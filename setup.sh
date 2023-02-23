@@ -1,4 +1,4 @@
-#!/bin.bash 
+#!/bin/bash 
 export ANSIBLE_SAFE_VERSION="0.0.4"
 export INVENTORY="localhost"
 function get_rhel_version() {
@@ -124,6 +124,7 @@ then
         echo "You must be root to run this script"
         exit 1
     fi
+    groupadd lab-user
     get_quibinode_navigator "/root"
     configure_navigator "/root"
     generate_inventory "/root"

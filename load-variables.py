@@ -12,7 +12,7 @@ def update_inventory(username=None):
             username = input("Enter username: ")
     else:
         username = getpass.getuser()
-        
+
     while True:
         domain_name = input("Enter the domain name for your system: ")
         regex = r"^(?:(?!-)[A-Za-z0-9-]{1,63}(?<!-)\.)+[A-Za-z]{2,}$"
@@ -22,7 +22,7 @@ def update_inventory(username=None):
 
     dnf_forwarder = input("Enter the DNS forwarder for your system: ")
 
-    inventory_path = 'inventories/localhost/all.yml'
+    inventory_path = 'inventories/localhost/group_vars/all.yml'
     with open(inventory_path, 'r') as f:
         inventory = yaml.safe_load(f)
 

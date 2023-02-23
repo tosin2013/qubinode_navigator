@@ -66,7 +66,9 @@ List inventory
 
 Deploy KVM Host
 ```
-ansible-navigator run ansible-navigator/setup_kvmhost.yml \
+$ ssh-agent bash
+$ ssh-add ~/.ssh/id_rsa
+$ ansible-navigator run ansible-navigator/setup_kvmhost.yml \
  --vault-password-file $HOME/.vault_password -m stdout 
 ```
 
