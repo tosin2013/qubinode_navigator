@@ -70,5 +70,5 @@ ansible-navigator run ansible-navigator/setup_kvmhost.yml \
 ```
 
 Links: 
-https://gitlab.com/cjung/ansible-ee-intro/-/blob/main/ansible-navigator/httpd.yml
-https://redhat-cop.github.io/agnosticd/
+* https://gitlab.com/cjung/ansible-ee-intro/-/blob/main/ansible-navigator/httpd.yml
+* https://redhat-cop.github.io/agnosticd/
