@@ -1,0 +1,30 @@
+---
+- name: setup KVM host
+  hosts: control
+  become: yes
+
+  tasks:
+    - name: Ensure backup folder is created
+      file:
+        path: "{{ project_dir }}/backups"
+        state: directory
+        mode: '0755'
+
+    - fail: msg="Checking to see if host_device is defined."
+      when: host_device is not defined
+
+    - fail: msg="Checking to see if vg_name is defined."
+      when: vg_name is not defined
+
+    - name: create libvirt logical volume
+      include_role:
+         name: tosin2013.qubinode_kvmhost_setup_collection.swygue_lvm
+      when: create_lvm|bool
+
+    - name: running KVM host setup
+      include_role:
+         name: tosin2013.qubinode_kvmhost_setup_collection.qubinode_kvmhost_setup
+
+    - name: validate KVM host setup
+      include_role:
+         name: tosin2013.qubinode_kvmhost_setup_collection.edge_hosts_validate

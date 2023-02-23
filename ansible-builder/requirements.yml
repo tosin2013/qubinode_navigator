@@ -1,0 +1,15 @@
+---
+collections:
+  - ansible.posix
+  - containers.podman
+  - community.general
+  - community.libvirt
+  - fedora.linux_system_roles
+  #- name: https://github.com/Qubinode/qubinode_kvmhost_setup_collection.git
+  #  type: git
+  #  version: main
+  - tosin2013.qubinode_kvmhost_setup_collection
+roles: 
+  - linux-system-roles.network
+  - linux-system-roles.firewall
+  - linux-system-roles.cockpit

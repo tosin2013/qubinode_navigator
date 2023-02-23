@@ -1,0 +1,5 @@
+/ansible-builder/context/
+/ansible-navigator/roles/
+/ansible-navigator/collections/
+vault.*
+*.vault_password
