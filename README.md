@@ -1,5 +1,4 @@
-# Qubinode Installer v2
-
+# Qubinode Navigator
 
 
 
@@ -9,14 +8,14 @@ Git Clone Repo
 ```
 git clone https://github.com/tosin2013/quibinode_navigator.git
 
-cd qubinode-installer-v2/
+cd quibinode_navigator/
 ```
 
 Configure SSH 
 ```
 IP_ADDRESS=$(hostname -I | awk '{print $1}')
 ssh-keygen -f ~/.ssh/id_rsa -t rsa -N ''
-ssh-copy-id admin@${IP_ADDRESS}
+ssh-copy-id $USER@${IP_ADDRESS}
 ```
 
 Install Ansible Navigator
@@ -56,7 +55,7 @@ curl -OL https://github.com/tosin2013/ansiblesafe/releases/download/v0.0.4/ansib
 tar -zxvf ansiblesafe-v0.0.4-linux-amd64.tar.gz
 chmod +x ansiblesafe-linux-amd64 
 sudo mv ansiblesafe-linux-amd64 /usr/local/bin/ansiblesafe
-ansiblesafe -f /home/admin/qubinode-installer-v2/inventories/localhost/group_vars/control/vault.yml
+ansiblesafe -f /home/admin/quibinode_navigator/inventories/localhost/group_vars/control/vault.yml
 ```
 
 List inventory 
@@ -64,6 +63,7 @@ List inventory
  ansible-navigator inventory --list -m stdout --vault-password-file $HOME/.vault_password
 ```
 
+Deploy KVM Host
 ```
 ansible-navigator run ansible-navigator/setup_kvmhost.yml \
  --vault-password-file $HOME/.vault_password -m stdout 
