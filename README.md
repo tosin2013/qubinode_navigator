@@ -1,6 +1,6 @@
 # Qubinode Navigator
 
-
+ sudo yum install gcc python3-devel
 
 ### How to build it
 
@@ -50,12 +50,13 @@ chmod +x ansible_vault_setup.sh
 
 Install and configure ansible safe
 ```bash
-dnf install ansible-core -y 
+sudo dnf install ansible-core -y 
 curl -OL https://github.com/tosin2013/ansiblesafe/releases/download/v0.0.4/ansiblesafe-v0.0.4-linux-amd64.tar.gz
 tar -zxvf ansiblesafe-v0.0.4-linux-amd64.tar.gz
 chmod +x ansiblesafe-linux-amd64 
 sudo mv ansiblesafe-linux-amd64 /usr/local/bin/ansiblesafe
-ansiblesafe -f /home/admin/quibinode_navigator/inventories/localhost/group_vars/control/vault.yml
+ansiblesafe -f /home/${USER}/quibinode_navigator/inventories/localhost/group_vars/control/vault.yml
+ansiblesafe -f /root/quibinode_navigator/inventories/localhost/group_vars/control/vault.yml
 ```
 
 List inventory 

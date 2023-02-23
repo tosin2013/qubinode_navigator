@@ -1,11 +1,11 @@
 ---
-kvm_host_gw: 192.168.1.1
-kvm_host_interface: eno1
-kvm_host_ip: 192.168.1.10
-kvm_host_macaddr: '11:11:11:11:11:11'
-kvm_host_mask_prefix: 24
-kvm_host_netmask: 255.255.255.0
-kvm_host_mtu: 1500
+kvm_host_gw: CHANGEME
+kvm_host_interface: CHANGEME
+kvm_host_ip: CHANGEME
+kvm_host_macaddr: CHANGEME
+kvm_host_mask_prefix: CHANGEME
+kvm_host_netmask: CHANGEME
+kvm_host_mtu: CHANGEME
 kvm_bridge_type: Bridge
 kvm_host_domain: "{{ domain }}"
 kvm_host_bootproto: 'static'
@@ -35,6 +35,9 @@ run_qubinode_setup: yes
 # Run storage check
 run_storage_check: ""
 
+## Set to no if you don't want to configure libvirt storage
+create_libvirt_storage: true
+
 # Enable cockpit service
 enable_cockpit: yes
 
@@ -63,9 +66,6 @@ configure_bridge: true
 # setup a LVM group for qubinode. Also set this to no
 # if you already have you storage for lvm setup
 create_lvm: yes
-
-## Set to no if you don't want to configure libvirt storage
-create_libvirt_storage: true
 
 # used in playbook setup_kvmhost.yml
 network_interface_name: "{{ kvm_host_interface }}"
