@@ -13,20 +13,10 @@ become_user: root
 
 
 # The domain name for your system
-domain: "lab.tosins-supermicro.io"
+domain: "lab.qubinode.io"
 
 # RHEL Version
 rhel_version: ""
-
-####
-# Gitops Settings
-# Set enable_gitops to 'true' to enable Gitops functionality.
-# The default_gitops_repo is the URL of the Git repository that will be used for Gitops.
-# The directory_name is the name of the directory where the Gitops files will be stored.
-####
-enable_gitops: false 
-default_gitops_repo: https://github.com/tosin2013/kvm-gitops.git
-directory_name: "quick-dev"
 
 #####
 # RHPDS Settings
@@ -38,11 +28,6 @@ run_on_rhpds: no
 run_kni_lab_on_rhpds: no 
 one_redhat: no
 
-
-#####
-# RHPDS Settings
-run_on_dsal: no
-multi_network: no
 
 #####
 # Application Dependencies
@@ -108,7 +93,7 @@ logical_volumes:
     size: "+100%FREE"
     mount_dir: "{{ kvm_host_libvirt_dir | default('/var/lib/libvirt/images') }}"
     fstype: xfs
-    
+
 #This is for KVM host initial setup of /etc/resolv.conf
 required_rpm_packages:
    - virt-install

@@ -3,7 +3,7 @@
 GIT_URL := https://github.com/tosin2013/quibinode_navigator.git
 TAG := 0.1.0 
 INSTALL_PATH = ~/.ansible-navigator.yml
-SOURCE_FILE = ~/quibinode_navigator/ansible-navigator/local-ansible-navigator.yml
+SOURCE_FILE = ~/quibinode_navigator/ansible-navigator/release-ansible-navigator.yml
 
 INSTALL_ANSIBLE_NAVIGATOR := pip3 install ansible-navigator
 BUILD_CMD := tag=$(TAG) && cd ~/quibinode_navigator/ansible-builder/ && ansible-builder build -f qubinode-installer.yml -t qubinode-installer:$${tag} -v 3
