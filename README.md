@@ -1,8 +1,20 @@
 # Qubinode Navigator
 
- sudo yum install gcc python3-devel
+ sudo yum install gcc python3-devel podman
 
 ### How to build it
+```
+curl -OL https://raw.githubusercontent.com/tosin2013/quibinode_navigator/main/setup.sh
+chmod +x setup.sh
+./setup.sh
+```
+
+### How to use it
+```
+pip install -r requirements.txt
+python3 load-variables.py
+```
+
 
 Git Clone Repo
 ```

@@ -38,6 +38,13 @@ function configure_navigator() {
         if ! command -v ansible-navigator &> /dev/null; then
             make install-ansible-navigator
             make copy-navigator
+            # Check if running as root
+            if [ "$EUID" -eq 0 ]; then
+               sed -i  's|/home/admin/quibinode_navigator/inventories/localhost|/root/quibinode_navigator/inventories/localhost|g'  ~/.ansible-navigator.yml
+            else
+                ssh-copy-id $USER@${IP_ADDRESS}
+                sed -i  's|/home/admin/quibinode_navigator/inventories/localhost|/home/'$USER'/quibinode_navigator/inventories/localhost|g'  ~/.ansible-navigator.yml
+            fi
         fi
     else
         echo "Qubinode Installer does not exist"

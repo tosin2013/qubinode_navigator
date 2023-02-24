@@ -5,6 +5,7 @@ import yaml
 import netifaces
 import psutil
 import re
+import time 
 
 def update_inventory(username=None):
     if os.geteuid() == 0:
@@ -35,6 +36,16 @@ def update_inventory(username=None):
 
 
 def get_interface_ips():
+    if os.geteuid() == 0:
+        print("Error: Cannot set configure_bridge to True when running as root.")
+        configure_bridge = False
+        print("configure_bridge is set to", configure_bridge)
+        time.sleep(3) 
+    else:
+        configure_bridge = True  # set configure_bridge to True or False based on your requirements
+        print("configure_bridge is set to", configure_bridge)
+        time.sleep(3) 
+
     # Get a list of network interfaces
     interfaces = netifaces.interfaces()
 
@@ -69,6 +80,7 @@ def get_interface_ips():
     with open(inventory_path, 'r') as f:
         inventory = yaml.safe_load(f)
 
+    inventory['configure_bridge'] = configure_bridge
     inventory['kvm_host_gw'] = netifaces.gateways()['default'][netifaces.AF_INET][0]
     inventory['kvm_host_interface'] = interface
     inventory['kvm_host_ip'] = ip
