@@ -1,13 +1,6 @@
 
 #!/bin/bash
 
-if [ -f random-functions.sh ]; then
-    source random-functions.sh
-else
-    echo "random-functions.sh does not exist"
-    exit 1
-fi
-
 ############################################
 ## @brief This function will configure the images for kcli
 ##  * @param {string} $1 - The path to the vault file

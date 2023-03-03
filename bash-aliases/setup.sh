@@ -4,3 +4,6 @@ if [ ! -d /opt/qubinode-installer ]; then
     exit 1
 fi
 
+cd /opt/qubinode-installer
+
+sudo cp -R $HOME/quibinode_navigator/bash-aliases/ .

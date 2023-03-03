@@ -1,4 +1,5 @@
 #!/bin/bash 
+set -xe
 export ANSIBLE_SAFE_VERSION="0.0.4"
 export INVENTORY="localhost"
 function get_rhel_version() {
@@ -137,6 +138,12 @@ function configure-os(){
 }
 
 get_rhel_version
+if ! command -v git &> /dev/null; then
+   echo "git could not be found"
+   echo "Please install git and try again"
+   exit 1
+fi 
+
 if [  $BASE_OS == "ROCKY8" ];
 then 
     if [ $(id -u) -ne 0 ]; then
@@ -144,7 +151,7 @@ then
         exit 1
     fi
     configure-os $BASE_OS
-    groupadd lab-user
+    #groupadd lab-user
     get_quibinode_navigator "/root"
     configure_navigator "/root"
     configure_vault "/root"

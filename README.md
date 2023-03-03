@@ -9,46 +9,11 @@ chmod +x setup.sh
 
 ### How to use it
 ```
-pip install -r requirements.txt
+cd quibinode_navigator/
+pip3 install -r requirements.txt
 python3 load-variables.py
 ```
 
-
-
-
-
-
-
-
-Copy navigator 
-```bash
-make copy-navigator
-```
-
-
-Build the image:
-**update the tag in the make file to update release**
-```bash
-make build-image
-```
-
-Configure Ansible Vault
-```bash
-curl -OL https://gist.githubusercontent.com/tosin2013/022841d90216df8617244ab6d6aceaf8/raw/92400b9e459351d204feb67b985c08df6477d7fa/ansible_vault_setup.sh
-chmod +x ansible_vault_setup.sh
-./ansible_vault_setup.sh
-```
-
-Install and configure ansible safe
-```bash
-sudo dnf install ansible-core -y 
-curl -OL https://github.com/tosin2013/ansiblesafe/releases/download/v0.0.4/ansiblesafe-v0.0.4-linux-amd64.tar.gz
-tar -zxvf ansiblesafe-v0.0.4-linux-amd64.tar.gz
-chmod +x ansiblesafe-linux-amd64 
-sudo mv ansiblesafe-linux-amd64 /usr/local/bin/ansiblesafe
-ansiblesafe -f /home/${USER}/quibinode_navigator/inventories/localhost/group_vars/control/vault.yml
-ansiblesafe -f /root/quibinode_navigator/inventories/localhost/group_vars/control/vault.yml
-```
 
 List inventory 
 ```

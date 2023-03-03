@@ -32,6 +32,7 @@ source ~/.profile
 
 
 sudo pip3 install ansible-navigator
+sudo pip3 install firewall
 echo 'export PATH=$HOME/.local/bin:$PATH' >> ~/.profile
 source ~/.profile
 #/usr/bin/python3 -m pip install _sqlite3

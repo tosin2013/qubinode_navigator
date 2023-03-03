@@ -14,7 +14,7 @@ Suppoted Operating  Systems
 ---------
 Make sure the following packages are installed on your system before startng the install::
 
-    sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user podman ansible-core make -y
+    sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
 
 `CentOS 9 Streams <https://www.centos.org/>`_
 ---------
@@ -29,7 +29,7 @@ Make sure the following packages are installed on your system before startng the
 
 Make sure the following packages are installed on your system before startng the install::
     sudo dnf upgrade -y 
-    sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
+    sudo dnf install git vim unzip wget bind-utils tar util-linux-user  gcc podman ansible-core make  -y
 
 If you are using RHEL you can follow the steps below to get started.:
 
