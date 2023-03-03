@@ -124,6 +124,18 @@ function copy-ssh-id(){
     fi
 }
 
+function configure-os(){
+    if [ ${1} == "ROCKY8" ]; then
+        sudo dnf install -y git make ansible-core
+    elif [ ${1} == "FEDORA" ]; then
+        sudo dnf install -y git make ansible-core
+    elif [ ${1} == "UBUNTU" ]; then
+        sudo apt install -y git make ansible-core
+    elif [ ${1} == "CENTOS8" ]; then
+        sudo dnf install -y git make ansible-core
+    fi
+}
+
 get_rhel_version
 if [  $BASE_OS == "ROCKY8" ];
 then 
@@ -131,11 +143,12 @@ then
         echo "You must be root to run this script"
         exit 1
     fi
+    configure-os $BASE_OS
     groupadd lab-user
     get_quibinode_navigator "/root"
     configure_navigator "/root"
-    generate_inventory "/root"
     configure_vault "/root"
+    generate_inventory "/root"
     copy-ssh-id
 elif [ $BASE_OS != "ROCKY8" ];
 then 
@@ -143,14 +156,14 @@ then
     if [ $(id -u) -ne 0 ]; then
         get_quibinode_navigator "$HOME"
         configure_navigator  "$HOME"
-        generate_inventory "$HOME"
         configure_vault "$HOME"
+        generate_inventory "$HOME"
         copy-ssh-id
     else 
         get_quibinode_navigator "/root"
         configure_navigator "/root"
-        generate_inventory "/root"
         configure_vault "/root"
+        generate_inventory "/root"
         copy-ssh-id
     fi
 fi 

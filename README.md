@@ -1,7 +1,5 @@
 # Qubinode Navigator
 
- sudo yum install gcc python3-devel podman
-
 ### How to build it
 ```
 curl -OL https://raw.githubusercontent.com/tosin2013/quibinode_navigator/main/setup.sh
@@ -16,30 +14,11 @@ python3 load-variables.py
 ```
 
 
-Git Clone Repo
-```
-git clone https://github.com/tosin2013/quibinode_navigator.git
 
-cd quibinode_navigator/
-```
 
-Configure SSH 
-```
-IP_ADDRESS=$(hostname -I | awk '{print $1}')
-ssh-keygen -f ~/.ssh/id_rsa -t rsa -N ''
-ssh-copy-id $USER@${IP_ADDRESS}
-```
 
-Install Ansible Navigator
-```bash
-make install-ansible-navigator
-```
 
-If you use Red Hat Enterprise Linux with an active Subscription, you might have to lo log into the registry first:
 
-```bash
-make podman-login
-```
 
 Copy navigator 
 ```bash
