@@ -13,7 +13,7 @@ ansible-navigator:
     container-engine: podman
     enabled: true
     pull-policy: missing
-    image: quay.io/qubinode/qubinode-installer:0.3.0
+    image: quay.io/qubinode/qubinode-installer:0.4.0
     environment-variables:
       pass:
         - USER

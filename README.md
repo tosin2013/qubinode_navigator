@@ -17,7 +17,7 @@ python3 load-variables.py
 
 List inventory 
 ```
- ansible-navigator inventory --list -m stdout --vault-password-file $HOME/.vault_password
+ansible-navigator inventory --list -m stdout --vault-password-file $HOME/.vault_password
 ```
 
 Deploy KVM Host

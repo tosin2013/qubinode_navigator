@@ -13,10 +13,13 @@ function get_rhel_version() {
     export BASE_OS="RHEL7"
   elif cat /etc/redhat-release  | grep "CentOS Stream release 9" > /dev/null 2>&1; then
     export BASE_OS="CENTOS9"
+    sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
   elif cat /etc/redhat-release  | grep "CentOS Stream release 8" > /dev/null 2>&1; then
     export BASE_OS="CENTOS8"
+    sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
   elif cat /etc/redhat-release  | grep "Fedora" > /dev/null 2>&1; then
     export BASE_OS="FEDORA"
+    sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
   else
     echo "Operating System not supported"
     echo "You may put a pull request to add support for your OS"
