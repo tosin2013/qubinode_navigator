@@ -4,15 +4,35 @@ if [ ! -d /opt/qubinode-installer ]; then
     exit 1
 fi
 
+if ! command -v ansible-navigator &> /dev/null; then
+    curl -Ls get.dannyb.co/alf/setup | bash
+fi 
+
 cd /opt/qubinode-installer
 
 sudo cp -R $HOME/quibinode_navigator/bash-aliases/ .
 
+alf generate
+alf save
 
-if [ -d /opt/qubinode-installer/bash-aliases/ ];
-then
-        source /opt/qubinode-installer/bash-aliases/random-functions.sh
-        source /opt/qubinode-installer/bash-aliases/configure-kcli.sh
+# Define the array of lines to add
+lines=(
+    'source /opt/qubinode-installer/bash-aliases/random-functions.sh'
+    'source /opt/qubinode-installer/bash-aliases/configure-kcli.sh'
+)
+
+# Iterate through the array and check if each line exists in the file
+should_add=0
+for line in "${lines[@]}"; do
+    if ! grep -Fxq "$line" ~/.bash_aliases; then
+        should_add=1
+        break
+    fi
+done
+
+# If any line does not exist, append all the lines to the file
+if [[ $should_add -eq 1 ]]; then
+    printf '%s\n' "${lines[@]}" | tee -a ~/.bash_aliases > /dev/null
 fi
 
 
