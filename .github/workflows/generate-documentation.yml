@@ -23,4 +23,5 @@ jobs:
         echo ${{ github.ref }}
         ls -lath .
         cat REFERENCE.md
+        echo "***************"
         cat REFERENCE-setup.md
