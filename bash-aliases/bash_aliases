@@ -1,3 +1,0 @@
-
-alias kcli_setup='qubinode_setup_kcli'
-alias configure_kcli_images='kcli_configure_images'
