@@ -6,6 +6,7 @@ import netifaces
 import psutil
 import re
 import time 
+import subprocess
 
 def update_inventory(username=None):
     if os.geteuid() == 0:
@@ -111,7 +112,7 @@ def get_disk():
     if not disks:
         print('No suitable disks found.')
         return None
-    elif len(disks) == 1:
+    elif len(disks) == 3:
         return disks[0]
     else:
         print('Found multiple suitable disks:')
@@ -130,21 +131,40 @@ def select_disk():
     # Get available disks
     disks = get_disk()
     print(disks)
+    # Check if disk is already mounted
+    mounted = False
+    if disks:
+        for disk in disks:
+            output = subprocess.check_output(['mount', '-l'], text=True)
+            if f"{disk} " in output:
+                print(f"Disk {disk} is already mounted.")
+                disks = [disk]
+                mounted = True
+                break
+
+    # Skip disk selection if only one disk is available and already mounted
+    if mounted and len(disks) == 1:
+        print(f"Using disk: {disks[0]}")
+        use_root_disk = True
+    else:
+        use_root_disk = False
 
     # Update YAML file with selected disk
     inventory_path = 'inventories/localhost/group_vars/control/kvm_host.yml'
     with open(inventory_path, 'r') as f:
         inventory = yaml.safe_load(f)
     
-    if '/dev/' not in disks:
+    if use_root_disk is True:
         print('No disk selected.')
         inventory['create_libvirt_storage'] = False
+        inventory['create_lvm'] = False
         with open(inventory_path, 'w') as f:
             yaml.dump(inventory, f, default_flow_style=False)
         exit(1)
     else:
         disks = disks.replace('/dev/', '')
         inventory['create_libvirt_storage'] = True
+        inventory['create_lvm'] = True
         inventory['kvm_host_libvirt_extra_disk'] = disks
         with open(inventory_path, "w") as f:
             yaml.dump(inventory, f)

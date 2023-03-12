@@ -17,8 +17,8 @@ function kcli_configure_images(){
     sudo kcli download image centos8jumpbox -u https://cloud.centos.org/centos/8-stream/x86_64/images/CentOS-Stream-GenericCloud-8-20220913.0.x86_64.qcow2
     sudo kcli download image centos8streams -u https://cloud.centos.org/centos/8-stream/x86_64/images/CentOS-Stream-GenericCloud-8-20220913.0.x86_64.qcow2
     # sudo kcli download image ubuntu -u https://cloud-images.ubuntu.com/releases/jammy/release/ubuntu-22.04-server-cloudimg-amd64.img
-    RUN_ON_RHPDS=$(yq -r  -o=json ~/quibinode_navigator/inventories/localhost/group_vars/all.yml | jq -r '.run_on_rhpds')
-    if [[ $LINUX_VERSION == "rhel"  || "A${RUN_ON_RHPDS}" != "Afalse"  ]]; then
+
+    if [[ $LINUX_VERSION == "rhel"  || "A${INSTALL_RHEL_IMAGES}" != "Afalse"  ]]; then
       echo "Downloading Red Hat Enterprise Linux 8"
       sudo kcli download image rhel8
       echo "Downloading Red Hat Enterprise Linux 9"
@@ -49,4 +49,46 @@ function qubinode_setup_kcli() {
       echo "kcli is installed"
       kcli --help
     fi 
+}
+
+function install_dependencies {
+  cd /opt/qubinode-installer/kcli-plan-samples
+  sudo pip3 install -r profile_generator/requirements.txt
+}
+
+function check_kcli_plan {
+  if [ -d /opt/qubinode-installer/kcli-plan-samples ]; then
+    echo "kcli plan already exists"
+  else
+    cd /opt/qubinode-installer || return
+    sudo git clone https://github.com/tosin2013/kcli-plan-samples.git
+    install_dependencies
+  fi
+}
+
+function update_profiles_file {
+  if [ -d /opt/qubinode-installer/kcli-plan-samples ]; then
+    cd /opt/qubinode-installer/kcli-plan-samples || return
+    if [ ! -f /opt/qubinode-installer/kcli-plan-samples/.vault_password ]; then
+      sudo curl -OL https://gist.githubusercontent.com/tosin2013/022841d90216df8617244ab6d6aceaf8/raw/92400b9e459351d204feb67b985c08df6477d7fa/ansible_vault_setup.sh
+      sudo chmod +x ansible_vault_setup.sh
+      sudo ./ansible_vault_setup.sh
+    fi
+    depenacy_check
+    set_variables
+    ansiblesafe -f "${ANSIBLE_VAULT_FILE}" -o 2
+    PASSWORD=$(yq eval '.admin_user_password' "${ANSIBLE_VAULT_FILE}")
+    RHSM_ORG=$(yq eval '.rhsm_org' "${ANSIBLE_VAULT_FILE}")
+    RHSM_ACTIVATION_KEY=$(yq eval '.admin_user_password' "${ANSIBLE_VAULT_FILE}")
+    sudo python3 profile_generator/profile_generator.py update_yaml rhel9 rhel9/template.yaml --image rhel-baseos-9.1-x86_64-kvm.qcow2 --user $USER --user-password ${PASSWORD} --rhnorg ${RHSM_ORG} --rhnactivationkey ${RHSM_ACTIVATION_KEY}
+    sudo python3 profile_generator/profile_generator.py update_yaml fedora37 fedora37/template.yaml --image Fedora-Cloud-Base-37-1.7.x86_64.qcow2  --disk-size 30 --numcpus 4 --memory 8192 --user  $USER  --user-password ${PASSWORD}
+    ansiblesafe -f "${ANSIBLE_VAULT_FILE}" -o 1
+
+    sudo mkdir -p "${KCLI_CONFIG_DIR}"
+    sudo cp "${PROFILES_FILE}" "${KCLI_CONFIG_FILE}"
+    if [ "${SECURE_DEPLOYMENT}" == "true" ];
+    then 
+      sudo ansiblesafe -f "${KCLI_CONFIG_FILE}" -o 1
+    fi 
+  fi
 }

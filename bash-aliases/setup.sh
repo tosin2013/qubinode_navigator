@@ -4,13 +4,15 @@ if [ ! -d /opt/qubinode-installer ]; then
     exit 1
 fi
 
-if ! command -v ansible-navigator &> /dev/null; then
+if ! command -v alf &> /dev/null; then
     curl -Ls get.dannyb.co/alf/setup | bash
 fi 
 
 cd /opt/qubinode-installer
 
 sudo cp -R $HOME/quibinode_navigator/bash-aliases/ .
+cd /opt/qubinode-installer/bash-aliases
+ls -lath .
 
 alf generate
 alf save

@@ -21,12 +21,18 @@ ansible-navigator inventory --list -m stdout --vault-password-file $HOME/.vault_
 ```
 
 Deploy KVM Host
-```
+```bash 
 $ ssh-agent bash
 $ ssh-add ~/.ssh/id_rsa
 $ ansible-navigator run ansible-navigator/setup_kvmhost.yml \
  --vault-password-file $HOME/.vault_password -m stdout 
 ```
+
+Configure commands 
+```bash 
+./bash-aliases/setup.sh
+```
+
 
 Links: 
 * https://gitlab.com/cjung/ansible-ee-intro/-/blob/main/ansible-navigator/httpd.yml
