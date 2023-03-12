@@ -8,8 +8,15 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
+    - name: Document setup.sh
+      id: action-genshdoc
+      uses: vargiuscuola/genshdoc@master
+      with:
+        path: setup.sh
     - name: Github Action genshdoc
       id: action-genshdoc
       uses: vargiuscuola/genshdoc@master
+      with:
+        path: bash_aliases/
     - name: genshdoc result
       run: echo "The result of genshdoc Action was ${{ steps.action-genshdoc.outputs.result }}"
