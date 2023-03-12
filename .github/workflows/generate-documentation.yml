@@ -15,7 +15,7 @@ jobs:
       id: action-genshdoc
       uses: vargiuscuola/genshdoc@master
       with:
-        entryPoint: ./bash-aliases/
+        path: ./bash-aliases/
     - name: genshdoc result
       run: echo "The result of genshdoc Action was ${{ steps.action-genshdoc-setup.outputs.result }}"
     - name: Commit files
