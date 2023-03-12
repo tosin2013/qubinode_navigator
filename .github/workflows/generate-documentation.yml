@@ -11,8 +11,6 @@ jobs:
     - name: Document setup.sh
       id: action-genshdoc-setup
       uses: vargiuscuola/genshdoc@master
-      with:
-        path: setup.sh
     - name: Github Action genshdoc
       id: action-genshdoc
       uses: vargiuscuola/genshdoc@master

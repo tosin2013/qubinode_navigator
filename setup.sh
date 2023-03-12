@@ -1,4 +1,5 @@
 #!/bin/bash 
+#github-action genshdoc
 set -xe
 export ANSIBLE_SAFE_VERSION="0.0.4"
 export INVENTORY="localhost"
