@@ -25,3 +25,4 @@ jobs:
         cat REFERENCE.md
         echo "***************"
         cat REFERENCE-setup.md
+        cat REFERENCE-setup-commands.md
