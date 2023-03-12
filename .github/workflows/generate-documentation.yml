@@ -26,3 +26,5 @@ jobs:
         echo "***************"
         cat REFERENCE-setup.md
         cat REFERENCE-setup-commands.md
+        cat REFERENCE-configure-kcli.md
+        cat REFERENCE-random-functions.md
