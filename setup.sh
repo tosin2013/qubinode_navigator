@@ -2,6 +2,8 @@
 set -xe
 export ANSIBLE_SAFE_VERSION="0.0.4"
 export INVENTORY="localhost"
+
+# @description This function get_rhel_version function will determine the version of RHEL
 function get_rhel_version() {
   if cat /etc/redhat-release  | grep "Red Hat Enterprise Linux release 9.[0-9]" > /dev/null 2>&1; then
     export BASE_OS="RHEL9"
@@ -29,6 +31,7 @@ function get_rhel_version() {
 
 }
 
+# @description This function get_quibinode_navigator function will clone the quibinode_navigator repo
 function get_quibinode_navigator() {
     if [ -d $1/quibinode_navigator ]; then
         echo "Qubinode Installer already exists"
