@@ -28,3 +28,6 @@ jobs:
         cat REFERENCE-setup-commands.md
         cat REFERENCE-configure-kcli.md
         cat REFERENCE-random-functions.md
+        mkdir -p docs/REFERENCE
+        mv REFERENCE* docs/REFERENCE/
+        ls -lath docs/REFERENCE/
