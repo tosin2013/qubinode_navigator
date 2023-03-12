@@ -1,0 +1,15 @@
+name: Generate Documentation
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Github Action genshdoc
+      id: action-genshdoc
+      uses: vargiuscuola/genshdoc@master
+    - name: genshdoc result
+      run: echo "The result of genshdoc Action was ${{ steps.action-genshdoc.outputs.result }}"

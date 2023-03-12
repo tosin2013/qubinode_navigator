@@ -62,6 +62,7 @@ function check_kcli_plan {
   else
     cd /opt/qubinode-installer || return
     sudo git clone https://github.com/tosin2013/kcli-plan-samples.git
+    git checkout dev
     install_dependencies
   fi
 }

@@ -135,8 +135,7 @@ def select_disk():
     mounted = False
     if disks:
         for disk in disks:
-            output = subprocess.check_output(['mount', '-l'], text=True)
-            if f"{disk} " in output:
+            if os.path.ismount(f'/mnt/{disk}'):
                 print(f"Disk {disk} is already mounted.")
                 disks = [disk]
                 mounted = True
