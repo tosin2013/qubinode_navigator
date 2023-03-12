@@ -1,5 +1,6 @@
 
 #!/bin/bash
+#github-action genshdoc
 
 
 ############################################
@@ -8,7 +9,7 @@
 ############################################
 function kcli_configure_images(){
     echo "Configuring images"
-    depenacy_check
+    dependency_check
     echo "Downloading Fedora"
     sudo kcli download image fedora37
     echo "Downloading Centos Streams"
@@ -62,7 +63,8 @@ function check_kcli_plan {
   else
     cd /opt/qubinode-installer || return
     sudo git clone https://github.com/tosin2013/kcli-plan-samples.git
-    git checkout dev
+    cd /opt/qubinode-installer/kcli-plan-samples || return
+    sudo git checkout dev
     install_dependencies
   fi
 }
@@ -75,7 +77,7 @@ function update_profiles_file {
       sudo chmod +x ansible_vault_setup.sh
       sudo ./ansible_vault_setup.sh
     fi
-    depenacy_check
+    dependency_check
     set_variables
     ansiblesafe -f "${ANSIBLE_VAULT_FILE}" -o 2
     PASSWORD=$(yq eval '.admin_user_password' "${ANSIBLE_VAULT_FILE}")

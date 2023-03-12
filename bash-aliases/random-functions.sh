@@ -1,6 +1,8 @@
 #!/bin/bash
+#github-action genshdoc
 
-function depenacy_check() {
+# @description This function will check for the existence of the yq binary
+function dependency_check() {
     if ! yq -v  &> /dev/null
     then
         VERSION=v4.30.6
@@ -10,6 +12,14 @@ function depenacy_check() {
     fi
 }
 
+# @description This function will set the variables for the installer
+# ANSIBLE_SAFE_VERSION - The version of the ansiblesafe binary
+# ANSIBLE_VAULT_FILE - The location of the vault file
+# KCLI_CONFIG_DIR - The location of the kcli config directory
+# KCLI_CONFIG_FILE - The location of the kcli config file
+# PROFILES_FILE - The name of the kcli profiles file
+# SECURE_DEPLOYMENT - The value of the secure deployment variable
+# INSTALL_RHEL_IMAGES - Set the vault to true if you want to install the RHEL images
 function set_variables() {
     export ANSIBLE_SAFE_VERSION="0.0.4"
     export ANSIBLE_VAULT_FILE="$HOME/quibinode_navigator/inventories/localhost/group_vars/control/vault.yml"

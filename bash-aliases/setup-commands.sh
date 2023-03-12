@@ -1,13 +1,13 @@
 #!/bin/bash 
 #github-action genshdoc
+# @file Setup the bash aliases for the qubinode installer
+# @brief This script will setup the bash aliases for the qubinode installer
 
-# @description  This will check if the /opt/qubinode-installer folder exists
 if [ ! -d /opt/qubinode-installer ]; then
     echo "Qubinode Installer does not exist"
     exit 1
 fi
 
-# @description alf  will check if the alf command exists
 if ! command -v alf &> /dev/null; then
     curl -Ls get.dannyb.co/alf/setup | bash
 fi 
