@@ -8,6 +8,9 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
+      with:
+        ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
+        persist-credentials: true
     - name: Document setup.sh
       id: action-genshdoc-setup
       uses: vargiuscuola/genshdoc@master
@@ -38,6 +41,6 @@ jobs:
     - name: push
       uses: ad-m/github-push-action@master
       with:
-        github_token: ${{ secrets.ACCESS_TOKEN }}
+        ssh: true
         branch: ${{ github.ref }}
         directory: .
