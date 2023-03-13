@@ -42,4 +42,6 @@ jobs:
         push-branch: main
         commit-message: 'Updating documentation'
         rebase: 'true' # pull and rebase before commit
+        name: tosin2013
+        email: tosin.akinosho@gmail.com
       
