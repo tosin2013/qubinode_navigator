@@ -17,7 +17,7 @@ kvm_host_dns_server: "{{ primary_dns_server | default('1.1.1.1') }}"
 search_domains: 
   - "{{ domain }}"
 
-libvirt_pool_name_check: yes
+libvirt_pool_name_check: true
 skip_libvirt_pool: no
 
 # We leverage a bridge network for OCP3 installs
@@ -30,21 +30,21 @@ qubinode_bridge_name: qubibr0
 rhel_release: ""
 
 # This variable is being phased out
-run_qubinode_setup: yes
+run_qubinode_setup: true
 
 # Run storage check
 run_storage_check: ""
 
 # Enable cockpit service
-enable_cockpit: yes
+enable_cockpit: true
 
-# # Set to yes to add the admin_user to the libvirt group
+# # Set to true to add the admin_user to the libvirt group
 # # and change libvirt to be accessible user 
-enable_libvirt_admin_user: yes
+enable_libvirt_admin_user: true
 
 # Configure the user bash shell login prompt
 # # This will overwrite your existing .bashrc, .vimrc and other terminal configuration files
-configure_shell: yes
+configure_shell: true
 
 # set path to libvirt images
 kvm_host_libvirt_dir: /var/lib/libvirt/images
@@ -54,7 +54,7 @@ kvm_vm_pool_dir: "{{ kvm_host_libvirt_dir }}"
 
 host_device: "{{ kvm_host_libvirt_extra_disk | default('nvme0n1') }}"
 vg_name: vg_qubi
-vm_libvirt_net_check: yes
+vm_libvirt_net_check: true
 
 # should a bridge interface be created
 configure_bridge: true
@@ -62,7 +62,7 @@ configure_bridge: true
 # Set to no prevent the installer from attempting
 # setup a LVM group for qubinode. Also set this to no
 # if you already have you storage for lvm setup
-create_lvm: yes
+create_lvm: true
 
 ## Set to no if you don't want to configure libvirt storage
 create_libvirt_storage: true
