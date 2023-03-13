@@ -9,11 +9,10 @@ project_dir: /opt/qubinode-installer
 
 # The name of the admin user for your system
 admin_user: admin
-become_user: root
-
+become: true
 
 # The domain name for your system
-domain: "lab.qubinode.io"
+domain: "CHANGEME"
 
 # RHEL Version
 rhel_version: ""
@@ -24,8 +23,8 @@ rhel_version: ""
 # Set run_kni_lab_on_rhpds to 'yes' to run a KNI lab on RHPDS.
 # Set one_redhat to 'yes' if you have a One Red Hat account.
 #####
-run_on_rhpds: false 
-run_kni_lab_on_rhpds: false 
+run_on_rhpds: false
+run_kni_lab_on_rhpds: false
 one_redhat: false
 
 
@@ -48,24 +47,6 @@ dns_forwarder: "CHANGEME"
 # Set rhsm_reg_method to 'username_pass' to use a Red Hat account.
 # Set rhsm_reg_method to 'rhsm' to use the Red Hat Subscription Manager.
 rhsm_reg_method: ""
-
-######################################
-#         SYSTEM VARIABLES           #
-# You shouldn't need to change these #
-######################################
-
-# Ansible 2.6 is rhel-7-server-ansible-2.6-rpms
-# Ansible 2.9 on rhel 7  rhel-7-server-ansible-2.9-rpms
-rhel7_ansible_repo: rhel-7-server-ansible-2.9-rpms
-rhel8_ansible_repo: ansible-2.9-for-rhel-8-x86_64-rpms
-ansible_version: 2.9.10
-ansible_release: 2.9
-rhel8_version: 8.6
-rhel7_version: 7.9
-
-# All VMs created name will begin with this prefix.
-instance_prefix: qbn
-preappend_host_name: "{{ instance_prefix }}-{{ product }}-"
 
 ## When this var is set to true and the host gets it's ip address from
 ## dhcp. It was take that IP address and configure the host to use static
@@ -126,7 +107,7 @@ required_rpm_packages:
   - python3-dns
   - python3-lxml
   - cockpit-machines
-  - bc 
+  - bc
   - nmap
   - ncurses-devel
   - curl
