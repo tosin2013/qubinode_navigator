@@ -1,5 +1,9 @@
 # Qubinode Navigator
 
+
+[![ansible-lint](https://github.com/tosin2013/quibinode_navigator/actions/workflows/ansible-lint.yml/badge.svg)](https://github.com/tosin2013/quibinode_navigator/actions/workflows/ansible-lint.yml)
+[![Generate Documentation](https://github.com/tosin2013/quibinode_navigator/actions/workflows/generate-documentation.yml/badge.svg)](https://github.com/tosin2013/quibinode_navigator/actions/workflows/generate-documentation.yml)
+
 ### How to build it
 ```
 curl -OL https://raw.githubusercontent.com/tosin2013/quibinode_navigator/main/setup.sh

@@ -5,7 +5,7 @@
 # you can update them manually       #
 ######################################
 # Config Directory
-project_dir: /opt/qubinode-installer
+project_dir: /opt/qubifalsede-installer
 
 # The name of the admin user for your system
 admin_user: admin
@@ -24,9 +24,9 @@ rhel_version: ""
 # Set run_kni_lab_on_rhpds to 'yes' to run a KNI lab on RHPDS.
 # Set one_redhat to 'yes' if you have a One Red Hat account.
 #####
-run_on_rhpds: no
-run_kni_lab_on_rhpds: no
-one_redhat: no
+run_on_rhpds: false
+run_kni_lab_on_rhpds: false
+one_redhat: false
 
 
 #####
@@ -38,7 +38,7 @@ ansible_automation_platform: false
 enable_ceph_deployment: false
 
 # PTR - The PTR record that should be used for your system
-qubinode_ptr: changeme.in-addr.arpa
+qubifalsede_ptr: changeme.in-addr.arpa
 
 # Public DNS server
 # The IP address of the DNS server that your system will use
@@ -70,8 +70,8 @@ preappend_host_name: "{{ instance_prefix }}-{{ product }}-"
 ## When this var is set to true and the host gets it's ip address from
 ## dhcp. It was take that IP address and configure the host to use static
 ## ip address assignment. It's recommended that you create a DHCP reservation
-## for this host to ensure the DHCP lease does not expire and get consume by
-## another host on the network.
+## for this host to ensure the DHCP lease does falset expire and get consume by
+## afalsether host on the network.
 convert_dhcp_to_static: true
 
 # ROLE: swygue-redhat-subscription
@@ -96,38 +96,37 @@ logical_volumes:
 
 # This is for KVM host initial setup of /etc/resolv.conf
 required_rpm_packages:
-   - virt-install
-   - libvirt-daemon-config-network
-   - libvirt-daemon-kvm
-   - libguestfs-tools
-   - libvirt-client
-   - qemu-kvm
-   - nfs-utils
-   - libvirt-daemon
-   - libvirt-client
-   - virt-top
-   - tuned
-   - openssh-server
-   - wget
-   - git
-   - net-tools
-   - bind-utils
-   - yum-utils
-   - iptables-services
-   - bash-completion
-   - kexec-tools
-   - sos
-   - psacct
-   - vim
-   - device-mapper-event-libs
-   - device-mapper-libs
-   - httpd-tools
-   - tmux
-   - python3-dns
-   - python3-lxml
-   - cockpit-machines
-   - bc
-   - nmap
-   - ncurses-devel
-   - curl
-   
+  - virt-install
+  - libvirt-daemon-config-network
+  - libvirt-daemon-kvm
+  - libguestfs-tools
+  - libvirt-client
+  - qemu-kvm
+  - nfs-utils
+  - libvirt-daemon
+  - libvirt-client
+  - virt-top
+  - tuned
+  - openssh-server
+  - wget
+  - git
+  - net-tools
+  - bind-utils
+  - yum-utils
+  - iptables-services
+  - bash-completion
+  - kexec-tools
+  - sos
+  - psacct
+  - vim
+  - device-mapper-event-libs
+  - device-mapper-libs
+  - httpd-tools
+  - tmux
+  - python3-dns
+  - python3-lxml
+  - cockpit-machines
+  - bc
+  - nmap
+  - ncurses-devel
+  - curl

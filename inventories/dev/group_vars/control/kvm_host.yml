@@ -1,15 +1,14 @@
 ---
-kvm_host_gw: CHANGEME
-kvm_host_interface: CHANGEME
-kvm_host_ip: CHANGEME
-kvm_host_macaddr: CHANGEME
-kvm_host_mask_prefix: CHANGEME
-kvm_host_netmask: CHANGEME
-kvm_host_mtu: CHANGEME
+kvm_host_gw: 192.168.1.1
+kvm_host_interface: eno1
+kvm_host_ip: 192.168.1.10
+kvm_host_macaddr: '11:11:11:11:11:11'
+kvm_host_mask_prefix: 24
+kvm_host_netmask: 255.255.255.0
+kvm_host_mtu: 1500
 kvm_bridge_type: Bridge
 kvm_host_domain: "{{ domain }}"
 kvm_host_bootproto: 'static'
-kvm_bridge_type: 'Bridge'
 
 # The the primary dns server to the dns_forwarder
 primary_dns_server: "{{ dns_forwarder | default('1.1.1.1') }}"
@@ -18,15 +17,16 @@ search_domains:
   - "{{ domain }}"
 
 libvirt_pool_name_check: true
-skip_libvirt_pool: no
+skip_libvirt_pool: false
 
 # We leverage a bridge network for OCP3 installs
 # and other VMS. This sets the name of the bridge to be created and use when
 # deploying VMS. If there is an existing libvirt bridge network, set the name here instea.
 qubinode_bridge_name: qubibr0
 
-# RHEL 7.9 is the current tested RHEL 7 minor release.
+
 # RHEL 8.6  is the current tested RHEL 8 minor release.
+# RHEL 9.1  is the current tested RHEL 9 minor release.
 rhel_release: ""
 
 # This variable is being phased out
@@ -34,9 +34,6 @@ run_qubinode_setup: true
 
 # Run storage check
 run_storage_check: ""
-
-## Set to no if you don't want to configure libvirt storage
-create_libvirt_storage: true
 
 # Enable cockpit service
 enable_cockpit: true
@@ -67,6 +64,9 @@ configure_bridge: true
 # if you already have you storage for lvm setup
 create_lvm: true
 
+## Set to no if you don't want to configure libvirt storage
+create_libvirt_storage: true
+
 # used in playbook setup_kvmhost.yml
 network_interface_name: "{{ kvm_host_interface }}"
 
@@ -80,7 +80,7 @@ remove_nfs: false
 # use by funciton check_hardware_resources
 libvirt_pool_name: default
 
-qubinode_installer_host_completed: no
+qubinode_installer_host_completed: false
 
 # name of the libvirt network to use
 vm_libvirt_net: "qubinet"
