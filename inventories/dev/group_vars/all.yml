@@ -8,7 +8,7 @@
 project_dir: /opt/qubinode-installer
 
 # The name of the admin user for your system
-admin_user: CHANGEME
+admin_user: admin
 become_user: root
 
 
@@ -28,6 +28,7 @@ run_on_rhpds: no
 run_kni_lab_on_rhpds: no 
 one_redhat: no
 
+
 #####
 # Application Dependencies
 # Set ansible_automation_platform to 'true' to install the Ansible Automation Platform.
@@ -41,7 +42,7 @@ qubinode_ptr: changeme.in-addr.arpa
 
 # Public DNS server
 # The IP address of the DNS server that your system will use
-dns_forwarder: "192.168.1.124"
+dns_forwarder: "CHANGEME"
 
 # swygue-redhat-subscription Role
 # Set rhsm_reg_method to 'username_pass' to use a Red Hat account.
@@ -61,6 +62,10 @@ ansible_version: 2.9.10
 ansible_release: 2.9
 rhel8_version: 8.6
 rhel7_version: 7.9
+
+# All VMs created name will begin with this prefix.
+instance_prefix: qbn
+preappend_host_name: "{{ instance_prefix }}-{{ product }}-"
 
 ## When this var is set to true and the host gets it's ip address from
 ## dhcp. It was take that IP address and configure the host to use static
@@ -88,7 +93,7 @@ logical_volumes:
     size: "+100%FREE"
     mount_dir: "{{ kvm_host_libvirt_dir | default('/var/lib/libvirt/images') }}"
     fstype: xfs
-    
+
 #This is for KVM host initial setup of /etc/resolv.conf
 required_rpm_packages:
    - virt-install

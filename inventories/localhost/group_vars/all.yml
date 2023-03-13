@@ -42,7 +42,7 @@ qubinode_ptr: changeme.in-addr.arpa
 
 # Public DNS server
 # The IP address of the DNS server that your system will use
-dns_forwarder: "192.168.1.124"
+dns_forwarder: "CHANGEME"
 
 # swygue-redhat-subscription Role
 # Set rhsm_reg_method to 'username_pass' to use a Red Hat account.
