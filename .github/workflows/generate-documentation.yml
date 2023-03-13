@@ -38,7 +38,7 @@ jobs:
     - name: push
       uses: ad-m/github-push-action@master
       with:
-        github-token: ${{ secrets.ACCESS_TOKEN }}
-        repository: https://github.com/tosin2013/quibinode_navigator.git
+        github_token: ${{ secrets.ACCESS_TOKEN }}
+        github_url: https://github.com/tosin2013/quibinode_navigator.git
         branch: ${{ github.ref }}
         directory: .
