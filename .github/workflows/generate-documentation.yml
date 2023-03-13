@@ -38,9 +38,8 @@ jobs:
     - name: push
       uses: github-actions-x/commit@v2.9
       with:
-        github-token: $GITHUB_TOKEN
+        github-token: ${{ secrets.ACCESS_TOKEN }}
         push-branch: main
         commit-message: 'Updating documentation'
         rebase: 'true' # pull and rebase before commit
-      env:
-        GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+      
