@@ -4,7 +4,7 @@
 # The are automatically updated or   #
 # you can update them manually       #
 ######################################
-# Config Directory 
+# Config Directory
 project_dir: /opt/qubinode-installer
 
 # The name of the admin user for your system
@@ -24,8 +24,8 @@ rhel_version: ""
 # Set run_kni_lab_on_rhpds to 'yes' to run a KNI lab on RHPDS.
 # Set one_redhat to 'yes' if you have a One Red Hat account.
 #####
-run_on_rhpds: no 
-run_kni_lab_on_rhpds: no 
+run_on_rhpds: no
+run_kni_lab_on_rhpds: no
 one_redhat: no
 
 
@@ -94,7 +94,7 @@ logical_volumes:
     mount_dir: "{{ kvm_host_libvirt_dir | default('/var/lib/libvirt/images') }}"
     fstype: xfs
 
-#This is for KVM host initial setup of /etc/resolv.conf
+# This is for KVM host initial setup of /etc/resolv.conf
 required_rpm_packages:
    - virt-install
    - libvirt-daemon-config-network
@@ -126,7 +126,8 @@ required_rpm_packages:
    - python3-dns
    - python3-lxml
    - cockpit-machines
-   - bc 
+   - bc
    - nmap
    - ncurses-devel
    - curl
+   
