@@ -94,39 +94,39 @@ logical_volumes:
     mount_dir: "{{ kvm_host_libvirt_dir | default('/var/lib/libvirt/images') }}"
     fstype: xfs
 
-#This is for KVM host initial setup of /etc/resolv.conf
+# This is for KVM host initial setup of /etc/resolv.conf
 required_rpm_packages:
-   - virt-install
-   - libvirt-daemon-config-network
-   - libvirt-daemon-kvm
-   - libguestfs-tools
-   - libvirt-client
-   - qemu-kvm
-   - nfs-utils
-   - libvirt-daemon
-   - libvirt-client
-   - virt-top
-   - tuned
-   - openssh-server
-   - wget
-   - git
-   - net-tools
-   - bind-utils
-   - yum-utils
-   - iptables-services
-   - bash-completion
-   - kexec-tools
-   - sos
-   - psacct
-   - vim
-   - device-mapper-event-libs
-   - device-mapper-libs
-   - httpd-tools
-   - tmux
-   - python3-dns
-   - python3-lxml
-   - cockpit-machines
-   - bc 
-   - nmap
-   - ncurses-devel
-   - curl
+  - virt-install
+  - libvirt-daemon-config-network
+  - libvirt-daemon-kvm
+  - libguestfs-tools
+  - libvirt-client
+  - qemu-kvm
+  - nfs-utils
+  - libvirt-daemon
+  - libvirt-client
+  - virt-top
+  - tuned
+  - openssh-server
+  - wget
+  - git
+  - net-tools
+  - bind-utils
+  - yum-utils
+  - iptables-services
+  - bash-completion
+  - kexec-tools
+  - sos
+  - psacct
+  - vim
+  - device-mapper-event-libs
+  - device-mapper-libs
+  - httpd-tools
+  - tmux
+  - python3-dns
+  - python3-lxml
+  - cockpit-machines
+  - bc 
+  - nmap
+  - ncurses-devel
+  - curl
