@@ -1,14 +1,17 @@
 #!/bin/bash 
 #github-action genshdoc
+
+# @setting-header setup.sh quickstart script for quibinode_navigator
+# @setting ./setup.sh 
+
 set -xe
 export ANSIBLE_SAFE_VERSION="0.0.4"
 export INVENTORY="localhost"
 
-# @description This function get_rhel_version function will determine the version of RHEL
+# @setting  The function get_rhel_version function will determine the version of RHEL
 function get_rhel_version() {
   if cat /etc/redhat-release  | grep "Red Hat Enterprise Linux release 9.[0-9]" > /dev/null 2>&1; then
     export BASE_OS="RHEL9"
-    sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
   elif cat /etc/redhat-release  | grep "Red Hat Enterprise Linux release 8.[0-9]" > /dev/null 2>&1; then
       export BASE_OS="RHEL8"
   elif cat /etc/redhat-release  | grep "Rocky Linux release 8.[0-9]" > /dev/null 2>&1; then
@@ -17,13 +20,10 @@ function get_rhel_version() {
     export BASE_OS="RHEL7"
   elif cat /etc/redhat-release  | grep "CentOS Stream release 9" > /dev/null 2>&1; then
     export BASE_OS="CENTOS9"
-    sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
   elif cat /etc/redhat-release  | grep "CentOS Stream release 8" > /dev/null 2>&1; then
     export BASE_OS="CENTOS8"
-    sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
   elif cat /etc/redhat-release  | grep "Fedora" > /dev/null 2>&1; then
     export BASE_OS="FEDORA"
-    sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
   else
     echo "Operating System not supported"
     echo "You may put a pull request to add support for your OS"
@@ -41,6 +41,7 @@ function get_quibinode_navigator() {
     fi
 }
 
+# @description This function configure_navigator function will configure the ansible-navigator
 function configure_navigator() {
     if [ -d $1/quibinode_navigator ]; then
         cd $1/quibinode_navigator
@@ -59,6 +60,7 @@ function configure_navigator() {
     fi
 }
 
+# @description This function configure_vault function will configure the ansible-vault it will download ansible vault and ansiblesafe
 function configure_vault() {
     if [ -d $1/quibinode_navigator ]; then
         cd $1/quibinode_navigator
@@ -91,6 +93,7 @@ function configure_vault() {
     fi
 }
 
+# @description This function generate_inventory function will generate the inventory
 function generate_inventory(){
     if [ -d $1/quibinode_navigator ]; then
         cd $1/quibinode_navigator
@@ -116,6 +119,7 @@ function generate_inventory(){
     fi
 }
 
+# @description This function configure_ssh function will configure the ssh
 function copy-ssh-id(){
     if [ -f ~/.ssh/id_rsa ]; then
         echo "SSH key already exists"
@@ -132,15 +136,18 @@ function copy-ssh-id(){
     fi
 }
 
+# @description This configure-os function will get the base os and install the required packages
 function configure-os(){
     if [ ${1} == "ROCKY8" ]; then
-        sudo dnf install -y git make ansible-core
+        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
     elif [ ${1} == "FEDORA" ]; then
-        sudo dnf install -y git make ansible-core
+        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
     elif [ ${1} == "UBUNTU" ]; then
-        sudo apt install -y git make ansible-core
+        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
     elif [ ${1} == "CENTOS8" ]; then
-        sudo dnf install -y git make ansible-core
+        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
+    elif [ ${1} == "CENTOS9" ]; then
+        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
     fi
 }
 
