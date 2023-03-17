@@ -10,6 +10,12 @@ This function get_quibinode_navigator function will clone the quibinode_navigato
 *  The function get_rhel_version function will determine the version of RHEL
 
 
+# Global Variables
+
+* **ANSIBLE_SAFE_VERSION** (this): is the ansible safe version
+* **INVENTORY** (this): is the inventory file name and path Example: inventories/localhost
+
+
 # Functions
 * [configure_navigator()](#configure_navigator)
 * [configure_vault()](#configure_vault)
