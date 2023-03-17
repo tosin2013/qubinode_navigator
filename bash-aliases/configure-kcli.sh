@@ -45,6 +45,8 @@ function qubinode_setup_kcli() {
         echo "eval '$(register-python-argcomplete kcli)'" >> ~/.bashrc
         if [[ $RHEL_VERSION == "CENTOS9" ]]; then
           sudo kcli create host kvm -H 127.0.0.1 local
+        elif [[ $RHEL_VERSION == "RHEL9" ]]; then
+          sudo kcli create host kvm -H 127.0.0.1 local
         fi
     else 
       echo "kcli is installed"

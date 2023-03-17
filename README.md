@@ -28,15 +28,21 @@ Deploy KVM Host
 ```bash 
 $ ssh-agent bash
 $ ssh-add ~/.ssh/id_rsa
+$ cd $HOME/qubinode_navigator
 $ ansible-navigator run ansible-navigator/setup_kvmhost.yml \
  --vault-password-file $HOME/.vault_password -m stdout 
 ```
 
 Configure commands 
 ```bash 
-./bash-aliases/setup.sh
+./bash-aliases/setup-commands.sh
 ```
-
+Configure KCLI for VMs
+```bash
+kcli-utils setup
+kcli-utils configure-images
+kcli-utils check-kcli-plan
+```
 
 Links: 
 * https://gitlab.com/cjung/ansible-ee-intro/-/blob/main/ansible-navigator/httpd.yml
