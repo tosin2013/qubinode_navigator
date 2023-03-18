@@ -149,16 +149,13 @@ function configure-os(){
     elif [ ${1} == "CENTOS8" ]; then
         sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
     elif [ ${1} == "CENTOS9" ]; then
+        sudo dnf update -y 
         sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
     fi
 }
 
 get_rhel_version
-if ! command -v git &> /dev/null; then
-   echo "git could not be found"
-   echo "Please install git and try again"
-   exit 1
-fi 
+
 
 if [  $BASE_OS == "ROCKY8" ];
 then 
@@ -177,12 +174,14 @@ elif [ $BASE_OS != "ROCKY8" ];
 then 
     echo "Continuing with the script"
     if [ $(id -u) -ne 0 ]; then
+        configure-os $BASE_OS
         get_quibinode_navigator "$HOME"
         configure_navigator  "$HOME"
         configure_vault "$HOME"
         generate_inventory "$HOME"
         copy-ssh-id
     else 
+        configure-os $BASE_OS
         get_quibinode_navigator "/root"
         configure_navigator "/root"
         configure_vault "/root"

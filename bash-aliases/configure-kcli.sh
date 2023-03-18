@@ -33,19 +33,20 @@ function kcli_configure_images(){
 ## @brief This function will install and configure the default settings for kcli
 ############################################
 function qubinode_setup_kcli() {
+    get_rhel_version
     if [[ ! -f /usr/bin/kcli ]];
     then 
         sudo dnf -y install libvirt libvirt-daemon-driver-qemu qemu-kvm
         sudo systemctl enable --now libvirtd
         sudo usermod -aG qemu,libvirt $USER
-        if [[ $RHEL_VERSION == "CENTOS9" ]]; then
+        if [[ $BASE_OS == "CENTOS9" ]]; then
           sudo dnf copr enable karmab/kcli  epel-9-x86_64
         fi
         curl https://raw.githubusercontent.com/karmab/kcli/master/install.sh | bash
         echo "eval '$(register-python-argcomplete kcli)'" >> ~/.bashrc
-        if [[ $RHEL_VERSION == "CENTOS9" ]]; then
+        if [[ $BASE_OS == "CENTOS9" ]]; then
           sudo kcli create host kvm -H 127.0.0.1 local
-        elif [[ $RHEL_VERSION == "RHEL9" ]]; then
+        elif [[ $BASE_OS == "RHEL9" ]]; then
           sudo kcli create host kvm -H 127.0.0.1 local
         fi
     else 
@@ -84,7 +85,7 @@ function update_profiles_file {
     ansiblesafe -f "${ANSIBLE_VAULT_FILE}" -o 2
     PASSWORD=$(yq eval '.admin_user_password' "${ANSIBLE_VAULT_FILE}")
     RHSM_ORG=$(yq eval '.rhsm_org' "${ANSIBLE_VAULT_FILE}")
-    RHSM_ACTIVATION_KEY=$(yq eval '.admin_user_password' "${ANSIBLE_VAULT_FILE}")
+    RHSM_ACTIVATION_KEY=$(yq eval '.rhsm_activationkey' "${ANSIBLE_VAULT_FILE}")
     sudo python3 profile_generator/profile_generator.py update_yaml rhel9 rhel9/template.yaml --image rhel-baseos-9.1-x86_64-kvm.qcow2 --user $USER --user-password ${PASSWORD} --rhnorg ${RHSM_ORG} --rhnactivationkey ${RHSM_ACTIVATION_KEY}
     sudo python3 profile_generator/profile_generator.py update_yaml fedora37 fedora37/template.yaml --image Fedora-Cloud-Base-37-1.7.x86_64.qcow2  --disk-size 30 --numcpus 4 --memory 8192 --user  $USER  --user-password ${PASSWORD}
     ansiblesafe -f "${ANSIBLE_VAULT_FILE}" -o 1

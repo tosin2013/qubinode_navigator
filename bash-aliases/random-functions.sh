@@ -29,3 +29,27 @@ function set_variables() {
     SECURE_DEPLOYMENT="false"
     INSTALL_RHEL_IMAGES="false"
 }
+
+# @setting  The function get_rhel_version function will determine the version of RHEL
+function get_rhel_version() {
+  if cat /etc/redhat-release  | grep "Red Hat Enterprise Linux release 9.[0-9]" > /dev/null 2>&1; then
+    export BASE_OS="RHEL9"
+  elif cat /etc/redhat-release  | grep "Red Hat Enterprise Linux release 8.[0-9]" > /dev/null 2>&1; then
+      export BASE_OS="RHEL8"
+  elif cat /etc/redhat-release  | grep "Rocky Linux release 8.[0-9]" > /dev/null 2>&1; then
+    export BASE_OS="ROCKY8"
+  elif cat /etc/redhat-release  | grep 7.[0-9] > /dev/null 2>&1; then
+    export BASE_OS="RHEL7"
+  elif cat /etc/redhat-release  | grep "CentOS Stream release 9" > /dev/null 2>&1; then
+    export BASE_OS="CENTOS9"
+  elif cat /etc/redhat-release  | grep "CentOS Stream release 8" > /dev/null 2>&1; then
+    export BASE_OS="CENTOS8"
+  elif cat /etc/redhat-release  | grep "Fedora" > /dev/null 2>&1; then
+    export BASE_OS="FEDORA"
+  else
+    echo "Operating System not supported"
+    echo "You may put a pull request to add support for your OS"
+  fi
+  echo ${BASE_OS}
+
+}
