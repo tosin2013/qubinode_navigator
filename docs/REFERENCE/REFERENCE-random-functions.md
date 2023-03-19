@@ -3,6 +3,11 @@
 This function will check for the existence of the yq binary
 
 
+# Settings
+
+*  The function get_rhel_version function will determine the version of RHEL
+
+
 # Functions
 * [set_variables()](#set_variables)
 
