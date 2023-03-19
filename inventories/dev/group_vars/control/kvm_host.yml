@@ -13,7 +13,7 @@ kvm_host_bootproto: 'static'
 # The the primary dns server to the dns_forwarder
 primary_dns_server: "{{ dns_forwarder | default('1.1.1.1') }}"
 kvm_host_dns_server: "{{ primary_dns_server | default('1.1.1.1') }}"
-search_domains: 
+search_domains:
   - "{{ domain }}"
 
 libvirt_pool_name_check: true
@@ -39,7 +39,7 @@ run_storage_check: ""
 enable_cockpit: true
 
 # # Set to true to add the admin_user to the libvirt group
-# # and change libvirt to be accessible user 
+# # and change libvirt to be accessible user
 enable_libvirt_admin_user: true
 
 # Configure the user bash shell login prompt
@@ -73,9 +73,9 @@ network_interface_name: "{{ kvm_host_interface }}"
 # set storage device to dedicate to /var/lib/libvirt/images
 kvm_host_libvirt_extra_disk: nvme0n1
 
-# setup NFS Server 
+# setup NFS Server
 setup_nfs: true
-remove_nfs: false 
+remove_nfs: false
 
 # use by funciton check_hardware_resources
 libvirt_pool_name: default
@@ -102,4 +102,3 @@ libvirt_host_networks:
     subnet: "not currently in use"
     mac: "{{ kvm_host_macaddr }}"
     mtu: 1500
-

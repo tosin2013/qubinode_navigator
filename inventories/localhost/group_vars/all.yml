@@ -4,7 +4,7 @@
 # The are automatically updated or   #
 # you can update them manually       #
 ######################################
-# Config Directory 
+# Config Directory
 project_dir: /opt/qubinode-installer
 
 # The name of the admin user for your system
