@@ -2,7 +2,6 @@
 #github-action genshdoc
 # @ file Setup freeipa-workshop-deployer https://github.com/tosin2013/freeipa-workshop-deployer
 # @ brief This script will setup the freeipa-workshop-deployer
-set -x 
 
 ############################################
 ## @brief This function will deploy freeipa with dns
@@ -26,10 +25,8 @@ function deploy_freeipa(){
     sudo sed -i "s/example.com/${DOMAIN}/g" vars.sh
     sudo sed -i "s/1.1.1.1/${FORWARD_DOMAIN}/g" vars.sh
     sudo sed -i 's|INFRA_PROVIDER="aws"|INFRA_PROVIDER="kcli"|g' vars.sh
-    cat vars.sh
-    sleep 10
+    #cat vars.sh
     ./total_deployer.sh
-    set +x 
 }
 
 ############################################
@@ -38,5 +35,4 @@ function deploy_freeipa(){
 function destroy_freeipa(){
     cd /opt/qubinode-installer/freeipa-workshop-deployer || return
     ./1_kcli/destroy.sh
-    set +x
 }
