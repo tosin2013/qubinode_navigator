@@ -26,7 +26,9 @@ function deploy_freeipa(){
     sudo sed -i "s/example.com/${DOMAIN}/g" vars.sh
     sudo sed -i "s/1.1.1.1/${FORWARD_DOMAIN}/g" vars.sh
     sudo sed -i 's|INFRA_PROVIDER="aws"|INFRA_PROVIDER="kcli"|g' vars.sh
-    /opt/qubinode-installer/kcli-plan-samples/helper_scripts/get-ips-by-mac.sh freeipa vars.sh
+    /opt/qubinode-installer/kcli-plan-samples/helper_scripts/get-ips-by-mac.sh freeipa vars.sh || exit 1
+    cat vars.sh
+    sleep 10
     ./total_deployer.sh
     set +x 
 }
