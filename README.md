@@ -49,7 +49,8 @@ kcli-utils check-kcli-plan
 Configure FreeIPA
 ```bash
 source ~/.bash_aliases  
-    
+freeipa-utils deploy
+
 ```
 
 Links: 
