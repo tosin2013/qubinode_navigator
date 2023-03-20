@@ -5,7 +5,7 @@
 
 if [ ! -d /opt/qubinode-installer/freeipa-workshop-deployer ]; then
   cd /opt/qubinode-installer/
-  git clone https://github.com/tosin2013/freeipa-workshop-deployer.git
+  sudo git clone https://github.com/tosin2013/freeipa-workshop-deployer.git
 fi 
 
 if [ -d /opt/qubinode-installer/kcli-plan-samples ]; then
