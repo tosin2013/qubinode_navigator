@@ -9,7 +9,7 @@ if [ ! -d /opt/qubinode-installer ]; then
 fi
 
 if ! command -v alf &> /dev/null; then
-    curl -Ls get.dannyb.co/alf/setup | bash
+    curl -OL https://github.com/DannyBen/alf/archive/refs/tags/v0.5.0.tar.gz
 fi 
 
 cd /opt/qubinode-installer
@@ -25,6 +25,7 @@ alf save
 lines=(
     'source /opt/qubinode-installer/bash-aliases/random-functions.sh'
     'source /opt/qubinode-installer/bash-aliases/configure-kcli.sh'
+    'source  /opt/qubinode-installer/bash-aliases/configure-freeipa-workshop-deployer.sh'
 )
 
 # Iterate through the array and check if each line exists in the file

@@ -37,12 +37,19 @@ Configure commands
 ```bash 
 ./bash-aliases/setup-commands.sh
 ```
+
 Configure KCLI for VMs
 ```bash
 source ~/.bash_aliases
 kcli-utils setup
 kcli-utils configure-images
 kcli-utils check-kcli-plan
+```
+
+Configure FreeIPA
+```bash
+source ~/.bash_aliases  
+    
 ```
 
 Links: 
