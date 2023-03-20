@@ -7,6 +7,7 @@
 ## @brief This function will deploy freeipa with dns
 ############################################
 function deploy_freeipa(){
+    set_variables
     if [ ! -d /opt/qubinode-installer/freeipa-workshop-deployer ]; then
         cd /opt/qubinode-installer/
         sudo git clone https://github.com/tosin2013/freeipa-workshop-deployer.git

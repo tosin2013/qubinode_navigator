@@ -21,9 +21,9 @@ function dependency_check() {
 # SECURE_DEPLOYMENT - The value of the secure deployment variable
 # INSTALL_RHEL_IMAGES - Set the vault to true if you want to install the RHEL images
 function set_variables() {
-    export ANSIBLE_SAFE_VERSION="0.0.4"
-    export ANSIBLE_VAULT_FILE="$HOME/quibinode_navigator/inventories/localhost/group_vars/control/vault.yml"
-    export ANSIBLE_ALL_VARIABLES="$HOME/quibinode_navigator/inventories/localhost/group_vars/all.yml"
+    ANSIBLE_SAFE_VERSION="0.0.4"
+    ANSIBLE_VAULT_FILE="$HOME/quibinode_navigator/inventories/localhost/group_vars/control/vault.yml"
+    ANSIBLE_ALL_VARIABLES="$HOME/quibinode_navigator/inventories/localhost/group_vars/all.yml"
     KCLI_CONFIG_DIR="${HOME}/.kcli"
     KCLI_CONFIG_FILE="${KCLI_CONFIG_DIR}/profiles.yml"
     PROFILES_FILE="kcli-profiles.yml"
