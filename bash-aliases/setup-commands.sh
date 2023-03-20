@@ -26,7 +26,7 @@ fi
 lines=(
     'source /opt/quibinode_navigator/bash-aliases/random-functions.sh'
     'source /opt/quibinode_navigator/bash-aliases/configure-kcli.sh'
-    'source  /opt/quibinode_navigator/bash-aliases/configure-freeipa-workshop-deployer.sh'
+    'source /opt/quibinode_navigator/bash-aliases/configure-freeipa-workshop-deployer.sh'
 )
 
 # Iterate through the array and check if each line exists in the file
