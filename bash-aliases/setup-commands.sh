@@ -12,13 +12,16 @@ if [ ! -d /opt/quibinode_navigator ];
 then
     cd /opt/
     sudo git clone https://github.com/tosin2013/quibinode_navigator.git quibinode_navigator
+    cd /opt/quibinode_navigator
+    sudo git pull 
+    alf generate
+    alf save
 else
     cd /opt/quibinode_navigator
     sudo git pull 
+    alf generate
+    alf save
 fi
-
-alf generate
-alf save
 
 # Define the array of lines to add
 lines=(

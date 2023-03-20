@@ -11,6 +11,9 @@ function deploy_freeipa(){
     if [ ! -d /opt/quibinode_navigator/freeipa-workshop-deployer ]; then
         cd /opt/quibinode_navigator/
         sudo git clone https://github.com/tosin2013/freeipa-workshop-deployer.git
+    else 
+        cd /opt/quibinode_navigator/freeipa-workshop-deployer
+        sudo git pull
     fi 
 
     if [ -d /opt/quibinode_navigator/kcli-plan-samples ]; then
