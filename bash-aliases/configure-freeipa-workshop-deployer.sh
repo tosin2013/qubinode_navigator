@@ -8,8 +8,9 @@
 ############################################
 function deploy_freeipa(){
     set_variables
+    dependency_check
     if [ ! -d /opt/freeipa-workshop-deployer ]; then
-        cd /opt/quibinode_navigator/
+        cd /opt/
         sudo git clone https://github.com/tosin2013/freeipa-workshop-deployer.git
     else 
         cd /opt/freeipa-workshop-deployer
