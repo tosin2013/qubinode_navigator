@@ -3,21 +3,22 @@
 # @ file Setup freeipa-workshop-deployer https://github.com/tosin2013/freeipa-workshop-deployer
 # @ brief This script will setup the freeipa-workshop-deployer
 
-if [ ! -d /opt/qubinode-installer/freeipa-workshop-deployer ]; then
-  cd /opt/qubinode-installer/
-  sudo git clone https://github.com/tosin2013/freeipa-workshop-deployer.git
-fi 
-
-if [ -d /opt/qubinode-installer/kcli-plan-samples ]; then
-  echo "kcli-plan-samples folder  already exists"
-else 
-  update_profiles_file
-fi 
 
 ############################################
 ## @brief This function will deploy freeipa with dns
 ############################################
 function deploy_freeipa(){
+    if [ ! -d /opt/qubinode-installer/freeipa-workshop-deployer ]; then
+        cd /opt/qubinode-installer/
+        sudo git clone https://github.com/tosin2013/freeipa-workshop-deployer.git
+    fi 
+
+    if [ -d /opt/qubinode-installer/kcli-plan-samples ]; then
+        echo "kcli-plan-samples folder  already exists"
+    else 
+        update_profiles_file
+    fi 
+
     cd /opt/qubinode-installer/freeipa-workshop-deployer || return
     sudo cp  example.vars.sh vars.sh
     DOMAIN=$(yq eval '.domain' $ANSIBLE_ALL_VARIABLES)
