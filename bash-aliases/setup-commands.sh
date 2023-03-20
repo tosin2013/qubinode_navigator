@@ -3,34 +3,28 @@
 # @file Setup the bash aliases for the qubinode installer
 # @brief This script will setup the bash aliases for the qubinode installer
 
-if [ ! -d /opt/qubinode-installer ]; then
-    echo "Qubinode Installer does not exist"
-    exit 1
-fi
-
 if ! command -v alf &> /dev/null; then
-    curl -OL https://github.com/DannyBen/alf/archive/refs/tags/v0.5.0.tar.gz
+    curl -Ls get.dannyb.co/alf/setup | bash
 fi 
 
-cd /opt/qubinode-installer
 
-if [ ! -d $HOME/quibinode_navigator/bash-aliases/ ];
-then 
-   git clone https://github.com/tosin2013/quibinode_navigator.git
+if [ ! -d /opt/quibinode_navigator ];
+then
+    cd /opt/
+    sudo git clone https://github.com/tosin2013/quibinode_navigator.git quibinode_navigator
 else
-  cd $HOME/quibinode_navigator/bash-aliases/
-  sudo git pull 
-fi 
-
+    cd /opt/quibinode_navigator
+    sudo git pull 
+fi
 
 alf generate
 alf save
 
 # Define the array of lines to add
 lines=(
-    'source /opt/qubinode-installer/bash-aliases/random-functions.sh'
-    'source /opt/qubinode-installer/bash-aliases/configure-kcli.sh'
-    'source  /opt/qubinode-installer/bash-aliases/configure-freeipa-workshop-deployer.sh'
+    'source /opt/quibinode_navigator/bash-aliases/random-functions.sh'
+    'source /opt/quibinode_navigator/bash-aliases/configure-kcli.sh'
+    'source  /opt/quibinode_navigator/bash-aliases/configure-freeipa-workshop-deployer.sh'
 )
 
 # Iterate through the array and check if each line exists in the file

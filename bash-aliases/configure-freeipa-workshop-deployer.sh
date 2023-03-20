@@ -8,18 +8,18 @@
 ############################################
 function deploy_freeipa(){
     set_variables
-    if [ ! -d /opt/qubinode-installer/freeipa-workshop-deployer ]; then
-        cd /opt/qubinode-installer/
+    if [ ! -d /opt/quibinode_navigator/freeipa-workshop-deployer ]; then
+        cd /opt/quibinode_navigator/
         sudo git clone https://github.com/tosin2013/freeipa-workshop-deployer.git
     fi 
 
-    if [ -d /opt/qubinode-installer/kcli-plan-samples ]; then
+    if [ -d /opt/quibinode_navigator/kcli-plan-samples ]; then
         echo "kcli-plan-samples folder  already exists"
     else 
         update_profiles_file
     fi 
 
-    cd /opt/qubinode-installer/freeipa-workshop-deployer || return
+    cd /opt/quibinode_navigator/freeipa-workshop-deployer || return
     sudo cp  example.vars.sh vars.sh
     cat $ANSIBLE_ALL_VARIABLES
     DOMAIN=$(yq eval '.domain' $ANSIBLE_ALL_VARIABLES)
@@ -35,6 +35,6 @@ function deploy_freeipa(){
 ## @brief This function will destroy freeipa with dns
 ############################################
 function destroy_freeipa(){
-    cd /opt/qubinode-installer/freeipa-workshop-deployer || return
+    cd /opt/quibinode_navigator/freeipa-workshop-deployer || return
     ./1_kcli/destroy.sh
 }

@@ -56,26 +56,26 @@ function qubinode_setup_kcli() {
 }
 
 function install_dependencies {
-  cd /opt/qubinode-installer/kcli-plan-samples
+  cd /opt/quibinode_navigator/kcli-plan-samples
   sudo pip3 install -r profile_generator/requirements.txt
 }
 
 function check_kcli_plan {
-  if [ -d /opt/qubinode-installer/kcli-plan-samples ]; then
+  if [ -d /opt/quibinode_navigator/kcli-plan-samples ]; then
     echo "kcli plan already exists"
   else
-    cd /opt/qubinode-installer || return
+    cd /opt/quibinode_navigator || return
     sudo git clone https://github.com/tosin2013/kcli-plan-samples.git
-    cd /opt/qubinode-installer/kcli-plan-samples || return
+    cd /opt/quibinode_navigator/kcli-plan-samples || return
     sudo git checkout dev
     install_dependencies
   fi
 }
 
 function update_profiles_file {
-  if [ -d /opt/qubinode-installer/kcli-plan-samples ]; then
-    cd /opt/qubinode-installer/kcli-plan-samples || return
-    if [ ! -f /opt/qubinode-installer/kcli-plan-samples/.vault_password ]; then
+  if [ -d /opt/quibinode_navigator/kcli-plan-samples ]; then
+    cd /opt/quibinode_navigator/kcli-plan-samples || return
+    if [ ! -f /opt/quibinode_navigator/kcli-plan-samples/.vault_password ]; then
       sudo curl -OL https://gist.githubusercontent.com/tosin2013/022841d90216df8617244ab6d6aceaf8/raw/92400b9e459351d204feb67b985c08df6477d7fa/ansible_vault_setup.sh
       sudo chmod +x ansible_vault_setup.sh
       sudo ./ansible_vault_setup.sh
