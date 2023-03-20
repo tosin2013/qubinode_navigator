@@ -146,7 +146,7 @@ ansiblesafe -f /root/quibinode_navigator/inventories/localhost/group_vars/contro
 generate_inventory /root
 
 ansible-navigator inventory --list -m stdout --vault-password-file $HOME/.vault_password || exit 1
-
+eval `ssh-agent`
 ssh-add ~/.ssh/id_rsa
 cd $HOME/quibinode_navigator
 source ~/.profile
