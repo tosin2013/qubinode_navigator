@@ -36,6 +36,7 @@ function get_rhel_version() {
 
 # @description This function get_quibinode_navigator function will clone the quibinode_navigator repo
 function get_quibinode_navigator() {
+    echo "Cloning quibinode_navigator"
     if [ -d $1/quibinode_navigator ]; then
         echo "Qubinode Installer already exists"
     else
@@ -45,6 +46,8 @@ function get_quibinode_navigator() {
 
 # @description This function configure_navigator function will configure the ansible-navigator
 function configure_navigator() {
+    echo "Configuring ansible navigator"
+    echo "****************"
     if [ -d $1/quibinode_navigator ]; then
         cd $1/quibinode_navigator
         if ! command -v ansible-navigator &> /dev/null; then
@@ -64,6 +67,8 @@ function configure_navigator() {
 
 # @description This function configure_vault function will configure the ansible-vault it will download ansible vault and ansiblesafe
 function configure_vault() {
+    echo "Configuring vault using ansible safe"
+    echo "****************"
     if [ -d $1/quibinode_navigator ]; then
         cd $1/quibinode_navigator
         if ! command -v ansible-vault &> /dev/null; then
@@ -77,6 +82,8 @@ function configure_vault() {
         fi
         curl -OL https://gist.githubusercontent.com/tosin2013/022841d90216df8617244ab6d6aceaf8/raw/92400b9e459351d204feb67b985c08df6477d7fa/ansible_vault_setup.sh
         chmod +x ansible_vault_setup.sh
+        echo "Configure Ansible Vault password file"
+        echo "****************"
         ./ansible_vault_setup.sh
         if [ $(id -u) -ne 0 ]; then
             if [ ! -f /home/${USER}/quibinode_navigator/inventories/localhost/group_vars/control/vault.yml ];
@@ -97,6 +104,8 @@ function configure_vault() {
 
 # @description This function generate_inventory function will generate the inventory
 function generate_inventory(){
+    echo "Generating inventory"
+    echo "****************"
     if [ -d $1/quibinode_navigator ]; then
         cd $1/quibinode_navigator
         if [ ! -d inventories/${INVENTORY} ]; then
@@ -123,6 +132,8 @@ function generate_inventory(){
 
 # @description This function configure_ssh function will configure the ssh
 function copy-ssh-id(){
+    echo "Configuring SSH"
+    echo "****************"
     if [ -f ~/.ssh/id_rsa ]; then
         echo "SSH key already exists"
     else
@@ -192,15 +203,20 @@ fi
 
 
 ansible-navigator inventory --list -m stdout --vault-password-file $HOME/.vault_password || exit 1
-
+eval `ssh-agent`
 ssh-add ~/.ssh/id_rsa
 source ~/.profile
 cd  $HOME/quibinode_navigator
 sudo pip3  install  -r requirements.txt
+echo "Loading variables for Ansible Navigator"
+echo "****************"
 python3 load-variables.py
+echo "Running setup_kvmhost.yml to configure the host with KVM"
+echo "****************"
 ansible-navigator run ansible-navigator/setup_kvmhost.yml \
  --vault-password-file $HOME/.vault_password -m stdout || exit 1
 
+echo "Configuring bash aliases for command commands"
 ./bash-aliases/setup-commands.sh || exit 1
 
 source ~/.bash_aliases
