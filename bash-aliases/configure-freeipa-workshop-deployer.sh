@@ -21,7 +21,7 @@ function deploy_freeipa(){
     cd /opt/qubinode-installer/freeipa-workshop-deployer || return
     sudo cp  example.vars.sh vars.sh
     DOMAIN=$(yq eval '.domain' $ANSIBLE_ALL_VARIABLES)
-    FORWARD_DOMAIN=$(yq eval '.domain' $ANSIBLE_ALL_VARIABLES)
+    FORWARD_DOMAIN=$(yq eval '.dns_forwarder' $ANSIBLE_ALL_VARIABLES)
     sudo sed -i "s/example.com/${DOMAIN}/g" vars.sh
     sudo sed -i "s/1.1.1.1/${FORWARD_DOMAIN}/g" vars.sh
     sudo sed -i 's|INFRA_PROVIDER="aws"|INFRA_PROVIDER="kcli"|g' vars.sh
