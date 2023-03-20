@@ -8,16 +8,15 @@ if ! command -v alf &> /dev/null; then
 fi 
 
 
-if [ ! -d /opt/quibinode_navigator ];
+if [ ! -d /opt/quibinode_navigator/bash-aliases/ ];
 then
     cd /opt/
     sudo git clone https://github.com/tosin2013/quibinode_navigator.git quibinode_navigator
-    cd /opt/quibinode_navigator
-    sudo git pull 
+    cd /opt/quibinode_navigator/bash-aliases/
     alf generate
     alf save
 else
-    cd /opt/quibinode_navigator
+    cd /opt/quibinode_navigator/bash-aliases/
     sudo git pull 
     alf generate
     alf save
