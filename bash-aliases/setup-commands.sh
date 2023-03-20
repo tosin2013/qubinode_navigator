@@ -14,9 +14,14 @@ fi
 
 cd /opt/qubinode-installer
 
-sudo cp -R $HOME/quibinode_navigator/bash-aliases/ .
-cd /opt/qubinode-installer/bash-aliases
-ls -lath .
+if [ ! -d $HOME/quibinode_navigator/bash-aliases/ ];
+then 
+   git clone https://github.com/tosin2013/quibinode_navigator.git
+else
+  cd $HOME/quibinode_navigator/bash-aliases/
+  sudo git pull 
+fi 
+
 
 alf generate
 alf save

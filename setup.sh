@@ -189,3 +189,21 @@ then
         copy-ssh-id
     fi
 fi 
+
+
+ansible-navigator inventory --list -m stdout --vault-password-file $HOME/.vault_password || exit 1
+
+ssh-add ~/.ssh/id_rsa
+source ~/.profile
+cd  $HOME/quibinode_navigator
+sudo pip3  install  -r requirements.txt
+python3 load-variables.py
+ansible-navigator run ansible-navigator/setup_kvmhost.yml \
+ --vault-password-file $HOME/.vault_password -m stdout || exit 1
+
+./bash-aliases/setup-commands.sh || exit 1
+
+source ~/.bash_aliases
+kcli-utils setup
+kcli-utils configure-images
+kcli-utils check-kcli-plan

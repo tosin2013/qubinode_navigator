@@ -53,6 +53,15 @@ freeipa-utils deploy
 
 ```
 
+## Workloads 
+**MicroShift Demos**
+* https://github.com/tosin2013/kcli-plan-samples/tree/dev/microshift-demos
+* https://github.com/redhat-et/microshift-demos
+
+## TEsting 
+* https://github.com/jjaswanson4/device-edge-workshops/tree/main/exercises/rhde_aw_120
+* https://github.com/FNNDSC/miniChRIS-podman
+
 Links: 
 * https://gitlab.com/cjung/ansible-ee-intro/-/blob/main/ansible-navigator/httpd.yml
 * https://redhat-cop.github.io/agnosticd/
