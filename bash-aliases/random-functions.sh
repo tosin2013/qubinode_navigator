@@ -10,6 +10,10 @@ function dependency_check() {
         sudo wget https://github.com/mikefarah/yq/releases/download/${VERSION}/${BINARY} -O /usr/bin/yq &&\
         sudo chmod +x /usr/bin/yq
     fi
+    get_rhel_version
+    if [ "$BASE_OS" == "ROCKY8" ]; then
+      source ~/.profile
+    fi
 }
 
 # @description This function will set the variables for the installer

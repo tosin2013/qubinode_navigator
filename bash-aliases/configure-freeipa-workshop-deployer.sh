@@ -31,6 +31,10 @@ function deploy_freeipa(){
     sudo sed -i "s/example.com/${DOMAIN}/g" vars.sh
     sudo sed -i "s/1.1.1.1/${FORWARD_DOMAIN}/g" vars.sh
     sudo sed -i 's|INFRA_PROVIDER="aws"|INFRA_PROVIDER="kcli"|g' vars.sh
+    get_rhel_version
+    if [ "$BASE_OS" == "ROCKY8" ]; then
+      sudo sed -i 's|KCLI_NETWORK="qubinet"|KCLI_NETWORK="default"|g' vars.sh
+    fi
     cat vars.sh
     ./total_deployer.sh
 }

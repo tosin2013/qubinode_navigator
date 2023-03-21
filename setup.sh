@@ -205,7 +205,6 @@ fi
 ansible-navigator inventory --list -m stdout --vault-password-file $HOME/.vault_password || exit 1
 eval `ssh-agent`
 ssh-add ~/.ssh/id_rsa
-source ~/.profile
 cd  $HOME/quibinode_navigator
 sudo pip3  install  -r requirements.txt
 echo "Loading variables for Ansible Navigator"
