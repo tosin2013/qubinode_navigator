@@ -50,7 +50,6 @@ Configure FreeIPA
 ```bash
 source ~/.bash_aliases  
 freeipa-utils deploy
-
 ```
 
 ## Workloads 

@@ -159,6 +159,9 @@ function configure-os(){
         sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
     elif [ ${1} == "CENTOS8" ]; then
         sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
+    elif [ ${1} == "RHEL9" ]; then
+        sudo dnf update -y 
+        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
     elif [ ${1} == "CENTOS9" ]; then
         sudo dnf update -y 
         sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
