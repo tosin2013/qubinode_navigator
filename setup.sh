@@ -63,6 +63,11 @@ function configure_navigator() {
     else
         echo "Qubinode Installer does not exist"
     fi
+    cd $1/quibinode_navigator
+    sudo pip3 install -r requirements.txt
+    echo "Load variables"
+    echo "**************"
+    python3 load-variables.py
 }
 
 # @description This function configure_vault function will configure the ansible-vault it will download ansible vault and ansiblesafe
@@ -131,7 +136,7 @@ function generate_inventory(){
 }
 
 # @description This function configure_ssh function will configure the ssh
-function configure_ssh){
+function configure_ssh(){
     echo "Configuring SSH"
     echo "****************"
     if [ -f ~/.ssh/id_rsa ]; then
@@ -260,6 +265,7 @@ if [ $# -eq 0 ]; then
     get_quibinode_navigator $MY_DIR
     configure_navigator $MY_DIR
     configure_vault $MY_DIR
+    generate_inventory $MY_DIR
     test_inventory $MY_DIR
     deploy_kvmhost
     configure_bash_aliases $MY_DIR

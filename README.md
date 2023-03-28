@@ -1,66 +1,101 @@
 # Qubinode Navigator
-
+This repository contains a quickstart script setup.sh to set up and configure Qubinode Navigator. Qubinode Navigator helps to automate the deployment and management of virtual machines, containers, and other infrastructure resources.
 
 [![ansible-lint](https://github.com/tosin2013/quibinode_navigator/actions/workflows/ansible-lint.yml/badge.svg)](https://github.com/tosin2013/quibinode_navigator/actions/workflows/ansible-lint.yml)
 [![Generate Documentation](https://github.com/tosin2013/quibinode_navigator/actions/workflows/generate-documentation.yml/badge.svg)](https://github.com/tosin2013/quibinode_navigator/actions/workflows/generate-documentation.yml)
 
-### How to build it
+## Prerequisites
+* Linux-based operating system (RHEL, CentOS, Rocky Linux, or Fedora)
+* Git
+
+## Quickstart
+Follow these instructions to run the setup.sh script:
+
+1. Open a terminal window.
+
+2. Clone the qubinode_navigator repository:
+
+```bash
+git clone https://github.com/tosin2013/qubinode_navigator.git
 ```
-curl -OL https://raw.githubusercontent.com/tosin2013/quibinode_navigator/main/setup.sh
+
+3. Change directory to the qubinode_navigator folder:
+```bash
+cd qubinode_navigator
+```
+4. Make the setup.sh script executable:
+```bash
 chmod +x setup.sh
+```
+5. Run the setup.sh script:
+```bash
 ./setup.sh
 ```
 
-### How to use it
-```
-cd quibinode_navigator/
-pip3 install -r requirements.txt
-python3 load-variables.py
-```
+The script will now run and perform the necessary tasks, such as installing required packages, configuring the environment, and setting up the Qubinode Navigator.
+
+## Features
+
+The `setup.sh` script performs the following tasks:
+
+* Detects the Linux distribution
+* Installs required packages
+* Configures SSH
+* Configures firewalld
+* Clones the Qubinode Navigator repository
+* Configures Ansible Navigator
+* Configures Ansible Vault using Ansiblesafe
+* Tests the inventory
+* Deploys KVM Host
+* Configures bash aliases
+* Sets up Kcli
+  
+## Options
+The setup.sh script accepts the following command-line options:
+
+* `-h, --help: Show help message`
+* `--deploy-kvmhost: Deploy KVM host`
+* `--configure-bash-aliases: Configure bash aliases`
+* `--setup-kcli-base: Set up Kcli base`
+* `--deploy-freeipa: Deploy FreeIPA`
 
 
-List inventory 
-```
-ansible-navigator inventory --list -m stdout --vault-password-file $HOME/.vault_password
-```
-
-Deploy KVM Host
-```bash 
-$ ssh-agent bash
-$ ssh-add ~/.ssh/id_rsa
-$ cd $HOME/qubinode_navigator
-$ ansible-navigator run ansible-navigator/setup_kvmhost.yml \
- --vault-password-file $HOME/.vault_password -m stdout 
-```
-
-Configure commands 
-```bash 
-./bash-aliases/setup-commands.sh
-```
-
-Configure KCLI for VMs
+For example, to deploy a KVM host, run:
+**End to End Deployment**
 ```bash
-source ~/.bash_aliases
-kcli-utils setup
-kcli-utils configure-images
-kcli-utils check-kcli-plan
+./setup.sh
 ```
 
-Configure FreeIPA
+**Deploy KVM host**
 ```bash
-source ~/.bash_aliases  
-freeipa-utils deploy
+./setup.sh --deploy-kvmhost # Deploy KVM host
+```
+**Deploy KCLI**
+```bash
+./setup.sh --setup-kcli-base # Set up Kcli base
 ```
 
+**Deploy KVM host**
+```bash
+./setup.sh --deploy-freeipa # Deploy FreeIPA DNS
+```
+
+**Help**
+```bash
+./setup.sh --help # Show help message
+```
 ## Workloads 
 **MicroShift Demos**
 * https://github.com/tosin2013/kcli-plan-samples/tree/dev/microshift-demos
 * https://github.com/redhat-et/microshift-demos
 
-## TEsting 
+## Testing 
 * https://github.com/jjaswanson4/device-edge-workshops/tree/main/exercises/rhde_aw_120
 * https://github.com/FNNDSC/miniChRIS-podman
 
-Links: 
+## Links: 
 * https://gitlab.com/cjung/ansible-ee-intro/-/blob/main/ansible-navigator/httpd.yml
 * https://redhat-cop.github.io/agnosticd/
+
+## Contributing
+Please submit bug reports, suggestions, and improvements as GitHub issues.
