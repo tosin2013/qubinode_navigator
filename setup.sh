@@ -4,7 +4,7 @@
 # @setting-header setup.sh quickstart script for quibinode_navigator
 # @setting ./setup.sh 
 
-set -xe
+#set -xe
 # @global ANSIBLE_SAFE_VERSION this is the ansible safe version
 # @global INVENTORY this is the inventory file name and path Example: inventories/localhost
 export ANSIBLE_SAFE_VERSION="0.0.4"
@@ -131,7 +131,7 @@ function generate_inventory(){
 }
 
 # @description This function configure_ssh function will configure the ssh
-function copy-ssh-id(){
+function configure_ssh){
     echo "Configuring SSH"
     echo "****************"
     if [ -f ~/.ssh/id_rsa ]; then
@@ -149,8 +149,20 @@ function copy-ssh-id(){
     fi
 }
 
-# @description This configure-os function will get the base os and install the required packages
-function configure-os(){
+function configure_firewalld() {
+    echo "Configuring firewalld"
+    echo "*********************"
+    if systemctl is-active --quiet firewalld; then
+        echo "firewalld is already active"
+    else
+        echo "starting firewalld"
+        sudo systemctl start firewalld
+        sudo systemctl enable firewalld
+    fi
+}
+
+# @description This configure_os function will get the base os and install the required packages
+function configure_os(){
     if [ ${1} == "ROCKY8" ]; then
         sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
     elif [ ${1} == "FEDORA" ]; then
@@ -168,60 +180,117 @@ function configure-os(){
     fi
 }
 
+function test_inventory(){
+    echo "Testing inventory"
+    echo "****************"
+    if [ -d $1/quibinode_navigator ]; then
+        cd $1/quibinode_navigator
+        ansible-navigator inventory --list -m stdout --vault-password-file $HOME/.vault_password || exit 1
+    else
+        echo "Qubinode Installer does not exist"
+    fi
+}
+
+
+
+function deploy_kvmhost() {
+    echo "Deploying KVM Host"
+    echo "******************"
+    eval $(ssh-agent)
+    ssh-add ~/.ssh/id_rsa
+    cd "$HOME"/quibinode_navigator
+    source ~/.profile
+    ansible-navigator run ansible-navigator/setup_kvmhost.yml \
+        --vault-password-file "$HOME"/.vault_password -m stdout || exit 1
+}
+
+function configure_bash_aliases() {
+    echo "Configuring bash aliases"
+    echo "************************"
+    if [ "$(pwd)" != "$1/quibinode_navigator" ]; then
+        echo "Current directory is not $1/quibinode_navigator."
+        echo "Changing to $1/quibinode_navigator..."
+        cd $1/quibinode_navigator
+    else
+        echo "Current directory is $1/quibinode_navigator."
+    fi
+    if [ -f $1/.bash_aliases ]; then
+        echo "bash_aliases already exists"
+    else
+        ./bash-aliases/setup-commands.sh || exit 1
+    fi
+}
+
+
+function setup_kcli_base() {
+    if [ "$(pwd)" != "$1/quibinode_navigator" ]; then
+        echo "Current directory is not $1/quibinode_navigator."
+        echo "Changing to $1/quibinode_navigator..."
+        cd $1/quibinode_navigator
+    else
+        echo "Current directory is $1/quibinode_navigator."
+    fi
+    echo "Configuring Kcli"
+    echo "****************"
+    source $1/.bash_aliases
+    kcli-utils setup
+    kcli-utils configure-images
+    kcli-utils check-kcli-plan
+}
+
 get_rhel_version
 
 
 if [  $BASE_OS == "ROCKY8" ];
 then 
-    if [ $(id -u) -ne 0 ]; then
-        echo "You must be root to run this script"
-        exit 1
-    fi
-    configure-os $BASE_OS
-    #groupadd lab-user
-    get_quibinode_navigator "/root"
-    configure_navigator "/root"
-    configure_vault "/root"
-    generate_inventory "/root"
-    copy-ssh-id
-elif [ $BASE_OS != "ROCKY8" ];
-then 
-    echo "Continuing with the script"
-    if [ $(id -u) -ne 0 ]; then
-        configure-os $BASE_OS
-        get_quibinode_navigator "$HOME"
-        configure_navigator  "$HOME"
-        configure_vault "$HOME"
-        generate_inventory "$HOME"
-        copy-ssh-id
-    else 
-        configure-os $BASE_OS
-        get_quibinode_navigator "/root"
-        configure_navigator "/root"
-        configure_vault "/root"
-        generate_inventory "/root"
-        copy-ssh-id
-    fi
-fi 
+  echo "Please run the rocky-linux-hypervisor.sh script"
+  exit 1
+fi
 
+if [ "$EUID" -eq 0 ]; then
+  MY_DIR="/root"
+else
+  MY_DIR="$HOME"
+fi
 
-ansible-navigator inventory --list -m stdout --vault-password-file $HOME/.vault_password || exit 1
-eval `ssh-agent`
-ssh-add ~/.ssh/id_rsa
-cd  $HOME/quibinode_navigator
-sudo pip3  install  -r requirements.txt
-echo "Loading variables for Ansible Navigator"
-echo "****************"
-python3 load-variables.py
-echo "Running setup_kvmhost.yml to configure the host with KVM"
-echo "****************"
-ansible-navigator run ansible-navigator/setup_kvmhost.yml \
- --vault-password-file $HOME/.vault_password -m stdout || exit 1
+if [ $# -eq 0 ]; then
+    configure_ssh
+    configure_os  $BASE_OS
+    configure_firewalld
+    get_quibinode_navigator $MY_DIR
+    configure_navigator $MY_DIR
+    configure_vault $MY_DIR
+    test_inventory $MY_DIR
+    deploy_kvmhost
+    configure_bash_aliases $MY_DIR
+    setup_kcli_base  $MY_DIR
+fi
 
-echo "Configuring bash aliases for command commands"
-./bash-aliases/setup-commands.sh || exit 1
-
-source ~/.bash_aliases
-kcli-utils setup
-kcli-utils configure-images
-kcli-utils check-kcli-plan
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        --deploy-kvmhost)
+            deploy_kvmhost
+            shift
+            ;;
+        --configure-bash-aliases)
+            configure_bash_aliases  $MY_DIR
+            shift
+            ;;
+        --setup-kcli-base)
+            setup_kcli_base  $MY_DIR
+            shift
+            ;;
+        --deploy-freeipa)
+            freeipa-utils deploy
+            shift
+            ;;
+        *)
+            echo "Unknown option: $1"
+            exit 1
+            ;;
+    esac
+done

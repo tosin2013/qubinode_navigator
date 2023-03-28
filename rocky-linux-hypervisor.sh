@@ -1,5 +1,5 @@
 #!/bin/bash
-set -xe
+#set -xe
 KVM_VERSION=0.4.0
 export INVENTORY="localhost"
 
@@ -65,7 +65,7 @@ function install_packages() {
 }
 
 
-function congifure_firewalld() {
+function configure_firewalld() {
     echo "Configuring firewalld"
     echo "*********************"
     if systemctl is-active --quiet firewalld; then
@@ -216,6 +216,13 @@ function deploy_kvmhost() {
 function configure_bash_aliases() {
     echo "Configuring bash aliases"
     echo "************************"
+    if [ "$(pwd)" != "/root/quibinode_navigator" ]; then
+        echo "Current directory is not /root/quibinode_navigator."
+        echo "Changing to /root/quibinode_navigator..."
+        cd /root/quibinode_navigator
+    else
+        echo "Current directory is /root/quibinode_navigator."
+    fi
     if [ -f ~/.bash_aliases ]; then
         echo "bash_aliases already exists"
     else
@@ -224,6 +231,13 @@ function configure_bash_aliases() {
 }
 
 function setup_kcli_base() {
+    if [ "$(pwd)" != "/root/quibinode_navigator" ]; then
+        echo "Current directory is not /root/quibinode_navigator."
+        echo "Changing to /root/quibinode_navigator..."
+        cd /root/quibinode_navigator
+    else
+        echo "Current directory is /root/quibinode_navigator."
+    fi
     echo "Configuring Kcli"
     echo "****************"
     source ~/.bash_aliases
@@ -232,14 +246,57 @@ function setup_kcli_base() {
     kcli-utils check-kcli-plan
 }
 
-configure_ssh
-install_packages
-configure_python
-congifure_firewalld
-configure_groups
-configure_navigator
-configure_ansible_vault_setup
-test_inventory
-deploy_kvmhost
-configure_bash_aliases
-setup_kcli_base
+function show_help() {
+    echo "Usage: $0 [OPTION]"
+    echo "Call all functions if nothing is passed."
+    echo "OPTIONS:"
+    echo "  -h, --help                  Show this help message and exit"
+    echo "  --deploy-kvmhost            Deploy KVM host"
+    echo "  --configure-bash-aliases    Configure bash aliases"
+    echo "  --setup-kcli-base           Setup Kcli"
+    echo "  --deploy-freeipa            Deploy FreeIPA"
+}
+
+if [ $# -eq 0 ]; then
+    configure_ssh
+    install_packages
+    configure_python
+    configure_firewalld
+    configure_groups
+    configure_navigator
+    configure_ansible_vault_setup
+    test_inventory
+    deploy_kvmhost
+    configure_bash_aliases
+    setup_kcli_base
+fi
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        --deploy-kvmhost)
+            deploy_kvmhost
+            shift
+            ;;
+        --configure-bash-aliases)
+            configure_bash_aliases
+            shift
+            ;;
+        --setup-kcli-base)
+            setup_kcli_base
+            shift
+            ;;
+        --deploy-freeipa)
+            source ~/.bash_aliases
+            freeipa-utils deploy
+            shift
+            ;;
+        *)
+            echo "Unknown option: $1"
+            exit 1
+            ;;
+    esac
+done
