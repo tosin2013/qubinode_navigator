@@ -20,7 +20,7 @@ This function get_quibinode_navigator function will clone the quibinode_navigato
 * [configure_navigator()](#configure_navigator)
 * [configure_vault()](#configure_vault)
 * [generate_inventory()](#generate_inventory)
-* [configure_firewalld()](#configure_firewalld)
+* [configure_ssh()](#configure_ssh)
 * [configure_os()](#configure_os)
 
 
@@ -36,7 +36,7 @@ This function configure_vault function will configure the ansible-vault it will 
 
 This function generate_inventory function will generate the inventory
 
-## configure_firewalld()
+## configure_ssh()
 
 This function configure_ssh function will configure the ssh
 
