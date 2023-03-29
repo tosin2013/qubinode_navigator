@@ -7,9 +7,9 @@ Getting Started
 
 Git Clone Repo
 ```
-git clone https://github.com/tosin2013/quibinode_navigator.git
+git clone https://github.com/tosin2013/qubinode_navigator.git
 
-cd $HOME/quibinode_navigator/
+cd $HOME/qubinode_navigator/
 ```
 
 Configure SSH 
@@ -37,7 +37,7 @@ cat >~/.ansible-navigator.yml<<EOF
 ansible-navigator:
   ansible:
     inventories:    
-      - /home/admin/quibinode_navigator/inventories/localhost
+      - /home/admin/qubinode_navigator/inventories/localhost
   logging:
     level: debug
     append: true
@@ -95,8 +95,8 @@ tar -zxvf ansiblesafe-v0.0.4-linux-amd64.tar.gz
 chmod +x ansiblesafe-linux-amd64 
 sudo mv ansiblesafe-linux-amd64 /usr/local/bin/ansiblesafe
 
-# ansiblesafe -f /home/${USER}/quibinode_navigator/inventories/localhost/group_vars/control/vault.yml
-# ansiblesafe -f /root/quibinode_navigator/inventories/localhost/group_vars/control/vault.yml
+# ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml
+# ansiblesafe -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml
 ```
 
 

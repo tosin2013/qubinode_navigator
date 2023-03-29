@@ -1,12 +1,12 @@
 .DEFAULT_GOAL := build
 
-GIT_URL := https://github.com/tosin2013/quibinode_navigator.git
+GIT_URL := https://github.com/tosin2013/qubinode_navigator.git
 TAG := 0.1.0 
 INSTALL_PATH = ~/.ansible-navigator.yml
-SOURCE_FILE = ~/quibinode_navigator/ansible-navigator/release-ansible-navigator.yml
+SOURCE_FILE = ~/qubinode_navigator/ansible-navigator/release-ansible-navigator.yml
 
 INSTALL_ANSIBLE_NAVIGATOR := pip3 install ansible-navigator
-BUILD_CMD := tag=$(TAG) && cd ~/quibinode_navigator/ansible-builder/ && ansible-builder build -f qubinode-installer.yml -t qubinode-installer:$${tag} -v 3
+BUILD_CMD := tag=$(TAG) && cd ~/qubinode_navigator/ansible-builder/ && ansible-builder build -f qubinode-installer.yml -t qubinode-installer:$${tag} -v 3
 COPY_NAVIGATOR_CMD := cp $(SOURCE_FILE) $(INSTALL_PATH)
 PODMAN_LOGIN := podman login registry.redhat.io
 LIST_INVENTORY_CMD := ansible-navigator inventory --list -m stdout

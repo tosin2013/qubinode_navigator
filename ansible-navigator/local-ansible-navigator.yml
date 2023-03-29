@@ -2,7 +2,7 @@
 ansible-navigator:
   ansible:
     inventories:
-      - /home/admin/quibinode_navigator/inventories/localhost
+      - /home/admin/qubinode_navigator/inventories/localhost
   logging:
     level: debug
     append: true

@@ -17,7 +17,7 @@ function deploy_freeipa(){
         sudo git pull
     fi 
 
-    if [ -d /opt/quibinode_navigator/kcli-plan-samples ]; then
+    if [ -d /opt/qubinode_navigator/kcli-plan-samples ]; then
         echo "kcli-plan-samples folder  already exists"
     else 
         update_profiles_file

@@ -12,8 +12,8 @@ fi
 function generate_inventory() {
     echo "Generating inventory"
     echo "*********************"
-    if [ -d "$1"/quibinode_navigator ]; then
-        cd "$1"/quibinode_navigator
+    if [ -d "$1"/qubinode_navigator ]; then
+        cd "$1"/qubinode_navigator
         if [ ! -d inventories/${INVENTORY} ]; then
             mkdir -p inventories/${INVENTORY}
             mkdir -p inventories/${INVENTORY}/group_vars/control
@@ -41,7 +41,7 @@ function install_packages() {
     # Check if packages are already installed
     echo "Installing packages"
     echo "*******************"
-    for package in openssl-devel bzip2-devel libffi-devel wget vim podman ncurses-devel sqlite-devel firewalld; do
+    for package in openssl-devel bzip2-devel libffi-devel wget vim podman ncurses-devel sqlite-devel firewalld make gcc git; do
         if rpm -q "${package}" >/dev/null 2>&1; then
             echo "Package ${package} already installed"
         else
@@ -127,14 +127,15 @@ function configure_python() {
 function configure_navigator() {
     echo "Configuring Qubinode Navigator"
     echo "******************************"
-    if [ -d "$HOME"/quibinode_navigator ]; then
+    if [ -d "$HOME"/qubinode_navigator ]; then
         echo "Qubinode Navigator already exists"
     else
         cd "$HOME"
-        git clone https://github.com/tosin2013/quibinode_navigator.git
+        git clone https://github.com/tosin2013/qubinode_navigator.git
     fi
-    cd "$HOME"/quibinode_navigator
+    cd "$HOME"/qubinode_navigator
     sudo pip3 install -r requirements.txt
+    echo "Current DNS Server: $(cat /etc/resolv.conf | grep nameserver | awk '{print $2}')"
     echo "Load variables"
     echo "**************"
     python3 load-variables.py
@@ -160,7 +161,7 @@ function configure_ansible_navigator() {
 ansible-navigator:
   ansible:
     inventories:    
-      - /root/quibinode_navigator/inventories/localhost
+      - /root/qubinode_navigator/inventories/localhost
   logging:
     level: debug
     append: true
@@ -189,7 +190,7 @@ function configure_ansible_vault_setup() {
     chmod +x ansiblesafe-linux-amd64
     sudo mv ansiblesafe-linux-amd64 /usr/local/bin/ansiblesafe
 
-    ansiblesafe -f /root/quibinode_navigator/inventories/localhost/group_vars/control/vault.yml
+    ansiblesafe -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml
     generate_inventory /root
 }
 
@@ -204,7 +205,7 @@ function deploy_kvmhost() {
     echo "******************"
     eval $(ssh-agent)
     ssh-add ~/.ssh/id_rsa
-    cd "$HOME"/quibinode_navigator
+    cd "$HOME"/qubinode_navigator
     source ~/.profile
     ansible-navigator run ansible-navigator/setup_kvmhost.yml \
         --vault-password-file "$HOME"/.vault_password -m stdout || exit 1
@@ -213,12 +214,12 @@ function deploy_kvmhost() {
 function configure_bash_aliases() {
     echo "Configuring bash aliases"
     echo "************************"
-    if [ "$(pwd)" != "/root/quibinode_navigator" ]; then
-        echo "Current directory is not /root/quibinode_navigator."
-        echo "Changing to /root/quibinode_navigator..."
-        cd /root/quibinode_navigator
+    if [ "$(pwd)" != "/root/qubinode_navigator" ]; then
+        echo "Current directory is not /root/qubinode_navigator."
+        echo "Changing to /root/qubinode_navigator..."
+        cd /root/qubinode_navigator
     else
-        echo "Current directory is /root/quibinode_navigator."
+        echo "Current directory is /root/qubinode_navigator."
     fi
     if [ -f ~/.bash_aliases ]; then
         echo "bash_aliases already exists"
@@ -228,12 +229,12 @@ function configure_bash_aliases() {
 }
 
 function setup_kcli_base() {
-    if [ "$(pwd)" != "/root/quibinode_navigator" ]; then
-        echo "Current directory is not /root/quibinode_navigator."
-        echo "Changing to /root/quibinode_navigator..."
-        cd /root/quibinode_navigator
+    if [ "$(pwd)" != "/root/qubinode_navigator" ]; then
+        echo "Current directory is not /root/qubinode_navigator."
+        echo "Changing to /root/qubinode_navigator..."
+        cd /root/qubinode_navigator
     else
-        echo "Current directory is /root/quibinode_navigator."
+        echo "Current directory is /root/qubinode_navigator."
     fi
     echo "Configuring Kcli"
     echo "****************"

@@ -1,7 +1,7 @@
 #!/bin/bash 
 #github-action genshdoc
 
-# @setting-header setup.sh quickstart script for quibinode_navigator
+# @setting-header setup.sh quickstart script for qubinode_navigator
 # @setting ./setup.sh 
 
 #set -xe
@@ -34,13 +34,13 @@ function get_rhel_version() {
 
 }
 
-# @description This function get_quibinode_navigator function will clone the quibinode_navigator repo
+# @description This function get_quibinode_navigator function will clone the qubinode_navigator repo
 function get_quibinode_navigator() {
-    echo "Cloning quibinode_navigator"
-    if [ -d $1/quibinode_navigator ]; then
+    echo "Cloning qubinode_navigator"
+    if [ -d $1/qubinode_navigator ]; then
         echo "Qubinode Installer already exists"
     else
-        git clone https://github.com/tosin2013/quibinode_navigator.git
+        git clone https://github.com/tosin2013/qubinode_navigator.git
     fi
 }
 
@@ -48,22 +48,22 @@ function get_quibinode_navigator() {
 function configure_navigator() {
     echo "Configuring ansible navigator"
     echo "****************"
-    if [ -d $1/quibinode_navigator ]; then
-        cd $1/quibinode_navigator
+    if [ -d $1/qubinode_navigator ]; then
+        cd $1/qubinode_navigator
         if ! command -v ansible-navigator &> /dev/null; then
             make install-ansible-navigator
             make copy-navigator
             # Check if running as root
             if [ "$EUID" -eq 0 ]; then
-               sed -i  's|/home/admin/quibinode_navigator/inventories/localhost|/root/quibinode_navigator/inventories/localhost|g'  ~/.ansible-navigator.yml
+               sed -i  's|/home/admin/qubinode_navigator/inventories/localhost|/root/qubinode_navigator/inventories/localhost|g'  ~/.ansible-navigator.yml
             else
-                sed -i  's|/home/admin/quibinode_navigator/inventories/localhost|/home/'$USER'/quibinode_navigator/inventories/localhost|g'  ~/.ansible-navigator.yml
+                sed -i  's|/home/admin/qubinode_navigator/inventories/localhost|/home/'$USER'/qubinode_navigator/inventories/localhost|g'  ~/.ansible-navigator.yml
             fi
         fi
     else
         echo "Qubinode Installer does not exist"
     fi
-    cd $1/quibinode_navigator
+    cd $1/qubinode_navigator
     sudo pip3 install -r requirements.txt
     echo "Load variables"
     echo "**************"
@@ -74,8 +74,8 @@ function configure_navigator() {
 function configure_vault() {
     echo "Configuring vault using ansible safe"
     echo "****************"
-    if [ -d $1/quibinode_navigator ]; then
-        cd $1/quibinode_navigator
+    if [ -d $1/qubinode_navigator ]; then
+        cd $1/qubinode_navigator
         if ! command -v ansible-vault &> /dev/null; then
             sudo dnf install ansible-core -y 
         fi
@@ -91,14 +91,14 @@ function configure_vault() {
         echo "****************"
         ./ansible_vault_setup.sh
         if [ $(id -u) -ne 0 ]; then
-            if [ ! -f /home/${USER}/quibinode_navigator/inventories/localhost/group_vars/control/vault.yml ];
+            if [ ! -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml ];
             then
-                ansiblesafe -f /home/${USER}/quibinode_navigator/inventories/localhost/group_vars/control/vault.yml
+                ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml
             fi
         else 
-            if [ ! -f /root/quibinode_navigator/inventories/localhost/group_vars/control/vault.yml ];
+            if [ ! -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml ];
             then
-                ansiblesafe -f /root/quibinode_navigator/inventories/localhost/group_vars/control/vault.yml
+                ansiblesafe -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml
             fi
         fi
         #ansible-navigator inventory --list -m stdout --vault-password-file $HOME/.vault_password
@@ -111,8 +111,8 @@ function configure_vault() {
 function generate_inventory(){
     echo "Generating inventory"
     echo "****************"
-    if [ -d $1/quibinode_navigator ]; then
-        cd $1/quibinode_navigator
+    if [ -d $1/qubinode_navigator ]; then
+        cd $1/qubinode_navigator
         if [ ! -d inventories/${INVENTORY} ]; then
             mkdir -p inventories/${INVENTORY}
             mkdir -p inventories/${INVENTORY}/group_vars/control
@@ -188,8 +188,8 @@ function configure_os(){
 function test_inventory(){
     echo "Testing inventory"
     echo "****************"
-    if [ -d $1/quibinode_navigator ]; then
-        cd $1/quibinode_navigator
+    if [ -d $1/qubinode_navigator ]; then
+        cd $1/qubinode_navigator
         ansible-navigator inventory --list -m stdout --vault-password-file $HOME/.vault_password || exit 1
     else
         echo "Qubinode Installer does not exist"
@@ -203,7 +203,7 @@ function deploy_kvmhost() {
     echo "******************"
     eval $(ssh-agent)
     ssh-add ~/.ssh/id_rsa
-    cd "$HOME"/quibinode_navigator
+    cd "$HOME"/qubinode_navigator
     source ~/.profile
     ansible-navigator run ansible-navigator/setup_kvmhost.yml \
         --vault-password-file "$HOME"/.vault_password -m stdout || exit 1
@@ -212,12 +212,12 @@ function deploy_kvmhost() {
 function configure_bash_aliases() {
     echo "Configuring bash aliases"
     echo "************************"
-    if [ "$(pwd)" != "$1/quibinode_navigator" ]; then
-        echo "Current directory is not $1/quibinode_navigator."
-        echo "Changing to $1/quibinode_navigator..."
-        cd $1/quibinode_navigator
+    if [ "$(pwd)" != "$1/qubinode_navigator" ]; then
+        echo "Current directory is not $1/qubinode_navigator."
+        echo "Changing to $1/qubinode_navigator..."
+        cd $1/qubinode_navigator
     else
-        echo "Current directory is $1/quibinode_navigator."
+        echo "Current directory is $1/qubinode_navigator."
     fi
     if [ -f $1/.bash_aliases ]; then
         echo "bash_aliases already exists"
@@ -228,12 +228,12 @@ function configure_bash_aliases() {
 
 
 function setup_kcli_base() {
-    if [ "$(pwd)" != "$1/quibinode_navigator" ]; then
-        echo "Current directory is not $1/quibinode_navigator."
-        echo "Changing to $1/quibinode_navigator..."
-        cd $1/quibinode_navigator
+    if [ "$(pwd)" != "$1/qubinode_navigator" ]; then
+        echo "Current directory is not $1/qubinode_navigator."
+        echo "Changing to $1/qubinode_navigator..."
+        cd $1/qubinode_navigator
     else
-        echo "Current directory is $1/quibinode_navigator."
+        echo "Current directory is $1/qubinode_navigator."
     fi
     echo "Configuring Kcli"
     echo "****************"
