@@ -8,7 +8,18 @@ This repository contains a quickstart script setup.sh to set up and configure Qu
 * Linux-based operating system (RHEL, CentOS, Rocky Linux, or Fedora)
 * Git
 
-## Quickstart
+## Quickstart 
+
+### Running on RHEL, CentOS, or Fedora
+```
+curl https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/setup.sh | bash
+```
+### Runing on Rocky Linux on RHPDS
+```
+curl https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/rocky-linux-hypervisor.sh | bash
+```
+
+## Running from Git Repository
 Follow these instructions to run the setup.sh script:
 
 1. Open a terminal window.

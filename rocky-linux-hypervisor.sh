@@ -58,10 +58,7 @@ function install_packages() {
         sudo dnf groupinstall "Development Tools" -y
     fi
 
-    if sudo dnf check-update >/dev/null 2>&1; then
-        echo "Updating packages"
-        sudo dnf update -y
-    fi
+    sudo dnf update -y
 }
 
 
