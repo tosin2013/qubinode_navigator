@@ -41,7 +41,7 @@ function install_packages() {
     # Check if packages are already installed
     echo "Installing packages"
     echo "*******************"
-    for package in openssl-devel bzip2-devel libffi-devel wget vim podman ncurses-devel sqlite-devel firewalld make gcc git; do
+    for package in openssl-devel bzip2-devel libffi-devel wget vim podman ncurses-devel sqlite-devel firewalld make gcc git unzip; do
         if rpm -q "${package}" >/dev/null 2>&1; then
             echo "Package ${package} already installed"
         else
@@ -181,9 +181,15 @@ EOF
 function configure_ansible_vault_setup() {
     echo "Configuring Ansible Vault Setup"
     echo "*****************************"
-    curl -OL https://gist.githubusercontent.com/tosin2013/022841d90216df8617244ab6d6aceaf8/raw/92400b9e459351d204feb67b985c08df6477d7fa/ansible_vault_setup.sh
-    chmod +x ansible_vault_setup.sh
-    ./ansible_vault_setup.sh
+    if [ ! -s ~/.vault_password ]; then
+        rm -f ~/.vault_password
+        if [ ! -f /root/qubinode_navigator/ansible_vault_setup.sh ];
+        then 
+            curl -OL https://gist.githubusercontent.com/tosin2013/022841d90216df8617244ab6d6aceaf8/raw/92400b9e459351d204feb67b985c08df6477d7fa/ansible_vault_setup.sh
+            chmod +x ansible_vault_setup.sh
+        fi 
+        bash -x ./ansible_vault_setup.sh
+    fi
 
     curl -OL https://github.com/tosin2013/ansiblesafe/releases/download/v0.0.4/ansiblesafe-v0.0.4-linux-amd64.tar.gz
     tar -zxvf ansiblesafe-v0.0.4-linux-amd64.tar.gz

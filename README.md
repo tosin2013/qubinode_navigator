@@ -16,6 +16,7 @@ curl https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/setup.s
 ```
 ### Runing on Rocky Linux on RHPDS
 ```
+sudo su - 
 curl https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/rocky-linux-hypervisor.sh | bash
 ```
 
