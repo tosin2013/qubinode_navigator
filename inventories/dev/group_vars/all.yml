@@ -9,8 +9,6 @@ project_dir: /opt/qubifalsede-installer
 
 # The name of the admin user for your system
 admin_user: admin
-become_user: root
-
 
 # The domain name for your system
 domain: "CHANGEME"

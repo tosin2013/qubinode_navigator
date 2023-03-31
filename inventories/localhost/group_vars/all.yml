@@ -9,7 +9,6 @@ project_dir: /opt/qubinode-installer
 
 # The name of the admin user for your system
 admin_user: admin
-become: true
 
 # The domain name for your system
 domain: "CHANGEME"
