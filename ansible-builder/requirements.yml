@@ -5,11 +5,11 @@ collections:
   - community.general
   - community.libvirt
   - fedora.linux_system_roles
-  #- name: https://github.com/Qubinode/qubinode_kvmhost_setup_collection.git
-  #  type: git
-  #  version: main
+# - name: https://github.com/Qubinode/qubinode_kvmhost_setup_collection.git
+#  type: git
+#  version: main
   - tosin2013.qubinode_kvmhost_setup_collection
-roles: 
+roles:
   - linux-system-roles.network
   - linux-system-roles.firewall
   - linux-system-roles.cockpit

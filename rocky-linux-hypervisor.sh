@@ -181,6 +181,8 @@ EOF
 function configure_ansible_vault_setup() {
     echo "Configuring Ansible Vault Setup"
     echo "*****************************"
+    echo "Press Enter to continue, or wait 5 minutes for the script to continue automatically"
+    read -t 360 -p "Press Enter to continue, or wait 5 minutes for the script to continue automatically" || true
     if [ ! -s ~/.vault_password ]; then
         rm -f ~/.vault_password
         if [ ! -f /root/qubinode_navigator/ansible_vault_setup.sh ];

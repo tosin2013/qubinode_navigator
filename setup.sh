@@ -85,10 +85,12 @@ function configure_vault() {
             chmod +x ansiblesafe-linux-amd64 
             sudo mv ansiblesafe-linux-amd64 /usr/local/bin/ansiblesafe
         fi
-        curl -OL https://gist.githubusercontent.com/tosin2013/022841d90216df8617244ab6d6aceaf8/raw/92400b9e459351d204feb67b985c08df6477d7fa/ansible_vault_setup.sh
-        chmod +x ansible_vault_setup.sh
         echo "Configure Ansible Vault password file"
         echo "****************"
+        echo "Press Enter to continue, or wait 5 minutes for the script to continue automatically"
+        read -t 360 -p "Press Enter to continue, or wait 5 minutes for the script to continue automatically" || true
+        curl -OL https://gist.githubusercontent.com/tosin2013/022841d90216df8617244ab6d6aceaf8/raw/92400b9e459351d204feb67b985c08df6477d7fa/ansible_vault_setup.sh
+        chmod +x ansible_vault_setup.sh
         ./ansible_vault_setup.sh
         if [ $(id -u) -ne 0 ]; then
             if [ ! -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml ];
