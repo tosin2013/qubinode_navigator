@@ -1,7 +1,7 @@
 ---
 - name: setup KVM host
   hosts: control
-  become: yes
+  become: true
 
   tasks:
     - name: Ensure backup folder is created
@@ -17,14 +17,14 @@
       when: vg_name is not defined
 
     - name: create libvirt logical volume
-      include_role:
-         name: tosin2013.qubinode_kvmhost_setup_collection.swygue_lvm
+      ansible.builtin.include_role:
+        name: tosin2013.qubinode_kvmhost_setup_collection.swygue_lvm
       when: create_lvm|bool
 
     - name: running KVM host setup
-      include_role:
-         name: tosin2013.qubinode_kvmhost_setup_collection.qubinode_kvmhost_setup
+      ansible.builtin.include_role:
+        name: tosin2013.qubinode_kvmhost_setup_collection.qubinode_kvmhost_setup
 
     - name: validate KVM host setup
-      include_role:
-         name: tosin2013.qubinode_kvmhost_setup_collection.edge_hosts_validate
+      ansible.builtin.include_role:
+        name: tosin2013.qubinode_kvmhost_setup_collection.edge_hosts_validate
