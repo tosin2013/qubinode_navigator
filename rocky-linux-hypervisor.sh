@@ -135,7 +135,8 @@ function configure_navigator() {
     fi
     cd "$HOME"/qubinode_navigator
     sudo pip3 install -r requirements.txt
-    echo "Current DNS Server: $(cat /etc/resolv.conf | grep nameserver | awk '{print $2}')"
+    read -t 360 -p "Press Enter to continue, or wait 5 minutes for the script to continue automatically" || true
+    echo "Current DNS Server: $(cat /etc/resolv.conf | grep nameserver | awk '{print $2}' | head -1)"
     echo "Load variables"
     echo "**************"
     python3 load-variables.py
@@ -181,17 +182,13 @@ EOF
 function configure_ansible_vault_setup() {
     echo "Configuring Ansible Vault Setup"
     echo "*****************************"
-    echo "Press Enter to continue, or wait 5 minutes for the script to continue automatically"
-    read -t 360 -p "Press Enter to continue, or wait 5 minutes for the script to continue automatically" || true
-    if [ ! -s ~/.vault_password ]; then
-        rm -f ~/.vault_password
-        if [ ! -f /root/qubinode_navigator/ansible_vault_setup.sh ];
-        then 
-            curl -OL https://gist.githubusercontent.com/tosin2013/022841d90216df8617244ab6d6aceaf8/raw/92400b9e459351d204feb67b985c08df6477d7fa/ansible_vault_setup.sh
-            chmod +x ansible_vault_setup.sh
-        fi 
-        bash -x ./ansible_vault_setup.sh
+    if [ ! -f /root/qubinode_navigator/ansible_vault_setup.sh ];
+    then 
+        curl -OL https://gist.githubusercontent.com/tosin2013/022841d90216df8617244ab6d6aceaf8/raw/92400b9e459351d204feb67b985c08df6477d7fa/ansible_vault_setup.sh
+        chmod +x ansible_vault_setup.sh
     fi
+    rm -f ~/.vault_password
+    bash  ./ansible_vault_setup.sh
 
     curl -OL https://github.com/tosin2013/ansiblesafe/releases/download/v0.0.4/ansiblesafe-v0.0.4-linux-amd64.tar.gz
     tar -zxvf ansiblesafe-v0.0.4-linux-amd64.tar.gz
