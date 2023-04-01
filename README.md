@@ -19,6 +19,13 @@ curl https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/setup.s
 sudo su - 
 curl https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/rocky-linux-hypervisor.sh | bash
 ```
+### Runing on Rocky Linux on RHPDS using tmux Recommened 
+```
+sudo su - 
+dnf install -y tmux curl
+tmux new-session -d -s rocky-linux-hypervisor 'curl https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/rocky-linux-hypervisor.sh | bash'
+tmux attach -t rocky-linux-hypervisor
+```
 
 ## Running from Git Repository
 Follow these instructions to run the setup.sh script:
