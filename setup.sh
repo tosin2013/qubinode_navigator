@@ -68,7 +68,7 @@ function configure_navigator() {
     sudo pip3 install -r requirements.txt
     echo "Load variables"
     echo "**************"
-    if [ $CICD_PIPELINE == "false" ]
+    if [ $CICD_PIPELINE == "false" ];
     then
         python3 load-variables.py
     else 
