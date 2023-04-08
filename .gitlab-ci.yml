@@ -15,6 +15,6 @@ build:
     - mkdir -p ~/.ssh/
     - ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
     - sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no "$SSH_USER"@"$SSH_HOST"
-    - ssh "$SSH_USER"@"$SSH_HOST"  'bash -s' < /tmp/setup.sh --configure-bash-aliases
+    - ssh "$SSH_USER"@"$SSH_HOST" 'bash -s -- --configure-bash-aliases' < /tmp/setup.sh
   only:
     - main
