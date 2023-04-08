@@ -45,4 +45,12 @@ function deploy_freeipa(){
 function destroy_freeipa(){
     cd /opt/freeipa-workshop-deployer || return
     ./1_kcli/destroy.sh
+    cd /opt/freeipa-workshop-deployer/2_ansible_config/
+    IP_ADDRESS=$(sudo kcli info vm device-edge-workshops | grep ip: | awk '{print $2}')
+    echo "IP Address: ${IP_ADDRESS}"
+    sudo python3 dynamic_dns.py --remove controller
+    sudo python3 dynamic_dns.py --remove 'cockpit'
+    sudo python3 dynamic_dns.py --remove 'gitea'
+    sudo python3 dynamic_dns.py --remove 'edge-manager'
+    cd ~
 }
