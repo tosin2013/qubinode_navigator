@@ -13,8 +13,8 @@ build:
     - wget https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/setup.sh -P /tmp/
     - chmod +x /tmp/setup.sh
     - sshpass -h
-    - echo  SSHPASS='$SSH_PASS' sshpass -e ssh "$SSH_USER"@"$SSH_HOST" date
-    - SSHPASS='$SSH_PASS' sshpass -e ssh "$SSH_USER"@"$SSH_HOST" date
-    - SSHPASS='$SSH_PASS' sshpass -e ssh "$SSH_USER"@"$SSH_HOST" 'bash -s' < /tmp/setup.sh
+    - echo  SSHPASS="$SSH_PASS" sshpass -e ssh "$SSH_USER"@"$SSH_HOST" date
+    - SSHPASS="$SSH_PASS" sshpass -e ssh "$SSH_USER"@"$SSH_HOST" date
+    - SSHPASS="$SSH_PASS" sshpass -e ssh "$SSH_USER"@"$SSH_HOST" 'bash -s' < /tmp/setup.sh
   only:
     - main
