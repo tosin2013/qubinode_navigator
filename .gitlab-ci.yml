@@ -22,6 +22,7 @@ build:
     - mkdir -p ~/.ssh/
     - ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
     - sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no "$SSH_USER"@"$SSH_HOST"
+    - env
     - ssh "$SSH_USER"@"$SSH_HOST" 'bash -s' < /tmp/setup.sh
   only:
     - main
