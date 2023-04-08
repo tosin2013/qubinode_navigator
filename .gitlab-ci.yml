@@ -9,7 +9,7 @@ build:
     SSH_PASS: COmp123$%
     SSH_HOST: 192.168.1.39
   script:
-    - apk add --no-cache wget
+    - dnf install wget
     - wget https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/setup.sh -P /tmp/
     - chmod +x /tmp/setup.sh
     - sshpass -p "$SSH_PASS" ssh "$SSH_USER"@"$SSH_HOST" 'bash -s' < /tmp/setup.sh
