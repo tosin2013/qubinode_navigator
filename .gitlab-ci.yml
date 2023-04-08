@@ -5,8 +5,9 @@ build:
   stage: build
   image: alpine
   variables:
-    SSH_USER: your_ssh_username
-    SSH_PASS: your_ssh_password
+    SSH_USER: admin
+    SSH_PASS: COmp123$%
+    SSH_HOST: 192.168.1.39
   script:
     - apk add --no-cache wget
     - wget https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/setup.sh -P /tmp/
