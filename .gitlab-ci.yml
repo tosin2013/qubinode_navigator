@@ -14,4 +14,4 @@ build:
     - chmod +x /tmp/setup.sh
     - sshpass -p "$SSH_PASS" ssh "$SSH_USER"@"$SSH_HOST" 'bash -s' < /tmp/setup.sh
   only:
-    - master
+    - main
