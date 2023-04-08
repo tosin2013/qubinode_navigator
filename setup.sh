@@ -79,7 +79,7 @@ function configure_navigator() {
             echo "Error: One or more environment variables are not set"
             exit 1
         fi
-        python3 load-variables.py --username ${ENV_USERNAME} --domain ${DOMAIN} --forwarder ${FORWADER} --bridge ${ACTIVE_BRIDGE} --interface ${INTERFACE} --disk ${DISK}
+        python3 load-variables.py --username ${ENV_USERNAME} --domain ${DOMAIN} --forwarder ${FORWARDER} --bridge ${ACTIVE_BRIDGE} --interface ${INTERFACE} --disk ${DISK}
     fi
 }
 
