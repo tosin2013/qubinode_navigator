@@ -6,8 +6,8 @@ build:
   image: fedora:37
   variables:
     SSH_USER: admin
-    SSH_PASS: XXXXX
-    SSH_HOST: 192.168.1.35
+    SSH_PASS: COmp123$%
+    SSH_HOST: 192.168.1.39
   script:
     - dnf install wget sshpass openssh-clients -y
     - wget https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/setup.sh -P /tmp/
