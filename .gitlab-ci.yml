@@ -6,15 +6,17 @@ build:
   image: fedora:37
   variables:
     SSH_USER: admin
-    SSH_PASS: COmp123$%
+    SSH_PASS: XXXXX
     SSH_HOST: 192.168.1.39
   script:
     - dnf install wget sshpass -y
-    - wget https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/setup.sh -P /tmp/
-    - chmod +x /tmp/setup.sh
     - sshpass -h
+    - wget https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/setup.sh
+    - mv setup.sh /tmp/ && chmod +x /tmp/setup.sh
     - echo  SSHPASS="$SSH_PASS" sshpass -e ssh "$SSH_USER"@"$SSH_HOST" date
     - SSHPASS="$SSH_PASS" sshpass -e ssh "$SSH_USER"@"$SSH_HOST" date
-    - SSHPASS="$SSH_PASS" sshpass -e ssh "$SSH_USER"@"$SSH_HOST" 'bash -s' < /tmp/setup.sh
+    - SSHPASS="$SSH_PASS" sshpass -e ssh "$SSH_USER"@"$SSH_HOST" "mkdir -p /tmp"
+    - sshpass -p "$SSH_PASS" scp setup.sh "$SSH_USER"@"$SSH_HOST":/tmp/
+    - SSHPASS="$SSH_PASS" sshpass -e ssh "$SSH_USER"@"$SSH_HOST" "chmod +x /tmp/setup.sh && /tmp/setup.sh"
   only:
     - main
