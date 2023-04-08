@@ -9,7 +9,10 @@
 # @global INVENTORY this is the inventory file name and path Example: inventories/localhost
 export ANSIBLE_SAFE_VERSION="0.0.4"
 export INVENTORY="localhost"
-export CICD_PIPELINE="false"
+if [ -z "$CICD_PIPELINE" ]; then
+  export CICD_PIPELINE="false"
+  exit 1
+fi
 
 # @setting  The function get_rhel_version function will determine the version of RHEL
 function get_rhel_version() {

@@ -17,13 +17,10 @@ build:
     DISK: /dev/nvme0n1
   script:
     - dnf install wget openssh-clients sshpass -y
-    - cat setup.sh
-    - cp setup.sh /tmp/setup.sh
-    - chmod +x /tmp/setup.sh
     - mkdir -p ~/.ssh/
     - ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
     - sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no "$SSH_USER"@"$SSH_HOST"
     - env
-    - ssh "$SSH_USER"@"$SSH_HOST"  'env CICD_PIPELINE="$CICD_PIPELINE" ENV_USERNAME="${ENV_USERNAME}" bash -s' < /tmp/setup.sh
+    - ssh "$SSH_USER"@"$SSH_HOST"  'env CICD_PIPELINE="$CICD_PIPELINE" ENV_USERNAME="${ENV_USERNAME}" bash -s' < setup.sh
   only:
     - main
