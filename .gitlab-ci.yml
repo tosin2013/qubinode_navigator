@@ -17,7 +17,8 @@ build:
     DISK: /dev/nvme0n1
   script:
     - dnf install wget openssh-clients sshpass -y
-    - wget https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/setup.sh -P /tmp/
+    - cat setup.sh
+    - cp setup.sh /tmp/setup.sh
     - chmod +x /tmp/setup.sh
     - mkdir -p ~/.ssh/
     - ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
