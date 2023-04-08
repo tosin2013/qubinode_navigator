@@ -9,6 +9,7 @@
 # @global INVENTORY this is the inventory file name and path Example: inventories/localhost
 export ANSIBLE_SAFE_VERSION="0.0.4"
 export INVENTORY="localhost"
+export CICD_PIPELINE=false
 
 # @setting  The function get_rhel_version function will determine the version of RHEL
 function get_rhel_version() {
@@ -67,7 +68,16 @@ function configure_navigator() {
     sudo pip3 install -r requirements.txt
     echo "Load variables"
     echo "**************"
-    python3 load-variables.py
+    if [ $CICD_PIPELINE == false]
+    then
+        python3 load-variables.py
+    else 
+        if [[ -z "$ENV_USERNAME" || -z "$DOMAIN" || -z "$FORWARDER" || -z "$ACTIVE_BRIDGE" || -z "$INTERFACE" || -z "$DISK" ]]; then
+            echo "Error: One or more environment variables are not set"
+            exit 1
+        fi
+        python3 load-variables.py --username ${ENV_USERNAME} --domain ${DOMAIN} --forwarder ${FORWADER} --bridge ${ACTIVE_BRIDGE} --interface ${INTERFACE} --disk ${DISK}
+    fi
 }
 
 # @description This function configure_vault function will configure the ansible-vault it will download ansible vault and ansiblesafe
@@ -87,11 +97,14 @@ function configure_vault() {
         fi
         echo "Configure Ansible Vault password file"
         echo "****************"
-        echo "Press Enter to continue, or wait 5 minutes for the script to continue automatically"
         read -t 360 -p "Press Enter to continue, or wait 5 minutes for the script to continue automatically" || true
-        curl -OL https://gist.githubusercontent.com/tosin2013/022841d90216df8617244ab6d6aceaf8/raw/92400b9e459351d204feb67b985c08df6477d7fa/ansible_vault_setup.sh
-        chmod +x ansible_vault_setup.sh
-        ./ansible_vault_setup.sh
+        if [ ! -f ~/qubinode_navigator/ansible_vault_setup.sh ];
+        then 
+            curl -OL https://gist.githubusercontent.com/tosin2013/022841d90216df8617244ab6d6aceaf8/raw/92400b9e459351d204feb67b985c08df6477d7fa/ansible_vault_setup.sh
+            chmod +x ansible_vault_setup.sh
+        fi
+        rm -f ~/.vault_password
+        bash  ./ansible_vault_setup.sh
         if [ $(id -u) -ne 0 ]; then
             if [ ! -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml ];
             then
@@ -243,6 +256,17 @@ function setup_kcli_base() {
     kcli-utils setup
     kcli-utils configure-images
     kcli-utils check-kcli-plan
+}
+
+function show_help() {
+    echo "Usage: $0 [OPTION]"
+    echo "Call all functions if nothing is passed."
+    echo "OPTIONS:"
+    echo "  -h, --help                  Show this help message and exit"
+    echo "  --deploy-kvmhost            Deploy KVM host"
+    echo "  --configure-bash-aliases    Configure bash aliases"
+    echo "  --setup-kcli-base           Setup Kcli"
+    echo "  --deploy-freeipa            Deploy FreeIPA"
 }
 
 get_rhel_version
