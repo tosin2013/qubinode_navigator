@@ -9,6 +9,7 @@
 # @global INVENTORY this is the inventory file name and path Example: inventories/localhost
 export ANSIBLE_SAFE_VERSION="0.0.4"
 export INVENTORY="localhost"
+source /usr/bin/env
 if [ -z ${CICD_PIPELINE} ]; then
     export CICD_PIPELINE="false"
 fi
@@ -74,7 +75,6 @@ function configure_navigator() {
     then
         python3 load-variables.py
     else 
-        source /usr/bin/env
         if [[ -z "$ENV_USERNAME" && -z "$DOMAIN" && -z "$FORWARDER" && -z "$ACTIVE_BRIDGE" && -z "$INTERFACE" && -z "$DISK" ]]; then
             echo "Error: One or more environment variables are not set"
             exit 1
