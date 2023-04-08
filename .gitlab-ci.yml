@@ -8,6 +8,13 @@ build:
     SSH_USER: admin
     SSH_PASSWORD: COmp123$%
     SSH_HOST: 192.168.1.39
+    CICD_PIPELINE: true
+    ENV_USERNAME: admin
+    DOMAIN: qubinodelab.io
+    FORWARDER: 1.1.1.1
+    ACTIVE_BRIDGE: true
+    INTERFACE: eno1
+    DISK: /dev/nvme0n1
   script:
     - dnf install wget openssh-clients sshpass -y
     - wget https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/setup.sh -P /tmp/

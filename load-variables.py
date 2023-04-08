@@ -1,4 +1,5 @@
 import fire
+import argparse
 import getpass
 import os
 import yaml
@@ -8,21 +9,23 @@ import re
 import time 
 import subprocess
 
-def update_inventory(username=None):
-    if os.geteuid() == 0:
-        if not username:
+def update_inventory(username=None, domain_name=None, dnf_forwarder=None):
+    if username is None:
+        if os.geteuid() == 0:
             username = input("Enter username: ")
-    else:
-        username = getpass.getuser()
+        else:
+            username = getpass.getuser()
 
-    while True:
-        domain_name = input("Enter the domain name for your system: ")
-        regex = r"^(?:(?!-)[A-Za-z0-9-]{1,63}(?<!-)\.)+[A-Za-z]{2,}$"
-        if re.match(regex, domain_name):
-            break
-        print("Invalid domain name format. Please try again.")
+    if domain_name is None:
+        while True:
+            domain_name = input("Enter the domain name for your system: ")
+            regex = r"^(?:(?!-)[A-Za-z0-9-]{1,63}(?<!-)\.)+[A-Za-z]{2,}$"
+            if re.match(regex, domain_name):
+                break
+            print("Invalid domain name format. Please try again.")
 
-    dnf_forwarder = input("Enter the DNS forwarder for your system: ")
+    if dnf_forwarder is None:
+        dnf_forwarder = input("Enter the DNS forwarder for your system: ")
 
     inventory_path = 'inventories/localhost/group_vars/all.yml'
     with open(inventory_path, 'r') as f:
@@ -36,16 +39,15 @@ def update_inventory(username=None):
         yaml.dump(inventory, f, default_flow_style=False)
 
 
-def get_interface_ips():
-    if os.geteuid() == 0:
-        print("Error: Cannot set configure_bridge to True when running as root.")
-        configure_bridge = False
-        print("configure_bridge is set to", configure_bridge)
-        time.sleep(3) 
-    else:
-        configure_bridge = True  # set configure_bridge to True or False based on your requirements
-        print("configure_bridge is set to", configure_bridge)
-        time.sleep(3) 
+def get_interface_ips(configure_bridge=None, interface=None):
+    if configure_bridge is None:
+        if os.geteuid() == 0:
+            print("Error: Cannot set configure_bridge to True when running as root.")
+            configure_bridge = False
+            print("configure_bridge is set to", configure_bridge)
+        else:
+            configure_bridge = True  # set configure_bridge to True or False based on your requirements
+            print("configure_bridge is set to", configure_bridge)
 
     # Get a list of network interfaces
     interfaces = netifaces.interfaces()
@@ -53,19 +55,20 @@ def get_interface_ips():
     # Filter out loopback interfaces and any that don't have an IPv4 address
     interfaces = [i for i in interfaces if i != 'lo' and netifaces.AF_INET in netifaces.ifaddresses(i)]
 
-    # If there's only one interface, use that
-    if len(interfaces) == 1:
-        interface = interfaces[0]
-    # If there's more than one, prompt the user to choose one
-    elif len(interfaces) > 1:
-        print("Multiple network interfaces found:")
-        for i, interface in enumerate(interfaces):
-            print(f"{i+1}. {interface}")
-        choice = int(input("Choose an interface to use: "))
-        interface = interfaces[choice-1]
-    # If there are no interfaces, raise an exception
-    else:
-        raise Exception("No network interfaces found")
+    if interface is None:
+        # If there's only one interface, use that
+        if len(interfaces) == 1:
+            interface = interfaces[0]
+        # If there's more than one, prompt the user to choose one
+        elif len(interfaces) > 1:
+            print("Multiple network interfaces found:")
+            for i, interface in enumerate(interfaces):
+                print(f"{i+1}. {interface}")
+            choice = int(input("Choose an interface to use: "))
+            interface = interfaces[choice-1]
+        # If there are no interfaces, raise an exception
+        else:
+            raise Exception("No network interfaces found")
 
     # Get the IPv4 address, netmask, and MAC address for the chosen interface
     addrs = netifaces.ifaddresses(interface)
@@ -91,7 +94,7 @@ def get_interface_ips():
 
     with open(inventory_path, 'w') as f:
         yaml.dump(inventory, f, default_flow_style=False)
-    
+
     print({
         "kvm_host_gw": netifaces.gateways()['default'][netifaces.AF_INET][0],
         "kvm_host_interface": interface,
@@ -100,8 +103,6 @@ def get_interface_ips():
         "kvm_host_mask_prefix": prefix_len,
         "kvm_host_netmask": netmask,
     })
-
-
 
 def get_disk():
     disks = []
@@ -127,9 +128,10 @@ def get_disk():
         return disks[int(choice) - 1]
 
 
-def select_disk():
+def select_disk(disks=None):
     # Get available disks
-    disks = get_disk()
+    if disks is None:
+        disks = get_disk()
     print(disks)
     # Check if disk is already mounted
     mounted = False
@@ -173,6 +175,15 @@ def select_disk():
 
 
 if __name__ == '__main__':
-    fire.Fire(update_inventory)
-    get_interface_ips()
-    select_disk()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--username', help='Username for the system')
+    parser.add_argument('--domain', help='Domain name for the system')
+    parser.add_argument('--forwarder', help='DNS forwarder for the system')
+    parser.add_argument('--bridge', type=bool, help='Configure bridge for the system')
+    parser.add_argument('--interface', help='Network interface to use')
+    parser.add_argument('--disk', help='Disk to use')
+    args = parser.parse_args()
+
+    update_inventory(args.username, args.domain, args.forwarder)
+    get_interface_ips(args.bridge, args.interface)
+    select_disk(args.disk)
