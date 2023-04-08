@@ -15,6 +15,7 @@ build:
     - mkdir -p ~/.ssh/
     - echo "$SSH_KEY" | tr -d '\r' > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
+    - cat  ~/.ssh/id_rsa
     - ssh "$SSH_USER"@"$SSH_HOST" hostnamectl # 'bash -s' < /tmp/setup.sh
   only:
     - main
