@@ -3,7 +3,7 @@ stages:
 
 build:
   stage: build
-  image: alpine
+  image: fedora:37
   variables:
     SSH_USER: admin
     SSH_PASS: COmp123$%
