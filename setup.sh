@@ -9,7 +9,7 @@
 # @global INVENTORY this is the inventory file name and path Example: inventories/localhost
 export ANSIBLE_SAFE_VERSION="0.0.4"
 export INVENTORY="localhost"
-export CICD_PIPELINE=false
+export CICD_PIPELINE="false"
 
 # @setting  The function get_rhel_version function will determine the version of RHEL
 function get_rhel_version() {
@@ -68,7 +68,7 @@ function configure_navigator() {
     sudo pip3 install -r requirements.txt
     echo "Load variables"
     echo "**************"
-    if [ $CICD_PIPELINE == false]
+    if [ $CICD_PIPELINE == "false" ];
     then
         python3 load-variables.py
     else 
