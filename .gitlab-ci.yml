@@ -8,11 +8,11 @@ build:
     SSH_USER: admin
     SSH_PASSWORD: COmp123$%
     SSH_HOST: 192.168.1.39
-    CICD_PIPELINE: true
+    CICD_PIPELINE: 'true'
     ENV_USERNAME: admin
     DOMAIN: qubinodelab.io
     FORWARDER: 1.1.1.1
-    ACTIVE_BRIDGE: true
+    ACTIVE_BRIDGE: 'true'
     INTERFACE: eno1
     DISK: /dev/nvme0n1
   script:
