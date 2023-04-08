@@ -74,6 +74,7 @@ function configure_navigator() {
     then
         python3 load-variables.py
     else 
+        source /usr/bin/env
         if [[ -z "$ENV_USERNAME" && -z "$DOMAIN" && -z "$FORWARDER" && -z "$ACTIVE_BRIDGE" && -z "$INTERFACE" && -z "$DISK" ]]; then
             echo "Error: One or more environment variables are not set"
             exit 1
