@@ -1,0 +1,16 @@
+stages:
+  - build
+
+build:
+  stage: build
+  image: alpine
+  variables:
+    SSH_USER: your_ssh_username
+    SSH_PASS: your_ssh_password
+  script:
+    - apk add --no-cache wget
+    - wget https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/setup.sh -P /tmp/
+    - chmod +x /tmp/setup.sh
+    - sshpass -p "$SSH_PASS" ssh "$SSH_USER"@"$SSH_HOST" 'bash -s' < /tmp/setup.sh
+  only:
+    - master
