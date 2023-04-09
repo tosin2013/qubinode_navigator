@@ -18,7 +18,6 @@ vault_query:
       - dnf -y update
       - dnf install -y jq vault
       - setcap -r /usr/bin/vault
-      - vault status
       - export VAULT_TOKEN="${VAULT_TOKEN}"
       - export VAULT_ADDR="${VAULT_ADDRESS}"
       - sudo -E vault kv get -format=json secret/homelab | jq -r '.data.data' > $YAML_FILE
