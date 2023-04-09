@@ -290,7 +290,7 @@ function deploy_kvmhost() {
     source ~/.profile
     sudo mkdir -p /home/runner/.vim/autoload
     sudo chown -R runner:runner /home/runner/.vim/autoload
-
+    sudo chmod 777 -R /home/runner/.vim/autoload
     sudo /usr/local/bin/ansible-navigator run ansible-navigator/setup_kvmhost.yml \
         --vault-password-file "$HOME"/.vault_password -m stdout || exit 1
 }
