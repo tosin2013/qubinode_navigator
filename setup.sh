@@ -118,10 +118,12 @@ function configure_vault() {
             chmod +x ansible_vault_setup.sh
         fi
         rm -f ~/.vault_password
-        bash  ./ansible_vault_setup.sh
+       
         if [ $USE_HASHICORP_VAULT == "true" ];
         then
-             if [ $(id -u) -ne 0 ]; then
+            echo "$SSH_PASSWORD" > ~/.vault_password
+            bash  ./ansible_vault_setup.sh
+            if [ $(id -u) -ne 0 ]; then
                 if [ ! -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml ];
                 then
                     ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml -o 4
@@ -135,6 +137,7 @@ function configure_vault() {
                 fi
             fi
         else
+            bash  ./ansible_vault_setup.sh
             if [ $(id -u) -ne 0 ]; then
                 if [ ! -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml ];
                 then
