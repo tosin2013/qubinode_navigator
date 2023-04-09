@@ -1,8 +1,8 @@
 stages:
-  - build
+  - supermicro
 
 build:
-  stage: build
+  stage: supermicro
   image: fedora:37
   variables:
     SSH_USER: admin
