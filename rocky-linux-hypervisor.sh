@@ -158,6 +158,15 @@ function configure_python() {
         echo 'export PATH=$HOME/.local/bin:$PATH' >>~/.profile
         source ~/.profile
     fi
+    if ! command -v ansible-navigator &> /dev/null
+    then
+        echo "ansible-navigator not found, installing..."
+        sudo pip3 install ansible-navigator
+        echo 'export PATH=$HOME/.local/bin:$PATH' >>~/.profile
+        source ~/.profile
+    else
+        echo "ansible-navigator is already installed"
+    fi
 }
 
 function configure_navigator() {
