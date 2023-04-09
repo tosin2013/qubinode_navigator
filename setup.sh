@@ -3,15 +3,26 @@
 
 # @setting-header setup.sh quickstart script for qubinode_navigator
 # @setting ./setup.sh 
+# Uncomment for debugging
+export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+set -x
 
 #set -xe
 # @global ANSIBLE_SAFE_VERSION this is the ansible safe version
 # @global INVENTORY this is the inventory file name and path Example: inventories/localhost
-export ANSIBLE_SAFE_VERSION="0.0.4"
+export ANSIBLE_SAFE_VERSION="0.0.5"
 export INVENTORY="localhost"
-source /usr/bin/env
-if [ -z ${CICD_PIPELINE} ]; then
-    export CICD_PIPELINE="false"
+if [ -z "$CICD_PIPELINE" ]; then
+  export CICD_PIPELINE="false"
+fi
+
+if [ -z "$USE_HASHICORP_VAULT" ]; then
+  export USE_HASHICORP_VAULT="false"
+else
+    if [[ -z "$VAULT_ADDRESS" && -z "$VAULT_ADDRESS" && -z ${SECRET_PATH} ]]; then
+      echo "VAULT enviornment variables are not passed  is not set"
+      exit 1
+    fi
 fi
 
 # @setting  The function get_rhel_version function will determine the version of RHEL
@@ -79,7 +90,7 @@ function configure_navigator() {
             echo "Error: One or more environment variables are not set"
             exit 1
         fi
-        python3 load-variables.py --username ${ENV_USERNAME} --domain ${DOMAIN} --forwarder ${FORWADER} --bridge ${ACTIVE_BRIDGE} --interface ${INTERFACE} --disk ${DISK}
+        python3 load-variables.py --username ${ENV_USERNAME} --domain ${DOMAIN} --forwarder ${FORWARDER} --bridge ${ACTIVE_BRIDGE} --interface ${INTERFACE} --disk ${DISK}
     fi
 }
 
@@ -107,18 +118,38 @@ function configure_vault() {
             chmod +x ansible_vault_setup.sh
         fi
         rm -f ~/.vault_password
-        bash  ./ansible_vault_setup.sh
-        if [ $(id -u) -ne 0 ]; then
-            if [ ! -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml ];
-            then
-                ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml
+       
+        if [ $USE_HASHICORP_VAULT == "true" ];
+        then
+            echo "$SSH_PASSWORD" > ~/.vault_password
+            bash  ./ansible_vault_setup.sh
+            if [ $(id -u) -ne 0 ]; then
+                if [ ! -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml ];
+                then
+                    ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml -o 4
+                    ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml -o 1
+                fi
+            else 
+                if [ ! -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml ];
+                then
+                    ansiblesafe -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml -o 4
+                    ansiblesafe -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml -o 1
+                fi
             fi
-        else 
-            if [ ! -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml ];
-            then
-                ansiblesafe -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml
+        else
+            bash  ./ansible_vault_setup.sh
+            if [ $(id -u) -ne 0 ]; then
+                if [ ! -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml ];
+                then
+                    ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml
+                fi
+            else 
+                if [ ! -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml ];
+                then
+                    ansiblesafe -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml
+                fi
             fi
-        fi
+        fi 
         #ansible-navigator inventory --list -m stdout --vault-password-file $HOME/.vault_password
     else
         echo "Qubinode Installer does not exist"
@@ -163,12 +194,21 @@ function configure_ssh(){
         IP_ADDRESS=$(hostname -I | awk '{print $1}')
         ssh-keygen -f ~/.ssh/id_rsa -t rsa -N ''
         # Check if running as root
-        if [ "$EUID" -eq 0 ]; then
-            read -p "Enter the target username to ssh into machine: " control_user
-            ssh-copy-id $control_user@${IP_ADDRESS}
-        else
-            ssh-copy-id $USER@${IP_ADDRESS}
-        fi
+        if [ $CICD_PIPELINE == "true" ];
+        then 
+            if [ "$EUID" -eq 0 ]; then
+                sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no $control_user@${IP_ADDRESS}
+            else
+                sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no $USER@${IP_ADDRESS}
+            fi
+        else 
+            if [ "$EUID" -eq 0 ]; then
+                read -p "Enter the target username to ssh into machine: " control_user
+                ssh-copy-id $control_user@${IP_ADDRESS}
+            else
+                ssh-copy-id $USER@${IP_ADDRESS}
+            fi
+        fi 
     fi
 }
 
@@ -187,19 +227,19 @@ function configure_firewalld() {
 # @description This configure_os function will get the base os and install the required packages
 function configure_os(){
     if [ ${1} == "ROCKY8" ]; then
-        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
+        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make sshpass -y
     elif [ ${1} == "FEDORA" ]; then
-        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
+        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  sshpass -y
     elif [ ${1} == "UBUNTU" ]; then
-        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
+        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  sshpass -y
     elif [ ${1} == "CENTOS8" ]; then
-        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
+        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make sshpass -y
     elif [ ${1} == "RHEL9" ]; then
         sudo dnf update -y 
-        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
+        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make sshpass -y
     elif [ ${1} == "CENTOS9" ]; then
         sudo dnf update -y 
-        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
+        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make sshpass -y
     fi
 }
 
