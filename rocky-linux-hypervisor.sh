@@ -55,7 +55,7 @@ function install_packages() {
     # Check if packages are already installed
     echo "Installing packages"
     echo "*******************"
-    for package in openssl-devel bzip2-devel libffi-devel wget vim podman ncurses-devel sqlite-devel firewalld make gcc git unzip; do
+    for package in openssl-devel bzip2-devel libffi-devel wget vim podman ncurses-devel sqlite-devel firewalld make gcc git unzip sshpass; do
         if rpm -q "${package}" >/dev/null 2>&1; then
             echo "Package ${package} already installed"
         else
@@ -157,7 +157,17 @@ function configure_navigator() {
     echo "Current DNS Server: $(cat /etc/resolv.conf | grep nameserver | awk '{print $2}' | head -1)"
     echo "Load variables"
     echo "**************"
-    python3 load-variables.py
+    if [ $CICD_PIPELINE == "false" ];
+    then
+        python3 load-variables.py
+    else 
+        if [[ -z "$ENV_USERNAME" && -z "$DOMAIN" && -z "$FORWARDER" && -z "$ACTIVE_BRIDGE" && -z "$INTERFACE" && -z "$DISK" ]]; then
+            echo "Error: One or more environment variables are not set"
+            exit 1
+        fi
+        python3 load-variables.py --username ${ENV_USERNAME} --domain ${DOMAIN} --forwarder ${FORWARDER} --bridge ${ACTIVE_BRIDGE} --interface ${INTERFACE} --disk ${DISK}
+    fi
+
 }
 
 function configure_ssh() {
@@ -168,7 +178,12 @@ function configure_ssh() {
     else
         IP_ADDRESS=$(hostname -I | awk '{print $1}')
         ssh-keygen -f ~/.ssh/id_rsa -t rsa -N ''
-        ssh-copy-id lab-user@"${IP_ADDRESS}"
+        if [ $CICD_PIPELINE == "true" ];
+        then 
+            sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no lab-user@${IP_ADDRESS}
+        else
+            ssh-copy-id lab-user@"${IP_ADDRESS}"
+        fi
     fi
 }
 
@@ -206,7 +221,15 @@ function configure_ansible_vault_setup() {
         chmod +x ansible_vault_setup.sh
     fi
     rm -f ~/.vault_password
-    bash  ./ansible_vault_setup.sh
+    if [ $CICD_PIPELINE == "true" ];
+    then    
+        echo "$SSH_PASSWORD" > ~/.vault_password
+        bash  ./ansible_vault_setup.sh
+    else 
+        bash  ./ansible_vault_setup.sh
+    fi 
+
+    
 
     curl -OL https://github.com/tosin2013/ansiblesafe/releases/download/v${ANSIBLE_SAFE_VERSION}/ansiblesafe-v${ANSIBLE_SAFE_VERSION}-linux-amd64.tar.gz
     tar -zxvf ansiblesafe-v${ANSIBLE_SAFE_VERSION}-linux-amd64.tar.gz
