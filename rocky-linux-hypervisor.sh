@@ -56,14 +56,7 @@ function generate_inventory() {
         echo "[control]" >inventories/${INVENTORY}/hosts
         echo "control ansible_host=${control_host} ansible_user=${control_user}" >>inventories/${INVENTORY}/hosts
         configure_ansible_navigator
-        if ! command -v ansible-navigator &> /dev/null
-        then
-            echo "ansible-navigator not found, installing..."
-            configure_python
-        else
-            echo "ansible-navigator is already installed"
-        fi
-        ansible-navigator inventory --list -m stdout --vault-password-file "$HOME"/.vault_password
+        /usr/local/bin/ansible-navigator inventory --list -m stdout --vault-password-file "$HOME"/.vault_password
     else
         echo "Qubinode Installer does not exist"
     fi
@@ -288,7 +281,7 @@ function test_inventory() {
     echo "Testing Ansible Inventory"
     echo "*************************"
     source ~/.profile
-    ansible-navigator inventory --list -m stdout --vault-password-file "$HOME"/.vault_password || exit 1
+   /usr/local/bin/ansible-navigator inventory --list -m stdout --vault-password-file "$HOME"/.vault_password || exit 1
 }
 
 function deploy_kvmhost() {
@@ -298,7 +291,7 @@ function deploy_kvmhost() {
     ssh-add ~/.ssh/id_rsa
     cd "$HOME"/qubinode_navigator
     source ~/.profile
-    ansible-navigator run ansible-navigator/setup_kvmhost.yml \
+    /usr/local/bin/ansible-navigator run ansible-navigator/setup_kvmhost.yml \
         --vault-password-file "$HOME"/.vault_password -m stdout || exit 1
 }
 
