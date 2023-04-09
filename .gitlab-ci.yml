@@ -17,6 +17,7 @@ vault_query:
       - dnf config-manager --add-repo https://rpm.releases.hashicorp.com/fedora/hashicorp.repo
       - dnf -y update
       - dnf install -y jq vault
+      - etcap -r /usr/bin/vault
       - export VAULT_TOKEN="${VAULT_TOKEN}"
       - export VAULT_ADDR="${VAULT_ADDRESS}"
       - sudo -E vault kv get -format=json secret/homelab | jq -r '.data.data' > $YAML_FILE
