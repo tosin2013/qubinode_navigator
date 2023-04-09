@@ -194,12 +194,21 @@ function configure_ssh(){
         IP_ADDRESS=$(hostname -I | awk '{print $1}')
         ssh-keygen -f ~/.ssh/id_rsa -t rsa -N ''
         # Check if running as root
-        if [ "$EUID" -eq 0 ]; then
-            read -p "Enter the target username to ssh into machine: " control_user
-            ssh-copy-id $control_user@${IP_ADDRESS}
-        else
-            ssh-copy-id $USER@${IP_ADDRESS}
-        fi
+        if [ $CICD_PIPELINE == "true" ];
+        then 
+            if [ "$EUID" -eq 0 ]; then
+                sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no $control_user@${IP_ADDRESS}
+            else
+                sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no $USER@${IP_ADDRESS}
+            fi
+        else 
+            if [ "$EUID" -eq 0 ]; then
+                read -p "Enter the target username to ssh into machine: " control_user
+                ssh-copy-id $control_user@${IP_ADDRESS}
+            else
+                ssh-copy-id $USER@${IP_ADDRESS}
+            fi
+        fi 
     fi
 }
 
@@ -218,19 +227,19 @@ function configure_firewalld() {
 # @description This configure_os function will get the base os and install the required packages
 function configure_os(){
     if [ ${1} == "ROCKY8" ]; then
-        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
+        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make sshpass -y
     elif [ ${1} == "FEDORA" ]; then
-        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
+        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  sshpass -y
     elif [ ${1} == "UBUNTU" ]; then
-        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
+        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  sshpass -y
     elif [ ${1} == "CENTOS8" ]; then
-        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
+        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make sshpass -y
     elif [ ${1} == "RHEL9" ]; then
         sudo dnf update -y 
-        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
+        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make sshpass -y
     elif [ ${1} == "CENTOS9" ]; then
         sudo dnf update -y 
-        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
+        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make sshpass -y
     fi
 }
 
