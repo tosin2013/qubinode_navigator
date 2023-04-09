@@ -1,5 +1,27 @@
+variables:
+  YAML_FILE: "config.yml"
+
 stages:
+  - vault_query
   - build
+
+vault_query:
+  stage: vault_query
+  image: fedora:37
+  variables:
+    VAULT_ADDRESS: http://10.0.0.48:8200/
+    VAULT_TOKEN: s.zlOfmgNtfTiMUpEFspZhspWg
+    SECRET_PATH:  homelab
+  script:
+      - dnf install -y jq
+      - export VAULT_TOKEN="${VAULT_TOKEN}"
+      - export VAULT_ADDR="${VAULT_ADDRESS}"
+      - vault kv get -format=json secret/homelab | jq -r '.data.data' > $YAML_FILE
+  artifacts:
+    paths:
+      - $YAML_FILE
+  only:
+    - main
 
 build:
   stage: build
@@ -15,18 +37,15 @@ build:
     ACTIVE_BRIDGE: 'false'
     INTERFACE: bond0
     DISK: /dev/sdc
-    USE_HASHICORP_VAULT: 'true'
-    VAULT_ADDRESS: http://10.0.0.48:8200/
-    VAULT_TOKEN: s.zlOfmgNtfTiMUpEFspZhspWg
-    SECRET_PATH:  homelab
   script:
+    - cat $YAML_FILE || exit 1
     - dnf install wget openssh-clients sshpass -y
     - mkdir -p ~/.ssh/
     - ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
     - sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no "$SSH_USER"@"$SSH_HOST"
     - ssh "$SSH_USER"@"$SSH_HOST"  'env CICD_PIPELINE="'$CICD_PIPELINE'" SSH_PASSWORD="'$SSH_PASSWORD'"
         ENV_USERNAME="'$ENV_USERNAME'" DOMAIN="'$DOMAIN'" FORWARDER="'$FORWARDER'" 
-        ACTIVE_BRIDGE="'$ACTIVE_BRIDGE'" INTERFACE="'$INTERFACE'" DISK="'$DISK'" USE_HASHICORP_VAULT="'${USE_HASHICORP_VAULT}'"
-        VAULT_ADDRESS="'$VAULT_ADDRESS'" VAULT_TOKEN="'${VAULT_TOKEN}'" SECRET_PATH="'${SECRET_PATH}'" sudo -E bash -s' < rocky-linux-hypervisor.sh
+        ACTIVE_BRIDGE="'$ACTIVE_BRIDGE'" INTERFACE="'$INTERFACE'" DISK="'$DISK'"  sudo -E bash -s' < rocky-linux-hypervisor.sh
+        
   only:
     - main
