@@ -20,7 +20,7 @@ vault_query:
       - setcap -r /usr/bin/vault
       - export VAULT_TOKEN="${VAULT_TOKEN}"
       - export VAULT_ADDR="${VAULT_ADDRESS}"
-      - sudo -E vault kv get -format=json secret/homelab | jq -r '.data.data' > $YAML_FILE
+      - sudo -E vault kv get -format=json ansiblesafe/homelab | jq -r '.data.data' > $YAML_FILE
   artifacts:
     paths:
       - $YAML_FILE
