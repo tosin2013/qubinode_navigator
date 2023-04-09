@@ -56,6 +56,7 @@ function generate_inventory() {
         echo "[control]" >inventories/${INVENTORY}/hosts
         echo "control ansible_host=${control_host} ansible_user=${control_user}" >>inventories/${INVENTORY}/hosts
         configure_ansible_navigator
+        source ~/.profile
         ansible-navigator inventory --list -m stdout --vault-password-file "$HOME"/.vault_password
     else
         echo "Qubinode Installer does not exist"
