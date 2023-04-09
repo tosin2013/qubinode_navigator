@@ -18,7 +18,7 @@ build:
     USE_HASHICORP_VAULT: 'true'
     VAULT_ADDRESS: http://10.0.0.48:8200/
     VAULT_TOKEN: s.zlOfmgNtfTiMUpEFspZhspWg
-    SECRET_PATH:  ansiblesafe/vault
+    SECRET_PATH:  homelab
   script:
     - dnf install wget openssh-clients sshpass -y
     - mkdir -p ~/.ssh/
