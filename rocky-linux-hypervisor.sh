@@ -288,7 +288,10 @@ function deploy_kvmhost() {
     ssh-add ~/.ssh/id_rsa
     cd "$HOME"/qubinode_navigator
     source ~/.profile
-    sudo /usr/local/bin/ansible-navigator run ansible-navigator/setup_kvmhost.yml -e "become_user=root" \
+    sudo mkdir -p /home/runner/.vim/autoload
+    sudo chown -R runner:runner /home/runner/.vim/autoload
+
+    sudo /usr/local/bin/ansible-navigator run ansible-navigator/setup_kvmhost.yml \
         --vault-password-file "$HOME"/.vault_password -m stdout || exit 1
 }
 
