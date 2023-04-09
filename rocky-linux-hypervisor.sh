@@ -217,7 +217,7 @@ ansible-navigator:
   ansible:
     inventory:
       entries:
-      - /home/admin/qubinode_navigator/inventories/localhost
+      - /root/qubinode_navigator/inventories/localhost
   execution-environment:
     container-engine: podman
     enabled: true
