@@ -156,12 +156,13 @@ function configure_navigator() {
     fi
     cd "$HOME"/qubinode_navigator
     sudo pip3 install -r requirements.txt
-    read -t 360 -p "Press Enter to continue, or wait 5 minutes for the script to continue automatically" || true
+
     echo "Current DNS Server: $(cat /etc/resolv.conf | grep nameserver | awk '{print $2}' | head -1)"
     echo "Load variables"
     echo "**************"
     if [ $CICD_PIPELINE == "false" ];
     then
+        read -t 360 -p "Press Enter to continue, or wait 5 minutes for the script to continue automatically" || true
         python3 load-variables.py
     else 
         if [[ -z "$ENV_USERNAME" && -z "$DOMAIN" && -z "$FORWARDER" && -z "$ACTIVE_BRIDGE" && -z "$INTERFACE" && -z "$DISK" ]]; then
