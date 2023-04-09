@@ -16,6 +16,8 @@ if [ -z "$CICD_PIPELINE" ]; then
   export CICD_PIPELINE="false"
   exit 1
 fi
+echo "CICD_PIPELINE is set to $CICD_PIPELINE" 
+exit 1
 
 if [ -z "$USE_HASHICORP_VAULT" ]; then
   export USE_HASHICORP_VAULT="false"
