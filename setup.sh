@@ -7,11 +7,19 @@
 #set -xe
 # @global ANSIBLE_SAFE_VERSION this is the ansible safe version
 # @global INVENTORY this is the inventory file name and path Example: inventories/localhost
-export ANSIBLE_SAFE_VERSION="0.0.4"
+export ANSIBLE_SAFE_VERSION="0.0.5"
 export INVENTORY="localhost"
 if [ -z "$CICD_PIPELINE" ]; then
   export CICD_PIPELINE="false"
-  exit 1
+fi
+
+if [ -z "$USE_HASHICORP_VAULT" ]; then
+  export USE_HASHICORP_VAULT="false"
+else
+    if [[ -z "$VAULT_ADDRESS" && -z "$VAULT_ADDRESS" && -z ${SECRET_PATH} ]]; then
+      echo "VAULT enviornment variables are not passed  is not set"
+      exit 1
+    fi
 fi
 
 # @setting  The function get_rhel_version function will determine the version of RHEL
@@ -75,7 +83,7 @@ function configure_navigator() {
     then
         python3 load-variables.py
     else 
-        if [[ -z "$ENV_USERNAME" || -z "$DOMAIN" || -z "$FORWARDER" || -z "$ACTIVE_BRIDGE" || -z "$INTERFACE" || -z "$DISK" ]]; then
+        if [[ -z "$ENV_USERNAME" && -z "$DOMAIN" && -z "$FORWARDER" && -z "$ACTIVE_BRIDGE" && -z "$INTERFACE" && -z "$DISK" ]]; then
             echo "Error: One or more environment variables are not set"
             exit 1
         fi
@@ -108,17 +116,34 @@ function configure_vault() {
         fi
         rm -f ~/.vault_password
         bash  ./ansible_vault_setup.sh
-        if [ $(id -u) -ne 0 ]; then
-            if [ ! -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml ];
-            then
-                ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml
+        if [ $USE_HASHICORP_VAULT == "true" ];
+        then
+             if [ $(id -u) -ne 0 ]; then
+                if [ ! -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml ];
+                then
+                    ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml -o 4
+                    ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml -o 1
+                fi
+            else 
+                if [ ! -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml ];
+                then
+                    ansiblesafe -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml -o 4
+                    ansiblesafe -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml -o 1
+                fi
             fi
-        else 
-            if [ ! -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml ];
-            then
-                ansiblesafe -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml
+        else
+            if [ $(id -u) -ne 0 ]; then
+                if [ ! -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml ];
+                then
+                    ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml
+                fi
+            else 
+                if [ ! -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml ];
+                then
+                    ansiblesafe -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml
+                fi
             fi
-        fi
+        fi 
         #ansible-navigator inventory --list -m stdout --vault-password-file $HOME/.vault_password
     else
         echo "Qubinode Installer does not exist"

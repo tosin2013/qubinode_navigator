@@ -1,6 +1,7 @@
 #!/bin/bash
 #set -xe
 KVM_VERSION=0.4.0
+export ANSIBLE_SAFE_VERSION="0.0.5"
 export INVENTORY="localhost"
 
 if [[ $EUID -ne 0 ]]; then
@@ -194,8 +195,8 @@ function configure_ansible_vault_setup() {
     rm -f ~/.vault_password
     bash  ./ansible_vault_setup.sh
 
-    curl -OL https://github.com/tosin2013/ansiblesafe/releases/download/v0.0.4/ansiblesafe-v0.0.4-linux-amd64.tar.gz
-    tar -zxvf ansiblesafe-v0.0.4-linux-amd64.tar.gz
+    curl -OL https://github.com/tosin2013/ansiblesafe/releases/download/v${ANSIBLE_SAFE_VERSION}/ansiblesafe-v${ANSIBLE_SAFE_VERSION}-linux-amd64.tar.gz
+    tar -zxvf ansiblesafe-v${ANSIBLE_SAFE_VERSION}-linux-amd64.tar.gz
     chmod +x ansiblesafe-linux-amd64
     sudo mv ansiblesafe-linux-amd64 /usr/local/bin/ansiblesafe
 
