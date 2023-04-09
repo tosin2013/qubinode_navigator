@@ -56,7 +56,13 @@ function generate_inventory() {
         echo "[control]" >inventories/${INVENTORY}/hosts
         echo "control ansible_host=${control_host} ansible_user=${control_user}" >>inventories/${INVENTORY}/hosts
         configure_ansible_navigator
-        source ~/.profile
+        if ! command -v ansible-navigator &> /dev/null
+        then
+            echo "ansible-navigator not found, installing..."
+            configure_python
+        else
+            echo "ansible-navigator is already installed"
+        fi
         ansible-navigator inventory --list -m stdout --vault-password-file "$HOME"/.vault_password
     else
         echo "Qubinode Installer does not exist"
@@ -207,22 +213,24 @@ function configure_ansible_navigator() {
 ---
 ansible-navigator:
   ansible:
-    inventories:    
-      - /root/qubinode_navigator/inventories/localhost
-  logging:
-    level: debug
-    append: true
-    file: /tmp/navigator/ansible-navigator.log
-  playbook-artifact:
-    enable: false
+    inventory:
+      entries:
+      - /home/admin/qubinode_navigator/inventories/localhost
   execution-environment:
     container-engine: podman
     enabled: true
-    pull-policy: missing
-    image: quay.io/qubinode/qubinode-installer:${KVM_VERSION}
     environment-variables:
       pass:
-        - USER
+      - USER
+    image: quay.io/qubinode/qubinode-installer:${KVM_VERSION}
+    pull:
+      policy: missing
+  logging:
+    append: true
+    file: /tmp/navigator/ansible-navigator.log
+    level: debug
+  playbook-artifact:
+    enable: false
 EOF
 }
 function configure_ansible_vault_setup() {
