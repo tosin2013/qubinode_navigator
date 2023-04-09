@@ -13,7 +13,7 @@ vault_query:
     VAULT_TOKEN: s.zlOfmgNtfTiMUpEFspZhspWg
     SECRET_PATH:  homelab
   script:
-      - dnf install -y jq
+      - dnf install -y jq vault
       - export VAULT_TOKEN="${VAULT_TOKEN}"
       - export VAULT_ADDR="${VAULT_ADDRESS}"
       - vault kv get -format=json secret/homelab | jq -r '.data.data' > $YAML_FILE
