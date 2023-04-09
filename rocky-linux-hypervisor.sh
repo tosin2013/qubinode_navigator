@@ -221,9 +221,6 @@ ansible-navigator:
   execution-environment:
     container-engine: podman
     enabled: true
-    environment-variables:
-      pass:
-      - USER
     image: quay.io/qubinode/qubinode-installer:${KVM_VERSION}
     pull:
       policy: missing
