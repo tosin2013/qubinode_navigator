@@ -10,7 +10,7 @@ ansible-navigator:
     environment-variables:
       pass:
       - USER
-    image: quay.io/qubinode/qubinode-installer:0.4.0
+    image:  localhost/qubinode-installer:0.1.0
     pull:
       policy: missing
   logging:
