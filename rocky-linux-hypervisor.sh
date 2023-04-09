@@ -14,6 +14,7 @@ fi
 
 if [ -z "$CICD_PIPELINE" ]; then
   export CICD_PIPELINE="false"
+  exit 1
 fi
 
 if [ -z "$USE_HASHICORP_VAULT" ]; then
