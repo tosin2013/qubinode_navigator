@@ -13,6 +13,9 @@ vault_query:
     VAULT_TOKEN: s.zlOfmgNtfTiMUpEFspZhspWg
     SECRET_PATH:  homelab
   script:
+      - dnf install -y dnf-plugins-core
+      - dnf config-manager --add-repo https://rpm.releases.hashicorp.com/fedora/hashicorp.repo
+      - dnf -y update
       - dnf install -y jq vault
       - export VAULT_TOKEN="${VAULT_TOKEN}"
       - export VAULT_ADDR="${VAULT_ADDRESS}"
