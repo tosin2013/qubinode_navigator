@@ -17,7 +17,7 @@ if [ -z "$CICD_PIPELINE" ]; then
   exit 1
 fi
 echo "CICD_PIPELINE is set to $CICD_PIPELINE" 
-exit 1
+
 
 if [ -z "$USE_HASHICORP_VAULT" ]; then
   export USE_HASHICORP_VAULT="false"
@@ -237,7 +237,7 @@ function configure_ansible_vault_setup() {
     fi 
 
     
-
+    source ~/.profile
     curl -OL https://github.com/tosin2013/ansiblesafe/releases/download/v${ANSIBLE_SAFE_VERSION}/ansiblesafe-v${ANSIBLE_SAFE_VERSION}-linux-amd64.tar.gz
     tar -zxvf ansiblesafe-v${ANSIBLE_SAFE_VERSION}-linux-amd64.tar.gz
     chmod +x ansiblesafe-linux-amd64
