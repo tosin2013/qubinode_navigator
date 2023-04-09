@@ -291,7 +291,7 @@ function deploy_kvmhost() {
     sudo mkdir -p /home/runner/.vim/autoload
     sudo chown -R lab-user:wheel /home/runner/.vim/autoload
     sudo chmod 777 -R /home/runner/.vim/autoload
-    sudo /usr/local/bin/ansible-navigator run ansible-navigator/setup_kvmhost.yml --extra-vars "shell_user=lab-user" \
+    sudo /usr/local/bin/ansible-navigator run ansible-navigator/setup_kvmhost.yml --extra-vars "shell_user=lab-user" --extra-vars "ansible_user=lab-user"\
         --vault-password-file "$HOME"/.vault_password -m stdout || exit 1
 }
 
