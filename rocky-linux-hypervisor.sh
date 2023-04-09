@@ -43,7 +43,12 @@ function generate_inventory() {
         control_host="$(hostname -I | awk '{print $1}')"
         # Check if running as root
         if [ "$EUID" -eq 0 ]; then
-            read -r -p "Enter the target username to ssh into machine: " control_user
+            if [ $CICD_PIPELINE == "false" ];
+            then
+                read -r -p "Enter the target username to ssh into machine: " control_user
+            else
+                control_user="$USER"
+            fi 
         else
             control_user="$USER"
         fi
