@@ -9,6 +9,19 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
+if [ -z "$CICD_PIPELINE" ]; then
+  export CICD_PIPELINE="false"
+fi
+
+if [ -z "$USE_HASHICORP_VAULT" ]; then
+  export USE_HASHICORP_VAULT="false"
+else
+    if [[ -z "$VAULT_ADDRESS" && -z "$VAULT_ADDRESS" && -z ${SECRET_PATH} ]]; then
+      echo "VAULT enviornment variables are not passed  is not set"
+      exit 1
+    fi
+fi  
+
 # @description This function generate_inventory function will generate the inventory
 function generate_inventory() {
     echo "Generating inventory"
