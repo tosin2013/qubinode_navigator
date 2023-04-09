@@ -1,5 +1,8 @@
 #!/bin/bash
-#set -xe
+# Uncomment for debugging
+export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+set -x
+
 KVM_VERSION=0.4.0
 export ANSIBLE_SAFE_VERSION="0.0.5"
 export INVENTORY="localhost"
