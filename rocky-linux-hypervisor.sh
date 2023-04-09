@@ -251,7 +251,7 @@ function configure_ansible_vault_setup() {
         sudo mv ansiblesafe-linux-amd64 /usr/local/bin/ansiblesafe
     fi 
 
-    ansiblesafe -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml
+    /usr/local/bin/ansiblesafe -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml
     generate_inventory /root
 }
 
