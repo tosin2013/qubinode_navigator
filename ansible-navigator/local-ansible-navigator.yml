@@ -1,19 +1,21 @@
 ---
 ansible-navigator:
   ansible:
-    inventories:
+    inventory:
+      entries:
       - /home/admin/qubinode_navigator/inventories/localhost
-  logging:
-    level: debug
-    append: true
-    file: /tmp/navigator/ansible-navigator.log
-  playbook-artifact:
-    enable: false
   execution-environment:
     container-engine: podman
     enabled: true
-    pull-policy: missing
-    image: localhost/qubinode-installer:0.1.0
     environment-variables:
       pass:
-        - USER
+      - USER
+    image: quay.io/qubinode/qubinode-installer:0.4.0
+    pull:
+      policy: missing
+  logging:
+    append: true
+    file: /tmp/navigator/ansible-navigator.log
+    level: debug
+  playbook-artifact:
+    enable: false
