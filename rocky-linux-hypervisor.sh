@@ -270,6 +270,7 @@ function configure_ansible_vault_setup() {
 function test_inventory() {
     echo "Testing Ansible Inventory"
     echo "*************************"
+    source ~/.profile
     ansible-navigator inventory --list -m stdout --vault-password-file "$HOME"/.vault_password || exit 1
 }
 

@@ -43,7 +43,6 @@ build:
     DISK: /dev/sdc
   script:
     - ls -la $YAML_FILE
-    - cat $YAML_FILE || exit 1
     - dnf install wget openssh-clients sshpass -y
     - mkdir -p ~/.ssh/
     - ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
