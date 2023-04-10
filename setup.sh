@@ -181,6 +181,8 @@ function generate_inventory(){
         echo "[control]" > inventories/${INVENTORY}/hosts
         echo "control ansible_host=${control_host} ansible_user=${control_user}" >> inventories/${INVENTORY}/hosts
         if ! command -v ansible-navigator &> /dev/null; then
+            pip3 install ansible-navigator
+            whereis ansible-navigator
             ANSIBLE_NAVIAGATOR=$(whereis ansible-navigator | awk '{print $2}')
         else 
             ANSIBLE_NAVIAGATOR="ansible-navigator "
@@ -280,7 +282,7 @@ function deploy_kvmhost() {
     if ! command -v ansible-navigator &> /dev/null; then
         ANSIBLE_NAVIAGATOR=$(whereis ansible-navigator | awk '{print $2}')
     else 
-        ANSIBLE_NAVIAGATOR="ansible-navigator "
+        ANSIBLE_NAVIAGATOR="ansible-navigator"
     fi
     ${ANSIBLE_NAVIAGATOR} run ansible-navigator/setup_kvmhost.yml \
         --vault-password-file "$HOME"/.vault_password -m stdout || exit 1
