@@ -32,8 +32,8 @@ build:
   image: fedora:37
   variables:
     SSH_USER:  lab-user
-    SSH_PASSWORD: 4BFIZBrIEk1D
-    SSH_HOST: hypervisor.6qw9r.dynamic.opentlc.com
+    SSH_PASSWORD: 6c2YwdhGcb7H
+    SSH_HOST: hypervisor.8fb4s.dynamic.opentlc.com
     CICD_PIPELINE: 'true'
     ENV_USERNAME:  lab-user
     DOMAIN: qubinodelab.io
@@ -41,7 +41,7 @@ build:
     ACTIVE_BRIDGE: 'false'
     INTERFACE: bond0
     DISK: /dev/sdc
-    GIT_REPO: https://gitlab.tosins-cloudlabs.com/tosin/qubinode_navigator.git
+    GIT_REPO: https://github.com/tosin2013/qubinode_navigator.git
   script:
     - ls -la $YAML_FILE
     - dnf install wget openssh-clients sshpass -y
