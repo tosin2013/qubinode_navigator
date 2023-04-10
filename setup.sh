@@ -112,7 +112,7 @@ function configure_vault() {
         fi
         echo "Configure Ansible Vault password file"
         echo "****************"
-        read -t 360 -p "Press Enter to continue, or wait 5 minutes for the script to continue automatically" || true
+        
         if [ ! -f ~/qubinode_navigator/ansible_vault_setup.sh ];
         then 
             curl -OL https://gist.githubusercontent.com/tosin2013/022841d90216df8617244ab6d6aceaf8/raw/92400b9e459351d204feb67b985c08df6477d7fa/ansible_vault_setup.sh
@@ -131,6 +131,7 @@ function configure_vault() {
                     ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml -o 1
                 fi
             else 
+                read -t 360 -p "Press Enter to continue, or wait 5 minutes for the script to continue automatically" || true
                 if [ ! -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml ];
                 then
                     ansiblesafe -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml -o 4
