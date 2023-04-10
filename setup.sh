@@ -180,7 +180,12 @@ function generate_inventory(){
         
         echo "[control]" > inventories/${INVENTORY}/hosts
         echo "control ansible_host=${control_host} ansible_user=${control_user}" >> inventories/${INVENTORY}/hosts
-        ansible-navigator inventory --list -m stdout --vault-password-file $HOME/.vault_password
+        if ! command -v ansible-navigator &> /dev/null; then
+            ANSIBLE_NAVIAGATOR=$(whereis ansible-navigator | awk '{print $2}')
+        else 
+            ANSIBLE_NAVIAGATOR="ansible-navigator "
+        fi
+        ${ANSIBLE_NAVIAGATOR} inventory --list -m stdout --vault-password-file $HOME/.vault_password
     else
         echo "Qubinode Installer does not exist"
     fi
@@ -252,7 +257,12 @@ function test_inventory(){
     echo "****************"
     if [ -d $1/qubinode_navigator ]; then
         cd $1/qubinode_navigator
-        ansible-navigator inventory --list -m stdout --vault-password-file $HOME/.vault_password || exit 1
+        if ! command -v ansible-navigator &> /dev/null; then
+            ANSIBLE_NAVIAGATOR=$(whereis ansible-navigator | awk '{print $2}')
+        else 
+            ANSIBLE_NAVIAGATOR="ansible-navigator "
+        fi
+        ${ANSIBLE_NAVIAGATOR}  inventory --list -m stdout --vault-password-file $HOME/.vault_password || exit 1
     else
         echo "Qubinode Installer does not exist"
     fi
@@ -267,7 +277,12 @@ function deploy_kvmhost() {
     ssh-add ~/.ssh/id_rsa
     cd "$HOME"/qubinode_navigator
     source ~/.profile
-    ansible-navigator run ansible-navigator/setup_kvmhost.yml \
+    if ! command -v ansible-navigator &> /dev/null; then
+        ANSIBLE_NAVIAGATOR=$(whereis ansible-navigator | awk '{print $2}')
+    else 
+        ANSIBLE_NAVIAGATOR="ansible-navigator "
+    fi
+    ${ANSIBLE_NAVIAGATOR} run ansible-navigator/setup_kvmhost.yml \
         --vault-password-file "$HOME"/.vault_password -m stdout || exit 1
 }
 
