@@ -118,3 +118,5 @@ For example, to deploy a KVM host, run:
 
 ## Contributing
 Please submit bug reports, suggestions, and improvements as GitHub issues.
+
+See [Developers Guide](docs/developers.rst) for more information.

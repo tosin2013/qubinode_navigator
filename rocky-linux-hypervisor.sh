@@ -5,7 +5,7 @@ set -x
 
 KVM_VERSION=0.5.0
 export ANSIBLE_SAFE_VERSION="0.0.5"
-export INVENTORY="localhost"
+
 export GIT_REPO="https://github.com/tosin2013/qubinode_navigator.git"
 if [[ $EUID -ne 0 ]]; then
     echo "This script must be run as root"
@@ -14,7 +14,7 @@ fi
 
 if [ -z "$CICD_PIPELINE" ]; then
   export CICD_PIPELINE="false"
-  exit 1
+  export INVENTORY="localhost"
 fi
 echo "CICD_PIPELINE is set to $CICD_PIPELINE" 
 
@@ -216,7 +216,7 @@ ansible-navigator:
   ansible:
     inventory:
       entries:
-      - /root/qubinode_navigator/inventories/localhost
+      - /root/qubinode_navigator/inventories/${INVENTORY}
   execution-environment:
     container-engine: podman
     enabled: true

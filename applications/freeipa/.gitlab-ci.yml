@@ -1,0 +1,21 @@
+stages:
+  - freeipa
+
+build:
+  stage: freeipa
+  image: fedora:37
+  variables:
+    SSH_USER:  admin
+    SSH_PASSWORD: CHANGEME
+    SSH_HOST: 192.168.1.10
+  script:
+    - ls -la $YAML_FILE
+    - dnf install wget openssh-clients sshpass -y
+    - mkdir -p ~/.ssh/
+    - ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
+    - sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no "$SSH_USER"@"$SSH_HOST"
+    - scp $YAML_FILE "$SSH_USER"@"$SSH_HOST":/tmp/
+    - ssh "$SSH_USER"@"$SSH_HOST"  'sudo -E bash -s' < freeipa-utils deploy
+        
+  only:
+    - main
