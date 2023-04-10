@@ -1,0 +1,33 @@
+stages:
+  - supermicro
+
+build:
+  stage: supermicro
+  image: fedora:37
+  variables:
+    SSH_USER: admin
+    SSH_PASSWORD: COmp123$%
+    SSH_HOST: 192.168.1.39
+    CICD_PIPELINE: 'true'
+    ENV_USERNAME: admin
+    DOMAIN: qubinodelab.io
+    FORWARDER: '1.1.1.1'
+    ACTIVE_BRIDGE: 'true'
+    INTERFACE: eno1
+    DISK: /dev/nvme0n1
+    USE_HASHICORP_VAULT: 'true'
+    VAULT_ADDRESS: http://10.0.0.48:8200/
+    VAULT_TOKEN: s.zlOfmgNtfTiMUpEFspZhspWg
+    SECRET_PATH:  homelab
+  script:
+    - dnf install wget openssh-clients sshpass -y
+    - mkdir -p ~/.ssh/
+    - ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
+    - sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no "$SSH_USER"@"$SSH_HOST"
+    - ssh "$SSH_USER"@"$SSH_HOST"  'env CICD_PIPELINE="'$CICD_PIPELINE'" SSH_PASSWORD="'$SSH_PASSWORD'"
+        ENV_USERNAME="'$ENV_USERNAME'" DOMAIN="'$DOMAIN'" FORWARDER="'$FORWARDER'" 
+        ACTIVE_BRIDGE="'$ACTIVE_BRIDGE'" INTERFACE="'$INTERFACE'" DISK="'$DISK'" USE_HASHICORP_VAULT="'${USE_HASHICORP_VAULT}'"
+        VAULT_ADDRESS="'$VAULT_ADDRESS'" VAULT_TOKEN="'${VAULT_TOKEN}'" SECRET_PATH="'${SECRET_PATH}'" bash -s' < setup.sh
+  only:
+    - main
+

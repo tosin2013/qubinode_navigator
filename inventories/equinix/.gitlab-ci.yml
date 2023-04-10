@@ -1,0 +1,56 @@
+variables:
+  YAML_FILE: "config.yml"
+
+stages:
+  - vault_query
+  - build
+
+vault_query:
+  stage: vault_query
+  image: fedora:37
+  variables:
+    VAULT_ADDRESS: http://10.0.0.48:8200/
+    VAULT_TOKEN: s.zlOfmgNtfTiMUpEFspZhspWg
+    SECRET_PATH:  homelab
+  script:
+      - dnf install -y dnf-plugins-core
+      - dnf config-manager --add-repo https://rpm.releases.hashicorp.com/fedora/hashicorp.repo
+      - dnf -y update
+      - dnf install -y jq vault
+      - setcap -r /usr/bin/vault
+      - export VAULT_TOKEN="${VAULT_TOKEN}"
+      - export VAULT_ADDR="${VAULT_ADDRESS}"
+      - sudo -E vault kv get -format=json ansiblesafe/homelab | jq -r '.data.data' > $YAML_FILE
+  artifacts:
+    paths:
+      - $YAML_FILE
+  only:
+    - main
+
+build:
+  stage: build
+  image: fedora:37
+  variables:
+    SSH_USER:  lab-user
+    SSH_PASSWORD: 4BFIZBrIEk1D
+    SSH_HOST: hypervisor.6qw9r.dynamic.opentlc.com
+    CICD_PIPELINE: 'true'
+    ENV_USERNAME:  lab-user
+    DOMAIN: qubinodelab.io
+    FORWARDER: '147.75.207.207'
+    ACTIVE_BRIDGE: 'false'
+    INTERFACE: bond0
+    DISK: /dev/sdc
+  script:
+    - ls -la $YAML_FILE
+    - dnf install wget openssh-clients sshpass -y
+    - mkdir -p ~/.ssh/
+    - ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
+    - sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no "$SSH_USER"@"$SSH_HOST"
+    - scp $YAML_FILE "$SSH_USER"@"$SSH_HOST":/tmp/
+    - ssh "$SSH_USER"@"$SSH_HOST"  'env CICD_PIPELINE="'$CICD_PIPELINE'" SSH_PASSWORD="'$SSH_PASSWORD'"
+        ENV_USERNAME="'$ENV_USERNAME'" DOMAIN="'$DOMAIN'" FORWARDER="'$FORWARDER'" 
+        ACTIVE_BRIDGE="'$ACTIVE_BRIDGE'" INTERFACE="'$INTERFACE'" DISK="'$DISK'"  sudo -E bash -s' < rocky-linux-hypervisor.sh
+        
+  only:
+    - main
