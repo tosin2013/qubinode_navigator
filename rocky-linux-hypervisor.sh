@@ -6,7 +6,7 @@ set -x
 KVM_VERSION=0.4.0
 export ANSIBLE_SAFE_VERSION="0.0.5"
 export INVENTORY="localhost"
-
+export GIT_REPO="https://github.com/tosin2013/qubinode_navigator.git"
 if [[ $EUID -ne 0 ]]; then
     echo "This script must be run as root"
     exit 1
@@ -169,7 +169,7 @@ function configure_navigator() {
         echo "Qubinode Navigator already exists"
     else
         cd "$HOME"
-        git clone https://github.com/tosin2013/qubinode_navigator.git
+        git clone ${GIT_REPO}
     fi
     cd "$HOME"/qubinode_navigator
     sudo pip3 install -r requirements.txt
