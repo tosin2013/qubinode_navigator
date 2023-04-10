@@ -47,3 +47,9 @@ fi
 if [ -f ~/.bash_aliases ]; then
 . ~/.bash_aliases
 fi
+
+ALIASES_LINE='[[ -f ~/.bash_aliases ]] && . ~/.bash_aliases'
+
+if ! grep -qF "$ALIASES_LINE" ~/.bashrc; then
+  echo "$ALIASES_LINE" >> ~/.bashrc
+fi

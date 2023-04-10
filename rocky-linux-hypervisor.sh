@@ -1,12 +1,32 @@
 #!/bin/bash
-#set -xe
-KVM_VERSION=0.4.0
-export INVENTORY="localhost"
+# Uncomment for debugging
+export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+set -x
 
+KVM_VERSION=0.4.0
+export ANSIBLE_SAFE_VERSION="0.0.5"
+export INVENTORY="localhost"
+export GIT_REPO="https://github.com/tosin2013/qubinode_navigator.git"
 if [[ $EUID -ne 0 ]]; then
     echo "This script must be run as root"
     exit 1
 fi
+
+if [ -z "$CICD_PIPELINE" ]; then
+  export CICD_PIPELINE="false"
+  exit 1
+fi
+echo "CICD_PIPELINE is set to $CICD_PIPELINE" 
+
+
+if [ -z "$USE_HASHICORP_VAULT" ]; then
+  export USE_HASHICORP_VAULT="false"
+else
+    if [[ -z "$VAULT_ADDRESS" && -z "$VAULT_ADDRESS" && -z ${SECRET_PATH} ]]; then
+      echo "VAULT enviornment variables are not passed  is not set"
+      exit 1
+    fi
+fi  
 
 # @description This function generate_inventory function will generate the inventory
 function generate_inventory() {
@@ -23,7 +43,12 @@ function generate_inventory() {
         control_host="$(hostname -I | awk '{print $1}')"
         # Check if running as root
         if [ "$EUID" -eq 0 ]; then
-            read -r -p "Enter the target username to ssh into machine: " control_user
+            if [ $CICD_PIPELINE == "false" ];
+            then
+                read -r -p "Enter the target username to ssh into machine: " control_user
+            else
+                control_user="$USER"
+            fi 
         else
             control_user="$USER"
         fi
@@ -31,7 +56,7 @@ function generate_inventory() {
         echo "[control]" >inventories/${INVENTORY}/hosts
         echo "control ansible_host=${control_host} ansible_user=${control_user}" >>inventories/${INVENTORY}/hosts
         configure_ansible_navigator
-        ansible-navigator inventory --list -m stdout --vault-password-file "$HOME"/.vault_password
+        /usr/local/bin/ansible-navigator inventory --list -m stdout --vault-password-file "$HOME"/.vault_password
     else
         echo "Qubinode Installer does not exist"
     fi
@@ -41,7 +66,7 @@ function install_packages() {
     # Check if packages are already installed
     echo "Installing packages"
     echo "*******************"
-    for package in openssl-devel bzip2-devel libffi-devel wget vim podman ncurses-devel sqlite-devel firewalld make gcc git unzip; do
+    for package in openssl-devel bzip2-devel libffi-devel wget vim podman ncurses-devel sqlite-devel firewalld make gcc git unzip sshpass; do
         if rpm -q "${package}" >/dev/null 2>&1; then
             echo "Package ${package} already installed"
         else
@@ -126,6 +151,15 @@ function configure_python() {
         echo 'export PATH=$HOME/.local/bin:$PATH' >>~/.profile
         source ~/.profile
     fi
+    if ! command -v ansible-navigator &> /dev/null
+    then
+        echo "ansible-navigator not found, installing..."
+        sudo pip3 install ansible-navigator
+        echo 'export PATH=$HOME/.local/bin:$PATH' >>~/.profile
+        source ~/.profile
+    else
+        echo "ansible-navigator is already installed"
+    fi
 }
 
 function configure_navigator() {
@@ -135,15 +169,25 @@ function configure_navigator() {
         echo "Qubinode Navigator already exists"
     else
         cd "$HOME"
-        git clone https://github.com/tosin2013/qubinode_navigator.git
+        git clone ${GIT_REPO}
     fi
     cd "$HOME"/qubinode_navigator
     sudo pip3 install -r requirements.txt
-    read -t 360 -p "Press Enter to continue, or wait 5 minutes for the script to continue automatically"
     echo "Current DNS Server: $(cat /etc/resolv.conf | grep nameserver | awk '{print $2}' | head -1)"
     echo "Load variables"
     echo "**************"
-    python3 load-variables.py
+    if [ $CICD_PIPELINE == "false" ];
+    then
+        read -t 360 -p "Press Enter to continue, or wait 5 minutes for the script to continue automatically" || true
+        python3 load-variables.py
+    else 
+        if [[ -z "$ENV_USERNAME" && -z "$DOMAIN" && -z "$FORWARDER" && -z "$ACTIVE_BRIDGE" && -z "$INTERFACE" && -z "$DISK" ]]; then
+            echo "Error: One or more environment variables are not set"
+            exit 1
+        fi
+        python3 load-variables.py --username ${ENV_USERNAME} --domain ${DOMAIN} --forwarder ${FORWARDER} --bridge ${ACTIVE_BRIDGE} --interface ${INTERFACE} --disk ${DISK}
+    fi
+
 }
 
 function configure_ssh() {
@@ -154,7 +198,12 @@ function configure_ssh() {
     else
         IP_ADDRESS=$(hostname -I | awk '{print $1}')
         ssh-keygen -f ~/.ssh/id_rsa -t rsa -N ''
-        ssh-copy-id lab-user@"${IP_ADDRESS}"
+        if [ $CICD_PIPELINE == "true" ];
+        then 
+            sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no lab-user@${IP_ADDRESS}
+        else
+            ssh-copy-id lab-user@"${IP_ADDRESS}"
+        fi
     fi
 }
 
@@ -165,22 +214,21 @@ function configure_ansible_navigator() {
 ---
 ansible-navigator:
   ansible:
-    inventories:    
+    inventory:
+      entries:
       - /root/qubinode_navigator/inventories/localhost
-  logging:
-    level: debug
-    append: true
-    file: /tmp/navigator/ansible-navigator.log
-  playbook-artifact:
-    enable: false
   execution-environment:
     container-engine: podman
     enabled: true
-    pull-policy: missing
     image: quay.io/qubinode/qubinode-installer:${KVM_VERSION}
-    environment-variables:
-      pass:
-        - USER
+    pull:
+      policy: missing
+  logging:
+    append: true
+    file: /tmp/navigator/ansible-navigator.log
+    level: debug
+  playbook-artifact:
+    enable: false
 EOF
 }
 function configure_ansible_vault_setup() {
@@ -192,21 +240,44 @@ function configure_ansible_vault_setup() {
         chmod +x ansible_vault_setup.sh
     fi
     rm -f ~/.vault_password
-    bash  ./ansible_vault_setup.sh
+    if [ $CICD_PIPELINE == "true" ];
+    then    
+        echo "$SSH_PASSWORD" > ~/.vault_password
+        bash  ./ansible_vault_setup.sh
+    else 
+        bash  ./ansible_vault_setup.sh
+    fi 
 
-    curl -OL https://github.com/tosin2013/ansiblesafe/releases/download/v0.0.4/ansiblesafe-v0.0.4-linux-amd64.tar.gz
-    tar -zxvf ansiblesafe-v0.0.4-linux-amd64.tar.gz
-    chmod +x ansiblesafe-linux-amd64
-    sudo mv ansiblesafe-linux-amd64 /usr/local/bin/ansiblesafe
-
-    ansiblesafe -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml
+    
+    source ~/.profile
+    if [ ! -f /usr/local/bin/ansiblesafe ];
+    then
+        curl -OL https://github.com/tosin2013/ansiblesafe/releases/download/v${ANSIBLE_SAFE_VERSION}/ansiblesafe-v${ANSIBLE_SAFE_VERSION}-linux-amd64.tar.gz
+        tar -zxvf ansiblesafe-v${ANSIBLE_SAFE_VERSION}-linux-amd64.tar.gz
+        chmod +x ansiblesafe-linux-amd64
+        sudo mv ansiblesafe-linux-amd64 /usr/local/bin/ansiblesafe
+    fi 
+    if [ $CICD_PIPELINE == "true" ];
+    then 
+        if [ -f /tmp/config.yml ];
+        then
+            cp /tmp/config.yml /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml
+            /usr/local/bin/ansiblesafe -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml -o 1
+        else
+            echo "Error: config.yml file not found"
+            exit 1
+        fi
+    else
+        /usr/local/bin/ansiblesafe -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml
+    fi
     generate_inventory /root
 }
 
 function test_inventory() {
     echo "Testing Ansible Inventory"
     echo "*************************"
-    ansible-navigator inventory --list -m stdout --vault-password-file "$HOME"/.vault_password || exit 1
+    source ~/.profile
+   /usr/local/bin/ansible-navigator inventory --list -m stdout --vault-password-file "$HOME"/.vault_password || exit 1
 }
 
 function deploy_kvmhost() {
@@ -216,7 +287,10 @@ function deploy_kvmhost() {
     ssh-add ~/.ssh/id_rsa
     cd "$HOME"/qubinode_navigator
     source ~/.profile
-    ansible-navigator run ansible-navigator/setup_kvmhost.yml \
+    sudo mkdir -p /home/runner/.vim/autoload
+    sudo chown -R lab-user:wheel /home/runner/.vim/autoload
+    sudo chmod 777 -R /home/runner/.vim/autoload
+    sudo /usr/local/bin/ansible-navigator run ansible-navigator/setup_kvmhost.yml --extra-vars "shell_user=lab-user" --extra-vars "ansible_user=lab-user"\
         --vault-password-file "$HOME"/.vault_password -m stdout || exit 1
 }
 

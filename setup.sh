@@ -7,13 +7,13 @@
 #export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
 #set -x
 
-#set -xe
 # @global ANSIBLE_SAFE_VERSION this is the ansible safe version
 # @global INVENTORY this is the inventory file name and path Example: inventories/localhost
 export ANSIBLE_SAFE_VERSION="0.0.5"
-export INVENTORY="localhost"
+export GIT_REPO="https://github.com/tosin2013/qubinode_navigator.git"
 if [ -z "$CICD_PIPELINE" ]; then
   export CICD_PIPELINE="false"
+  export INVENTORY="localhost"
 fi
 
 if [ -z "$USE_HASHICORP_VAULT" ]; then
@@ -55,7 +55,7 @@ function get_quibinode_navigator() {
     if [ -d $1/qubinode_navigator ]; then
         echo "Qubinode Installer already exists"
     else
-        git clone https://github.com/tosin2013/qubinode_navigator.git
+        git clone ${GIT_REPO}
     fi
 }
 
@@ -70,9 +70,9 @@ function configure_navigator() {
             make copy-navigator
             # Check if running as root
             if [ "$EUID" -eq 0 ]; then
-               sed -i  's|/home/admin/qubinode_navigator/inventories/localhost|/root/qubinode_navigator/inventories/localhost|g'  ~/.ansible-navigator.yml
+               sed -i  's|/home/admin/qubinode_navigator/inventories/localhost|/root/qubinode_navigator/inventories/'${INVENTORY}'|g'  ~/.ansible-navigator.yml
             else
-                sed -i  's|/home/admin/qubinode_navigator/inventories/localhost|/home/'$USER'/qubinode_navigator/inventories/localhost|g'  ~/.ansible-navigator.yml
+                sed -i  's|/home/admin/qubinode_navigator/inventories/localhost|/home/'$USER'/qubinode_navigator/inventories/'${INVENTORY}'|g'  ~/.ansible-navigator.yml
             fi
         fi
     else
@@ -111,7 +111,7 @@ function configure_vault() {
         fi
         echo "Configure Ansible Vault password file"
         echo "****************"
-        read -t 360 -p "Press Enter to continue, or wait 5 minutes for the script to continue automatically" || true
+        
         if [ ! -f ~/qubinode_navigator/ansible_vault_setup.sh ];
         then 
             curl -OL https://gist.githubusercontent.com/tosin2013/022841d90216df8617244ab6d6aceaf8/raw/92400b9e459351d204feb67b985c08df6477d7fa/ansible_vault_setup.sh
@@ -124,29 +124,30 @@ function configure_vault() {
             echo "$SSH_PASSWORD" > ~/.vault_password
             bash  ./ansible_vault_setup.sh
             if [ $(id -u) -ne 0 ]; then
-                if [ ! -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml ];
+                if [ ! -f /home/${USER}/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml ];
                 then
-                    ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml -o 4
-                    ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml -o 1
+                    ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml -o 4
+                    ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml -o 1
                 fi
             else 
-                if [ ! -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml ];
+                if [ ! -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml ];
                 then
-                    ansiblesafe -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml -o 4
-                    ansiblesafe -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml -o 1
+                    ansiblesafe -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml -o 4
+                    ansiblesafe -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml -o 1
                 fi
             fi
         else
+            read -t 360 -p "Press Enter to continue, or wait 5 minutes for the script to continue automatically" || true
             bash  ./ansible_vault_setup.sh
             if [ $(id -u) -ne 0 ]; then
-                if [ ! -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml ];
+                if [ ! -f /home/${USER}/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml ];
                 then
-                    ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml
+                    ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml
                 fi
             else 
-                if [ ! -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml ];
+                if [ ! -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml ];
                 then
-                    ansiblesafe -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml
+                    ansiblesafe -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml
                 fi
             fi
         fi 
@@ -165,7 +166,7 @@ function generate_inventory(){
         if [ ! -d inventories/${INVENTORY} ]; then
             mkdir -p inventories/${INVENTORY}
             mkdir -p inventories/${INVENTORY}/group_vars/control
-            cp -r inventories/localhost/group_vars/control/* inventories/${INVENTORY}/group_vars/control/
+            cp -r inventories/${INVENTORY}/group_vars/control/* inventories/${INVENTORY}/group_vars/control/
         fi
         # set the values
         control_host="$(hostname -I | awk '{print $1}')"
@@ -178,7 +179,14 @@ function generate_inventory(){
         
         echo "[control]" > inventories/${INVENTORY}/hosts
         echo "control ansible_host=${control_host} ansible_user=${control_user}" >> inventories/${INVENTORY}/hosts
-        ansible-navigator inventory --list -m stdout --vault-password-file $HOME/.vault_password
+        if ! command -v ansible-navigator &> /dev/null; then
+            sudo pip3 install ansible-navigator
+            whereis ansible-navigator
+            ANSIBLE_NAVIAGATOR=$(whereis ansible-navigator | awk '{print $2}')
+        else 
+            ANSIBLE_NAVIAGATOR="ansible-navigator "
+        fi
+        ${ANSIBLE_NAVIAGATOR} inventory --list -m stdout --vault-password-file $HOME/.vault_password
     else
         echo "Qubinode Installer does not exist"
     fi
@@ -200,6 +208,7 @@ function configure_ssh(){
                 sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no $control_user@${IP_ADDRESS}
             else
                 sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no $USER@${IP_ADDRESS}
+                sudo ssh-keygen -f ~/.ssh/id_rsa -t rsa -N ''
             fi
         else 
             if [ "$EUID" -eq 0 ]; then
@@ -207,6 +216,7 @@ function configure_ssh(){
                 ssh-copy-id $control_user@${IP_ADDRESS}
             else
                 ssh-copy-id $USER@${IP_ADDRESS}
+                sudo ssh-keygen -f ~/.ssh/id_rsa -t rsa -N ''
             fi
         fi 
     fi
@@ -248,7 +258,12 @@ function test_inventory(){
     echo "****************"
     if [ -d $1/qubinode_navigator ]; then
         cd $1/qubinode_navigator
-        ansible-navigator inventory --list -m stdout --vault-password-file $HOME/.vault_password || exit 1
+        if ! command -v ansible-navigator &> /dev/null; then
+            ANSIBLE_NAVIAGATOR=$(whereis ansible-navigator | awk '{print $2}')
+        else 
+            ANSIBLE_NAVIAGATOR="ansible-navigator "
+        fi
+        ${ANSIBLE_NAVIAGATOR}  inventory --list -m stdout --vault-password-file $HOME/.vault_password || exit 1
     else
         echo "Qubinode Installer does not exist"
     fi
@@ -263,7 +278,12 @@ function deploy_kvmhost() {
     ssh-add ~/.ssh/id_rsa
     cd "$HOME"/qubinode_navigator
     source ~/.profile
-    ansible-navigator run ansible-navigator/setup_kvmhost.yml \
+    if ! command -v ansible-navigator &> /dev/null; then
+        ANSIBLE_NAVIAGATOR=$(whereis ansible-navigator | awk '{print $2}')
+    else 
+        ANSIBLE_NAVIAGATOR="ansible-navigator"
+    fi
+    ${ANSIBLE_NAVIAGATOR} run ansible-navigator/setup_kvmhost.yml \
         --vault-password-file "$HOME"/.vault_password -m stdout || exit 1
 }
 

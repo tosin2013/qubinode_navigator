@@ -1,0 +1,58 @@
+variables:
+  YAML_FILE: "config.yml"
+
+stages:
+  - vault_query
+  - build
+
+vault_query:
+  stage: vault_query
+  image: fedora:37
+  variables:
+    VAULT_ADDRESS: http://CHANGEME:8200/
+    VAULT_TOKEN: CHANGEME
+    SECRET_PATH:  equinix
+  script:
+      - dnf install -y dnf-plugins-core
+      - dnf config-manager --add-repo https://rpm.releases.hashicorp.com/fedora/hashicorp.repo
+      - dnf -y update
+      - dnf install -y jq vault
+      - setcap -r /usr/bin/vault
+      - export VAULT_TOKEN="${VAULT_TOKEN}"
+      - export VAULT_ADDR="${VAULT_ADDRESS}"
+      - sudo -E vault kv get -format=json ansiblesafe/equinix | jq -r '.data.data' > $YAML_FILE
+  artifacts:
+    paths:
+      - $YAML_FILE
+  only:
+    - main
+
+build:
+  stage: build
+  image: fedora:37
+  variables:
+    SSH_USER:  admin
+    SSH_PASSWORD: CHANGEME
+    SSH_HOST: hypervisor.example.com
+    CICD_PIPELINE: 'true'
+    ENV_USERNAME:  admin
+    DOMAIN: qubinodelab.io
+    FORWARDER: '1.1.1.1'
+    ACTIVE_BRIDGE: 'false'
+    INTERFACE: bond0
+    DISK: /dev/sdc
+    GIT_REPO: https://github.com/tosin2013/qubinode_navigator.git
+  script:
+    - ls -la $YAML_FILE
+    - dnf install wget openssh-clients sshpass -y
+    - mkdir -p ~/.ssh/
+    - ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
+    - sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no "$SSH_USER"@"$SSH_HOST"
+    - scp $YAML_FILE "$SSH_USER"@"$SSH_HOST":/tmp/
+    - sed -i 's|export GIT_REPO=.*|GIT_REPO="'$GIT_REPO'"|g' rocky-linux-hypervisor.sh
+    - ssh "$SSH_USER"@"$SSH_HOST"  'env CICD_PIPELINE="'$CICD_PIPELINE'" SSH_PASSWORD="'$SSH_PASSWORD'"
+        ENV_USERNAME="'$ENV_USERNAME'" DOMAIN="'$DOMAIN'" FORWARDER="'$FORWARDER'" 
+        ACTIVE_BRIDGE="'$ACTIVE_BRIDGE'" INTERFACE="'$INTERFACE'" DISK="'$DISK'"  sudo -E bash -s' < rocky-linux-hypervisor.sh
+        
+  only:
+    - main

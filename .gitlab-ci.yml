@@ -1,0 +1,25 @@
+stages:
+  - supermicro
+  - equinix
+
+# supermicro deployment
+supermicro:
+  stage: supermicro
+  only:
+     variables:
+      - $TARGER_SERVER == "supermicro"
+  trigger:
+    # Include the configuration file of the child pipeline
+    include: inventories/supermicro/.gitlab-ci.yml
+  rules:
+    
+
+# equinix deployment
+equinix:
+  stage: equinix
+  only:
+     variables:
+      - $TARGER_SERVER == "equinix"
+  trigger:
+    include: inventories/equinix/.gitlab-ci.yml
+
