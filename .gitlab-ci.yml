@@ -5,28 +5,22 @@ stages:
 # supermicro deployment
 supermicro:
   stage: supermicro
-  only:
-    changes:
-      - inventories/supermicro/*
   trigger:
     # Include the configuration file of the child pipeline
     include: inventories/supermicro/.gitlab-ci.yml
   rules:
     - if: TARGET_SERVER == "supermicro"
       when: manual
-      allow_failure: true
+      allow_failure: false
     
 
 # equinix deployment
 equinix:
   stage: equinix
-  only:
-    changes:
-      - inventories/equinix/*
   trigger:
     include: inventories/equinix/.gitlab-ci.yml
   rules:
     - if: TARGET_SERVER == "equinix"
       when: manual
-      allow_failure: true
+      allow_failure: false
 
