@@ -20,6 +20,7 @@ build:
     VAULT_TOKEN: s.zlOfmgNtfTiMUpEFspZhspWg
     SECRET_PATH:  homelab
     GIT_REPO:  https://gitlab.tosins-cloudlabs.com/tosin/qubinode_navigator.git
+    INVENTORY: supermicro
   script:
     - dnf install wget openssh-clients sshpass -y
     - mkdir -p ~/.ssh/

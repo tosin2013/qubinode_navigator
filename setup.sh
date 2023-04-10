@@ -11,10 +11,10 @@ set -x
 # @global ANSIBLE_SAFE_VERSION this is the ansible safe version
 # @global INVENTORY this is the inventory file name and path Example: inventories/localhost
 export ANSIBLE_SAFE_VERSION="0.0.5"
-export INVENTORY="localhost"
 export GIT_REPO="https://github.com/tosin2013/qubinode_navigator.git"
 if [ -z "$CICD_PIPELINE" ]; then
   export CICD_PIPELINE="false"
+  export INVENTORY="localhost"
 fi
 
 if [ -z "$USE_HASHICORP_VAULT" ]; then
