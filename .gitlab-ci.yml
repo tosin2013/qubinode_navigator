@@ -1,5 +1,6 @@
 stages:
-  - servers
+  - supermicro
+  - equinix
 
 # supermicro deployment
 supermicro:
