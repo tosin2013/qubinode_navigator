@@ -32,29 +32,38 @@ make podman-login
 
 Create Ansible navigator config file
 ```
-cat >~/.ansible-navigator.yml<<EOF
+# export INVENTORY=supermicro
+# cat >~/.ansible-navigator.yml<<EOF
 ---
 ansible-navigator:
   ansible:
-    inventories:    
-      - /home/admin/qubinode_navigator/inventories/localhost
-  logging:
-    level: debug
-    append: true
-    file: /tmp/navigator/ansible-navigator.log
-  playbook-artifact:
-    enable: false
+    inventory:
+      entries:
+      - /home/admin/qubinode_navigator/inventories/${INVENTORY}
   execution-environment:
     container-engine: podman
     enabled: true
-    pull-policy: missing
-    image: localhost/qubinode-installer:0.1.0 
     environment-variables:
       pass:
-        - USER
+      - USER
+    image:  localhost/qubinode-installer:0.1.0
+    pull:
+      policy: missing
+  logging:
+    append: true
+    file: /tmp/navigator/ansible-navigator.log
+    level: debug
+  playbook-artifact:
+    enable: false
 EOF
 ```
-
+Add hosts file
+```
+# control_user=admin
+# control_host=$(hostname -I | awk '{print $1}')
+echo "[control]" > inventories/${INVENTORY}/hosts
+echo "control ansible_host=${control_host} ansible_user=${control_user}" >> inventories/${INVENTORY}/hosts
+```
 Create Requirement file for ansible builder 
 ```
 cat >ansible-builder/requirements.yml<<EOF
@@ -90,13 +99,14 @@ chmod +x ansible_vault_setup.sh
 
 Install and configure ansible safe
 ```bash
-curl -OL https://github.com/tosin2013/ansiblesafe/releases/download/v0.0.4/ansiblesafe-v0.0.4-linux-amd64.tar.gz
-tar -zxvf ansiblesafe-v0.0.4-linux-amd64.tar.gz
+curl -OL https://github.com/tosin2013/ansiblesafe/releases/download/v0.0.5/ansiblesafe-v0.0.5-linux-amd64.tar.gz
+tar -zxvf ansiblesafe-v0.0.5-linux-amd64.tar.gz
 chmod +x ansiblesafe-linux-amd64 
 sudo mv ansiblesafe-linux-amd64 /usr/local/bin/ansiblesafe
 
-# ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml
-# ansiblesafe -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml
+# export INVENTORY=supermicro
+# ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml
+# ansiblesafe -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml
 ```
 
 

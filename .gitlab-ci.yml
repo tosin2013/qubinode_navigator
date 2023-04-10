@@ -1,6 +1,7 @@
 stages:
   - supermicro
   - equinix
+  - applications
 
 # supermicro deployment
 supermicro:
@@ -23,3 +24,11 @@ equinix:
   trigger:
     include: inventories/equinix/.gitlab-ci.yml
 
+# freeipa deployment
+applications:
+  stage: applications
+  only:
+     variables:
+      - $DEPLOY_APP == "freeipa"
+  trigger:
+    include: applications/freeipa/.gitlab-ci.yml

@@ -241,7 +241,7 @@ function configure_os(){
     elif [ ${1} == "FEDORA" ]; then
         sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  sshpass -y
     elif [ ${1} == "UBUNTU" ]; then
-        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  sshpass -y
+        sudo apt install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  sshpass -y
     elif [ ${1} == "CENTOS8" ]; then
         sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make sshpass -y
     elif [ ${1} == "RHEL9" ]; then
