@@ -3,7 +3,7 @@
 export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
 set -x
 
-KVM_VERSION=0.4.0
+KVM_VERSION=0.5.0
 export ANSIBLE_SAFE_VERSION="0.0.5"
 export INVENTORY="localhost"
 export GIT_REPO="https://github.com/tosin2013/qubinode_navigator.git"
@@ -290,7 +290,7 @@ function deploy_kvmhost() {
     sudo mkdir -p /home/runner/.vim/autoload
     sudo chown -R lab-user:wheel /home/runner/.vim/autoload
     sudo chmod 777 -R /home/runner/.vim/autoload
-    sudo /usr/local/bin/ansible-navigator run ansible-navigator/setup_kvmhost.yml --extra-vars "shell_user=lab-user" --extra-vars "ansible_user=lab-user"\
+    sudo /usr/local/bin/ansible-navigator run ansible-navigator/setup_kvmhost.yml --extra-vars "admin_user=lab-user" \
         --vault-password-file "$HOME"/.vault_password -m stdout || exit 1
 }
 
