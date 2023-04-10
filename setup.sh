@@ -71,9 +71,9 @@ function configure_navigator() {
             make copy-navigator
             # Check if running as root
             if [ "$EUID" -eq 0 ]; then
-               sed -i  's|/home/admin/qubinode_navigator/inventories/'${INVENTORY}'|/root/qubinode_navigator/inventories/'${INVENTORY}'|g'  ~/.ansible-navigator.yml
+               sed -i  's|/home/admin/qubinode_navigator/inventories/localhost|/root/qubinode_navigator/inventories/'${INVENTORY}'|g'  ~/.ansible-navigator.yml
             else
-                sed -i  's|/home/admin/qubinode_navigator/inventories/'${INVENTORY}'|/home/'$USER'/qubinode_navigator/inventories/'${INVENTORY}'|g'  ~/.ansible-navigator.yml
+                sed -i  's|/home/admin/qubinode_navigator/inventories/localhost|/home/'$USER'/qubinode_navigator/inventories/'${INVENTORY}'|g'  ~/.ansible-navigator.yml
             fi
         fi
     else
