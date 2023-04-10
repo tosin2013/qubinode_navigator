@@ -71,9 +71,9 @@ function configure_navigator() {
             make copy-navigator
             # Check if running as root
             if [ "$EUID" -eq 0 ]; then
-               sed -i  's|/home/admin/qubinode_navigator/inventories/localhost|/root/qubinode_navigator/inventories/localhost|g'  ~/.ansible-navigator.yml
+               sed -i  's|/home/admin/qubinode_navigator/inventories/'${INVENTORY}'|/root/qubinode_navigator/inventories/'${INVENTORY}'|g'  ~/.ansible-navigator.yml
             else
-                sed -i  's|/home/admin/qubinode_navigator/inventories/localhost|/home/'$USER'/qubinode_navigator/inventories/localhost|g'  ~/.ansible-navigator.yml
+                sed -i  's|/home/admin/qubinode_navigator/inventories/'${INVENTORY}'|/home/'$USER'/qubinode_navigator/inventories/'${INVENTORY}'|g'  ~/.ansible-navigator.yml
             fi
         fi
     else
@@ -125,29 +125,29 @@ function configure_vault() {
             echo "$SSH_PASSWORD" > ~/.vault_password
             bash  ./ansible_vault_setup.sh
             if [ $(id -u) -ne 0 ]; then
-                if [ ! -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml ];
+                if [ ! -f /home/${USER}/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml ];
                 then
-                    ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml -o 4
-                    ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml -o 1
+                    ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml -o 4
+                    ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml -o 1
                 fi
             else 
-                if [ ! -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml ];
+                if [ ! -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml ];
                 then
-                    ansiblesafe -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml -o 4
-                    ansiblesafe -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml -o 1
+                    ansiblesafe -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml -o 4
+                    ansiblesafe -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml -o 1
                 fi
             fi
         else
             bash  ./ansible_vault_setup.sh
             if [ $(id -u) -ne 0 ]; then
-                if [ ! -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml ];
+                if [ ! -f /home/${USER}/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml ];
                 then
-                    ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml
+                    ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml
                 fi
             else 
-                if [ ! -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml ];
+                if [ ! -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml ];
                 then
-                    ansiblesafe -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml
+                    ansiblesafe -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml
                 fi
             fi
         fi 
@@ -166,7 +166,7 @@ function generate_inventory(){
         if [ ! -d inventories/${INVENTORY} ]; then
             mkdir -p inventories/${INVENTORY}
             mkdir -p inventories/${INVENTORY}/group_vars/control
-            cp -r inventories/localhost/group_vars/control/* inventories/${INVENTORY}/group_vars/control/
+            cp -r inventories/${INVENTORY}/group_vars/control/* inventories/${INVENTORY}/group_vars/control/
         fi
         # set the values
         control_host="$(hostname -I | awk '{print $1}')"
