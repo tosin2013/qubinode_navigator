@@ -11,7 +11,10 @@ supermicro:
   trigger:
     # Include the configuration file of the child pipeline
     include: inventories/supermicro/.gitlab-ci.yml
-    # With this strategy, the parent only succeed if the child succeed too
+  rules:
+    - if: TARGET_SERVER == "supermicro"
+      when: manual
+      allow_failure: true
     
 
 # equinix deployment
@@ -22,4 +25,8 @@ equinix:
       - inventories/equinix/*
   trigger:
     include: inventories/equinix/.gitlab-ci.yml
+  rules:
+    - if: TARGET_SERVER == "equinix"
+      when: manual
+      allow_failure: true
 
