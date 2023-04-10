@@ -10,13 +10,11 @@ import time
 import subprocess
 import sys
 
-inventory = os.environ.get('INVENTORY')
-if not inventory:
+inventory_env = os.environ.get('INVENTORY')
+if not inventory_env:
     print("INVENTORY environment variable not found.")
     sys.exit(1)
 
-
-inventory  = os.environ.get('INVENTORY')
 def update_inventory(username=None, domain_name=None, dnf_forwarder=None):
     if username is None:
         if os.geteuid() == 0:
@@ -35,7 +33,7 @@ def update_inventory(username=None, domain_name=None, dnf_forwarder=None):
     if dnf_forwarder is None:
         dnf_forwarder = input("Enter the DNS forwarder for your system: ")
 
-    inventory_path = 'inventories/'+inventory+'/group_vars/all.yml'
+    inventory_path = 'inventories/'+str(inventory_env)+'/group_vars/all.yml'
     with open(inventory_path, 'r') as f:
         inventory = yaml.safe_load(f)
 
@@ -88,7 +86,7 @@ def get_interface_ips(configure_bridge=None, interface=None):
     netaddr = '.'.join(str(int(x) & int(y)) for x, y in zip(ip.split('.'), netmask.split('.')))
     prefix_len = sum(bin(int(x)).count('1') for x in netmask.split('.'))
 
-    inventory_path = 'inventories/'+inventory+'/group_vars/control/kvm_host.yml'
+    inventory_path = 'inventories/'+str(inventory_env)+'/group_vars/control/kvm_host.yml'
     with open(inventory_path, 'r') as f:
         inventory = yaml.safe_load(f)
 
@@ -159,7 +157,7 @@ def select_disk(disks=None):
         use_root_disk = False
 
     # Update YAML file with selected disk
-    inventory_path = 'inventories/'+inventory+'/group_vars/control/kvm_host.yml'
+    inventory_path = 'inventories/'+str(inventory_env)+'/group_vars/control/kvm_host.yml'
     with open(inventory_path, 'r') as f:
         inventory = yaml.safe_load(f)
     
