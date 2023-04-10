@@ -22,7 +22,7 @@ rhel_version: ""
 # Set run_kni_lab_on_rhpds to 'yes' to run a KNI lab on RHPDS.
 # Set one_redhat to 'yes' if you have a One Red Hat account.
 #####
-enable_cicd: 1
+enable_cicd: wrong
 run_on_rhpds: false
 run_kni_lab_on_rhpds: false
 one_redhat: false
