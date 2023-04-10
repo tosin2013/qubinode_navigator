@@ -131,7 +131,6 @@ function configure_vault() {
                     ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml -o 1
                 fi
             else 
-                read -t 360 -p "Press Enter to continue, or wait 5 minutes for the script to continue automatically" || true
                 if [ ! -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml ];
                 then
                     ansiblesafe -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml -o 4
@@ -139,6 +138,7 @@ function configure_vault() {
                 fi
             fi
         else
+            read -t 360 -p "Press Enter to continue, or wait 5 minutes for the script to continue automatically" || true
             bash  ./ansible_vault_setup.sh
             if [ $(id -u) -ne 0 ]; then
                 if [ ! -f /home/${USER}/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml ];
