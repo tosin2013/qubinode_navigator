@@ -10,7 +10,7 @@ supermicro:
       - inventories/supermicro/*
   trigger:
     # Include the configuration file of the child pipeline
-    include: supermicro/.gitlab-ci.yml
+    include: inventories/supermicro/.gitlab-ci.yml
     # With this strategy, the parent only succeed if the child succeed too
     
 
@@ -21,5 +21,5 @@ equinix:
     changes:
       - inventories/equinix/*
   trigger:
-    include: equinix/.gitlab-ci.yml
+    include: inventories/equinix/.gitlab-ci.yml
 
