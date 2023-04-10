@@ -8,7 +8,15 @@ import psutil
 import re
 import time 
 import subprocess
+import sys
 
+inventory = os.environ.get('INVENTORY')
+if not inventory:
+    print("INVENTORY environment variable not found.")
+    sys.exit(1)
+
+
+inventory  = os.environ.get('INVENTORY')
 def update_inventory(username=None, domain_name=None, dnf_forwarder=None):
     if username is None:
         if os.geteuid() == 0:
