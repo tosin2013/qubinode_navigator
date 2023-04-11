@@ -1,3 +1,4 @@
 fire
 netifaces
 psutil
+requests

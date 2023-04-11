@@ -103,6 +103,13 @@ For example, to deploy a KVM host, run:
 ```bash
 ./setup.sh --help # Show help message
 ```
+
+## GitLab CI/CD
+To Kick off a GitLab CI/CD pipeline, run the following command:
+```bash
+python3 trigger-gitlab-pipeline.py --project_id=1 --token=glpt-mytoken --ref=main --target_server=servername --ssh_host=server.example.com --ssh_password=PASSWORD
+```
+
 ## Workloads 
 **MicroShift Demos**
 * https://github.com/tosin2013/kcli-plan-samples/tree/dev/microshift-demos
