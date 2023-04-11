@@ -40,7 +40,6 @@ build:
     FORWARDER: '147.75.207.207'
     ACTIVE_BRIDGE: 'false'
     INTERFACE: bond0
-    DISK: /dev/sdc
     GIT_REPO: https://github.com/tosin2013/qubinode_navigator.git
     INVENTORY: equinix
   script:
@@ -53,7 +52,7 @@ build:
     - sed -i 's|export GIT_REPO=.*|GIT_REPO="'$GIT_REPO'"|g' rocky-linux-hypervisor.sh
     - ssh "$SSH_USER"@"$SSH_HOST"  'env CICD_PIPELINE="'$CICD_PIPELINE'" SSH_PASSWORD="'$SSH_PASSWORD'"
         ENV_USERNAME="'$ENV_USERNAME'" DOMAIN="'$DOMAIN'" FORWARDER="'$FORWARDER'" INVENTORY="'$INVENTORY'"
-        ACTIVE_BRIDGE="'$ACTIVE_BRIDGE'" INTERFACE="'$INTERFACE'" DISK="'$DISK'"  sudo -E bash -s' < rocky-linux-hypervisor.sh
+        ACTIVE_BRIDGE="'$ACTIVE_BRIDGE'" INTERFACE="'$INTERFACE'" sudo -E bash -s' < rocky-linux-hypervisor.sh
         
   only:
     - main

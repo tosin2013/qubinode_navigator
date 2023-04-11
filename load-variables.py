@@ -133,51 +133,71 @@ def get_disk():
             return None
         return disks[int(choice) - 1]
 
-
 def select_disk(disks=None):
-    # Get available disks
-    if disks is None:
-        disks = get_disk()
-    print(disks)
-    # Check if disk is already mounted
-    mounted = False
-    if disks:
-        for disk in disks:
-            if os.path.ismount(f'/mnt/{disk}'):
-                print(f"Disk {disk} is already mounted.")
-                disks = [disk]
-                mounted = True
-                break
-
-    # Skip disk selection if only one disk is available and already mounted
-    if mounted and len(disks) == 1:
-        print(f"Using disk: {disks[0]}")
-        use_root_disk = True
-    else:
-        use_root_disk = False
-
-    # Update YAML file with selected disk
-    inventory_path = 'inventories/'+str(inventory_env)+'/group_vars/control/kvm_host.yml'
-    with open(inventory_path, 'r') as f:
-        inventory = yaml.safe_load(f)
+    # Check if vg_qubi is present
+    try:
+        vgdisplay_output = subprocess.check_output(['sudo', 'vgdisplay']).decode()
+    except subprocess.CalledProcessError:
+        print("Error: Could not get volume group information.")
+        exit(1)
     
-    if use_root_disk is True:
-        print('No disk selected.')
+    if 'vg_qubi' in vgdisplay_output:
+        print("Volume group 'vg_qubi' already exists.")
+        # Update YAML file with selected disk
+        inventory_path = 'inventories/'+str(inventory_env)+'/group_vars/control/kvm_host.yml'
+        with open(inventory_path, 'r') as f:
+            inventory = yaml.safe_load(f)
         inventory['create_libvirt_storage'] = False
         inventory['create_lvm'] = False
         with open(inventory_path, 'w') as f:
             yaml.dump(inventory, f, default_flow_style=False)
-        exit(1)
-    else:
-        disks = disks.replace('/dev/', '')
-        inventory['create_libvirt_storage'] = True
-        inventory['create_lvm'] = True
-        inventory['kvm_host_libvirt_extra_disk'] = disks
-        with open(inventory_path, "w") as f:
-            yaml.dump(inventory, f)
-            
-        print(f"Selected disk: {disks}")
+        print(f"Selected disk: {vgdisplay_output}")
         print(f"Updated {inventory_path}")
+        exit(0)
+    else:
+        # Get available disks
+        if disks is None:
+            disks = get_disk()
+        print(disks)
+        # Check if disk is already mounted
+        mounted = False
+        if disks:
+            for disk in disks:
+                if os.path.ismount(f'/mnt/{disk}'):
+                    print(f"Disk {disk} is already mounted.")
+                    disks = [disk]
+                    mounted = True
+                    break
+
+        # Skip disk selection if only one disk is available and already mounted
+        if mounted and len(disks) == 1:
+            print(f"Using disk: {disks[0]}")
+            use_root_disk = True
+        else:
+            use_root_disk = False
+
+        # Update YAML file with selected disk
+        inventory_path = 'inventories/'+str(inventory_env)+'/group_vars/control/kvm_host.yml'
+        with open(inventory_path, 'r') as f:
+            inventory = yaml.safe_load(f)
+        
+        if use_root_disk is True:
+            print('No disk selected.')
+            inventory['create_libvirt_storage'] = False
+            inventory['create_lvm'] = False
+            with open(inventory_path, 'w') as f:
+                yaml.dump(inventory, f, default_flow_style=False)
+            exit(1)
+        else:
+            disks = disks.replace('/dev/', '')
+            inventory['create_libvirt_storage'] = True
+            inventory['create_lvm'] = True
+            inventory['kvm_host_libvirt_extra_disk'] = disks
+            with open(inventory_path, "w") as f:
+                yaml.dump(inventory, f)
+                
+            print(f"Selected disk: {disks}")
+            print(f"Updated {inventory_path}")
 
 
 if __name__ == '__main__':
