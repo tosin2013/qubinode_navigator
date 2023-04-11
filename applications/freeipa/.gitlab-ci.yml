@@ -14,6 +14,6 @@ build:
     - mkdir -p ~/.ssh/
     - ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
     - sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no "$SSH_USER"@"$SSH_HOST"
-    - ssh "$SSH_USER"@"$SSH_HOST"  'sudo -E bash -s' < freeipa-utils deploy
+    - ssh "$SSH_USER"@"$SSH_HOST"  'source ~/.bash_aliases && myalias freeipa-utils deploy'
   only:
     - main
