@@ -184,11 +184,11 @@ function configure_navigator() {
         read -t 360 -p "Press Enter to continue, or wait 5 minutes for the script to continue automatically" || true
         python3 load-variables.py
     else 
-        if [[ -z "$ENV_USERNAME" && -z "$DOMAIN" && -z "$FORWARDER" && -z "$ACTIVE_BRIDGE" && -z "$INTERFACE" ]]; then
+        if [[ -z "$ENV_USERNAME" && -z "$DOMAIN" && -z "$FORWARDER" && -z "$INTERFACE" ]]; then
             echo "Error: One or more environment variables are not set"
             exit 1
         fi
-        python3 load-variables.py --username ${ENV_USERNAME} --domain ${DOMAIN} --forwarder ${FORWARDER} --bridge ${ACTIVE_BRIDGE} --interface ${INTERFACE} 
+        python3 load-variables.py --username ${ENV_USERNAME} --domain ${DOMAIN} --forwarder ${FORWARDER} --interface ${INTERFACE} 
     fi
 
 }
