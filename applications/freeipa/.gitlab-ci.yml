@@ -13,11 +13,9 @@ build:
     - mkdir -p ~/.ssh/
     - ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
     - sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no "$SSH_USER"@"$SSH_HOST"
-    - |
-      if [ "$CICD_PIPELINE" = "true" ]; then
-        ssh "$SSH_USER"@"$SSH_HOST"  'env CICD_PIPELINE="'$CICD_PIPELINE'" sudo -E bash -s' < rocky-linux-hypervisor.sh  --deploy-freeipa
-      else
-        ssh "$SSH_USER"@"$SSH_HOST" 'env CICD_PIPELINE="'$CICD_PIPELINE'" && source ~/.bash_aliases && freeipa-utils deploy'
-      fi
+    - ssh "$SSH_USER"@"$SSH_HOST"  'env CICD_PIPELINE="'$CICD_PIPELINE'" sudo -E bash -s' < rocky-linux-hypervisor.sh  --deploy-freeipa
+      #else
+      #  ssh "$SSH_USER"@"$SSH_HOST" 'env CICD_PIPELINE="'$CICD_PIPELINE'" && source ~/.bash_aliases && freeipa-utils deploy'
+      #fi
   only:
     - main
