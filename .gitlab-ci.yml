@@ -30,6 +30,10 @@ equinix:
 # freeipa deployment
 applications:
   stage: applications
+  variables:
+    SSH_HOST: "${SSH_HOST}"
+    SSH_USER: "${SSH_USER}"
+    SSH_PASSWORD: "${SSH_PASSWORD}"
   only:
      variables:
       - $DEPLOY_APP == "freeipa"

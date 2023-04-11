@@ -1,3 +1,5 @@
+# Description: Gitlab CI/CD pipeline for FreeIPA
+# SSH_USER SSH_PASSWORD SSH_HOST will be passed through the pipeline
 stages:
   - freeipa
 
@@ -5,12 +7,8 @@ build:
   stage: freeipa
   image: fedora:37
   variables:
-    SSH_USER:  admin
-    SSH_PASSWORD: COmp123$%
-    SSH_HOST: 192.168.1.39
     CICD_PIPELINE: "true"
   script:
-    - ls -la $YAML_FILE
     - dnf install wget openssh-clients sshpass -y
     - mkdir -p ~/.ssh/
     - ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
