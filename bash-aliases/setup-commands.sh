@@ -12,6 +12,8 @@ if [ ! -d /opt/quibinode_navigator/bash-aliases/ ];
 then
     cd /opt/
     sudo git clone https://github.com/tosin2013/quibinode_navigator.git quibinode_navigator
+    cd $HOME/quibinode_navigator
+    sudo cp bash-aliases/random-functions.sh /opt/quibinode_navigator/bash-aliases/random-functions.sh
     cd /opt/quibinode_navigator/bash-aliases/
     alf generate
     alf save
