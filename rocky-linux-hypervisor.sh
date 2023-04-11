@@ -340,8 +340,8 @@ function show_help() {
 }
 
 if [ $# -eq 0 ]; then
-    configure_ssh
     install_packages
+    configure_ssh
     configure_python
     configure_firewalld
     configure_groups

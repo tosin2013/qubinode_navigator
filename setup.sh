@@ -5,7 +5,7 @@
 # @setting ./setup.sh 
 # Uncomment for debugging
 export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
-set -x
+set -xe
 
 #set -xe
 # @global ANSIBLE_SAFE_VERSION this is the ansible safe version
@@ -349,8 +349,8 @@ else
 fi
 
 if [ $# -eq 0 ]; then
-    configure_ssh
     configure_os  $BASE_OS
+    configure_ssh
     configure_firewalld
     get_quibinode_navigator $MY_DIR
     configure_navigator $MY_DIR
