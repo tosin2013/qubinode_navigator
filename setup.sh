@@ -316,6 +316,7 @@ function setup_kcli_base() {
     fi
     echo "Configuring Kcli"
     echo "****************"
+    source $1/.profile
     source $1/.bash_aliases
     kcli-utils setup
     kcli-utils configure-images
