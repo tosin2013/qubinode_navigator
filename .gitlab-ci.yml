@@ -18,6 +18,9 @@ supermicro:
 # equinix deployment
 equinix:
   stage: equinix
+  variables:
+    SSH_HOST: "${SSH_HOST}"
+    SSH_PASSWORD: "${SSH_PASSWORD}"
   only:
      variables:
       - $TARGET_SERVER == "equinix"
