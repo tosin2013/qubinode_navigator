@@ -6,7 +6,7 @@ on:
       - 'collections/**'
       - requirements.txt
       - bindep.txt
-      - qubinode-installer.yml
+      - execution-environment.yml
   push:
     branches:
       - main
@@ -14,7 +14,7 @@ on:
       - 'collections/**'
       - requirements.txt
       - bindep.txt
-      - qubinode-installer.yml
+      - execution-environment.yml
 
   # Schedule workflow run at 00:00 on Sunday
   schedule:
