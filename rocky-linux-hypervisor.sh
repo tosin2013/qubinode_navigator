@@ -1,7 +1,7 @@
 #!/bin/bash
 # Uncomment for debugging
-export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
-set -x
+#export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+#set -x
 
 KVM_VERSION=0.5.0
 export ANSIBLE_SAFE_VERSION="0.0.5"
@@ -38,7 +38,9 @@ function generate_inventory() {
             mkdir -p inventories/${INVENTORY}
             mkdir -p inventories/${INVENTORY}/group_vars/control
             cp -r inventories/localhost/group_vars/control/* inventories/${INVENTORY}/group_vars/control/
+            sed -i 's|export CURRENT_INVENTORY="localhost"|export CURRENT_INVENTORY="'${INVENTORY}'"|g' bash-aliases/random-functions.sh
         fi
+        
         # set the values
         control_host="$(hostname -I | awk '{print $1}')"
         # Check if running as root
@@ -201,8 +203,10 @@ function configure_ssh() {
         if [ $CICD_PIPELINE == "true" ];
         then 
             sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no lab-user@${IP_ADDRESS}
+            sudo ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
         else
             ssh-copy-id lab-user@"${IP_ADDRESS}"
+            sudo ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
         fi
     fi
 }
@@ -339,8 +343,8 @@ function show_help() {
 }
 
 if [ $# -eq 0 ]; then
-    configure_ssh
     install_packages
+    configure_ssh
     configure_python
     configure_firewalld
     configure_groups
