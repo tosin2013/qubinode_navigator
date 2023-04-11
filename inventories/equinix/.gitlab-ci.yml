@@ -32,8 +32,8 @@ build:
   image: fedora:37
   variables:
     SSH_USER:  lab-user
-    SSH_PASSWORD: a0YMvZcvtF28
-    SSH_HOST: hypervisor.6pnlp.dynamic.opentlc.com
+    SSH_PASSWORD: oIcrkpV3o7gT
+    SSH_HOST: hypervisor.5tr2b.dynamic.opentlc.com
     CICD_PIPELINE: 'true'
     ENV_USERNAME:  lab-user
     DOMAIN: qubinodelab.io
