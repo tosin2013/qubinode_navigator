@@ -278,7 +278,6 @@ function deploy_kvmhost() {
     eval $(ssh-agent)
     ssh-add ~/.ssh/id_rsa
     cd "$HOME"/qubinode_navigator
-    source ~/.profile
     if ! command -v ansible-navigator &> /dev/null; then
         ANSIBLE_NAVIAGATOR=$(whereis ansible-navigator | awk '{print $2}')
     else 
