@@ -8,12 +8,13 @@ build:
     SSH_USER:  admin
     SSH_PASSWORD: CHANGEME
     SSH_HOST: 192.168.1.10
+    CICD_PIPELINE: "true"
   script:
     - ls -la $YAML_FILE
     - dnf install wget openssh-clients sshpass -y
     - mkdir -p ~/.ssh/
     - ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
     - sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no "$SSH_USER"@"$SSH_HOST"
-    - ssh "$SSH_USER"@"$SSH_HOST"  'source ~/.bash_aliases && freeipa-utils deploy'
+    - ssh "$SSH_USER"@"$SSH_HOST"  'env CICD_PIPELINE="'$CICD_PIPELINE'" && source ~/.bash_aliases && freeipa-utils deploy'
   only:
     - main
