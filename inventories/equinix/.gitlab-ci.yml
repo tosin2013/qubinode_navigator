@@ -1,9 +1,17 @@
+# passing SSH_HOST and SSH_PASSWORD in the menu
 variables:
   YAML_FILE: "config.yml"
 
 stages:
+  - check_env
   - vault_query
   - build
+
+check_env:
+  stage: check_env
+  image: python:3.10
+  script:
+    - python check_env.py
 
 vault_query:
   stage: vault_query
@@ -11,7 +19,7 @@ vault_query:
   variables:
     VAULT_ADDRESS: http://10.0.0.48:8200/
     VAULT_TOKEN: s.zlOfmgNtfTiMUpEFspZhspWg
-    SECRET_PATH:  homelab
+    SECRET_PATH:  equinix
   script:
       - dnf install -y dnf-plugins-core
       - dnf config-manager --add-repo https://rpm.releases.hashicorp.com/fedora/hashicorp.repo
@@ -20,7 +28,7 @@ vault_query:
       - setcap -r /usr/bin/vault
       - export VAULT_TOKEN="${VAULT_TOKEN}"
       - export VAULT_ADDR="${VAULT_ADDRESS}"
-      - sudo -E vault kv get -format=json ansiblesafe/homelab | jq -r '.data.data' > $YAML_FILE
+      - sudo -E vault kv get -format=json ansiblesafe/equinix | jq -r '.data.data' > $YAML_FILE
   artifacts:
     paths:
       - $YAML_FILE
@@ -32,8 +40,6 @@ build:
   image: fedora:37
   variables:
     SSH_USER:  lab-user
-    SSH_PASSWORD: oIcrkpV3o7gT
-    SSH_HOST: hypervisor.5tr2b.dynamic.opentlc.com
     CICD_PIPELINE: 'true'
     ENV_USERNAME:  lab-user
     DOMAIN: qubinodelab.io
