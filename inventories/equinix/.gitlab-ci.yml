@@ -42,6 +42,7 @@ build:
     INTERFACE: bond0
     DISK: /dev/sdc
     GIT_REPO: https://github.com/tosin2013/qubinode_navigator.git
+    INVENTORY: equinix
   script:
     - ls -la $YAML_FILE
     - dnf install wget openssh-clients sshpass -y
@@ -51,7 +52,7 @@ build:
     - scp $YAML_FILE "$SSH_USER"@"$SSH_HOST":/tmp/
     - sed -i 's|export GIT_REPO=.*|GIT_REPO="'$GIT_REPO'"|g' rocky-linux-hypervisor.sh
     - ssh "$SSH_USER"@"$SSH_HOST"  'env CICD_PIPELINE="'$CICD_PIPELINE'" SSH_PASSWORD="'$SSH_PASSWORD'"
-        ENV_USERNAME="'$ENV_USERNAME'" DOMAIN="'$DOMAIN'" FORWARDER="'$FORWARDER'" 
+        ENV_USERNAME="'$ENV_USERNAME'" DOMAIN="'$DOMAIN'" FORWARDER="'$FORWARDER'" INVENTORY="'$INVENTORY'"
         ACTIVE_BRIDGE="'$ACTIVE_BRIDGE'" INTERFACE="'$INTERFACE'" DISK="'$DISK'"  sudo -E bash -s' < rocky-linux-hypervisor.sh
         
   only:
