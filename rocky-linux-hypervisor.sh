@@ -266,14 +266,14 @@ function configure_ansible_vault_setup() {
     then 
         if [ -f /tmp/config.yml ];
         then
-            cp /tmp/config.yml /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml
-            /usr/local/bin/ansiblesafe -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml -o 1
+            cp /tmp/config.yml /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml
+            /usr/local/bin/ansiblesafe -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml -o 1
         else
             echo "Error: config.yml file not found"
             exit 1
         fi
     else
-        /usr/local/bin/ansiblesafe -f /root/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml
+        /usr/local/bin/ansiblesafe -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml
     fi
     generate_inventory /root
 }
