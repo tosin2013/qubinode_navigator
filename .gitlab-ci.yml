@@ -34,6 +34,8 @@ applications:
     SSH_HOST: "${SSH_HOST}"
     SSH_USER: "${SSH_USER}"
     SSH_PASSWORD: "${SSH_PASSWORD}"
+    INVENTORY: "${INVENTORY}"
+    ROCKY: "${ROCKY}"
   only:
      variables:
       - $DEPLOY_APP == "freeipa"

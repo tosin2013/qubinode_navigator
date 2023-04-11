@@ -16,7 +16,7 @@ build:
     - | 
       if [ "$ROCKY" = "true" ]; then
         ssh "$SSH_USER"@"$SSH_HOST" "sudo -E env CICD_PIPELINE=\"$CICD_PIPELINE\"   INVENTORY=\"$INVENTORY\" bash -s -- <  /opt/quibinode_navigator/rocky-linux-hypervisor.sh --deploy-freeipa"
-      else
+      elif [ "$ROCKY" = "false" ]; then
         ssh "$SSH_USER"@"$SSH_HOST" 'env CICD_PIPELINE="'$CICD_PIPELINE'"  INVENTORY="'$INVENTORY'"  && source ~/.bash_aliases && freeipa-utils deploy'
       fi
   only:
