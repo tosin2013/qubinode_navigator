@@ -15,7 +15,7 @@ build:
     - sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no "$SSH_USER"@"$SSH_HOST"
     - |
       if [ "$CICD_PIPELINE" = "true" ]; then
-        ssh "$SSH_USER"@"$SSH_HOST" "echo '$SSH_PASSWORD' | sudo -S su - root 'bash -s' -- < env CICD_PIPELINE="'$CICD_PIPELINE'" && source ~/.bash_aliases &&  freeipa-utils deploy"
+        ssh "$SSH_USER"@"$SSH_HOST" "echo '$SSH_PASSWORD' | sudo -S su - root 'bash -s' -- < /usr/bin/env CICD_PIPELINE="'$CICD_PIPELINE'" && source ~/.bash_aliases &&  freeipa-utils deploy"
       else
         ssh "$SSH_USER"@"$SSH_HOST" 'env CICD_PIPELINE="'$CICD_PIPELINE'" && source ~/.bash_aliases && freeipa-utils deploy'
       fi
