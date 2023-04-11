@@ -1,7 +1,7 @@
 # passing SSH_HOST and SSH_PASSWORD in the menu
 variables:
   YAML_FILE: "config.yml"
-
+  SSH_PASSWORD: placeholder
 stages:
   - check_env
   - vault_query
