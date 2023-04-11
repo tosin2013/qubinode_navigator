@@ -11,7 +11,7 @@ check_env:
   stage: check_env
   image: python:3.10
   script:
-    - python check_env.py
+    - python3 inventories/equinix/check_env.py
 
 vault_query:
   stage: vault_query
