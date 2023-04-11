@@ -6,7 +6,7 @@ build:
   image: fedora:37
   variables:
     SSH_USER:  admin
-    SSH_PASSWORD: Comp123$%
+    SSH_PASSWORD: COmp123$%
     SSH_HOST: 192.168.1.39
   script:
     - ls -la $YAML_FILE
