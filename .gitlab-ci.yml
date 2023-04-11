@@ -8,7 +8,7 @@ supermicro:
   stage: supermicro
   only:
      variables:
-      - $TARGER_SERVER == "supermicro"
+      - $TARGET_SERVER == "supermicro"
   trigger:
     # Include the configuration file of the child pipeline
     include: inventories/supermicro/.gitlab-ci.yml
@@ -20,7 +20,7 @@ equinix:
   stage: equinix
   only:
      variables:
-      - $TARGER_SERVER == "equinix"
+      - $TARGET_SERVER == "equinix"
   trigger:
     include: inventories/equinix/.gitlab-ci.yml
 
