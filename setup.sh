@@ -5,7 +5,7 @@
 # @setting ./setup.sh 
 # Uncomment for debugging
 #export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
-#set -x
+#set -xe
 
 # @global ANSIBLE_SAFE_VERSION this is the ansible safe version
 # @global INVENTORY this is the inventory file name and path Example: inventories/localhost
@@ -209,7 +209,7 @@ function configure_ssh(){
                 sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no $control_user@${IP_ADDRESS}
             else
                 sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no $USER@${IP_ADDRESS}
-                sudo ssh-keygen -f ~/.ssh/id_rsa -t rsa -N ''
+                sudo ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
             fi
         else 
             if [ "$EUID" -eq 0 ]; then
@@ -217,7 +217,7 @@ function configure_ssh(){
                 ssh-copy-id $control_user@${IP_ADDRESS}
             else
                 ssh-copy-id $USER@${IP_ADDRESS}
-                sudo ssh-keygen -f ~/.ssh/id_rsa -t rsa -N ''
+                sudo ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
             fi
         fi 
     fi
@@ -278,7 +278,6 @@ function deploy_kvmhost() {
     eval $(ssh-agent)
     ssh-add ~/.ssh/id_rsa
     cd "$HOME"/qubinode_navigator
-    source ~/.profile
     if ! command -v ansible-navigator &> /dev/null; then
         ANSIBLE_NAVIAGATOR=$(whereis ansible-navigator | awk '{print $2}')
     else 
@@ -349,8 +348,8 @@ else
 fi
 
 if [ $# -eq 0 ]; then
-    configure_ssh
     configure_os  $BASE_OS
+    configure_ssh
     configure_firewalld
     get_quibinode_navigator $MY_DIR
     configure_navigator $MY_DIR
