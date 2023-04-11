@@ -318,7 +318,7 @@ function configure_bash_aliases() {
 function confiure_lvm_storage(){
     if [ ! -f $HOME/configure-lvm.sh ];
     then 
-        curl -OL https://gist.githubusercontent.com/tosin2013/022841d90216df8617244ab6d6aceaf8/raw/92400b9e459351d204feb67b985c08df6477d7fa/configure-lvm.sh
+        curl -OL https://gist.githubusercontent.com/tosin2013/3ad54c647adec86e6899ca874afa6f5e/raw/8404bd9e6d54268a90744c76dde0ab00dfa39636/configure-lvm.sh
         chmod +x configure-lvm.sh
     fi 
     bash ./configure-lvm.sh

@@ -1,9 +1,18 @@
+# passing SSH_HOST and SSH_PASSWORD in the menu
 variables:
   YAML_FILE: "config.yml"
 
+  
 stages:
+  - check_env
   - vault_query
   - build
+
+check_env:
+  stage: check_env
+  image: python:3.10
+  script:
+    - python3 inventories/equinix/check_env.py
 
 vault_query:
   stage: vault_query
@@ -31,9 +40,7 @@ build:
   stage: build
   image: fedora:37
   variables:
-    SSH_USER:  admin
-    SSH_PASSWORD: CHANGEME
-    SSH_HOST: hypervisor.example.com
+    SSH_USER:  lab-user
     CICD_PIPELINE: 'true'
     ENV_USERNAME:  admin
     DOMAIN: qubinodelab.io
