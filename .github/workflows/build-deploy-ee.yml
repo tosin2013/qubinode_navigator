@@ -29,7 +29,7 @@ jobs:
     uses: tosin2013/qubinode_navigator/.github/workflows/base-build-deploy-ee.yml@main
     with:
       EE_FOLDER_NAME: 'ansible-builder'
-      EE_IMAGE_NAME: 'qubinode-installer:'
+      EE_IMAGE_NAME: 'qubinode-installer'
       EE_IMAGE_TAG: 'latest'
     secrets:
       REGISTRY_HOSTNAME: ${{ secrets.REGISTRY_HOSTNAME }}
