@@ -202,8 +202,10 @@ function configure_ssh() {
         if [ $CICD_PIPELINE == "true" ];
         then 
             sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no lab-user@${IP_ADDRESS}
+            sudo ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
         else
             ssh-copy-id lab-user@"${IP_ADDRESS}"
+            sudo ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
         fi
     fi
 }

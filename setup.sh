@@ -209,7 +209,7 @@ function configure_ssh(){
                 sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no $control_user@${IP_ADDRESS}
             else
                 sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no $USER@${IP_ADDRESS}
-                sudo ssh-keygen -f ~/.ssh/id_rsa -t rsa -N ''
+                sudo ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
             fi
         else 
             if [ "$EUID" -eq 0 ]; then
@@ -217,7 +217,7 @@ function configure_ssh(){
                 ssh-copy-id $control_user@${IP_ADDRESS}
             else
                 ssh-copy-id $USER@${IP_ADDRESS}
-                sudo ssh-keygen -f ~/.ssh/id_rsa -t rsa -N ''
+                sudo ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
             fi
         fi 
     fi
