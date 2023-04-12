@@ -1,7 +1,7 @@
 #!/bin/bash
 # Uncomment for debugging
-#export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
-#set -x
+export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+set -x
 
 KVM_VERSION=0.5.0
 export ANSIBLE_SAFE_VERSION="0.0.5"
@@ -38,9 +38,8 @@ function generate_inventory() {
             mkdir -p inventories/${INVENTORY}
             mkdir -p inventories/${INVENTORY}/group_vars/control
             cp -r inventories/localhost/group_vars/control/* inventories/${INVENTORY}/group_vars/control/
-            sed -i 's|export CURRENT_INVENTORY="localhost"|export CURRENT_INVENTORY="'${INVENTORY}'"|g' bash-aliases/random-functions.sh
         fi
-        
+        sed -i 's|export CURRENT_INVENTORY="localhost"|export CURRENT_INVENTORY="'${INVENTORY}'"|g' bash-aliases/random-functions.sh
         # set the values
         control_host="$(hostname -I | awk '{print $1}')"
         # Check if running as root
@@ -323,7 +322,7 @@ function confiure_lvm_storage(){
         curl -OL https://gist.githubusercontent.com/tosin2013/3ad54c647adec86e6899ca874afa6f5e/raw/8404bd9e6d54268a90744c76dde0ab00dfa39636/configure-lvm.sh
         chmod +x configure-lvm.sh
     fi 
-    $HOME/configure-lvm.sh
+    /home/lab-user/configure-lvm.sh
 }
 
 function setup_kcli_base() {
@@ -336,6 +335,7 @@ function setup_kcli_base() {
     fi
     echo "Configuring Kcli"
     echo "****************"
+    source ~/.profile
     source ~/.bash_aliases
     kcli-utils setup
     kcli-utils configure-images
