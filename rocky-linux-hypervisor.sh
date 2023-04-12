@@ -324,7 +324,7 @@ function confiure_lvm_storage(){
         curl -OL https://gist.githubusercontent.com/tosin2013/3ad54c647adec86e6899ca874afa6f5e/raw/8404bd9e6d54268a90744c76dde0ab00dfa39636/configure-lvm.sh
         chmod +x configure-lvm.sh
     fi 
-    $HOME/configure-lvm.sh
+    /home/lab-user/configure-lvm.sh
 }
 
 function setup_kcli_base() {
