@@ -323,7 +323,7 @@ function confiure_lvm_storage(){
         curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/dependancies/equinix-rocky/configure-lvm.sh
         chmod +x configure-lvm.sh
     fi 
-    /home/lab-user/configure-lvm.sh
+    /home/lab-user/configure-lvm.sh || exit 1
 }
 
 function setup_kcli_base() {
