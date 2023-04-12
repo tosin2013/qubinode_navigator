@@ -84,19 +84,19 @@ function update_profiles_file {
     fi
     dependency_check
     set_variables
-    ansiblesafe -f "${ANSIBLE_VAULT_FILE}" -o 2
+     /usr/local/bin/ansiblesafe -f "${ANSIBLE_VAULT_FILE}" -o 2
     PASSWORD=$(yq eval '.admin_user_password' "${ANSIBLE_VAULT_FILE}")
     RHSM_ORG=$(yq eval '.rhsm_org' "${ANSIBLE_VAULT_FILE}")
     RHSM_ACTIVATION_KEY=$(yq eval '.rhsm_activationkey' "${ANSIBLE_VAULT_FILE}")
     sudo python3 profile_generator/profile_generator.py update_yaml rhel9 rhel9/template.yaml --image rhel-baseos-9.1-x86_64-kvm.qcow2 --user $USER --user-password ${PASSWORD} --rhnorg ${RHSM_ORG} --rhnactivationkey ${RHSM_ACTIVATION_KEY}
     sudo python3 profile_generator/profile_generator.py update_yaml fedora37 fedora37/template.yaml --image Fedora-Cloud-Base-37-1.7.x86_64.qcow2  --disk-size 30 --numcpus 4 --memory 8192 --user  $USER  --user-password ${PASSWORD}
-    ansiblesafe -f "${ANSIBLE_VAULT_FILE}" -o 1
+     /usr/local/bin/ansiblesafe -f "${ANSIBLE_VAULT_FILE}" -o 1
 
     sudo mkdir -p "${KCLI_CONFIG_DIR}"
     sudo cp "${PROFILES_FILE}" "${KCLI_CONFIG_FILE}"
     if [ "${SECURE_DEPLOYMENT}" == "true" ];
     then 
-      sudo ansiblesafe -f "${KCLI_CONFIG_FILE}" -o 1
+      sudo  /usr/local/bin/ansiblesafe -f "${KCLI_CONFIG_FILE}" -o 1
     fi 
   fi
 }
