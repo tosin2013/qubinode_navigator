@@ -15,7 +15,7 @@ build:
     - sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no "$SSH_USER"@"$SSH_HOST"
     - | 
       if [ "$ROCKY" = "true" ]; then
-        ssh "$SSH_USER"@"$SSH_HOST" "sudo -E env CICD_PIPELINE=\"$CICD_PIPELINE\"   INVENTORY=\"$INVENTORY\" bash -s -- <  /opt/quibinode_navigator/rocky-linux-hypervisor.sh --deploy-freeipa"
+        ssh "$SSH_USER"@"$SSH_HOST" "sudo -E env CICD_PIPELINE=\"$CICD_PIPELINE\"   INVENTORY=\"$INVENTORY\" bash -s -- <  /opt/qubinode_navigator/rocky-linux-hypervisor.sh --deploy-freeipa"
       elif [ "$ROCKY" = "false" ]; then
         ssh "$SSH_USER"@"$SSH_HOST" 'env CICD_PIPELINE="'$CICD_PIPELINE'"  INVENTORY="'$INVENTORY'"  && source ~/.bash_aliases && freeipa-utils deploy'
       fi
