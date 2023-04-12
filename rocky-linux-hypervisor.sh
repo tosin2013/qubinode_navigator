@@ -320,7 +320,7 @@ function confiure_lvm_storage(){
     echo "************************"
     if [ ! -f $HOME/configure-lvm.sh ];
     then 
-        curl -OL https://gist.githubusercontent.com/tosin2013/3ad54c647adec86e6899ca874afa6f5e/raw/8404bd9e6d54268a90744c76dde0ab00dfa39636/configure-lvm.sh
+        curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/dependancies/equinix-rocky/configure-lvm.sh
         chmod +x configure-lvm.sh
     fi 
     /home/lab-user/configure-lvm.sh
