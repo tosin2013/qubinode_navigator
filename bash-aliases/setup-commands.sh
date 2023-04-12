@@ -8,17 +8,17 @@ if ! command -v alf &> /dev/null; then
 fi 
 
 
-if [ ! -d /opt/quibinode_navigator/bash-aliases/ ];
+if [ ! -d /opt/qubinode_navigator/bash-aliases/ ];
 then
     cd /opt/
-    sudo git clone https://github.com/tosin2013/quibinode_navigator.git quibinode_navigator
-    cd $HOME/quibinode_navigator
-    sudo cp bash-aliases/random-functions.sh /opt/quibinode_navigator/bash-aliases/random-functions.sh
-    cd /opt/quibinode_navigator/bash-aliases/
+    sudo git clone https://github.com/tosin2013/qubinode_navigator.git qubinode_navigator
+    cd $HOME/qubinode_navigator
+    sudo cp bash-aliases/random-functions.sh /opt/qubinode_navigator/bash-aliases/random-functions.sh
+    cd /opt/qubinode_navigator/bash-aliases/
     alf generate
     alf save
 else
-    cd /opt/quibinode_navigator/bash-aliases/
+    cd /opt/qubinode_navigator/bash-aliases/
     sudo git pull 
     alf generate
     alf save
@@ -26,9 +26,9 @@ fi
 
 # Define the array of lines to add
 lines=(
-    'source /opt/quibinode_navigator/bash-aliases/random-functions.sh'
-    'source /opt/quibinode_navigator/bash-aliases/configure-kcli.sh'
-    'source /opt/quibinode_navigator/bash-aliases/configure-freeipa-workshop-deployer.sh'
+    'source /opt/qubinode_navigator/bash-aliases/random-functions.sh'
+    'source /opt/qubinode_navigator/bash-aliases/configure-kcli.sh'
+    'source /opt/qubinode_navigator/bash-aliases/configure-freeipa-workshop-deployer.sh'
 )
 
 # Iterate through the array and check if each line exists in the file

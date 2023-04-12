@@ -1,6 +1,6 @@
 # Overview
 
-This function get_quibinode_navigator function will clone the qubinode_navigator repo
+This function get_qubinode_navigator function will clone the qubinode_navigator repo
 
 
 # Settings
@@ -17,11 +17,16 @@ This function get_quibinode_navigator function will clone the qubinode_navigator
 
 
 # Functions
-* [configure_navigator()](#configure_navigator)
-* [configure_vault()](#configure_vault)
-* [generate_inventory()](#generate_inventory)
-* [configure_ssh()](#configure_ssh)
-* [configure_os()](#configure_os)
+- [Overview](#overview)
+- [Settings](#settings)
+  - [setup.sh quickstart script for qubinode\_navigator](#setupsh-quickstart-script-for-qubinode_navigator)
+- [Global Variables](#global-variables)
+- [Functions](#functions)
+  - [configure\_navigator()](#configure_navigator)
+  - [configure\_vault()](#configure_vault)
+  - [generate\_inventory()](#generate_inventory)
+  - [configure\_ssh()](#configure_ssh)
+  - [configure\_os()](#configure_os)
 
 
 ## configure_navigator()
