@@ -9,7 +9,7 @@ if ! command -v alf &> /dev/null; then
     curl -Ls get.dannyb.co/alf/setup | bash
 fi 
 
-if [ -f /usr/local/bin/alf ]; then
+if [ ! -f /usr/local/bin/alf ]; then
     echo "alf is not installed"
     exit 1
 fi
