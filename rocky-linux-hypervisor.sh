@@ -1,7 +1,7 @@
 #!/bin/bash
 # Uncomment for debugging
-#export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
-#set -x
+export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+set -x
 
 KVM_VERSION=0.5.0
 export ANSIBLE_SAFE_VERSION="0.0.5"
@@ -337,6 +337,7 @@ function setup_kcli_base() {
     fi
     echo "Configuring Kcli"
     echo "****************"
+    source ~/.profile
     source ~/.bash_aliases
     kcli-utils setup
     kcli-utils configure-images
