@@ -49,6 +49,7 @@ build:
     INTERFACE: bond0
     GIT_REPO: https://github.com/tosin2013/qubinode_navigator.git
     INVENTORY: equinix
+  allow_failure: false
   script:
     - ls -la $YAML_FILE
     - dnf install wget openssh-clients sshpass -y
