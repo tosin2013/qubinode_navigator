@@ -2,11 +2,17 @@
 #github-action genshdoc
 # @file Setup the bash aliases for the qubinode installer
 # @brief This script will setup the bash aliases for the qubinode installer
+export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+set -x
 
 if ! command -v alf &> /dev/null; then
     curl -Ls get.dannyb.co/alf/setup | bash
 fi 
 
+if [ -f /usr/local/bin/alf ]; then
+    echo "alf is not installed"
+    exit 1
+fi
 
 if [ ! -d /opt/qubinode_navigator/bash-aliases/ ];
 then
@@ -15,13 +21,16 @@ then
     cd $HOME/qubinode_navigator
     sudo cp bash-aliases/random-functions.sh /opt/qubinode_navigator/bash-aliases/random-functions.sh
     cd /opt/qubinode_navigator/bash-aliases/
-    alf generate
-    alf save
+    /usr/local/bin/alf generate
+    /usr/local/bin/alf save
 else
+    cd $HOME/qubinode_navigator
+    sudo cp bash-aliases/random-functions.sh /opt/qubinode_navigator/bash-aliases/random-functions.sh
     cd /opt/qubinode_navigator/bash-aliases/
     sudo git pull 
-    alf generate
-    alf save
+    /usr/local/bin/alf generate
+    /usr/local/bin/alf save
+    cat  ~/.bash_aliases || exit 1
 fi
 
 # Define the array of lines to add
