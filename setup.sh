@@ -49,8 +49,8 @@ function get_rhel_version() {
 
 }
 
-# @description This function get_quibinode_navigator function will clone the qubinode_navigator repo
-function get_quibinode_navigator() {
+# @description This function get_qubinode_navigator function will clone the qubinode_navigator repo
+function get_qubinode_navigator() {
     echo "Cloning qubinode_navigator"
     if [ -d $1/qubinode_navigator ]; then
         echo "Qubinode Installer already exists"
@@ -315,6 +315,7 @@ function setup_kcli_base() {
     fi
     echo "Configuring Kcli"
     echo "****************"
+    source $1/.profile
     source $1/.bash_aliases
     kcli-utils setup
     kcli-utils configure-images
@@ -351,7 +352,7 @@ if [ $# -eq 0 ]; then
     configure_os  $BASE_OS
     configure_ssh
     configure_firewalld
-    get_quibinode_navigator $MY_DIR
+    get_qubinode_navigator $MY_DIR
     configure_navigator $MY_DIR
     configure_vault $MY_DIR
     generate_inventory $MY_DIR

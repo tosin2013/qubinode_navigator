@@ -183,11 +183,11 @@ function configure_navigator() {
         read -t 360 -p "Press Enter to continue, or wait 5 minutes for the script to continue automatically" || true
         python3 load-variables.py
     else 
-        if [[ -z "$ENV_USERNAME" && -z "$DOMAIN" && -z "$FORWARDER" && -z "$ACTIVE_BRIDGE" && -z "$INTERFACE" ]]; then
+        if [[ -z "$ENV_USERNAME" && -z "$DOMAIN" && -z "$FORWARDER" && -z "$INTERFACE" ]]; then
             echo "Error: One or more environment variables are not set"
             exit 1
         fi
-        python3 load-variables.py --username ${ENV_USERNAME} --domain ${DOMAIN} --forwarder ${FORWARDER} --bridge ${ACTIVE_BRIDGE} --interface ${INTERFACE} 
+        python3 load-variables.py --username ${ENV_USERNAME} --domain ${DOMAIN} --forwarder ${FORWARDER} --interface ${INTERFACE} 
     fi
 
 }
@@ -316,13 +316,16 @@ function configure_bash_aliases() {
 }
 
 function confiure_lvm_storage(){
+    echo "Configuring Storage"
+    echo "************************"
     if [ ! -f $HOME/configure-lvm.sh ];
     then 
         curl -OL https://gist.githubusercontent.com/tosin2013/3ad54c647adec86e6899ca874afa6f5e/raw/8404bd9e6d54268a90744c76dde0ab00dfa39636/configure-lvm.sh
         chmod +x configure-lvm.sh
     fi 
-    bash ./configure-lvm.sh
+    $HOME/configure-lvm.sh
 }
+
 function setup_kcli_base() {
     if [ "$(pwd)" != "/root/qubinode_navigator" ]; then
         echo "Current directory is not /root/qubinode_navigator."
