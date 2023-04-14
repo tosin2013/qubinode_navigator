@@ -1,5 +1,12 @@
 stages:
+  - check_env
   - supermicro
+
+check_env:
+  stage: check_env
+  image: python:3.10
+  script:
+    - python3 inventories/equinix/check_env.py
 
 build:
   stage: supermicro
