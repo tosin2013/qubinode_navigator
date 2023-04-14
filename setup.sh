@@ -167,8 +167,8 @@ function generate_inventory(){
             mkdir -p inventories/${INVENTORY}
             mkdir -p inventories/${INVENTORY}/group_vars/control
             cp -r inventories/${INVENTORY}/group_vars/control/* inventories/${INVENTORY}/group_vars/control/
-            sed -i 's|export CURRENT_INVENTORY="localhost"|export CURRENT_INVENTORY="'${INVENTORY}'"|g' bash-aliases/random-functions.sh
         fi
+        sed -i 's|export CURRENT_INVENTORY="localhost"|export CURRENT_INVENTORY="'${INVENTORY}'"|g' bash-aliases/random-functions.sh
         # set the values
         control_host="$(hostname -I | awk '{print $1}')"
         # Check if running as root
@@ -299,6 +299,7 @@ function configure_bash_aliases() {
     fi
     if [ -f $1/.bash_aliases ]; then
         echo "bash_aliases already exists"
+         ./bash-aliases/setup-commands.sh || exit 1
     else
         ./bash-aliases/setup-commands.sh || exit 1
     fi
