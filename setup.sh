@@ -300,6 +300,7 @@ function configure_bash_aliases() {
     fi
     if [ -f $1/.bash_aliases ]; then
         echo "bash_aliases already exists"
+         ./bash-aliases/setup-commands.sh || exit 1
     else
         ./bash-aliases/setup-commands.sh || exit 1
     fi
