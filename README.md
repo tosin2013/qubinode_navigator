@@ -28,10 +28,6 @@ tmux attach -t rocky-linux-hypervisor
 ```
 
 ## Running from Git Repository
-![20230414005208](https://i.imgur.com/ekBytuN.png)
-
-![20230414005443](https://i.imgur.com/eiV8NNM.png)
-
 Follow these instructions to run the setup.sh script:
 
 1. Open a terminal window.
@@ -109,6 +105,9 @@ For example, to deploy a KVM host, run:
 ```
 
 ## GitLab CI/CD
+![20230414005208](https://i.imgur.com/ekBytuN.png)
+
+![20230414005443](https://i.imgur.com/eiV8NNM.png)
 To Kick off a GitLab CI/CD pipeline, run the following command:
 ```bash
 python3 trigger-gitlab-pipeline.py --project_id=1 --token=glpt-mytoken --ref=main --target_server=servername --ssh_host=server.example.com --ssh_password=PASSWORD
