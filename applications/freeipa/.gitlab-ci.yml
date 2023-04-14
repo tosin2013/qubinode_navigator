@@ -8,6 +8,7 @@ build:
   image: fedora:37
   variables:
     CICD_PIPELINE: "true"
+  allow_failure: false
   script:
     - dnf install wget openssh-clients sshpass -y
     - mkdir -p ~/.ssh/

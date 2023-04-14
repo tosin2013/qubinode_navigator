@@ -67,7 +67,7 @@ function install_packages() {
     # Check if packages are already installed
     echo "Installing packages"
     echo "*******************"
-    for package in openssl-devel bzip2-devel libffi-devel wget vim podman ncurses-devel sqlite-devel firewalld make gcc git unzip sshpass; do
+    for package in openssl-devel bzip2-devel libffi-devel wget vim podman ncurses-devel sqlite-devel firewalld make gcc git unzip sshpass lvm lvm2; do
         if rpm -q "${package}" >/dev/null 2>&1; then
             echo "Package ${package} already installed"
         else
@@ -309,6 +309,7 @@ function configure_bash_aliases() {
     fi
     if [ -f ~/.bash_aliases ]; then
         echo "bash_aliases already exists"
+        ./bash-aliases/setup-commands.sh || exit 1
     else
         ./bash-aliases/setup-commands.sh || exit 1
     fi
@@ -322,7 +323,7 @@ function confiure_lvm_storage(){
         curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/dependancies/equinix-rocky/configure-lvm.sh
         chmod +x configure-lvm.sh
     fi 
-    /home/lab-user/configure-lvm.sh
+    /home/lab-user/configure-lvm.sh || exit 1
 }
 
 function setup_kcli_base() {
