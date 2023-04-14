@@ -6,6 +6,9 @@ stages:
 # supermicro deployment
 supermicro:
   stage: supermicro
+  variables:
+    SSH_HOST: "${SSH_HOST}"
+    SSH_PASSWORD: "${SSH_PASSWORD}"
   only:
      variables:
       - $TARGET_SERVER == "supermicro"
