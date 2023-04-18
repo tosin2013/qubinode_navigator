@@ -20,12 +20,14 @@ then
     sudo git clone https://github.com/tosin2013/qubinode_navigator.git qubinode_navigator
     cd $HOME/qubinode_navigator
     sudo cp bash-aliases/random-functions.sh /opt/qubinode_navigator/bash-aliases/random-functions.sh
+    sudo cp -r inventories/ /opt/qubinode_navigator/
     cd /opt/qubinode_navigator/bash-aliases/
     /usr/local/bin/alf generate
     /usr/local/bin/alf save
 else
     cd $HOME/qubinode_navigator
     sudo cp bash-aliases/random-functions.sh /opt/qubinode_navigator/bash-aliases/random-functions.sh
+    sudo cp -r inventories/ /opt/qubinode_navigator/
     cd /opt/qubinode_navigator/bash-aliases/
     sudo git pull 
     /usr/local/bin/alf generate
