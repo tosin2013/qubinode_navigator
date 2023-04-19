@@ -119,10 +119,12 @@ function configure_vault() {
             chmod +x ansible_vault_setup.sh
         fi
         rm -f ~/.vault_password
+        sudo rm -rf /root/.vault_password 
        
         if [ $USE_HASHICORP_VAULT == "true" ];
         then
             echo "$SSH_PASSWORD" > ~/.vault_password
+            sudo cp ~/.vault_password /root/.vault_password 
             bash  ./ansible_vault_setup.sh
             if [ $(id -u) -ne 0 ]; then
                 if [ ! -f /home/${USER}/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml ];
