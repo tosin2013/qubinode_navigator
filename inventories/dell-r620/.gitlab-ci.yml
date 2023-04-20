@@ -19,7 +19,7 @@ build:
     FORWARDER: '192.168.1.148'
     ACTIVE_BRIDGE: 'true'
     INTERFACE: eno1
-    DISK: /dev/sda3
+    DISK: skip
     USE_HASHICORP_VAULT: 'true'
     VAULT_ADDRESS: http://10.0.0.48:8200/
     VAULT_TOKEN: s.zlOfmgNtfTiMUpEFspZhspWg
