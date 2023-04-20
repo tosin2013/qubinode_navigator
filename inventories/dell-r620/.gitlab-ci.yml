@@ -1,31 +1,31 @@
 stages:
   - check_env
-  - supermicro
+  - dell-r620
 
 check_env:
   stage: check_env
   image: python:3.10
   script:
-    - python3 inventories/supermicro/check_env.py
+    - python3 inventories/dell-r620/check_env.py
 
 build:
-  stage: supermicro
+  stage: dell-r620
   image: fedora:37
   variables:
     SSH_USER: admin
     CICD_PIPELINE: 'true'
     ENV_USERNAME: admin
-    DOMAIN: qubinodelab.io
-    FORWARDER: '1.1.1.1'
+    DOMAIN: dell-r620.io
+    FORWARDER: '192.168.1.148'
     ACTIVE_BRIDGE: 'true'
     INTERFACE: eno1
-    DISK: /dev/nvme0n1
+    DISK: /dev/sda3
     USE_HASHICORP_VAULT: 'true'
     VAULT_ADDRESS: http://10.0.0.48:8200/
     VAULT_TOKEN: s.zlOfmgNtfTiMUpEFspZhspWg
     SECRET_PATH:  homelab
     GIT_REPO:  https://gitlab.tosins-cloudlabs.com/tosin/qubinode_navigator.git
-    INVENTORY: supermicro
+    INVENTORY: dell-r620
   script:
     - dnf install wget openssh-clients sshpass -y
     - mkdir -p ~/.ssh/

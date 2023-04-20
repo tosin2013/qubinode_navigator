@@ -1,6 +1,7 @@
 stages:
   - supermicro
   - equinix
+  - dell-r620
   - applications
 
 # supermicro deployment
@@ -16,7 +17,21 @@ supermicro:
     # Include the configuration file of the child pipeline
     include: inventories/supermicro/.gitlab-ci.yml
   rules:
-    
+
+# dell-r620 deployment
+dell-r620:
+  stage: dell-r620
+  variables:
+    SSH_HOST: "${SSH_HOST}"
+    SSH_PASSWORD: "${SSH_PASSWORD}"
+  only:
+     variables:
+      - $TARGET_SERVER == "dell-r620"
+  trigger:
+    # Include the configuration file of the child pipeline
+    include: inventories/dell-r620/.gitlab-ci.yml
+  rules:
+
 
 # equinix deployment
 equinix:
