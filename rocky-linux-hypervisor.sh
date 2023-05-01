@@ -4,7 +4,7 @@ export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
 set -x
 
 KVM_VERSION=0.5.0
-export ANSIBLE_SAFE_VERSION="0.0.5"
+export ANSIBLE_SAFE_VERSION="0.0.6"
 
 export GIT_REPO="https://github.com/tosin2013/qubinode_navigator.git"
 if [[ $EUID -ne 0 ]]; then
@@ -149,8 +149,7 @@ function configure_python() {
         sudo pip3 install firewall
         sudo pip3 install pyyaml
         sudo pip3 install ansible-vault
-        echo 'export PATH=$HOME/.local/bin:$PATH' >>~/.profile
-        source ~/.profile
+s
     fi
     if ! command -v ansible-navigator &> /dev/null
     then
@@ -243,9 +242,11 @@ function configure_ansible_vault_setup() {
         chmod +x ansible_vault_setup.sh
     fi
     rm -f ~/.vault_password
+    sudo rm -rf /root/password
     if [ $CICD_PIPELINE == "true" ];
     then    
         echo "$SSH_PASSWORD" > ~/.vault_password
+        sudo cp ~/.vault_password /root/.vault_password 
         bash  ./ansible_vault_setup.sh
     else 
         bash  ./ansible_vault_setup.sh

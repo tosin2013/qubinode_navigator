@@ -154,6 +154,18 @@ def select_disk(disks=None):
         print(f"Selected disk: {vgdisplay_output}")
         print(f"Updated {inventory_path}")
         exit(0)
+    elif disks == 'skip':
+        print("Skipping disk selection.")
+        # Update YAML file with selected disk
+        inventory_path = 'inventories/'+str(inventory_env)+'/group_vars/control/kvm_host.yml'
+        with open(inventory_path, 'r') as f:
+            inventory = yaml.safe_load(f)
+        inventory['create_libvirt_storage'] = False
+        inventory['create_lvm'] = False
+        with open(inventory_path, 'w') as f:
+            yaml.dump(inventory, f, default_flow_style=False)
+        print(f"Updated {inventory_path}")
+        exit(0)
     else:
         # Get available disks
         if disks is None:
@@ -181,6 +193,7 @@ def select_disk(disks=None):
         with open(inventory_path, 'r') as f:
             inventory = yaml.safe_load(f)
         
+
         if use_root_disk is True:
             print('No disk selected.')
             inventory['create_libvirt_storage'] = False
@@ -207,7 +220,7 @@ if __name__ == '__main__':
     parser.add_argument('--forwarder', help='DNS forwarder for the system')
     parser.add_argument('--bridge', type=bool, help='Configure bridge for the system')
     parser.add_argument('--interface', help='Network interface to use')
-    parser.add_argument('--disk', help='Disk to use')
+    parser.add_argument('--disk', help='Disk to use, or "skip" to skip disk selection')
     args = parser.parse_args()
 
     update_inventory(args.username, args.domain, args.forwarder)

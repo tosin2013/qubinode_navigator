@@ -6,10 +6,9 @@
 # Uncomment for debugging
 #export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
 #set -xe
-
 # @global ANSIBLE_SAFE_VERSION this is the ansible safe version
 # @global INVENTORY this is the inventory file name and path Example: inventories/localhost
-export ANSIBLE_SAFE_VERSION="0.0.5"
+export ANSIBLE_SAFE_VERSION="0.0.6"
 export GIT_REPO="https://github.com/tosin2013/qubinode_navigator.git"
 if [ -z "$CICD_PIPELINE" ]; then
   export CICD_PIPELINE="false"
@@ -118,10 +117,12 @@ function configure_vault() {
             chmod +x ansible_vault_setup.sh
         fi
         rm -f ~/.vault_password
+        sudo rm -rf /root/.vault_password 
        
         if [ $USE_HASHICORP_VAULT == "true" ];
         then
             echo "$SSH_PASSWORD" > ~/.vault_password
+            sudo cp ~/.vault_password /root/.vault_password 
             bash  ./ansible_vault_setup.sh
             if [ $(id -u) -ne 0 ]; then
                 if [ ! -f /home/${USER}/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml ];
@@ -316,7 +317,7 @@ function setup_kcli_base() {
     fi
     echo "Configuring Kcli"
     echo "****************"
-    source $1/.profile
+    #source $1/.profile
     source $1/.bash_aliases
     kcli-utils setup
     kcli-utils configure-images
