@@ -4,7 +4,7 @@ export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
 set -x
 
 KVM_VERSION=0.5.0
-export ANSIBLE_SAFE_VERSION="0.0.5"
+export ANSIBLE_SAFE_VERSION="0.0.6"
 
 export GIT_REPO="https://github.com/tosin2013/qubinode_navigator.git"
 if [[ $EUID -ne 0 ]]; then
