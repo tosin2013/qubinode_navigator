@@ -61,6 +61,6 @@ build:
     - ssh "$SSH_USER"@"$SSH_HOST"  'env CICD_PIPELINE="'$CICD_PIPELINE'" SSH_PASSWORD="'$SSH_PASSWORD'"
         ENV_USERNAME="'$ENV_USERNAME'" DOMAIN="'$DOMAIN'" FORWARDER="'$FORWARDER'" INVENTORY="'$INVENTORY'"
         ACTIVE_BRIDGE="'$ACTIVE_BRIDGE'" INTERFACE="'$INTERFACE'" sudo -E bash -s' < rocky-linux-hypervisor.sh
-        
+  retry: 2
   only:
     - main

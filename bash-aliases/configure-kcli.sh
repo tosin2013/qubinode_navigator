@@ -21,10 +21,10 @@ function kcli_configure_images(){
 
   if [[ $LINUX_VERSION == "rhel"  ||  "A${INSTALL_RHEL_IMAGES}" != "Atrue" ]]; then
     echo "Downloading Red Hat Enterprise Linux 8"
-    sudo kcli download image rhel-8.7-x86_64-kvm.qcow2
+    sudo kcli download image rhel8
     echo "Downloading Red Hat Enterprise Linux 9"
     echo "For AAP Deployments use: Red Hat Enterprise Linux 9.1 KVM Guest Image"
-    sudo kcli download image rhel-baseos-9.1-x86_64-kvm.qcow2
+    sudo kcli download image rhel9
   fi
 
 }
