@@ -13,6 +13,7 @@ build:
   image: fedora:37
   variables:
     SSH_USER: admin
+    SSH_PASSWORD:  "${SSH_PASSWORD}"
     CICD_PIPELINE: 'true'
     ENV_USERNAME: admin
     DOMAIN: qubinodelab.io
