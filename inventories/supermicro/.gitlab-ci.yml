@@ -23,7 +23,7 @@ build:
     DISK: /dev/nvme0n1
     USE_HASHICORP_VAULT: 'true'
     VAULT_ADDRESS: http://10.0.0.48:8200/
-    VAULT_TOKEN: s.zlOfmgNtfTiMUpEFspZhspWg
+    VAULT_TOKEN: s.3NX3yRXFOhut1352ubsKPJHj
     SECRET_PATH:  homelab
     GIT_REPO:  https://gitlab.tosins-cloudlabs.com/tosin/qubinode_navigator.git
     INVENTORY: supermicro
