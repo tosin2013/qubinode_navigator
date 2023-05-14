@@ -16,7 +16,7 @@ build:
     CICD_PIPELINE: 'true'
     ENV_USERNAME: admin
     DOMAIN: qubinodelab.io
-    FORWARDER: '1.1.1.1'
+    FORWARDER: '8.8.8.8'
     ACTIVE_BRIDGE: 'true'
     INTERFACE: eno1
     DISK: /dev/nvme0n1
