@@ -149,13 +149,16 @@ function configure_python() {
         sudo pip3 install firewall
         sudo pip3 install pyyaml
         sudo pip3 install ansible-vault
-s
+        /root/.local/bin/ansible-config  init --disabled -t all >/etc/ansible/ansible.cfg
+        echo "remote_tmp=/tmp/ansible-lab-user" >> /etc/ansible/ansible.cfg
+
     fi
     if ! command -v ansible-navigator &> /dev/null
     then
         echo "ansible-navigator not found, installing..."
         sudo pip3 install ansible-navigator
         echo 'export PATH=$HOME/.local/bin:$PATH' >>~/.profile
+        echo 'export PATH=$HOME/.local/bin:$PATH' >>/home/lab-user/.profile
         source ~/.profile
     else
         echo "ansible-navigator is already installed"
@@ -248,6 +251,7 @@ function configure_ansible_vault_setup() {
     then    
         echo "$SSH_PASSWORD" > ~/.vault_password
         sudo cp ~/.vault_password /root/.vault_password 
+        sudo cp ~/.vault_password /home/lab-user/.vault_password 
         bash  ./ansible_vault_setup.sh
     else 
         bash  ./ansible_vault_setup.sh
