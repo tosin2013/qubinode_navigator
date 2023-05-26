@@ -150,9 +150,9 @@ function configure_python() {
         sudo pip3 install pyyaml
         sudo pip3 install ansible-vault
         /root/.local/bin/ansible-config  init --disabled -t all >/etc/ansible/ansible.cfg
-        echo "remote_tmp=/tmp/ansible-lab-user" >> /etc/ansible/ansible.cfg
-
+        sudo sed -i 's/;remote_tmp=~\/.ansible\/tmp/remote_tmp=\/tmp\/ansible-lab-user/' /etc/ansible/ansible.cfg
     fi
+    
     if ! command -v ansible-navigator &> /dev/null
     then
         echo "ansible-navigator not found, installing..."
