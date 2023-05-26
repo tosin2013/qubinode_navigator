@@ -10,7 +10,7 @@ check_env:
 
 build:
   stage: dell-r620
-  image: fedora:37
+  image: fedora:38
   variables:
     SSH_USER: admin
     CICD_PIPELINE: 'true'
