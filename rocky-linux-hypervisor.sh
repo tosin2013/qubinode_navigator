@@ -324,12 +324,13 @@ function configure_bash_aliases() {
 function confiure_lvm_storage(){
     echo "Configuring Storage"
     echo "************************"
-    if [ ! -f $HOME/configure-lvm.sh ];
+    if [ ! -f /tmp/configure-lvm.sh ];
     then 
         curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/dependancies/equinix-rocky/configure-lvm.sh
+        mv configure-lvm.sh /tmp/configure-lvm.sh
         chmod +x configure-lvm.sh
     fi 
-    /home/lab-user/configure-lvm.sh || exit 1
+    /tmp/configure-lvm.sh || exit 1
 }
 
 function setup_kcli_base() {
