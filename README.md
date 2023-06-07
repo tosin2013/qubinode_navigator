@@ -37,7 +37,7 @@ export SSH_USER=lab-user
 export CICD_PIPELINE='true'
 export ENV_USERNAME=lab-user
 export DOMAIN=qubinodelab.io  # Change to your domain if you want to use your own domain
-export FORWARDER='147.75.207.270'
+export FORWARDER='1.1.1.1'
 export ACTIVE_BRIDGE='false'
 export INTERFACE=bond0
 export GIT_REPO=https://github.com/tosin2013/qubinode_navigator.git
@@ -60,8 +60,7 @@ EOF
 
 *The install will fail on the first time to re-run un the following below*
 ```
-# tmux new-session -d -s rocky-linux-hypervisor 'source notouch.env && sudo -E  ./rocky-linux-hypervisor.sh'
-# tmux attach -t rocky-linux-hypervisor
+source notouch.env && sudo -E  ./rocky-linux-hypervisor.sh
 ```
 
 
