@@ -1,7 +1,7 @@
 #!/bin/bash
 # Uncomment for debugging
-export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
-set -x
+#export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+#set -x
 
 KVM_VERSION=0.5.0
 export ANSIBLE_SAFE_VERSION="0.0.6"
@@ -162,6 +162,16 @@ function configure_python() {
         source ~/.profile
     else
         echo "ansible-navigator is already installed"
+    fi
+    if ! command -v ansible-vault &> /dev/null
+    then
+        echo "ansible-vault not found, installing..."
+        sudo pip3 install ansible-vault
+        echo 'export PATH=$HOME/.local/bin:$PATH' >>~/.profile
+        echo 'export PATH=$HOME/.local/bin:$PATH' >>/home/lab-user/.profile
+        source ~/.profile
+    else
+        echo "ansible-vault is already installed"
     fi
 }
 

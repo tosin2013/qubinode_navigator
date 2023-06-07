@@ -5,8 +5,9 @@ This repository contains a quickstart script setup.sh to set up and configure Qu
 [![Generate Documentation](https://github.com/tosin2013/qubinode_navigator/actions/workflows/generate-documentation.yml/badge.svg)](https://github.com/tosin2013/qubinode_navigator/actions/workflows/generate-documentation.yml)
 
 ## Prerequisites
-* Linux-based operating system (RHEL, CentOS, Rocky Linux, or Fedora)
+* Linux-based operating system (RHEL 9.2, CentOS, Rocky Linux, or Fedora)
 * Git
+
 
 ## Quickstart 
 
@@ -15,42 +16,48 @@ This repository contains a quickstart script setup.sh to set up and configure Qu
 curl https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/setup.sh | bash
 ```
 ### Running on Rocky Linux on RHPDS using tmux Recommened 
-1. switch to root user 
-    ```
-    sudo su - root
-    ```
-2. setup ansible safe
-    ```
-    dnf install ansible-core -y 
-    curl -OL https://github.com/tosin2013/ansiblesafe/releases/download/v0.0.6/ansiblesafe-v0.0.6-linux-amd64.tar.gz
-    tar -zxvf ansiblesafe-v0.0.6-linux-amd64.tar.gz
-    chmod +x ansiblesafe-linux-amd64 
-    sudo mv ansiblesafe-linux-amd64 /usr/local/bin/ansiblesafe
-    ```
-4. Run ansible safe **do not** encrypt vault.yml
-    ```
-    ansiblesafe
-    ```
-5. Copy vault.yml to /tmp/config.yml
-6. Export the following variables
-    ```
-    export SSH_USER=lab-user
-    export CICD_PIPELINE='true'
-    export ENV_USERNAME=lab-user
-    export DOMAIN=qubinodelab.io
-    export FORWARDER='147.75.207.207'
-    export ACTIVE_BRIDGE='false'
-    export INTERFACE=bond0
-    export GIT_REPO=https://github.com/tosin2013/qubinode_navigator.git
-    export INVENTORY=equinix
-    export SSH_PASSWORD=YOURPASSWORD
-    ```
-7. Run the following commands
-    ```
-    dnf install -y tmux curl
-    tmux new-session -d -s rocky-linux-hypervisor 'curl https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/rocky-linux-hypervisor.sh | bash'
-    tmux attach -t rocky-linux-hypervisor
-    ```
+**create /tmp/config.yml as lab-user**  
+`you can uae ansiblesafe to generate the content of this file` - [link](https://github.com/tosin2013/ansiblesafe) 
+```
+$ vi /tmp/config.yml
+rhsm_username: rheluser
+rhsm_password: rhelpassword
+rhsm_org: orgid
+rhsm_activationkey: activationkey
+admin_user_password: password # Change to the lab-user password
+offline_token: offlinetoken
+openshift_pull_secret: pullsecret
+freeipa_server_admin_password: password # Change to the lab-user password
+```
+**Add the following to .bashrc as lab-user**
+```
+$ vi .bashrc
+export SSH_USER=lab-user
+export CICD_PIPELINE='true'
+export ENV_USERNAME=lab-user
+export DOMAIN=qubinodelab.io  # Change to your domain if you want to use your own domain
+export FORWARDER='147.75.207.270'
+export ACTIVE_BRIDGE='false'
+export INTERFACE=bond0
+export GIT_REPO=https://github.com/tosin2013/qubinode_navigator.git
+export INVENTORY=equinix
+export SSH_PASSWORD=DontForgetToChangeMe # Change to the lab-user password
+```
+
+**Run the following commands as lab-user**
+`run the ./rocky-linux-hypervisor.sh more than once because it will the first time`
+```
+sudo dnf install -y tmux curl
+git clone https://github.com/gpakosz/.tmux.git
+ln -s -f .tmux/.tmux.conf
+cp .tmux/.tmux.conf.local .
+curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/rocky-linux-hypervisor.sh 
+chmod +x rocky-linux-hypervisor.sh 
+tmux new-session -d -s rocky-linux-hypervisor 'source ~/.bashrc && sudo -E  ./rocky-linux-hypervisor.sh'
+tmux attach -t rocky-linux-hypervisor
+```
+
+
 
 ## Running from Git Repository
 ![20230414005208](https://i.imgur.com/ekBytuN.png)
@@ -127,6 +134,7 @@ For example, to deploy a KVM host, run:
 ```bash
 ./setup.sh --help # Show help message
 ```
+## View the Kcli pipelines 
 
 ## GitLab CI/CD
 To Kick off a GitLab CI/CD pipeline, run the following command:
