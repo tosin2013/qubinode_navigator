@@ -1,7 +1,7 @@
 #!/bin/bash
 # Uncomment for debugging
-export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
-set -x
+#export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+#set -x
 
 KVM_VERSION=0.5.0
 export ANSIBLE_SAFE_VERSION="0.0.6"
@@ -149,16 +149,29 @@ function configure_python() {
         sudo pip3 install firewall
         sudo pip3 install pyyaml
         sudo pip3 install ansible-vault
-s
+        /root/.local/bin/ansible-config  init --disabled -t all >/etc/ansible/ansible.cfg
+        sudo sed -i 's/;remote_tmp=~\/.ansible\/tmp/remote_tmp=\/tmp\/ansible-lab-user/' /etc/ansible/ansible.cfg
     fi
+    
     if ! command -v ansible-navigator &> /dev/null
     then
         echo "ansible-navigator not found, installing..."
         sudo pip3 install ansible-navigator
         echo 'export PATH=$HOME/.local/bin:$PATH' >>~/.profile
+        echo 'export PATH=$HOME/.local/bin:$PATH' >>/home/lab-user/.profile
         source ~/.profile
     else
         echo "ansible-navigator is already installed"
+    fi
+    if ! command -v ansible-vault &> /dev/null
+    then
+        echo "ansible-vault not found, installing..."
+        sudo pip3 install ansible-vault
+        echo 'export PATH=$HOME/.local/bin:$PATH' >>~/.profile
+        echo 'export PATH=$HOME/.local/bin:$PATH' >>/home/lab-user/.profile
+        source ~/.profile
+    else
+        echo "ansible-vault is already installed"
     fi
 }
 
@@ -247,6 +260,7 @@ function configure_ansible_vault_setup() {
     then    
         echo "$SSH_PASSWORD" > ~/.vault_password
         sudo cp ~/.vault_password /root/.vault_password 
+        sudo cp ~/.vault_password /home/lab-user/.vault_password 
         bash  ./ansible_vault_setup.sh
     else 
         bash  ./ansible_vault_setup.sh
@@ -319,12 +333,13 @@ function configure_bash_aliases() {
 function confiure_lvm_storage(){
     echo "Configuring Storage"
     echo "************************"
-    if [ ! -f $HOME/configure-lvm.sh ];
+    if [ ! -f /tmp/configure-lvm.sh ];
     then 
         curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/dependancies/equinix-rocky/configure-lvm.sh
+        mv configure-lvm.sh /tmp/configure-lvm.sh
         chmod +x configure-lvm.sh
     fi 
-    /home/lab-user/configure-lvm.sh || exit 1
+    /tmp/configure-lvm.sh || exit 1
 }
 
 function setup_kcli_base() {

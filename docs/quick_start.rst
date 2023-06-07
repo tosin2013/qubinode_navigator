@@ -47,15 +47,6 @@ Make sure the following packages are installed on your system before startng the
     chmod +x configure-rhel9.x.sh
     ./configure-rhel9.x.sh
 
-`Red Hat Enterprise Linux 8 <https://developers.redhat.com/products/rhel/hello-world>`_
----------
-
-Make sure the following packages are installed on your system before startng the install on RHEL 8::
-
-    curl -OL https://gist.githubusercontent.com/tosin2013/ae925297c1a257a1b9ac8157bcc81f31/raw/71a798d427a016bbddcc374f40e9a4e6fd2d3f25/configure-rhel8.x.sh
-    chmod +x configure-rhel8.x.sh
-    ./configure-rhel8.x.sh
-
 `Other RHEL Based Distros`_
 ---------
 Make sure the following packages are installed on your system before startng the install::
