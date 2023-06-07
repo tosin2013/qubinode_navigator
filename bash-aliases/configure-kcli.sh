@@ -11,13 +11,10 @@ function kcli_configure_images(){
     echo "Configuring images"
     dependency_check
     echo "Downloading Fedora"
-    sudo kcli download image fedora37
-    echo "Downloading Centos Streams"
-    sudo kcli download image centos9jumpbox -u https://cloud.centos.org/centos/9-stream/x86_64/images/CentOS-Stream-GenericCloud-9-20230405.1.x86_64.qcow2
-    sudo kcli download image  ztpfwjumpbox  -u https://cloud.centos.org/centos/9-stream/x86_64/images/CentOS-Stream-GenericCloud-9-20230405.1.x86_64.qcow2
-    sudo kcli download image centos8jumpbox -u https://cloud.centos.org/centos/8-stream/x86_64/images/CentOS-Stream-GenericCloud-8-20230404.0.x86_64.qcow2
-    sudo kcli download image centos8streams -u https://cloud.centos.org/centos/8-stream/x86_64/images/CentOS-Stream-GenericCloud-8-20230404.0.x86_64.qcow2
-    sudo kcli download image ubuntu -u https://cloud-images.ubuntu.com/releases/jammy/release/ubuntu-22.04-server-cloudimg-amd64.img
+    sudo kcli download image fedora38
+    #echo "Downloading Centos Streams"
+    sudo kcli download image centos9-stream
+    #sudo kcli download image ubuntu -u https://cloud-images.ubuntu.com/releases/jammy/release/ubuntu-22.04-server-cloudimg-amd64.img
 
   if [[ $LINUX_VERSION == "rhel"  ||  "A${INSTALL_RHEL_IMAGES}" != "Atrue" ]]; then
     echo "Downloading Red Hat Enterprise Linux 8"
