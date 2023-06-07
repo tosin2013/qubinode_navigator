@@ -31,7 +31,8 @@ freeipa_server_admin_password: password # Change to the lab-user password
 ```
 **Add the following to .bashrc as lab-user**
 ```
-$ vi .bashrc
+$ SSH_PASSOWRD=DontForgetToChangeMe
+$ cat >notouch.env<<EOF
 export SSH_USER=lab-user
 export CICD_PIPELINE='true'
 export ENV_USERNAME=lab-user
@@ -41,22 +42,27 @@ export ACTIVE_BRIDGE='false'
 export INTERFACE=bond0
 export GIT_REPO=https://github.com/tosin2013/qubinode_navigator.git
 export INVENTORY=equinix
-export SSH_PASSWORD=DontForgetToChangeMe # Change to the lab-user password
+export SSH_PASSWORD=${SSH_PASSOWRD}
+EOF
 ```
 
-**Run the following commands as lab-user**
-`run the ./rocky-linux-hypervisor.sh more than once because it will the first time`
+**Run the following commands as lab-user**  
 ```
-sudo dnf install -y tmux curl
-git clone https://github.com/gpakosz/.tmux.git
-ln -s -f .tmux/.tmux.conf
-cp .tmux/.tmux.conf.local .
-curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/rocky-linux-hypervisor.sh 
-chmod +x rocky-linux-hypervisor.sh 
-tmux new-session -d -s rocky-linux-hypervisor 'source ~/.bashrc && sudo -E  ./rocky-linux-hypervisor.sh'
-tmux attach -t rocky-linux-hypervisor
+# sudo dnf install -y tmux curl
+# git clone https://github.com/gpakosz/.tmux.git
+# ln -s -f .tmux/.tmux.conf
+# cp .tmux/.tmux.conf.local .
+# curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/rocky-linux-hypervisor.sh 
+# chmod +x rocky-linux-hypervisor.sh 
+# tmux new-session -d -s rocky-linux-hypervisor 'source notouch.env && sudo -E  ./rocky-linux-hypervisor.sh'
+# tmux attach -t rocky-linux-hypervisor
 ```
 
+*The install will fail on the first time to re-run un the following below*
+```
+# tmux new-session -d -s rocky-linux-hypervisor 'source notouch.env && sudo -E  ./rocky-linux-hypervisor.sh'
+# tmux attach -t rocky-linux-hypervisor
+```
 
 
 ## Running from Git Repository
