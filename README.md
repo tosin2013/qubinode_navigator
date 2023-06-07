@@ -68,7 +68,7 @@ When the prompt below comes up follow the link and look for the corresponding rh
 right click on the link and copy the link address
 ![20230607131930](https://i.imgur.com/83Gar1k.png)
 
-Once deployment is complete you can run [kcli](https://kcli.readthedocs.io/en/latest/) commands or got to [kcli-pipelines](https://github.com/tosin2013/kcli-pipelines) repo to run vms. 
+Once deployment is complete you can run [kcli](https://kcli.readthedocs.io/en/latest/) commands or go to [kcli-pipelines](https://github.com/tosin2013/kcli-pipelines) repo to run vms. 
 ```
 $ kcli --help
 ```
