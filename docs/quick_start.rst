@@ -10,7 +10,7 @@ The first step is to get RHEL 9 based operating system installed on your hardwar
 Suppoted Operating  Systems
 ========================
 
-`Fedora 37 <https://getfedora.org/>`_
+`Fedora 38 <https://getfedora.org/>`_
 ---------
 Make sure the following packages are installed on your system before startng the install::
 
@@ -24,7 +24,7 @@ Make sure the following packages are installed on your system before startng the
     sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make  -y
 
 
-`Rocky 8.7 <https://rockylinux.org//>`_
+`Rocky 8.8 <https://rockylinux.org//>`_
 ---------
 
 Make sure the following packages are installed on your system before startng the install::
@@ -52,58 +52,3 @@ Make sure the following packages are installed on your system before startng the
 Make sure the following packages are installed on your system before startng the install::
 
     sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user podman ansible-core make -y
-
-The qubinode-installer
-=========================
-
-Download and extract the qubinode-installer as a non root user::
-
-    cd $HOME
-    wget https://github.com/Qubinode/qubinode-installer/archive/master.zip
-    unzip master.zip
-    rm master.zip
-    mv qubinode-installer-master qubinode-installer
-
-If you would like to develop the qubinode-installer you can clone the repo::
-
-    YOUR_ID=githubid
-    git clone https://github.com/${YOUR_ID}/qubinode-installer.git
-    cd  qubinode-installer
-
-Qubinode Setup
-===============
-
-The below commands ensure your system is setup as a KVM host.
-The qubinode-installer needs to run as a regular user.
-
-* setup   - ensure your username is setup for sudoers
-* rhsm    - ensure your rhel system is registered to Red Hat
-* ansible - ensure your rhel system is setup for to function as a ansible controller
-* host    - ensure your rhel system is setup as a KVM host
-
-Validate sudo user for admin::
-
-    $ sudo cat /etc/sudoers | grep admin
-      admin ALL=(ALL) NOPASSWD: ALL 
-    
-    $ sudo su - root
-    $ curl -OL https://gist.githubusercontent.com/tosin2013/385054f345ff7129df6167631156fa2a/raw/b67866c8d0ec220c393ea83d2c7056f33c472e65/configure-sudo-user.sh
-    $ chmod +x configure-sudo-user.sh
-    $ ./configure-sudo-user.sh admin 
-    $ sudo su - admin 
-
-
-Start The Qubinode Installer::
-
-    cd ~/qubinode-installer
-    ./qubinode-installer -m setup
-    ./qubinode-installer -m rhsm
-    ./qubinode-installer -m ansible
-    ./qubinode-installer -m host
-
-
-At this point you should be able to acces the RHEL system via the cockpit web interface on
-* https://SERVER_IP:9090
-
-
-See the `Qubinode Overview <https://qubinode-installer.readthedocs.io/en/latest/index.html>`_ for more information on the diffent deployment options available.

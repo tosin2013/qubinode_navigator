@@ -8,7 +8,6 @@ This repository contains a quickstart script setup.sh to set up and configure Qu
 * Linux-based operating system (RHEL 9.2, CentOS, Rocky Linux, or Fedora)
 * Git
 
-
 ## Quickstart 
 
 ### Running on RHEL, CentOS, or Fedora
@@ -172,4 +171,4 @@ python3 trigger-gitlab-pipeline.py --project_id=1 --token=glpt-mytoken --ref=mai
 ## Contributing
 Please submit bug reports, suggestions, and improvements as GitHub issues.
 
-See [Developers Guide](docs/developers.rst) for more information.
+See [Developers Guide](docs/developers.md) for more information.
