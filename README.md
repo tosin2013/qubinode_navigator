@@ -74,9 +74,11 @@ Once deployment is complete you can run [kcli](https://kcli.readthedocs.io/en/la
 $ kcli --help
 ```
 
-**Rocky Linux on RHPDS Post Steps**
-Login via RDP using the remote user and password you set in the config.yml file.
+**Rocky Linux on RHPDS Post Steps**  
+Login via RDP using the remote user and password you set in the config.yml file.  
+
 ![20230610101107](https://i.imgur.com/DjPE6NR.png)
+
 `You can also use Remmina to login to the VM`
 
 ## Running from Git Repository
