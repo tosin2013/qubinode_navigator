@@ -8,7 +8,6 @@ This repository contains a quickstart script setup.sh to set up and configure Qu
 * Linux-based operating system (RHEL 9.2, CentOS, Rocky Linux, or Fedora)
 * Git
 
-
 ## Quickstart 
 
 ### Running on RHEL, CentOS, or Fedora
@@ -28,6 +27,8 @@ admin_user_password: password # Change to the lab-user password
 offline_token: offlinetoken
 openshift_pull_secret: pullsecret
 freeipa_server_admin_password: password # Change to the lab-user password
+xrdp_remote_user: remoteuser
+remote_user_password: password
 ```
 **Add the following to .bashrc as lab-user**
 ```
@@ -68,7 +69,7 @@ When the prompt below comes up follow the link and look for the corresponding rh
 right click on the link and copy the link address
 ![20230607131930](https://i.imgur.com/83Gar1k.png)
 
-Once deployment is complete you can run [kcli](https://kcli.readthedocs.io/en/latest/) commands or got to [kcli-pipelines](https://github.com/tosin2013/kcli-pipelines) repo to run vms. 
+Once deployment is complete you can run [kcli](https://kcli.readthedocs.io/en/latest/) commands or go to [kcli-pipelines](https://github.com/tosin2013/kcli-pipelines) repo to run vms. 
 ```
 $ kcli --help
 ```
@@ -171,4 +172,4 @@ python3 trigger-gitlab-pipeline.py --project_id=1 --token=glpt-mytoken --ref=mai
 ## Contributing
 Please submit bug reports, suggestions, and improvements as GitHub issues.
 
-See [Developers Guide](docs/developers.rst) for more information.
+See [Developers Guide](docs/developers.md) for more information.
