@@ -3,13 +3,13 @@ ansible-navigator:
   ansible:
     inventory:
       entries:
-      - /home/admin/qubinode_navigator/inventories/localhost
+        - /home/admin/qubinode_navigator/inventories/localhost
   execution-environment:
     container-engine: podman
     enabled: true
     environment-variables:
       pass:
-      - USER
+        - USER
     image: quay.io/qubinode/qubinode-installer:0.6.0
     pull:
       policy: missing
