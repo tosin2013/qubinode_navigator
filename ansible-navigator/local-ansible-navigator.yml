@@ -3,14 +3,14 @@ ansible-navigator:
   ansible:
     inventory:
       entries:
-      - /home/admin/qubinode_navigator/inventories/localhost
+        - /home/admin/qubinode_navigator/inventories/localhost
   execution-environment:
     container-engine: podman
     enabled: true
     environment-variables:
       pass:
-      - USER
-    image:  localhost/qubinode-installer:0.1.0
+        - USER
+    image: localhost/qubinode-installer:0.1.0
     pull:
       policy: missing
   logging:
