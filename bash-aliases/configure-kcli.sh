@@ -16,13 +16,13 @@ function kcli_configure_images(){
     sudo kcli download image centos9-stream
     #sudo kcli download image ubuntu -u https://cloud-images.ubuntu.com/releases/jammy/release/ubuntu-22.04-server-cloudimg-amd64.img
 
-  if [[ $LINUX_VERSION == "rhel"  ||  "A${INSTALL_RHEL_IMAGES}" != "Atrue" ]]; then
-    echo "Downloading Red Hat Enterprise Linux 8"
-    sudo kcli download image rhel8
-    echo "Downloading Red Hat Enterprise Linux 9"
-    echo "For AAP Deployments use: Red Hat Enterprise Linux 9.1 KVM Guest Image"
-    sudo kcli download image rhel9
-  fi
+  #if [[ $LINUX_VERSION == "rhel"  &&  "A${INSTALL_RHEL_IMAGES}" != "Atrue" ]]; then
+  #  echo "Downloading Red Hat Enterprise Linux 8"
+  #  sudo kcli download image rhel8
+  #  echo "Downloading Red Hat Enterprise Linux 9"
+  #  echo "For AAP Deployments use: Red Hat Enterprise Linux 9.1 KVM Guest Image"
+  #  sudo kcli download image rhel9
+  #fi
 
 }
 
