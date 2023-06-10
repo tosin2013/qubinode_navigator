@@ -1,5 +1,5 @@
 ---
-- name: setup KVM host
+- name: Setup KVM host
   hosts: control
   become: true
   tasks:
@@ -9,7 +9,7 @@
         state: directory
         mode: '0755'
 
-    - name: Checking to see if host_device is define
+    - name: Checking to see if host_device is defined
       ansible.builtin.fail:
         msg: "Checking to see if host_device is defined."
       when: host_device is not defined
