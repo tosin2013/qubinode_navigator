@@ -5,15 +5,17 @@
 
   tasks:
     - name: Ensure backup folder is created
-      file:
+      ansible.builtin.file:
         path: "{{ project_dir }}/backups"
         state: directory
         mode: '0755'
 
-    - fail: msg="Checking to see if host_device is defined."
+    - name: Checking to see if host_device is define
+      ansible.builtin.failed: msg="Checking to see if host_device is defined."
       when: host_device is not defined
 
-    - fail: msg="Checking to see if vg_name is defined."
+    - name: Checking to see if vg_name is defined
+      ansible.builtin.failed: msg="Checking to see if vg_name is defined."
       when: vg_name is not defined
 
     - name: create libvirt logical volume
