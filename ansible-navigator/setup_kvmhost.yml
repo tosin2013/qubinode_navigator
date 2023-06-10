@@ -11,11 +11,13 @@
         mode: '0755'
 
     - name: Checking to see if host_device is define
-      ansible.builtin.failed: msg="Checking to see if host_device is defined."
+      ansible.builtin.fail: 
+        msg: "Checking to see if host_device is defined."
       when: host_device is not defined
 
     - name: Checking to see if vg_name is defined
-      ansible.builtin.failed: msg="Checking to see if vg_name is defined."
+      ansible.builtin.fail: 
+        msg: "Checking to see if vg_name is defined."
       when: vg_name is not defined
 
     - name: create libvirt logical volume
