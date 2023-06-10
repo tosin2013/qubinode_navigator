@@ -33,6 +33,7 @@ make podman-login
 **Create Ansible navigator config file**
 ```
 # export INVENTORY=supermicro
+# cp -avi inventories/sample/ inventories/${INVENTORY}
 # cat >~/.ansible-navigator.yml<<EOF
 ---
 ansible-navigator:

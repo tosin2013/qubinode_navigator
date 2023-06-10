@@ -23,7 +23,7 @@
 
     - name: running KVM host setup
       ansible.builtin.include_role:
-        name: tosin2013.qubinode_kvmhost_setup_collection.qubinode_kvmhost_setup
+        name: tosin2013.qubinode_kvmhost_setup_collection.kvmhost_setup
 
     - name: validate KVM host setup
       ansible.builtin.include_role:
