@@ -81,6 +81,11 @@ Login via RDP using the remote user and password you set in the config.yml file.
 
 `You can also use Remmina to login to the VM`
 
+**ssh into vm and run the following**
+```
+$ sudo kcli download image rhel8
+$ sudo kcli download image rhel9
+```
 ## Running from Git Repository
 ![20230414005208](https://i.imgur.com/ekBytuN.png)
 
