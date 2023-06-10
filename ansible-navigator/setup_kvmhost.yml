@@ -2,7 +2,6 @@
 - name: setup KVM host
   hosts: control
   become: true
-
   tasks:
     - name: Ensure backup folder is created
       ansible.builtin.file:
@@ -11,24 +10,24 @@
         mode: '0755'
 
     - name: Checking to see if host_device is define
-      ansible.builtin.fail: 
+      ansible.builtin.fail:
         msg: "Checking to see if host_device is defined."
       when: host_device is not defined
 
     - name: Checking to see if vg_name is defined
-      ansible.builtin.fail: 
+      ansible.builtin.fail:
         msg: "Checking to see if vg_name is defined."
       when: vg_name is not defined
 
-    - name: create libvirt logical volume
+    - name: Create libvirt logical volume
       ansible.builtin.include_role:
         name: tosin2013.qubinode_kvmhost_setup_collection.swygue_lvm
-      when: create_lvm|bool
+      when: create_lvm | bool
 
-    - name: running KVM host setup
+    - name: Running KVM host setup
       ansible.builtin.include_role:
         name: tosin2013.qubinode_kvmhost_setup_collection.kvmhost_setup
 
-    - name: validate KVM host setup
+    - name: Validate KVM host setup
       ansible.builtin.include_role:
         name: tosin2013.qubinode_kvmhost_setup_collection.edge_hosts_validate
