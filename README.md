@@ -28,7 +28,7 @@ offline_token: offlinetoken
 openshift_pull_secret: pullsecret
 freeipa_server_admin_password: password # Change to the lab-user password
 xrdp_remote_user: remoteuser
-remote_user_password: password
+xrdp_remote_user_password: password
 ```
 **Add the following to .bashrc as lab-user**
 ```
