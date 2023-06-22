@@ -64,6 +64,12 @@ EOF
 source notouch.env && sudo -E  ./rocky-linux-hypervisor.sh
 ```
 
+**ssh into vm and run the following**
+```
+$ sudo kcli download image rhel8
+$ sudo kcli download image rhel9
+```
+
 When the prompt below comes up follow the link and look for the corresponding rhel release.
 ![20230607131855](https://i.imgur.com/MaFsUau.png)
 right click on the link and copy the link address
@@ -81,11 +87,7 @@ Login via RDP using the remote user and password you set in the config.yml file.
 
 `You can also use Remmina to login to the VM`
 
-**ssh into vm and run the following**
-```
-$ sudo kcli download image rhel8
-$ sudo kcli download image rhel9
-```
+
 ## Running from Git Repository
 Follow these instructions to run the setup.sh script:
 
