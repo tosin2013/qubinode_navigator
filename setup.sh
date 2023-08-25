@@ -48,6 +48,34 @@ function get_rhel_version() {
 
 }
 
+function install_packages() {
+    # Check if packages are already installed
+    echo "Installing packages"
+    echo "*******************"
+    for package in openssl-devel bzip2-devel libffi-devel wget vim podman ncurses-devel sqlite-devel firewalld make gcc git unzip sshpass lvm lvm2; do
+        if rpm -q "${package}" >/dev/null 2>&1; then
+            echo "Package ${package} already installed"
+        else
+            echo "Installing package ${package}"
+            sudo dnf install "${package}" -y
+        fi
+    done
+
+    # Install necessary groups and updates
+    if dnf group info "Development Tools" >/dev/null 2>&1; then
+        echo "Package group Development Tools already installed"
+    else
+        echo "Installing package group Development Tools"
+        sudo dnf groupinstall "Development Tools" -y
+        sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
+        sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo'
+        dnf check-update
+        sudo dnf install code -y
+    fi
+
+    sudo dnf update -y
+}
+
 # @description This function get_qubinode_navigator function will clone the qubinode_navigator repo
 function get_qubinode_navigator() {
     echo "Cloning qubinode_navigator"
@@ -352,6 +380,7 @@ fi
 
 if [ $# -eq 0 ]; then
     configure_os  $BASE_OS
+    install_packages
     configure_ssh
     configure_firewalld
     get_qubinode_navigator $MY_DIR
