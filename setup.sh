@@ -52,7 +52,7 @@ function install_packages() {
     # Check if packages are already installed
     echo "Installing packages"
     echo "*******************"
-    for package in openssl-devel bzip2-devel libffi-devel wget vim podman ncurses-devel sqlite-devel firewalld make gcc git unzip sshpass lvm lvm2; do
+    for package in openssl-devel bzip2-devel libffi-devel wget vim podman ncurses-devel sqlite-devel firewalld make gcc git unzip sshpass lvm lvm2 python3 python3-pip; do
         if rpm -q "${package}" >/dev/null 2>&1; then
             echo "Package ${package} already installed"
         else
@@ -74,6 +74,7 @@ function install_packages() {
     fi
 
     sudo dnf update -y
+
 }
 
 # @description This function get_qubinode_navigator function will clone the qubinode_navigator repo
@@ -93,7 +94,29 @@ function configure_navigator() {
     if [ -d $1/qubinode_navigator ]; then
         cd $1/qubinode_navigator
         if ! command -v ansible-navigator &> /dev/null; then
-            make install-ansible-navigator
+            if [ ${BASE_OS}  == "RHEL8" ]; then {
+                # Enable the Python 3.9 Module
+                sudo dnf module install -y python39
+                sudo dnf install -y python39 python39-devel python39-pip
+                sudo dnf module enable -y python39
+
+                # Make sure the Python 3.6 Module is disabled
+                sudo dnf module disable -y python36
+
+                # Set the default Python version to 3.9
+                sudo alternatives --set python /usr/bin/python3.9
+                sudo alternatives --set python3 /usr/bin/python3.9
+
+                # Install needed Pip modules
+                # - For Ansible-Navigator
+                curl -sSL https://raw.githubusercontent.com/ansible/ansible-navigator/main/requirements.txt | sudo python3 -m pip install -r /dev/stdin
+                sudo python3 -m pip install -r $HOME/qubinode_navigator/bash-aliases/bastion-requirements.txt
+            }
+            else
+            {
+                make install-ansible-navigator
+            }
+            
             make copy-navigator
             # Check if running as root
             if [ "$EUID" -eq 0 ]; then
