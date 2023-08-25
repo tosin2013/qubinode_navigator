@@ -94,7 +94,7 @@ function configure_navigator() {
     if [ -d $1/qubinode_navigator ]; then
         cd $1/qubinode_navigator
         if ! command -v ansible-navigator &> /dev/null; then
-            if [ ${BASE_OS}  == "RHEL8" ]; then {
+            if [ ${BASE_OS}  == "RHEL8" ]; then 
                 # Enable the Python 3.9 Module
                 sudo dnf module install -y python39
                 sudo dnf install -y python39 python39-devel python39-pip
@@ -111,11 +111,9 @@ function configure_navigator() {
                 # - For Ansible-Navigator
                 curl -sSL https://raw.githubusercontent.com/ansible/ansible-navigator/main/requirements.txt | sudo python3 -m pip install -r /dev/stdin
                 sudo python3 -m pip install -r $HOME/qubinode_navigator/bash-aliases/bastion-requirements.txt
-            }
             else
-            {
                 make install-ansible-navigator
-            }
+            fi
             
             make copy-navigator
             # Check if running as root
