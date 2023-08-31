@@ -14,7 +14,7 @@ This repository contains a quickstart script setup.sh to set up and configure Qu
 ```
 curl https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/setup.sh | bash
 ```
-### Running on Rocky Linux on RHPDS using tmux
+### Running on  RHPDS using tmux
 **create /tmp/config.yml as lab-user**  
 `you can uae ansiblesafe to generate the content of this file` - [link](https://github.com/tosin2013/ansiblesafe) 
 ```

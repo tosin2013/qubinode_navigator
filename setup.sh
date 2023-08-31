@@ -107,6 +107,28 @@ function configure_navigator() {
                 sudo alternatives --set python /usr/bin/python3.9
                 sudo alternatives --set python3 /usr/bin/python3.9
 
+                # Non-root podman hacks
+                sudo chmod 4755 /usr/bin/newgidmap
+                sudo chmod 4755 /usr/bin/newuidmap
+
+                sudo dnf reinstall -yq shadow-utils
+
+                cat > /tmp/xdg_runtime_dir.sh <<EOF
+export XDG_RUNTIME_DIR="\$HOME/.run/containers"
+EOF
+
+                sudo mv /tmp/xdg_runtime_dir.sh /etc/profile.d/xdg_runtime_dir.sh
+                sudo chmod a+rx /etc/profile.d/xdg_runtime_dir.sh
+                sudo cp /etc/profile.d/xdg_runtime_dir.sh /etc/profile.d/xdg_runtime_dir.zsh
+
+
+                cat > /tmp/ping_group_range.conf <<EOF
+net.ipv4.ping_group_range=0 2000000
+EOF
+                sudo mv /tmp/ping_group_range.conf /etc/sysctl.d/ping_group_range.conf
+
+                sudo sysctl --system
+
                 # Install needed Pip modules
                 # - For Ansible-Navigator
                 curl -sSL https://raw.githubusercontent.com/ansible/ansible-navigator/main/requirements.txt | sudo python3 -m pip install -r /dev/stdin
