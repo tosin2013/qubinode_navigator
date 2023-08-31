@@ -42,7 +42,7 @@ export FORWARDER='1.1.1.1'
 export ACTIVE_BRIDGE='false'
 export INTERFACE=bond0
 export GIT_REPO=https://github.com/tosin2013/qubinode_navigator.git
-export INVENTORY=equinix
+export INVENTORY=rhel8-equinix
 export SSH_PASSWORD=${SSH_PASSOWRD}
 EOF
 ```
