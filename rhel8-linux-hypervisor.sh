@@ -3,7 +3,7 @@
 export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
 set -x
 
-KVM_VERSION=0.7.0
+KVM_VERSION=0.8.0
 export ANSIBLE_SAFE_VERSION="0.0.6"
 
 export GIT_REPO="https://github.com/tosin2013/qubinode_navigator.git"
