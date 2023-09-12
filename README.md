@@ -5,7 +5,7 @@ This repository contains a quickstart script setup.sh to set up and configure Qu
 [![Generate Documentation](https://github.com/tosin2013/qubinode_navigator/actions/workflows/generate-documentation.yml/badge.svg)](https://github.com/tosin2013/qubinode_navigator/actions/workflows/generate-documentation.yml)
 
 ## Prerequisites
-* Linux-based operating system (RHEL 9.2, CentOS, Rocky Linux, or Fedora)
+* Linux-based operating system (RHEL 9.2, CentOS, rhel8 Linux, or Fedora)
 * Git
 
 ## Quickstart 
@@ -49,19 +49,19 @@ EOF
 
 **Run the following commands as lab-user**  
 ```
-# sudo dnf install -y tmux curl
-# git clone https://github.com/gpakosz/.tmux.git
-# ln -s -f .tmux/.tmux.conf
-# cp .tmux/.tmux.conf.local .
-# curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/rocky-linux-hypervisor.sh 
-# chmod +x rocky-linux-hypervisor.sh 
-# tmux new-session -d -s rocky-linux-hypervisor 'source notouch.env && sudo -E  ./rocky-linux-hypervisor.sh'
-# tmux attach -t rocky-linux-hypervisor
+sudo dnf install -y tmux curl git vim 
+git clone https://github.com/gpakosz/.tmux.git
+ln -s -f .tmux/.tmux.conf
+cp .tmux/.tmux.conf.local .
+# curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/rhel8-linux-hypervisor.sh 
+# chmod +x rhel8-linux-hypervisor.sh 
+# tmux new-session -d -s rhel8-linux-hypervisor 'source notouch.env && sudo -E  ./rhel8-linux-hypervisor.sh'
+# tmux attach -t rhel8-linux-hypervisor
 ```
 
 *The install will fail on the first time to re-run un the following below*
 ```
-source notouch.env && sudo -E  ./rocky-linux-hypervisor.sh
+source notouch.env && sudo -E  ./rhel8-linux-hypervisor.sh
 ```
 
 **ssh into vm and run the following**
@@ -80,7 +80,7 @@ Once deployment is complete you can run [kcli](https://kcli.readthedocs.io/en/la
 $ kcli --help
 ```
 
-**Rocky Linux on RHPDS Post Steps**  
+**rhel8 Linux on RHPDS Post Steps**  
 Login via RDP using the remote user and password you set in the config.yml file.  
 
 ![20230610101107](https://i.imgur.com/DjPE6NR.png)
