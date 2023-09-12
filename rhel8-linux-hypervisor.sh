@@ -89,6 +89,7 @@ function install_packages() {
     fi
 
     sudo dnf update -y
+    sudo dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm -y
 }
 
 
@@ -285,8 +286,8 @@ function deploy_kvmhost() {
     sudo mkdir -p /home/runner/.vim/autoload
     sudo chown -R lab-user:wheel /home/runner/.vim/autoload
     sudo chmod 777 -R /home/runner/.vim/autoload
-    sudo /usr/local/bin/ansible-navigator run ansible-navigator/setup_kvmhost.yml --extra-vars "admin_user=lab-user"  --penv GUID \
-        --vault-password-file "$HOME"/.vault_password -m stdout || exit 1
+    sudo -E /usr/local/bin/ansible-navigator run ansible-navigator/setup_kvmhost.yml --extra-vars "admin_user=lab-user"  --penv GUID \
+        --vault-password-file "$HOME"/.vault_password -m stdout --penv GUID || exit 1
 }
 
 function configure_bash_aliases() {
