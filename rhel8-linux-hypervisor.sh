@@ -57,7 +57,7 @@ function generate_inventory() {
         echo "[control]" >inventories/${INVENTORY}/hosts
         echo "control ansible_host=${control_host} ansible_user=${control_user}" >>inventories/${INVENTORY}/hosts
         configure_ansible_navigator
-        /usr/local/bin/ansible-navigator inventory --list -m stdout --vault-password-file "$HOME"/.vault_password
+        /usr/local/bin/ansible-navigator inventory --list -m stdout --penv GUID  --vault-password-file "$HOME"/.vault_password
     else
         echo "Qubinode Installer does not exist"
     fi
@@ -67,7 +67,7 @@ function install_packages() {
     # Check if packages are already installed
     echo "Installing packages"
     echo "*******************"
-    for package in openssl-devel bzip2-devel libffi-devel wget vim podman ncurses-devel sqlite-devel firewalld make gcc git unzip sshpass lvm2; do
+    for package in openssl-devel bzip2-devel libffi-devel wget vim podman ncurses-devel sqlite-devel firewalld make gcc git unzip sshpass lvm2 leapp-upgrade cockpit-leapp; do
         if rpm -q "${package}" >/dev/null 2>&1; then
             echo "Package ${package} already installed"
         else
@@ -120,9 +120,12 @@ function configure_groups() {
 function configure_python() {
     echo "Configuring Python"
     echo "******************"
-    if which python3 >/dev/null; then
-        echo "Python is installed"
-    else
+    PYTHON_VERSION=$(python3 --version 2>&1 | awk '{print $2}')
+
+    # Check if the version is 3.6.8
+    if [ "$PYTHON_VERSION" == "3.6.8" ]; then
+        echo "Python version is 3.6.8. Upgrading..."
+
         # Enable the Python 3.9 Module
         sudo dnf module install -y python39
         sudo dnf install -y python39 python39-devel python39-pip
@@ -134,6 +137,8 @@ function configure_python() {
         # Set the default Python version to 3.9
         sudo alternatives --set python /usr/bin/python3.9
         sudo alternatives --set python3 /usr/bin/python3.9
+    else
+        echo "Python version ${PYTHON_VERSION}. Continuing..."
     fi
     
     if ! command -v ansible-navigator &> /dev/null
@@ -280,7 +285,7 @@ function deploy_kvmhost() {
     sudo mkdir -p /home/runner/.vim/autoload
     sudo chown -R lab-user:wheel /home/runner/.vim/autoload
     sudo chmod 777 -R /home/runner/.vim/autoload
-    sudo /usr/local/bin/ansible-navigator run ansible-navigator/setup_kvmhost.yml --extra-vars "admin_user=lab-user" \
+    sudo /usr/local/bin/ansible-navigator run ansible-navigator/setup_kvmhost.yml --extra-vars "admin_user=lab-user"  --penv GUID \
         --vault-password-file "$HOME"/.vault_password -m stdout || exit 1
 }
 
