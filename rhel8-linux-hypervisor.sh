@@ -138,6 +138,9 @@ function configure_python() {
         # Set the default Python version to 3.9
         sudo alternatives --set python /usr/bin/python3.9
         sudo alternatives --set python3 /usr/bin/python3.9
+
+        curl -sSL https://raw.githubusercontent.com/ansible/ansible-navigator/main/requirements.txt | sudo python3 -m pip install -r /dev/stdin
+        sudo python3 -m pip install -r $HOME/qubinode_navigator/bash-aliases/bastion-requirements.txt
     else
         echo "Python version ${PYTHON_VERSION}. Continuing..."
     fi
