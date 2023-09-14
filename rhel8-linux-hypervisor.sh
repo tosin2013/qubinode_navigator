@@ -90,6 +90,30 @@ function install_packages() {
 
     sudo dnf update -y
     sudo dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm -y
+    sudo dnf -y groupinstall "Development Tools"
+
+    #==============================================================================
+    # Non-root podman hacks
+    sudo chmod 4755 /usr/bin/newgidmap
+    sudo chmod 4755 /usr/bin/newuidmap
+    
+    sudo dnf reinstall -yq shadow-utils
+    
+    cat > /tmp/xdg_runtime_dir.sh <<EOF
+    export XDG_RUNTIME_DIR="\$HOME/.run/containers"
+    EOF
+    
+    sudo mv /tmp/xdg_runtime_dir.sh /etc/profile.d/xdg_runtime_dir.sh
+    sudo chmod a+rx /etc/profile.d/xdg_runtime_dir.sh
+    sudo cp /etc/profile.d/xdg_runtime_dir.sh /etc/profile.d/xdg_runtime_dir.zsh
+    
+    
+    cat > /tmp/ping_group_range.conf <<EOF
+    net.ipv4.ping_group_range=0 2000000
+    EOF
+    sudo mv /tmp/ping_group_range.conf /etc/sysctl.d/ping_group_range.conf
+    
+    sudo sysctl --system 
 }
 
 
