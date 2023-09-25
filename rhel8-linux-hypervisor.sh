@@ -101,7 +101,7 @@ function install_packages() {
     
     cat > /tmp/xdg_runtime_dir.sh <<EOF
     export XDG_RUNTIME_DIR="\$HOME/.run/containers"
-    EOF
+EOF
     
     sudo mv /tmp/xdg_runtime_dir.sh /etc/profile.d/xdg_runtime_dir.sh
     sudo chmod a+rx /etc/profile.d/xdg_runtime_dir.sh
@@ -110,7 +110,7 @@ function install_packages() {
     
     cat > /tmp/ping_group_range.conf <<EOF
     net.ipv4.ping_group_range=0 2000000
-    EOF
+EOF
     sudo mv /tmp/ping_group_range.conf /etc/sysctl.d/ping_group_range.conf
     
     sudo sysctl --system 
