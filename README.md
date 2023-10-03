@@ -18,7 +18,7 @@ curl https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/setup.s
 
 ### Running on RHEL 8 Equinix Server GitHub Actions
 Review the following before deploying to RHEL 8 Equinix Server:
-[Configure Ansible Navgiator workflow Via Github Actions](https://github.com/tosin2013/device-edge-demos/actions/workflows/install-navigator.yaml)
+[How to use GitHub Action to Run SSH Commands](https://medium.com/p/609df2a88ac3)
 1. Fork Repository
 2. Update the GitHub Action Variables
 3. Run GitHub Action Pipeline `Configure RHEL 8 Equinix Server` 
