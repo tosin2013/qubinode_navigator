@@ -12,6 +12,11 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
+if [ -f /opt/quibinode_navigator/.env ];
+then
+    source /opt/quibinode_navigator/.env
+fi
+
 if [ -z "$CICD_PIPELINE" ]; then
   export CICD_PIPELINE="false"
   export INVENTORY="localhost"
