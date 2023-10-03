@@ -10,8 +10,13 @@ on:
         description: 'target_server'
         required: true
         default: rhel8-equinix
+      ssh_password:
+        description: 'ssh password'
+        required: true
+        default: change_me
 env:
     TARGET_SERVER: ${{ inputs.target_server }}
+    SSH_PASSWORD: ${{ inputs.ssh_password }}
    
 jobs:
   configure-kcli-profiles:
@@ -39,5 +44,5 @@ jobs:
             sudo chmod -R g+w /opt
             git clone https://github.com/tosin2013/quibinode_navigator.git
           fi
-          export TARGET_SERVER=${{ env.TARGET_SERVER }}
-          'env CICD_PIPELINE="true" sudo -E bash -s' < /opt/quibinode_navigator/rhel8-linux-hypervisor.sh
+
+          'env CICD_PIPELINE="true" SSH_PASSWORD="'::add-mask::${{ env.SSH_PASSWORD }}'" INVENTORY="'${{ env.TARGET_SERVER }}'" sudo -E bash -s' < /opt/quibinode_navigator/rhel8-linux-hypervisor.sh
