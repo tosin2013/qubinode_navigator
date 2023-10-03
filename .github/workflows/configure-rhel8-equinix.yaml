@@ -50,4 +50,4 @@ jobs:
           echo "CICD_PIPELINE=true" > /opt/quibinode_navigator/.env
           echo "SSH_PASSWORD=${{ env.SSH_PASSWORD }}" >> /opt/quibinode_navigator/.env
           echo "INVENTORY='${{ env.TARGET_SERVER }}'" >> /opt/quibinode_navigator/.env
-          source /opt/quibinode_navigator/.env && sudo -E /opt/quibinode_navigator/rhel8-linux-hypervisor.sh
+          source /opt/quibinode_navigator/.env && sudo -E /opt/quibinode_navigator/rhel8-linux-hypervisor.sh || exit $?
