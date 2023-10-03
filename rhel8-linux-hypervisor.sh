@@ -186,9 +186,9 @@ function configure_navigator() {
         echo "Qubinode Navigator already exists"
     else
         cd "$HOME"
-        usermod -aG users $USER
-        chown -R root:users /opt
-        chmod -R g+w /opt
+        sudo usermod -aG users $USER
+        sudo chown -R root:users /opt
+        sudo chmod -R g+w /opt
         git clone ${GIT_REPO}
     fi
     cd "$HOME"/qubinode_navigator
