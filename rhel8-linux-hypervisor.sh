@@ -22,6 +22,7 @@ if [ -z "$CICD_PIPELINE" ]; then
   export INVENTORY="localhost"
 fi
 echo "CICD_PIPELINE is set to $CICD_PIPELINE" 
+exit 1
 
 
 if [ -z "$USE_HASHICORP_VAULT" ]; then
