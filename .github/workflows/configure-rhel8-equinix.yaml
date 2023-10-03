@@ -10,9 +10,16 @@ on:
         description: 'target_server'
         required: true
         default: rhel8-equinix
+      forwarder:
+        description: 'forwarder'
+        required: true
+        default: 1.1.1.1
 env:
     TARGET_SERVER: ${{ inputs.target_server }}
-    SSH_PASSWORD: ${{ inputs.ssh_password }}
+    DOMAIN: ${{ inputs.DOMAIN }}
+    FORWARDER: ${{ inputs.forwarder }}
+    ACTIVE_BRIDGE: 'false'
+    INTERFACE: 'bond0'
    
 jobs:
   configure-kcli-profiles:
@@ -44,4 +51,9 @@ jobs:
           echo "CICD_PIPELINE=true" > /opt/quibinode_navigator/.env
           echo "SSH_PASSWORD=${{ secrets.SSH_PASSWORD }}" >> /opt/quibinode_navigator/.env
           echo "INVENTORY='${{ env.TARGET_SERVER }}'" >> /opt/quibinode_navigator/.env
+          echo "ENV_USERNAME=${{ secrets.USERNAME }}" >> /opt/quibinode_navigator/.env
+          echo "DOMAIN=${{ env.DOMAIN }}" >> /opt/quibinode_navigator/.env
+          echo "FORWARDER=${{ env.FORWARDER }}" >> /opt/quibinode_navigator/.env
+          echo "ACTIVE_BRIDGE=${{ env.ACTIVE_BRIDGE }}" >> /opt/quibinode_navigator/.env
+          echo "INTERFACE=${{ env.INTERFACE }}" >> /opt/quibinode_navigator/.env
           source /opt/quibinode_navigator/.env && sudo -E /opt/quibinode_navigator/rhel8-linux-hypervisor.sh || exit $?
