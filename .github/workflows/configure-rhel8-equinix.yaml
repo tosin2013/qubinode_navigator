@@ -1,0 +1,40 @@
+name: Configure RHEL 8 Equinix Server
+on:
+  workflow_dispatch:
+    inputs:
+      hostname:
+        description: 'hostname'
+        required: true
+        default: hostname
+      target_server:
+        description: 'target_server'
+        required: true
+        default: rhel8-equinix
+env:
+    TARGET_SERVER: ${{ inputs.target_server }}
+   
+jobs:
+  configure-kcli-profiles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+    - name: configuring kcli profiles
+      uses: appleboy/ssh-action@v0.1.10
+      with:
+        host: ${{ inputs.hostname }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.KEY }}
+        port: ${{ secrets.PORT }}
+        command_timeout: 30m
+        script: | 
+          sudo yum install -y git
+          if [ -d "/opt/quibinode_navigator" ]; then
+            cd /opt/quibinode_navigator
+            git config pull.rebase false
+            git pull
+          else
+            cd /opt/
+            git clone https://github.com/tosin2013/quibinode_navigator.git
+          fi
+          export TARGET_SERVER=${{ env.TARGET_SERVER }}
+          /opt/quibinode_navigator/rhel8-linux-hypervisor.sh
