@@ -4,7 +4,7 @@ This repository contains a quickstart script setup.sh to set up and configure Qu
 [![ansible-lint](https://github.com/tosin2013/qubinode_navigator/actions/workflows/ansible-lint.yml/badge.svg)](https://github.com/tosin2013/qubinode_navigator/actions/workflows/ansible-lint.yml)
 [![Generate Documentation](https://github.com/tosin2013/qubinode_navigator/actions/workflows/generate-documentation.yml/badge.svg)](https://github.com/tosin2013/qubinode_navigator/actions/workflows/generate-documentation.yml)
 
-![20230927082627](https://i.imgur.com/0m9rlR6.png)
+
 ## Prerequisites
 * Linux-based operating system (RHEL 9.2, CentOS, rhel8 Linux, or Fedora)
 * Git
