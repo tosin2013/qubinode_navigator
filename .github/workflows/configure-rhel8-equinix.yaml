@@ -38,6 +38,7 @@ jobs:
           sudo yum install -y git
           if [ -d "/opt/quibinode_navigator" ]; then
             cd /opt/quibinode_navigator
+            git config --global --add safe.directory /opt/quibinode_navigator
             git config pull.rebase false
             git pull
           else

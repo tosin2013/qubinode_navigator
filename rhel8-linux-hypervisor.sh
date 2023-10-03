@@ -16,13 +16,12 @@ if [ -f /opt/quibinode_navigator/.env ];
 then
     source /opt/quibinode_navigator/.env
 fi
-echo "BEFORe if statement CICD_PIPELINE is set to $CICD_PIPELINE" 
+
 if [ -z "$CICD_PIPELINE" ]; then
   export CICD_PIPELINE="false"
   export INVENTORY="localhost"
 fi
 echo "CICD_PIPELINE is set to $CICD_PIPELINE" 
-exit 1
 
 
 if [ -z "$USE_HASHICORP_VAULT" ]; then
