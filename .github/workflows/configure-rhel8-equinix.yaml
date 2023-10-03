@@ -44,5 +44,8 @@ jobs:
             sudo chmod -R g+w /opt
             git clone https://github.com/tosin2013/quibinode_navigator.git
           fi
-
-          'env CICD_PIPELINE="true" SSH_PASSWORD="'::add-mask::${{ env.SSH_PASSWORD }}'" INVENTORY="'${{ env.TARGET_SERVER }}'" sudo -E bash -s' < /opt/quibinode_navigator/rhel8-linux-hypervisor.sh
+          echo "CICD_PIPELINE=true" > /opt/quibinode_navigator/.env
+          echo "SSH_PASSWORD=::add-mask::${{ env.SSH_PASSWORD }}" >> /opt/quibinode_navigator/.env
+          echo "INVENTORY='${{ env.TARGET_SERVER }}'" >> /opt/quibinode_navigator/.env
+          source /opt/quibinode_navigator/.env
+          sudo -E bash -s < /opt/quibinode_navigator/rhel8-linux-hypervisor.sh
