@@ -218,16 +218,16 @@ function configure_navigator() {
 function configure_ssh() {
     echo "Configuring SSH"
     echo "****************"
-    if [ -f /home/$USER/.ssh/id_rsa ]; then
+    if [ -f /home/lab-user/.ssh/id_rsa ]; then
         echo "SSH key already exists"
     else
         IP_ADDRESS=$(hostname -I | awk '{print $1}')
-        ssh-keygen -f /home/$USER/.ssh/id_rsa -t rsa -N ''
+        ssh-keygen -f /home/lab-user/.ssh/id_rsa -t rsa -N ''
         if [ $CICD_PIPELINE == "true" ];
         then 
             sudo ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
             sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no lab-user@${IP_ADDRESS} || exit $?
-            sshpass -p "$SSH_PASSWORD" ssh-copy-id  -i /home/$USER/.ssh/id_rsa -o StrictHostKeyChecking=no lab-user@${IP_ADDRESS} || exit $?
+            sshpass -p "$SSH_PASSWORD" ssh-copy-id  -i /home/lab-user/.ssh/id_rsa -o StrictHostKeyChecking=no lab-user@${IP_ADDRESS} || exit $?
         else
             sudo ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
             ssh-copy-id lab-user@"${IP_ADDRESS}"
