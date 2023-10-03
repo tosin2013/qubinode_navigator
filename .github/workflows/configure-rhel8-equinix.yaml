@@ -23,6 +23,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
+    - name: Mask SSH_PASSWORD and then add to .env
+      run: |
+        echo "::add-mask::${{ env.SSH_PASSWORD }}"
     - name: Configure RHEL 8 Equinix Server
       uses: appleboy/ssh-action@v0.1.10
       with:
@@ -45,7 +48,7 @@ jobs:
             git clone https://github.com/tosin2013/quibinode_navigator.git
           fi
           echo "CICD_PIPELINE=true" > /opt/quibinode_navigator/.env
-          echo "SSH_PASSWORD=::add-mask::${{ env.SSH_PASSWORD }}" >> /opt/quibinode_navigator/.env
+          echo "SSH_PASSWORD=${{ env.SSH_PASSWORD }}" >> /opt/quibinode_navigator/.env
           echo "INVENTORY='${{ env.TARGET_SERVER }}'" >> /opt/quibinode_navigator/.env
           source /opt/quibinode_navigator/.env
           sudo -E bash -s < /opt/quibinode_navigator/rhel8-linux-hypervisor.sh

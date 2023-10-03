@@ -377,7 +377,7 @@ function show_help() {
 
 if [ $# -eq 0 ]; then
     install_packages
-    configure_ssh
+    configure_ssh || exit $?
     confiure_lvm_storage
     configure_python
     configure_firewalld
