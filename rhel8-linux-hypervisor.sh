@@ -199,13 +199,13 @@ function configure_navigator() {
     if [ $CICD_PIPELINE == "false" ];
     then
         read -t 360 -p "Press Enter to continue, or wait 5 minutes for the script to continue automatically" || true
-        python3 load-variables.py
+        python3 load-variables.py 
     else 
         if [[ -z "$ENV_USERNAME" && -z "$DOMAIN" && -z "$FORWARDER" && -z "$INTERFACE" ]]; then
             echo "Error: One or more environment variables are not set"
             exit 1
         fi
-        python3 load-variables.py --username ${ENV_USERNAME} --domain ${DOMAIN} --forwarder ${FORWARDER} --interface ${INTERFACE} 
+        python3 load-variables.py --username ${ENV_USERNAME} --domain ${DOMAIN} --forwarder ${FORWARDER} --interface ${INTERFACE} || exit $?
     fi
 
 }
@@ -213,18 +213,16 @@ function configure_navigator() {
 function configure_ssh() {
     echo "Configuring SSH"
     echo "****************"
-    if [ -f ~/.ssh/id_rsa ]; then
+    if [ -f /home/$USER/.ssh/id_rsa ]; then
         echo "SSH key already exists"
     else
         IP_ADDRESS=$(hostname -I | awk '{print $1}')
-        ssh-keygen -f ~/.ssh/id_rsa -t rsa -N ''
+        ssh-keygen -f /home/$USER/.ssh/id_rsa -t rsa -N ''
         if [ $CICD_PIPELINE == "true" ];
         then 
-            sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no lab-user@${IP_ADDRESS}
-            sudo ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
+            sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no lab-user@${IP_ADDRESS} || exit $?
         else
             ssh-copy-id lab-user@"${IP_ADDRESS}"
-            sudo ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
         fi
     fi
 }

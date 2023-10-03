@@ -40,4 +40,4 @@ jobs:
             git clone https://github.com/tosin2013/quibinode_navigator.git
           fi
           export TARGET_SERVER=${{ env.TARGET_SERVER }}
-          sudo -E bash -s < /opt/quibinode_navigator/rhel8-linux-hypervisor.sh
+          'env CICD_PIPELINE="true" sudo -E bash -s' < /opt/quibinode_navigator/rhel8-linux-hypervisor.sh
