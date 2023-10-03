@@ -15,7 +15,15 @@ This repository contains a quickstart script setup.sh to set up and configure Qu
 ```
 curl https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/setup.sh | bash
 ```
-### Running on  RHPDS using tmux
+
+### Running on RHEL 8 Equinix Server GitHub Actions
+Review the following before deploying to RHEL 8 Equinix Server:
+[Configure Ansible Navgiator workflow Via Github Actions](https://github.com/tosin2013/device-edge-demos/actions/workflows/install-navigator.yaml)
+1. Fork Repository
+2. Update the GitHub Action Variables
+3. Run GitHub Action Pipeline `Configure RHEL 8 Equinix Server` 
+
+### Deploy manually on RRHEL 8 Equinix Server
 **create /tmp/config.yml as lab-user**  
 `you can use ansiblesafe to generate the content of this file` - [link](https://github.com/tosin2013/ansiblesafe) 
 ```
