@@ -19,9 +19,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-    - name: Mask SSH_PASSWORD and then add to .env
-      run: |
-        echo "::add-mask::${{ env.SSH_PASSWORD }}"
     - name: Configure RHEL 8 Equinix Server
       uses: appleboy/ssh-action@v0.1.10
       with:
