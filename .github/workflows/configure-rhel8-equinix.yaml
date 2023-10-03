@@ -34,6 +34,9 @@ jobs:
             git pull
           else
             cd /opt/
+            sudo usermod -aG users ${{ secrets.USERNAME }}
+            sudo chown -R root:users /opt
+            sudo chmod -R g+w /opt
             git clone https://github.com/tosin2013/quibinode_navigator.git
           fi
           export TARGET_SERVER=${{ env.TARGET_SERVER }}
