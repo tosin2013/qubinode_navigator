@@ -210,10 +210,7 @@ function configure_navigator() {
             echo "Error: One or more environment variables are not set"
             exit 1
         fi
-        if [ -f /opt/quibinode_navigator/.env ];
-        then
-            source /opt/quibinode_navigator/.env
-        fi
+
         python3 load-variables.py --username ${ENV_USERNAME} --domain ${DOMAIN} --forwarder ${FORWARDER} --interface ${INTERFACE} || exit $?
     fi
 

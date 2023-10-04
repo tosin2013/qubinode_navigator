@@ -52,12 +52,12 @@ jobs:
             sudo chmod -R g+w /opt
             git clone https://github.com/tosin2013/quibinode_navigator.git
           fi
-          echo "CICD_PIPELINE=true" > /opt/quibinode_navigator/.env
-          echo "SSH_PASSWORD=${{ secrets.SSH_PASSWORD }}" >> /opt/quibinode_navigator/.env
-          echo "INVENTORY='${{ env.TARGET_SERVER }}'" >> /opt/quibinode_navigator/.env
-          echo "ENV_USERNAME=${{ secrets.USERNAME }}" >> /opt/quibinode_navigator/.env
-          echo "DOMAIN=${{ env.DOMAIN }}" >> /opt/quibinode_navigator/.env
-          echo "FORWARDER=${{ env.FORWARDER }}" >> /opt/quibinode_navigator/.env
-          echo "ACTIVE_BRIDGE=${{ env.ACTIVE_BRIDGE }}" >> /opt/quibinode_navigator/.env
-          echo "INTERFACE=${{ env.INTERFACE }}" >> /opt/quibinode_navigator/.env
+          echo "export CICD_PIPELINE=true" > /opt/quibinode_navigator/.env
+          echo "export SSH_PASSWORD=${{ secrets.SSH_PASSWORD }}" >> /opt/quibinode_navigator/.env
+          echo "export INVENTORY='${{ env.TARGET_SERVER }}'" >> /opt/quibinode_navigator/.env
+          echo "export ENV_USERNAME=${{ secrets.USERNAME }}" >> /opt/quibinode_navigator/.env
+          echo "export DOMAIN=${{ env.DOMAIN }}" >> /opt/quibinode_navigator/.env
+          echo "export FORWARDER=${{ env.FORWARDER }}" >> /opt/quibinode_navigator/.env
+          echo "export ACTIVE_BRIDGE=${{ env.ACTIVE_BRIDGE }}" >> /opt/quibinode_navigator/.env
+          echo "export INTERFACE=${{ env.INTERFACE }}" >> /opt/quibinode_navigator/.env
           source /opt/quibinode_navigator/.env && sudo -E /opt/quibinode_navigator/rhel8-linux-hypervisor.sh || exit $?
