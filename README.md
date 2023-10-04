@@ -19,6 +19,23 @@ curl https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/setup.s
 ### Running on RHEL 8 Equinix Server GitHub Actions
 Review the following before deploying to RHEL 8 Equinix Server:
 [How to use GitHub Action to Run SSH Commands](https://medium.com/p/609df2a88ac3)
+**Before running pipeline create /tmp/config.yml as lab-user**  
+*Vault integration coming soon*
+`you can use ansiblesafe to generate the content of this file` - [link](https://github.com/tosin2013/ansiblesafe) 
+```
+$ sudo su - 
+$ vi /tmp/config.yml
+rhsm_username: rheluser
+rhsm_password: rhelpassword
+rhsm_org: orgid
+rhsm_activationkey: activationkey
+admin_user_password: password # Change to the lab-user password
+offline_token: offlinetoken
+openshift_pull_secret: pullsecret
+freeipa_server_admin_password: password # Change to the lab-user password
+xrdp_remote_user: remoteuser
+xrdp_remote_user_password: password
+```
 1. Fork Repository
 2. Update the GitHub Action Variables
 3. Run GitHub Action Pipeline `Configure RHEL 8 Equinix Server` 
