@@ -19,11 +19,16 @@ curl https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/setup.s
 ### Running on RHEL 8 Equinix Server GitHub Actions
 Review the following before deploying to RHEL 8 Equinix Server:
 [How to use GitHub Action to Run SSH Commands](https://medium.com/p/609df2a88ac3)
+```
+$ ./copy-keys.sh lab-user@hypervisor.example.com  username@example.com
+```
+*Update SSH_PASSWORD under - Actions secrets and variables*
+![20231004142730](https://i.imgur.com/jGQWp8I.png)
 **Before running pipeline create /tmp/config.yml as lab-user**  
 *Vault integration coming soon*
 `you can use ansiblesafe to generate the content of this file` - [link](https://github.com/tosin2013/ansiblesafe) 
 ```
-$ sudo su - 
+$ ssh into cluster
 $ vi /tmp/config.yml
 rhsm_username: rheluser
 rhsm_password: rhelpassword
@@ -39,6 +44,7 @@ xrdp_remote_user_password: password
 1. Fork Repository
 2. Update the GitHub Action Variables
 3. Run GitHub Action Pipeline `Configure RHEL 8 Equinix Server` 
+
 
 ### Deploy manually on RRHEL 8 Equinix Server
 **create /tmp/config.yml as lab-user**  
