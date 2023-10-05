@@ -23,6 +23,9 @@ if [ -z "$CICD_PIPELINE" ]; then
 fi
 echo "CICD_PIPELINE is set to $CICD_PIPELINE" 
 
+if [ -z "$GUID" ]; then
+  export GUID="$(uuidgen | cut -c 1-5)"
+fi
 
 if [ -z "$USE_HASHICORP_VAULT" ]; then
   export USE_HASHICORP_VAULT="false"

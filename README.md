@@ -44,7 +44,7 @@ xrdp_remote_user_password: password
 1. Fork Repository
 2. Update the GitHub Action Variables
 3. Run GitHub Action Pipeline `Configure RHEL 8 Equinix Server` 
-
+![20231004144259](https://i.imgur.com/EAfFJ0r.png)
 
 ### Deploy manually on RRHEL 8 Equinix Server
 **create /tmp/config.yml as lab-user**  
