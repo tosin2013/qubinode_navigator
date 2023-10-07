@@ -61,3 +61,9 @@ jobs:
           echo "export ACTIVE_BRIDGE=${{ env.ACTIVE_BRIDGE }}" >> /opt/quibinode_navigator/.env
           echo "export INTERFACE=${{ env.INTERFACE }}" >> /opt/quibinode_navigator/.env
           source /opt/quibinode_navigator/.env && sudo -E /opt/quibinode_navigator/rhel8-linux-hypervisor.sh || exit $?
+    - name: Send a repository dispatch event to restart the workflow if it failed
+      uses: actions/github-script@v5
+      if: ${{ failure() }}
+      with:
+        script: |
+          github.actions.createRepositoryDispatchEvent(repository_dispatch_event: {type: 'restart-workflow'})

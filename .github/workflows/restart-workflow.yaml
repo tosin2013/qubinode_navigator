@@ -1,0 +1,24 @@
+name: Restart Configure RHEL 8 Equinix Server Workflow
+
+on:
+  repository_dispatch:
+    types: [restart-workflow]
+
+jobs:
+  restart:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get the number of times the Configure RHEL 8 Equinix Server workflow has failed
+        uses: actions/github-script@v5
+        id: get-num-failures
+        with:
+          script: |
+            github.actions.getWorkflowRunStatus(workflow_id: 'Configure RHEL 8 Equinix Server')
+
+      - name: Restart the Configure RHEL 8 Equinix Server workflow if it has failed fewer than 3 times
+        uses: actions/github-script@v5
+        if: ${{ steps.get-num-failures.outputs.status != 'success' && steps.get-num-failures.outputs.num_failures < 3 }}
+        with:
+          script: |
+            github.actions.createRepositoryDispatchEvent(repository_dispatch_event: {type: 'restart-workflow'})

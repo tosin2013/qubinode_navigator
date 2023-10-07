@@ -18,13 +18,8 @@ vault_query:
   stage: vault_query
   image: fedora:38
   variables:
-<<<<<<< HEAD
     VAULT_ADDRESS: http://CHANGEME:8200/
     VAULT_TOKEN: CHANGEME
-=======
-    VAULT_ADDRESS: http://10.0.0.48:8200/
-    VAULT_TOKEN: s.KXRhGYyDynew8LjTgbqeIJ1m
->>>>>>> 4c5a072e4b823c2d87e53d5ddeccd9de1acfcb58
     SECRET_PATH:  equinix
   script:
       - dnf install -y dnf-plugins-core
