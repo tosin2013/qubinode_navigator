@@ -97,7 +97,9 @@ tmux attach -t rhel8-linux-hypervisor
 source notouch.env && sudo -E  ./rhel8-linux-hypervisor.sh
 ```
 
-**ssh into vm and run the following**
+## Post Steps
+**ssh into vm and run the following commands**
+This is used to install the rhel8 and rhel 9 kvm image so you may deploy freeipa.
 ```
 $ sudo kcli download image rhel8
 $ sudo kcli download image rhel9
