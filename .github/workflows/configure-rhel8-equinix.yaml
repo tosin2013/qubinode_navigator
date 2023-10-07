@@ -26,7 +26,7 @@ env:
     INTERFACE: 'bond0'
    
 jobs:
-  configure-kcli-profiles:
+  configure-rhel8-equinix:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
