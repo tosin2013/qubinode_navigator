@@ -1,5 +1,6 @@
 ---
 # https://github.com/tosin2013/kcli-openshift4-baremetal/blob/master/paramfiles/lab.yml
+# Use n2.xlarge.x86 on Equinix
 lab: true
 version: stable
 tag: "4.13"
@@ -9,18 +10,19 @@ launch_steps: true
 deploy_openshift: true
 installer_wait: false
 cluster: lab
-domain: karmalabs.corp
+domain: example.com
 baremetal_cidr: 192.168.130.0/24
 baremetal_net: lab-baremetal
+disk_size: 120
 virtual_ctlplanes_memory: 16384
 virtual_ctlplanes_numcpus: 8
 virtual_workers: true
-virtual_workers_memory: 16384
+virtual_workers_memory: 32768
 virtual_workers_number: 3
 virtual_workers_numcpus: 8
 virtual_workers_disksize: 120
 extra_disks:
-- size: 300
+- size: 400
 api_ip: 192.168.130.253
 ingress_ip: 192.168.130.252
 baremetal_ips:
@@ -38,5 +40,5 @@ baremetal_macs:
 - aa:aa:aa:aa:bb:05
 - aa:aa:aa:aa:bb:06
 notify: true
-nfs: true
+nfs: false
 disconnected: false
