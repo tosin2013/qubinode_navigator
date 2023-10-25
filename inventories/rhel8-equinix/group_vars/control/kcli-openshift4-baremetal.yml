@@ -1,5 +1,6 @@
 ---
 # https://github.com/tosin2013/kcli-openshift4-baremetal/blob/master/paramfiles/lab.yml
+# https://github.com/tosin2013/kcli-openshift4-baremetal/blob/master/plans/kcli_plan_default.yml
 # Use n2.xlarge.x86 on Equinix
 lab: true
 version: stable
@@ -8,7 +9,7 @@ virtual_protocol: redfish
 virtual_ctlplanes: true
 launch_steps: true
 deploy_openshift: true
-installer_wait: false
+installer_wait: true
 cluster: lab
 domain: example.com
 baremetal_cidr: 192.168.130.0/24
