@@ -68,16 +68,24 @@ jobs:
       with:
         github-token: ${{ secrets.PAT }}
         script: |
-          try {
-            await github.repos.createDispatchEvent({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              event_type: "custom_restart",
-              client_payload: {
-                workflow: "Configure RHEL 8 Equinix Server" 
-              }
-            })
-            core.info("Restart dispatched")  
-          } catch (error) {
-            core.setFailed(`Dispatch failed: ${error.message}`)
+          const core = require('@actions/core');
+          const github = require('@actions/github');
+    
+          async function run() {
+            try {
+              await github.repos.createDispatchEvent({
+                owner: github.context.repo.owner,
+                repo: github.context.repo.repo,
+                event_type: "custom_restart",
+                client_payload: {
+                  workflow: "Configure RHEL 8 Equinix Server" 
+                }
+              });
+              core.info("Restart dispatched");
+            } catch (error) {
+              core.setFailed(`Dispatch failed: ${error.message}`);
+            }
           }
+    
+          run();
+    
