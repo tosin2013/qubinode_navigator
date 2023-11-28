@@ -48,7 +48,7 @@ jobs:
     - name: Configure RHEL 8 Equinix Server
       uses: appleboy/ssh-action@v0.1.10
       with:
-        host: ${{ inputs.hostname }}
+        host: ${{ env.HOSTNAME }}
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.KEY }}
         port: ${{ secrets.PORT }}
