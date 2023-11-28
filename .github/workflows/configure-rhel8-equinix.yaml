@@ -62,7 +62,7 @@ jobs:
           echo "export INTERFACE=${{ env.INTERFACE }}" >> /opt/quibinode_navigator/.env
           source /opt/quibinode_navigator/.env && sudo -E /opt/quibinode_navigator/rhel8-linux-hypervisor.sh || exit $?
    
-          - name: Send a repository dispatch event to restart the workflow if it failed
+    - name: Send a repository dispatch event to restart the workflow if it failed
       if: ${{ failure() }}
       uses: actions/github-script@v3
       with:
