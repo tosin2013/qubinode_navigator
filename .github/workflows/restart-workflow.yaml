@@ -14,11 +14,29 @@ jobs:
         id: get-num-failures
         with:
           script: |
-            github.actions.getWorkflowRunStatus(workflow_id: 'Configure RHEL 8 Equinix Server')
+            const { owner, repo } = context.repo;
+            let numFailures = 0;
+            let workflowRuns = await github.actions.listWorkflowRunsForRepo({
+              owner,
+              repo,
+              workflow_id: 'Configure RHEL 8 Equinix Server',
+              status: 'completed'
+            });
+            workflowRuns.data.workflow_runs.forEach(run => {
+              if (run.conclusion !== 'success') {
+                numFailures++;
+              }
+            });
+            return numFailures;
 
       - name: Restart the Configure RHEL 8 Equinix Server workflow if it has failed fewer than 3 times
         uses: actions/github-script@v6
-        if: ${{ steps.get-num-failures.outputs.status != 'success' && steps.get-num-failures.outputs.num_failures < 3 }}
+        if: ${{ steps.get-num-failures.outputs.result < 3 }}
         with:
           script: |
-            github.actions.createRepositoryDispatchEvent(repository_dispatch_event: {type: 'restart-workflow'})
+            const { owner, repo } = context.repo;
+            await github.repos.createDispatchEvent({
+              owner,
+              repo,
+              event_type: 'restart-workflow'
+            });
