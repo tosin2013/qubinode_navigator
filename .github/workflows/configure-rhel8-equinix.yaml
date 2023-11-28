@@ -75,7 +75,6 @@ jobs:
           echo "export FORWARDER=${{ env.FORWARDER }}" >> /opt/quibinode_navigator/.env
           echo "export ACTIVE_BRIDGE=${{ env.ACTIVE_BRIDGE }}" >> /opt/quibinode_navigator/.env
           echo "export INTERFACE=${{ env.INTERFACE }}" >> /opt/quibinode_navigator/.env
-          exit 1
           source /opt/quibinode_navigator/.env && sudo -E /opt/quibinode_navigator/rhel8-linux-hypervisor.sh || exit $?
    
     - name: Send a repository dispatch event to restart the workflow if it failed
