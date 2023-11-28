@@ -79,7 +79,7 @@ jobs:
                 event_type: "custom_restart",
                 client_payload: {
                   data_key: {
-                    hostname: '${{ inputs.hostname }}',  // Replace with actual dynamic value if needed
+                    hostname: 'testing',  // Replace with actual dynamic value if needed
                     target_server: '${{ env.TARGET_SERVER }}',
                     forwarder: '${{ env.DOMAIN }}',
                     domain: '${{ env.DOMAIN }}'
