@@ -66,4 +66,9 @@ jobs:
       if: ${{ failure() }}
       with:
         script: |
-          github.actions.createRepositoryDispatchEvent(repository_dispatch_event: {type: 'restart-workflow'})
+          const { owner, repo } = context.repo;
+          await github.repos.createDispatchEvent({
+            owner,
+            repo,
+            event_type: 'restart-workflow'
+          });
