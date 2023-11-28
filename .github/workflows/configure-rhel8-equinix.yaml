@@ -69,14 +69,11 @@ jobs:
       with:
         github-token: ${{ secrets.PAT }}
         script: |
-          const core = require('@actions/core');
-          const github = require('@actions/github');
-    
           async function run() {
             try {
               await github.repos.createDispatchEvent({
-                owner: github.context.repo.owner,
-                repo: github.context.repo.repo,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
                 event_type: "custom_restart",
                 client_payload: {
                   workflow: "Configure RHEL 8 Equinix Server" 
