@@ -1,5 +1,7 @@
 name: Configure RHEL 8 Equinix Server
 on:
+  repository_dispatch:
+    types: [custom_restart]
   workflow_dispatch:
     inputs:
       hostname:
