@@ -76,7 +76,7 @@ jobs:
                 repo: context.repo.repo,
                 event_type: "custom_restart",
                 client_payload: {
-                  workflow: "Configure RHEL 8 Equinix Server" 
+                  workflow: "configure-rhel8-equinix.yaml" 
                 }
               });
               core.info("Restart dispatched");
