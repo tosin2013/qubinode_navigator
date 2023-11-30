@@ -19,7 +19,7 @@ virtual_ctlplanes_memory: 16384
 virtual_ctlplanes_numcpus: 8
 virtual_workers: true
 virtual_workers_memory: 48000
-virtual_workers_number: 9
+virtual_workers_number: 6
 virtual_workers_numcpus: 12
 virtual_workers_disksize: 120
 extra_disks:
@@ -32,7 +32,6 @@ baremetal_ips:
 - 192.168.130.22
 - 192.168.130.23
 - 192.168.130.24
-- 192.168.130.25
 - 192.168.130.25
 - 192.168.130.26
 - 192.168.130.27
