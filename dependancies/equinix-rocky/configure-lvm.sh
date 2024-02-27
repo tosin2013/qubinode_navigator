@@ -1,40 +1,52 @@
- #!/bin/bash
+#!/bin/bash
 set -xe
 
 function configure_vg(){
-    # Get list of block devices
-    devices=$(lsblk -l -d -e 11 -n -o NAME)
+    # Get list of all block devices excluding those excluded by lsblk and their sizes
+    readarray -t device_info <<< "$(lsblk -l -d -e 11 -n -o NAME,SIZE)"
 
-    # Initialize a variable to store the not mounted devices
-    not_mounted=""
+    declare -A device_sizes
 
-    # Iterate through devices and check if they are mounted
-    for device in $devices; do
-    mount=$(df -P | grep "/dev/$device" | awk '{print $1}')
-    if [[ -z "$mount" ]]; then
-        if [[ -z "$not_mounted" ]]; then
-        not_mounted="/dev/$device"
-        else
-        not_mounted="$not_mounted /dev/$device"
+    # Populate an associative array with device sizes and their counts
+    for info in "${device_info[@]}"; do
+        device=$(echo "$info" | awk '{print $1}')
+        size=$(echo "$info" | awk '{print $2}')
+        mount=$(lsblk -no MOUNTPOINT "/dev/$device")
+
+        if [[ -z "$mount" ]]; then # Check if the device is not mounted
+            if [[ -v device_sizes[$size] ]]; then
+                device_sizes[$size]="${device_sizes[$size]} /dev/$device"
+            else
+                device_sizes[$size]="/dev/$device"
+            fi
         fi
-    fi
     done
 
-    # Print the list of not mounted devices
-    echo "Not mounted devices: $not_mounted"
-    lsblk -dno SIZE $not_mounted | awk '{total += $1} END {print "Total size: " total " GB"}'
-    lsblk -dno SIZE $not_mounted | awk '{total += $1} END {print "Total size: " total" GB"}'
-    TOTAL_SIZE=$(lsblk -dno SIZE $not_mounted | awk '{total += $1} END { print total"GB"}')
+    # Find the largest size with the most devices of that size
+    largest_size=""
+    for size in "${!device_sizes[@]}"; do
+        if [[ -z "$largest_size" || "${#device_sizes[$size]}" -gt "${#device_sizes[$largest_size]}" ]]; then
+            largest_size=$size
+        fi
+    done
+
+    # Get the devices with the largest common size
+    not_mounted="${device_sizes[$largest_size]}"
+
+    if [[ -z "$not_mounted" ]]; then
+        echo "No suitable unmounted devices found."
+        exit 1
+    fi
+
+    echo "Using devices: $not_mounted"
 
     sudo /usr/sbin/pvcreate $not_mounted
     sudo /usr/sbin/vgcreate vg_qubi $not_mounted
-    sudo /usr/sbin/lvcreate -L${TOTAL_SIZE} -n vg_qubi-lv_qubi_images vg_qubi 
+    sudo /usr/sbin/lvcreate -l 100%FREE -n vg_qubi-lv_qubi_images vg_qubi 
     sudo mkfs.ext4 /dev/vg_qubi/vg_qubi-lv_qubi_images
     sudo mkdir -p /var/lib/libvirt/images
-    sudo mount  /dev/vg_qubi/vg_qubi-lv_qubi_images /var/lib/libvirt/images
-    echo "/dev/vg_qubi/vg_qubi-lv_qubi_images   /var/lib/libvirt/images  ext4   defaults    0   0" | sudo tee -a /etc/fstab
-
-    #echo "/dev/vg_qubi/vg_qubi-lv_qubi_images   /var/lib/libvirt/images  ext4   defaults    0   0" >>  /etc/fstab
+    sudo mount /dev/vg_qubi/vg_qubi-lv_qubi_images /var/lib/libvirt/images
+    echo "/dev/vg_qubi/vg_qubi-lv_qubi_images /var/lib/libvirt/images ext4 defaults 0 0" | sudo tee -a /etc/fstab
 }
 
 if ! sudo /usr/sbin/vgdisplay | grep -q vg_qubi; then
@@ -43,4 +55,3 @@ if ! sudo /usr/sbin/vgdisplay | grep -q vg_qubi; then
 else
     echo "vg_qubi found"
 fi
-  
