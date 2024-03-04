@@ -53,7 +53,7 @@ vg_name: vg_qubi
 vm_libvirt_net_check: true
 
 # should a bridge interface be created
-configure_bridge: false
+configure_bridge: true
 
 # Set to no prevent the installer from attempting
 # setup a LVM group for qubinode. Also set this to no
