@@ -150,6 +150,8 @@ function configure_python() {
     if ! command -v ansible-navigator &> /dev/null
     then
         echo "ansible-navigator not found, installing..."
+        curl -sSL https://raw.githubusercontent.com/ansible/ansible-navigator/fix/devel-testing/requirements.txt | python3 -m pip install -r /dev/stdin --user lab-user
+        pip3 install -r /root/qubinode_navigator/dependancies/hetzner/bastion-requirements.txt --user lab-user
         curl -sSL https://raw.githubusercontent.com/ansible/ansible-navigator/fix/devel-testing/requirements.txt | python3 -m pip install -r /dev/stdin
         pip3 install -r /root/qubinode_navigator/dependancies/hetzner/bastion-requirements.txt
     else
@@ -349,6 +351,9 @@ function setup_kcli_base() {
     kcli-utils setup
     kcli-utils configure-images
     kcli-utils check-kcli-plan
+    curl -OL https://raw.githubusercontent.com/tosin2013/kcli-pipelines/hetzner/configure-kcli-profiles.sh
+    chmod +x configure-kcli-profiles.sh
+    ./configure-kcli-profiles.sh
 }
 
 function show_help() {
