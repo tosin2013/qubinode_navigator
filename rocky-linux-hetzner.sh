@@ -13,18 +13,18 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 if [ -z "$CICD_PIPELINE" ]; then
-  export CICD_PIPELINE="false"
-  export INVENTORY="hetzner"
+export CICD_PIPELINE="false"
+export INVENTORY="hetzner"
 fi
 echo "CICD_PIPELINE is set to $CICD_PIPELINE" 
 
 
 if [ -z "$USE_HASHICORP_VAULT" ]; then
-  export USE_HASHICORP_VAULT="false"
+export USE_HASHICORP_VAULT="false"
 else
     if [[ -z "$VAULT_ADDRESS" && -z "$VAULT_ADDRESS" && -z ${SECRET_PATH} ]]; then
-      echo "VAULT enviornment variables are not passed  is not set"
-      exit 1
+    echo "VAULT enviornment variables are not passed  is not set"
+    exit 1
     fi
 fi  
 
@@ -36,6 +36,22 @@ function check_for_lab_user() {
         chmod +x configure-sudo-user.sh
         ./configure-sudo-user.sh lab-user
     fi
+}
+
+# Enable ssh password authentication
+function enable_ssh_password_authentication() {
+    echo "Enabling ssh password authentication"
+    echo "*************************************"
+    sudo sed -i 's/#PasswordAuthentication.*/PasswordAuthentication yes/g' /etc/ssh/sshd_config
+    sudo systemctl restart sshd
+}
+
+# Disable ssh password authentication
+function disable_ssh_password_authentication() {
+    echo "Disabling ssh password authentication"
+    echo "**************************************"
+    sudo sed -i 's/PasswordAuthentication.*/PasswordAuthentication no/g' /etc/ssh/sshd_config
+    sudo systemctl restart sshd
 }
 
 # @description This function generate_inventory function will generate the inventory
@@ -77,7 +93,7 @@ function install_packages() {
     # Check if packages are already installed
     echo "Installing packages"
     echo "*******************"
-    for package in openssl-devel bzip2-devel libffi-devel wget vim podman ncurses-devel sqlite-devel firewalld make gcc git unzip sshpass lvm lvm2; do
+    for package in openssl-devel bzip2-devel libffi-devel wget vim podman ncurses-devel sqlite-devel firewalld make gcc git unzip sshpass lvm lvm2 zlib-devel; do
         if rpm -q "${package}" >/dev/null 2>&1; then
             echo "Package ${package} already installed"
         else
@@ -130,7 +146,7 @@ function configure_groups() {
 function configure_python() {
     echo "Configuring Python"
     echo "******************"
-    if which python3 >/dev/null; then
+    if [[ $(python3.11 --version) == *"3.11"* ]]; then
         echo "Python is installed"
         source ~/.profile
     else
@@ -146,9 +162,9 @@ function configure_python() {
 
         # Verify Python 3.11 installation
         python3.11 --version
-        pip3.11 --version
-
-        sudo ln /usr/local/bin/python3.11 /usr/bin/python3
+        pip3.11 --versions
+        #rm -rf /usr/bin/python3
+        #sudo ln /usr/local/bin/python3.11 /usr/bin/python3
         sudo ln /usr/local/bin/python3.11 /usr/bin/python3.11
         sudo ln /usr/local/bin/pip3.11 /usr/bin/pip3
 
@@ -202,13 +218,13 @@ function configure_navigator() {
     if [ $CICD_PIPELINE == "false" ];
     then
         read -t 360 -p "Press Enter to continue, or wait 5 minutes for the script to continue automatically" || true
-        python3 load-variables.py
+        python3.11 load-variables.py
     else 
         if [[ -z "$ENV_USERNAME" && -z "$DOMAIN" && -z "$FORWARDER" && -z "$INTERFACE" ]]; then
             echo "Error: One or more environment variables are not set"
             exit 1
         fi
-        python3 load-variables.py --username ${ENV_USERNAME} --domain ${DOMAIN} --forwarder ${FORWARDER} --interface ${INTERFACE} 
+        python3.11 load-variables.py --username ${ENV_USERNAME} --domain ${DOMAIN} --forwarder ${FORWARDER} --interface ${INTERFACE} 
     fi
 
 }
@@ -305,7 +321,7 @@ function test_inventory() {
     echo "Testing Ansible Inventory"
     echo "*************************"
     source ~/.profile
-   /usr/local/bin/ansible-navigator inventory --list -m stdout --vault-password-file "$HOME"/.vault_password || exit 1
+    /usr/local/bin/ansible-navigator inventory --list -m stdout --vault-password-file "$HOME"/.vault_password || exit 1
 }
 
 function deploy_kvmhost() {
@@ -381,6 +397,7 @@ function show_help() {
 }
 
 if [ $# -eq 0 ]; then
+    enable_ssh_password_authentication
     check_for_lab_user
     install_packages
     configure_ssh

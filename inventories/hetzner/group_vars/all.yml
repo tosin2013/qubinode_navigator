@@ -9,6 +9,7 @@ project_dir: /opt/qubinode-installer
 
 # The name of the admin user for your system
 admin_user: lab-user
+ansible_user: "{{ admin_user }}"
 
 # The domain name for your system
 domain: "CHANGEME"
