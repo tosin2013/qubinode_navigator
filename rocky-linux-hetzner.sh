@@ -146,44 +146,12 @@ function configure_groups() {
 function configure_python() {
     echo "Configuring Python"
     echo "******************"
-    if [[ $(python3.11 --version) == *"3.11"* ]]; then
-        echo "Python is installed"
-        source ~/.profile
-    else
-        # Download Python 3.11 source code
-        VERSION=3.11.2
-        wget https://www.python.org/ftp/python/$VERSION/Python-$VERSION.tgz
-        tar -xzf Python-$VERSION.tgz
 
-        # Install Python 3.11
-        cd Python-$VERSION
-        ./configure --enable-loadable-sqlite-extensions --enable-optimizations
-        sudo make altinstall
-
-        # Verify Python 3.11 installation
-        python3.11 --version
-        pip3.11 --versions
-        #rm -rf /usr/bin/python3
-        #sudo ln /usr/local/bin/python3.11 /usr/bin/python3
-        sudo ln /usr/local/bin/python3.11 /usr/bin/python3.11
-        sudo ln /usr/local/bin/pip3.11 /usr/bin/pip3
-
-        sudo pip3 install setuptools-rust
-        sudo pip3 install --user ansible-core
-        sudo pip3 install --upgrade --user ansible
-        sudo pip3 install ansible-navigator
-        sudo pip3 install firewall
-        sudo pip3 install pyyaml
-        sudo pip3 install ansible-vault
-        /root/.local/bin/ansible-config  init --disabled -t all >/etc/ansible/ansible.cfg
-        sudo sed -i 's/;remote_tmp=~\/.ansible\/tmp/remote_tmp=\/tmp\/ansible-lab-user/' /etc/ansible/ansible.cfg
-    fi
-    
     if ! command -v ansible-navigator &> /dev/null
     then
         echo "ansible-navigator not found, installing..."
         curl -sSL https://raw.githubusercontent.com/ansible/ansible-navigator/fix/devel-testing/requirements.txt | python3 -m pip install -r /dev/stdin
-        pip3 install dependancies/hetzner/bastion-requirements.txt
+        pip3 install -r /root/qubinode_navigator/dependancies/hetzner/bastion-requirements.txt
     else
         echo "ansible-navigator is already installed"
     fi
@@ -216,13 +184,13 @@ function configure_navigator() {
     if [ $CICD_PIPELINE == "false" ];
     then
         read -t 360 -p "Press Enter to continue, or wait 5 minutes for the script to continue automatically" || true
-        python3.11 load-variables.py
+        python3 load-variables.py
     else 
         if [[ -z "$ENV_USERNAME" && -z "$DOMAIN" && -z "$FORWARDER" && -z "$INTERFACE" ]]; then
             echo "Error: One or more environment variables are not set"
             exit 1
         fi
-        python3.11 load-variables.py --username ${ENV_USERNAME} --domain ${DOMAIN} --forwarder ${FORWARDER} --interface ${INTERFACE} 
+        python3 load-variables.py --username ${ENV_USERNAME} --domain ${DOMAIN} --forwarder ${FORWARDER} --interface ${INTERFACE} 
     fi
 
 }
@@ -397,6 +365,7 @@ function show_help() {
 if [ $# -eq 0 ]; then
     enable_ssh_password_authentication
     install_packages
+    configure_python
     configure_ssh
     configure_firewalld
     configure_groups
