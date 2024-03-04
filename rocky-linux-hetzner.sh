@@ -93,7 +93,7 @@ function install_packages() {
     # Check if packages are already installed
     echo "Installing packages"
     echo "*******************"
-    for package in openssl-devel bzip2-devel libffi-devel wget vim podman ncurses-devel sqlite-devel firewalld make gcc git unzip sshpass lvm lvm2 zlib-devel; do
+    for package in openssl-devel bzip2-devel libffi-devel wget vim podman ncurses-devel sqlite-devel firewalld make gcc git unzip sshpass lvm lvm2 zlib-devel python3-pip; do
         if rpm -q "${package}" >/dev/null 2>&1; then
             echo "Package ${package} already installed"
         else
@@ -182,10 +182,8 @@ function configure_python() {
     if ! command -v ansible-navigator &> /dev/null
     then
         echo "ansible-navigator not found, installing..."
-        sudo pip3 install ansible-navigator
-        echo 'export PATH=$HOME/.local/bin:$PATH' >>~/.profile
-        echo 'export PATH=$HOME/.local/bin:$PATH' >>/home/lab-user/.profile
-        source ~/.profile
+        curl -sSL https://raw.githubusercontent.com/ansible/ansible-navigator/fix/devel-testing/requirements.txt | python3 -m pip install -r /dev/stdin
+        pip3 install dependancies/hetzner/bastion-requirements.txt
     else
         echo "ansible-navigator is already installed"
     fi
@@ -398,10 +396,8 @@ function show_help() {
 
 if [ $# -eq 0 ]; then
     enable_ssh_password_authentication
-    check_for_lab_user
     install_packages
     configure_ssh
-    configure_python
     configure_firewalld
     configure_groups
     configure_navigator
