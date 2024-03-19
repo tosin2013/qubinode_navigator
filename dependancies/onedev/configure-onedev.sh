@@ -24,7 +24,7 @@ run_podman_container() {
 
 # Main script execution starts here
 #mkdir -p $HOME/agent/work
-#podman run -t -v $(pwd)/agent/work:/agent/work -e serverUrl=http://139.178.94.45:6610 -e agentToken=ca261107-f24e-4c24-98be-bf8b3510dd89 -h myagent 1dev/agent
+#podman run -t -v $(pwd)/agent/work:/agent/work -e serverUrl=http://192.168.1.10:6610 -e agentToken=example-token -h myagent 1dev/agent
 
 # Step 1: Open necessary ports in firewalld
 open_firewall_ports
