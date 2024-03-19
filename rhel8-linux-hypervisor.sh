@@ -330,6 +330,13 @@ function deploy_kvmhost() {
         --vault-password-file "$HOME"/.vault_password -m stdout --penv GUID || exit 1
 }
 
+function configure_onedev(){
+    echo "Configuring OneDev"
+    echo "******************"
+    ./dependancies/onedev/configure-onedev.sh
+}
+
+
 function configure_bash_aliases() {
     echo "Configuring bash aliases"
     echo "************************"
@@ -400,6 +407,7 @@ if [ $# -eq 0 ]; then
     deploy_kvmhost
     configure_bash_aliases
     setup_kcli_base
+    configure_onedev
 fi
 
 while [[ $# -gt 0 ]]; do
