@@ -4,8 +4,9 @@ This repository contains a quickstart script setup.sh to set up and configure Qu
 [![ansible-lint](https://github.com/tosin2013/qubinode_navigator/actions/workflows/ansible-lint.yml/badge.svg)](https://github.com/tosin2013/qubinode_navigator/actions/workflows/ansible-lint.yml)
 [![Generate Documentation](https://github.com/tosin2013/qubinode_navigator/actions/workflows/generate-documentation.yml/badge.svg)](https://github.com/tosin2013/qubinode_navigator/actions/workflows/generate-documentation.yml)
 
+
 ## Prerequisites
-* Linux-based operating system (RHEL 9.2, CentOS, Rocky Linux, or Fedora)
+* Linux-based operating system (RHEL 9.2, CentOS, rhel8 Linux, or Fedora)
 * Git
 
 ## Quickstart 
@@ -14,10 +15,42 @@ This repository contains a quickstart script setup.sh to set up and configure Qu
 ```
 curl https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/setup.sh | bash
 ```
-### Running on  RHPDS using tmux
-**create /tmp/config.yml as lab-user**  
-`you can uae ansiblesafe to generate the content of this file` - [link](https://github.com/tosin2013/ansiblesafe) 
+
+### Running on RHEL 8 Equinix Server GitHub Actions
+Review the following before deploying to RHEL 8 Equinix Server:
+[How to use GitHub Action to Run SSH Commands](https://medium.com/p/609df2a88ac3)
 ```
+$ ./copy-keys.sh lab-user@hypervisor.example.com  username@example.com
+```
+*Update SSH_PASSWORD under - Actions secrets and variables*
+![20231004142730](https://i.imgur.com/jGQWp8I.png)
+**Before running pipeline create /tmp/config.yml as lab-user**  
+*Vault integration coming soon*
+`you can use ansiblesafe to generate the content of this file` - [link](https://github.com/tosin2013/ansiblesafe) 
+```
+$ ssh into cluster
+$ vi /tmp/config.yml
+rhsm_username: rheluser
+rhsm_password: rhelpassword
+rhsm_org: orgid
+rhsm_activationkey: activationkey
+admin_user_password: password # Change to the lab-user password
+offline_token: offlinetoken
+openshift_pull_secret: pullsecret
+freeipa_server_admin_password: password # Change to the lab-user password
+xrdp_remote_user: remoteuser
+xrdp_remote_user_password: password
+```
+1. Fork Repository
+2. Update the GitHub Action Variables
+3. Run GitHub Action Pipeline `Configure RHEL 8 Equinix Server` 
+![20231004144259](https://i.imgur.com/EAfFJ0r.png)
+
+### Deploy manually on RRHEL 8 Equinix Server
+**create /tmp/config.yml as lab-user**  
+`you can use ansiblesafe to generate the content of this file` - [link](https://github.com/tosin2013/ansiblesafe) 
+```
+$ sudo su - 
 $ vi /tmp/config.yml
 rhsm_username: rheluser
 rhsm_password: rhelpassword
@@ -49,22 +82,24 @@ EOF
 
 **Run the following commands as lab-user**  
 ```
-# sudo dnf install -y tmux curl
-# git clone https://github.com/gpakosz/.tmux.git
-# ln -s -f .tmux/.tmux.conf
-# cp .tmux/.tmux.conf.local .
-# curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/rocky-linux-hypervisor.sh 
-# chmod +x rhel8-hypervisor.sh
-# tmux new-session -d -s rocky-linux-hypervisor 'source notouch.env && sudo -E  ./rhel8-hypervisor.sh'
-# tmux attach -t rocky-linux-hypervisor
+sudo dnf install -y tmux curl git vim 
+git clone https://github.com/gpakosz/.tmux.git
+ln -s -f .tmux/.tmux.conf
+cp .tmux/.tmux.conf.local .
+curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/rhel8-linux-hypervisor.sh
+chmod +x rhel8-linux-hypervisor.sh
+tmux new-session -d -s rhel8-linux-hypervisor 'source notouch.env && sudo -E  ./rhel8-linux-hypervisor.sh'
+tmux attach -t rhel8-linux-hypervisor
 ```
 
 *The install will fail on the first time to re-run un the following below*
 ```
-source notouch.env && sudo -E  ./rhel8-hypervisor.sh
+source notouch.env && sudo -E  ./rocky-linux-hypervisor.sh
 ```
 
-**ssh into vm and run the following**
+## Post Steps
+**ssh into vm and run the following commands**
+This is used to install the rhel8 and rhel 9 kvm image so you may deploy freeipa.
 ```
 $ sudo kcli download image rhel8
 $ sudo kcli download image rhel9
@@ -80,7 +115,7 @@ Once deployment is complete you can run [kcli](https://kcli.readthedocs.io/en/la
 $ kcli --help
 ```
 
-**Rocky Linux on RHPDS Post Steps**  
+**rhel8 Linux on RHPDS Post Steps**  
 Login via RDP using the remote user and password you set in the config.yml file.  
 
 ![20230610101107](https://i.imgur.com/DjPE6NR.png)

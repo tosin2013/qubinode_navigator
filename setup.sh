@@ -4,8 +4,8 @@
 # @setting-header setup.sh quickstart script for qubinode_navigator
 # @setting ./setup.sh 
 # Uncomment for debugging
-export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
-set -x
+#export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+#set -x
 # @global ANSIBLE_SAFE_VERSION this is the ansible safe version
 # @global INVENTORY this is the inventory file name and path Example: inventories/localhost
 export ANSIBLE_SAFE_VERSION="0.0.6"
@@ -52,7 +52,7 @@ function install_packages() {
     # Check if packages are already installed
     echo "Installing packages"
     echo "*******************"
-    for package in openssl-devel bzip2-devel libffi-devel wget vim podman ncurses-devel sqlite-devel firewalld make gcc git unzip sshpass lvm lvm2 python3 python3-pip; do
+    for package in openssl-devel bzip2-devel libffi-devel wget vim podman ncurses-devel sqlite-devel firewalld make gcc git unzip sshpass lvm lvm2 python3 python3-pip leapp-upgrade cockpit-leapp; do
         if rpm -q "${package}" >/dev/null 2>&1; then
             echo "Package ${package} already installed"
         else

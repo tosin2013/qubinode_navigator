@@ -1,0 +1,100 @@
+---
+kvm_host_gw: 192.168.1.1
+kvm_host_interface: eno1
+kvm_host_ip: 192.168.1.10
+kvm_host_macaddr: '11:11:11:11:11:11'
+kvm_host_mask_prefix: 24
+kvm_host_netmask: 255.255.255.0
+kvm_host_mtu: 1500
+kvm_bridge_type: Bridge
+kvm_host_domain: "{{ domain }}"
+kvm_host_bootproto: 'static'
+
+# The the primary dns server to the dns_forwarder
+primary_dns_server: "{{ dns_forwarder | default('1.1.1.1') }}"
+kvm_host_dns_server: "{{ primary_dns_server | default('1.1.1.1') }}"
+search_domains:
+  - "{{ domain }}"
+
+libvirt_pool_name_check: true
+skip_libvirt_pool: false
+
+qubinode_bridge_name: qubibr0
+
+# RHEL 8.6  is the current tested RHEL 8 minor release.
+# RHEL 9.1  is the current tested RHEL 9 minor release.
+rhel_release: ""
+
+# This variable is being phased out
+run_qubinode_setup: true
+
+# Run storage check
+run_storage_check: ""
+
+# Enable cockpit service
+enable_cockpit: true
+
+# # Set to true to add the admin_user to the libvirt group
+# # and change libvirt to be accessible user
+enable_libvirt_admin_user: true
+
+# Configure the user bash shell login prompt
+# # This will overwrite your existing .bashrc, .vimrc and other terminal configuration files
+configure_shell: true
+
+# set path to libvirt images
+kvm_host_libvirt_dir: /var/lib/libvirt/images
+
+## deploy-kvm-vm role uses this var
+kvm_vm_pool_dir: "{{ kvm_host_libvirt_dir }}"
+
+host_device: "{{ kvm_host_libvirt_extra_disk | default('nvme0n1') }}"
+vg_name: vg_qubi
+vm_libvirt_net_check: true
+
+# should a bridge interface be created
+configure_bridge: true
+
+# Set to no prevent the installer from attempting
+# setup a LVM group for qubinode. Also set this to no
+# if you already have you storage for lvm setup
+create_lvm: false
+
+## Set to no if you don't want to configure libvirt storage
+create_libvirt_storage: false
+
+# used in playbook setup_kvmhost.yml
+network_interface_name: "{{ kvm_host_interface }}"
+
+# set storage device to dedicate to /var/lib/libvirt/images
+kvm_host_libvirt_extra_disk: nvme0n1
+
+# setup NFS Server
+setup_nfs: true
+remove_nfs: false
+
+# use by funciton check_hardware_resources
+libvirt_pool_name: default
+
+qubinode_installer_host_completed: false
+
+# name of the libvirt network to use
+vm_libvirt_net: "qubinet"
+
+libvirt_network_name: "qubinat"
+
+libvirt_host_networks:
+  - name: "{{ vm_libvirt_net }}"
+    create: true
+    mode: bridge
+    bridge_device: "{{ kvm_host_bridge_name | default(qubinode_bridge_name) }}"
+    ifcfg_type: "{{ kvm_bridge_type }}"
+    ifcfg_bootproto: "{{ kvm_host_bootproto }}"
+    bridge_slave_dev: "{{ kvm_host_interface }}"
+    gateway: "{{ kvm_host_gw }}"
+    mask_prefix: "{{ kvm_host_mask_prefix }}"
+    ipaddress: "{{ kvm_host_ip }}"
+    mask: "{{ kvm_host_netmask }}"
+    subnet: "not currently in use"
+    mac: "{{ kvm_host_macaddr }}"
+    mtu: 1500
