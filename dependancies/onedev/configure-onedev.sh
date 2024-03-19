@@ -18,8 +18,8 @@ open_firewall_ports() {
 # Function to run the Podman container
 run_podman_container() {
     echo "Running the Podman container..."
-    mkdir -p $HOME/onedev
-    podman run -id --rm -v $(pwd)/onedev:/opt/onedev -p ${PORTS[0]}:${PORTS[0]} -p ${PORTS[1]}:${PORTS[1]} 1dev/server
+    mkdir -p /opt/onedev
+    podman run -id --rm -v /opt/onedev:/opt/onedev -p ${PORTS[0]}:${PORTS[0]} -p ${PORTS[1]}:${PORTS[1]} 1dev/server
 }
 
 # Main script execution starts here
