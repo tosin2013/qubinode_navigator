@@ -54,14 +54,14 @@ EOF
 # ln -s -f .tmux/.tmux.conf
 # cp .tmux/.tmux.conf.local .
 # curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/rocky-linux-hypervisor.sh 
-# chmod +x rocky-linux-hypervisor.sh 
-# tmux new-session -d -s rocky-linux-hypervisor 'source notouch.env && sudo -E  ./rocky-linux-hypervisor.sh'
+# chmod +x rhel8-hypervisor.sh
+# tmux new-session -d -s rocky-linux-hypervisor 'source notouch.env && sudo -E  ./rhel8-hypervisor.sh'
 # tmux attach -t rocky-linux-hypervisor
 ```
 
 *The install will fail on the first time to re-run un the following below*
 ```
-source notouch.env && sudo -E  ./rocky-linux-hypervisor.sh
+source notouch.env && sudo -E  ./rhel8-hypervisor.sh
 ```
 
 **ssh into vm and run the following**
