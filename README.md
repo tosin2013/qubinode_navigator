@@ -1,10 +1,6 @@
 # Qubinode Navigator
 This repository contains a quickstart script setup.sh to set up and configure Qubinode Navigator. Qubinode Navigator helps to automate the deployment and management of virtual machines, containers, and other infrastructure resources.
 
-[![ansible-lint](https://github.com/tosin2013/qubinode_navigator/actions/workflows/ansible-lint.yml/badge.svg)](https://github.com/tosin2013/qubinode_navigator/actions/workflows/ansible-lint.yml)
-[![Generate Documentation](https://github.com/tosin2013/qubinode_navigator/actions/workflows/generate-documentation.yml/badge.svg)](https://github.com/tosin2013/qubinode_navigator/actions/workflows/generate-documentation.yml)
-
-
 ## Prerequisites
 * Linux-based operating system (RHEL 9.2, CentOS, rhel8 Linux, or Fedora)
 * Git
