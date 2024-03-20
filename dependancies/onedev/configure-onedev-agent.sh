@@ -1,7 +1,7 @@
 #!/bin/bash
 #set -x
 
-if [ ! -f /opt/onedev/agent/bin/agent.sh ]; then
+if [ ! -d /opt/onedev-agent/agent/ ]; then
     read -p "Enter OneDev username: " ONEDEV_USER
     read -s -p "Enter OneDev password: " ONEDEV_PASS
     read -p "Enter OneDev server IP address: " IPADDRESS
@@ -15,7 +15,7 @@ oneDevServerUrl="http://${IPADDRESS}:6610"
 DOWNLOAD_URL="http://${IPADDRESS}:6610/~downloads/agent.tar.gz"
 
 # Directory to extract the agent
-extractDir="/opt/onedev"
+extractDir="/opt/onede-agent"
 
 
 
@@ -36,7 +36,7 @@ if ! git --version | grep -q 'git version 2\.[1-9][1-9]\.'; then
 fi
 
 
-if [ ! -f /opt/onedev/agent/bin/agent.sh ]; then
+if [ ! -d /opt/onedev-agent/agent/ ]; then
     # Download and extract the agent package
     echo "Downloading and extracting the agent package..."
     mkdir -p "$extractDir"

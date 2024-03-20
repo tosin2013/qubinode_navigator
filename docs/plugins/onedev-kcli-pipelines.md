@@ -1,0 +1,25 @@
+---
+layout: default
+title:  "OneDev - Kcli Pipelines"
+parent: Plugins
+nav_order: 3
+---
+
+## Review OneDev - Git Server with CI/CD, Kanban, and Packages before starting
+
+## Example pipelines
+
+Trigger kcli-pipelines to deploy VMs on Baremetal server using OneDev pipelines.
+
+Git Repo: [https://github.com/tosin2013/kcli-pipelines.git](https://github.com/tosin2013/kcli-pipelines.git)
+
+*Click on `import`*
+![20240320093529](https://i.imgur.com/1b3zrpr.png)
+*Click on `From URL`*
+![20240320093616](https://i.imgur.com/pwPpEx0.png)
+*Click on `Import` using kcli pipelines repo*
+![20240320093704](https://i.imgur.com/EZTDdm5.png)
+*click on the `tosin2013/kcli-pipelines.git` to view repos*
+![20240320093809](https://i.imgur.com/MgdGkEN.png)
+
+![20240320093959](https://i.imgur.com/pVvwaTR.png)
