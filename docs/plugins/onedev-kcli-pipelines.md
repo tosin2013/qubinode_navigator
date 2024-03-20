@@ -5,7 +5,7 @@ parent: Plugins
 nav_order: 3
 ---
 
-## Review OneDev - Git Server with CI/CD, Kanban, and Packages before starting
+## Kcli Pipelines using OneDev 
 
 ## Example pipelines
 
