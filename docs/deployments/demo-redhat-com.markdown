@@ -80,3 +80,5 @@ Login via RDP using the remote user and password you set in the config.yml file.
 ![20230610101107](https://i.imgur.com/DjPE6NR.png)
 
 `You can also use Remmina to login to the VM`
+
+See [OneDev - Git Server with CI/CD, Kanban, and Packages](../plugins/onedev.html) 
