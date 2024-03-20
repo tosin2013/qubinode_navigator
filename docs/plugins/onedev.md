@@ -37,3 +37,4 @@ cd /opt/qubinode_navigator/
 * Type: `Remote Shell Executor`
 * Name: `default-executor`
 ![20240320095851](https://i.imgur.com/BCMbk87.png)
+![20240320100009](https://i.imgur.com/CfcrhHh.png)
