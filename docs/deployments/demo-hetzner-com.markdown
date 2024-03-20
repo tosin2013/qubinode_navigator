@@ -77,6 +77,18 @@ tmux new-session -s rocky-linux-hetzner
 source notouch.env && sudo -E  ./rocky-linux-hetzner.sh
 ```
 
+
+**ssh into vm and run the following**
+```
+$ sudo kcli download image rhel8
+$ sudo kcli download image rhel9
+```
+
+When the prompt below comes up follow the link and look for the corresponding rhel release.
+![20230607131855](https://i.imgur.com/MaFsUau.png)
+right click on the link and copy the link address
+![20230607131930](https://i.imgur.com/83Gar1k.png)
+
 ## Access the Server GUI
 ```
 IP_ADDRESS=192.168.1.100
