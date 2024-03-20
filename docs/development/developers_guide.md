@@ -1,10 +1,9 @@
 ---
 layout: default
 title:  "Developers Guide"
-parent: Deployment Documenation 
+parent: Developer Documentation
 nav_order: 1
 ---
-
 
 ## Getting Started
 
