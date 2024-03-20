@@ -5,6 +5,9 @@ This repository contains a quickstart script setup.sh to set up and configure Qu
 * Linux-based operating system (RHEL 9.2, CentOS, Rocky Linux, or Fedora)
 * Git
 
+## Documentation
+* [Qubinode Navigator Documentation](https://tosin2013.github.io/qubinode_navigator/)
+
 ## Quickstart 
 
 ### Running on RHEL, CentOS, or Fedora
