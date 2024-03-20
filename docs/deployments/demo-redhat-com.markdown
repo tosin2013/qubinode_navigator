@@ -5,9 +5,9 @@ parent: Deployment Documentation
 nav_order: 2
 ---
 
-Deploy to Red Hat Product Demo System
-https://connect.redhat.com/en/training/product-demo-system
+Deploy to [Red Hat Product Demo System](https://connect.redhat.com/en/training/product-demo-system) using the following steps.
 
+**SSH into Equinix Metal baremetal**
 
 **create /tmp/config.yml as lab-user**  
 `you can uae ansiblesafe to generate the content of this file` - [link](https://github.com/tosin2013/ansiblesafe) 
