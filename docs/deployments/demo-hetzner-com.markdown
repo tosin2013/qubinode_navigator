@@ -6,6 +6,8 @@ nav_order: 2
 ---
 
 Deploy to [Hetzner](https://www.hetzner.com/) using the following steps.
+**Tested on**
+* Rocky Linux 9
 
 **Activate Rocky linux**
 ![alt text](<Screenshot from 2024-03-20 15-09-38-new.png>)
