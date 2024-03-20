@@ -4,5 +4,3 @@
 
 layout: home
 ---
-
-[Link to Posts](/posts)

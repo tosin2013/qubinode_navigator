@@ -3,6 +3,7 @@ layout: post
 title:  "Developers Guide"
 date:   2024-03-19 22:33:21 +0000
 categories: developers
+show_excerpts: true
 ---
 
 ## Getting Started
