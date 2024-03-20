@@ -2,7 +2,7 @@
 layout: post
 title:  "Developers Guide"
 date:   2024-03-19 22:33:21 +0000
-categories: jekyll update
+categories: developers
 ---
 
 ## Getting Started

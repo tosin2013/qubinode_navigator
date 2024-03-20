@@ -5,7 +5,4 @@
 layout: home
 ---
 
-# Show post links
-{% for post in site.posts %}
-  <a href="{{ post.url }}">{{ post.title }}</a>
-{% endfor %}
+[Link to Posts](/posts)
