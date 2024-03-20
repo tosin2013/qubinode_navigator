@@ -307,6 +307,19 @@ function configure_firewalld() {
     fi
 }
 
+function configure_onedev(){
+    if [ "$(pwd)" != "/root/qubinode_navigator" ]; then
+        echo "Current directory is not /root/qubinode_navigator."
+        echo "Changing to /root/qubinode_navigator..."
+        cd /root/qubinode_navigator
+    else
+        echo "Current directory is /root/qubinode_navigator."
+    fi
+    echo "Configuring OneDev"
+    echo "******************"
+    ./dependancies/onedev/configure-onedev.sh
+}
+
 # @description This configure_os function will get the base os and install the required packages
 function configure_os(){
     if [ ${1} == "ROCKY8" ]; then
@@ -434,6 +447,7 @@ if [ $# -eq 0 ]; then
     deploy_kvmhost
     configure_bash_aliases $MY_DIR
     setup_kcli_base  $MY_DIR
+    configure_onedev 
 fi
 
 while [[ $# -gt 0 ]]; do
