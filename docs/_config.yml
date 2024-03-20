@@ -29,7 +29,8 @@ twitter_username: jekyllrb
 github_username:  jekyll
 
 # Build settings
-theme: jekyll-docs-theme
+# https://just-the-docs.com/
+theme: just-the-docs
 plugins:
   - jekyll-feed
   - jekyll-seo-tag
