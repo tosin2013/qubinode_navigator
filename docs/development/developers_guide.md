@@ -1,10 +1,10 @@
 ---
-layout: post
+layout: default
 title:  "Developers Guide"
-date:   2024-03-19 22:33:21 +0000
-categories: developers
-show_excerpts: true
+parent: Deployment Documenation 
+nav_order: 1
 ---
+
 
 ## Getting Started
 
