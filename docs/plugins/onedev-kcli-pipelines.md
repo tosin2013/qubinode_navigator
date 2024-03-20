@@ -30,3 +30,6 @@ Git Repo: [https://github.com/tosin2013/kcli-pipelines.git](https://github.com/t
 
 *Click on `Deploy VM` - Deploy FreeIPA VM first this will allow you to deploy the other vms*
 ![20240320100623](https://i.imgur.com/kigo2L3.png)
+
+**Current List of Deployable VMs after FreeIPA Deployment**
+![20240320101445](https://i.imgur.com/IXsGQg3.png)
