@@ -15,7 +15,10 @@ This repository provides a plan which deploys a vm where:
 # Prerequisites
 * [OneDev - Kcli Pipelines](../plugins/onedev-kcli-pipelines.html)  - is configured and running.
   
-Git Repo: [https://github.com/karmab/kcli-openshift4-baremetal](https://github.com/karmab/kcli-openshift4-baremetal)
+Reference Git Repo: [https://github.com/karmab/kcli-openshift4-baremetal](https://github.com/karmab/kcli-openshift4-baremetal)
+
+## Configure pipelines
+Git Repo: [https://github.com/tosin2013/kcli-pipelines.git](https://github.com/tosin2013/kcli-pipelines.git)
 
 *Click on `import`*
 ![20240320093529](https://i.imgur.com/1b3zrpr.png)
@@ -30,10 +33,10 @@ Git Repo: [https://github.com/karmab/kcli-openshift4-baremetal](https://github.c
 
 # Start Job 
 **Click .onedev-buildspec.yml**
- ![20240320100513](https://i.imgur.com/NtvjpQv.png)
+![20240323193344](https://i.imgur.com/mi3udC6.png)
 
-*Click on `Deploy VM` - Deploy FreeIPA VM first this will allow you to deploy the other vms*
-![20240320100623](https://i.imgur.com/kigo2L3.png)
+*Click on `kcli-openshift4-baremetal` - Deploy OpenShift on KVM*
+![20240323193525](https://i.imgur.com/ZmyBOo6.png)
+![20240323193635](https://i.imgur.com/qOR2ZO9.png)
 
-**Current List of Deployable VMs after FreeIPA Deployment**
-![20240320101445](https://i.imgur.com/IXsGQg3.png)
+**Wait for deployment to complete it should take 45 minutes to 1 hour**

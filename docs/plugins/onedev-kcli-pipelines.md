@@ -26,7 +26,7 @@ Git Repo: [https://github.com/tosin2013/kcli-pipelines.git](https://github.com/t
 
 # Start Job 
 **Click .onedev-buildspec.yml**
- ![20240320100513](https://i.imgur.com/NtvjpQv.png)
+![20240323193344](https://i.imgur.com/mi3udC6.png)
 
 *Click on `Deploy VM` - Deploy FreeIPA VM first this will allow you to deploy the other vms*
 ![20240320100623](https://i.imgur.com/kigo2L3.png)
