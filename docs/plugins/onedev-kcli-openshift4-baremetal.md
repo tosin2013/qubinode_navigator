@@ -13,7 +13,7 @@ This repository provides a plan which deploys a vm where:
 
 
 # Prerequisites
-* [OneDev - Kcli Pipelines]()  - is configured and running. 
+* [OneDev - Kcli Pipelines](../plugins/onedev-kcli-pipelines.md)  - is configured and running. 
   
 Git Repo: [https://github.com/karmab/kcli-openshift4-baremetal](https://github.com/karmab/kcli-openshift4-baremetal)
 
