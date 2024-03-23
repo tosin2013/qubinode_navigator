@@ -4,7 +4,3 @@
 
 layout: home
 ---
-
-[Deployments](/deployments)
-[Plugins](/plugins)
-[Developer](/developer)
