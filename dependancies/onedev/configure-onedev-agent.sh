@@ -15,9 +15,7 @@ oneDevServerUrl="http://${IPADDRESS}:6610"
 DOWNLOAD_URL="http://${IPADDRESS}:6610/~downloads/agent.tar.gz"
 
 # Directory to extract the agent
-extractDir="/opt/onede-agent"
-
-
+extractDir="/opt/onedev-agent"
 
 # Encode the username and password for Basic Auth
 CREDENTIALS=$(printf "%s:%s" "$ONEDEV_USER" "$ONEDEV_PASS" | base64)
@@ -36,6 +34,8 @@ if ! git --version | grep -q 'git version 2\.[1-9][1-9]\.'; then
 fi
 
 
+
+
 if [ ! -d /opt/onedev-agent/agent/ ]; then
     # Download and extract the agent package
     echo "Downloading and extracting the agent package..."
@@ -49,14 +49,14 @@ if [ ! -d /opt/onedev-agent/agent/ ]; then
     ls -lath "$extractDir" || exit $?
     rm "$extractDir/agent.tar.gz" || exit $?
     # Update serverUrl in agent.properties
+    if [ ! -f "$extractDir/agent/conf/agent.properties" ]; then
+        echo "agent.properties not found in $extractDir/conf"
+        exit 1
+    fi  
     echo "Configuring agent..."
-    sed -i "s#^serverUrl=.*#serverUrl=$oneDevServerUrl#g" "$extractDir/conf/agent.properties"
+    sed -i "s#^serverUrl=.*#serverUrl=$oneDevServerUrl#g" "$extractDir/agent/conf/agent.properties" || exit 1
 fi
 
-if [ ! -f "$extractDir/agent/conf/agent.properties" ]; then
-    echo "agent.properties not found in $extractDir/conf"
-    exit 1
-fi  
 
 
 # Run the agent

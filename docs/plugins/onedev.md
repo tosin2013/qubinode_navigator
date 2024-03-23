@@ -38,3 +38,5 @@ cd /opt/qubinode_navigator/
 * Name: `default-executor`
 ![20240320095851](https://i.imgur.com/BCMbk87.png)
 ![20240320100009](https://i.imgur.com/CfcrhHh.png)
+
+See [OneDev - Kcli Pipelines](../plugins/onedev-kcli-pipelines.html)
