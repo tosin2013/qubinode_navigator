@@ -40,5 +40,5 @@ cd /opt/qubinode_navigator/
 ![20240320095851](https://i.imgur.com/BCMbk87.png)
 ![20240320100009](https://i.imgur.com/CfcrhHh.png)
 
-See [OneDev - Kcli Pipelines](../plugins/onedev-kcli-pipelines.html)
-For OpenShift Deployments see [OneDev - kcli-openshift4-baremetal Pipelines](../plugins/onedev-kcli-openshift4-baremetal.html)
+* See [OneDev - Kcli Pipelines](../plugins/onedev-kcli-pipelines.html)
+* For OpenShift Deployments see [OneDev - kcli-openshift4-baremetal Pipelines](../plugins/onedev-kcli-openshift4-baremetal.html)
