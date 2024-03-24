@@ -14,6 +14,11 @@ This repository provides a plan which deploys a vm where:
 
 # Prerequisites
 * [OneDev - Kcli Pipelines](../plugins/onedev-kcli-pipelines.html)  - is configured and running.
+**ssh into vm and run the following**
+```
+$ sudo kcli download image rhel8
+$ sudo kcli download image rhel9
+```
   
 Reference Git Repo: [https://github.com/karmab/kcli-openshift4-baremetal](https://github.com/karmab/kcli-openshift4-baremetal)
 

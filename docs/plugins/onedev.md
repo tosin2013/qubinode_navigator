@@ -8,7 +8,8 @@ nav_order: 3
 [https://onedev.io/](https://onedev.io/) is a Git server with full support for pull requests, code reviews, and continuous integration. It also provides a Kanban board, a wiki, and a package registry. It is a self-hosted alternative to GitHub, GitLab, and Bitbucket.
 
 ## Create OneDev Account on phyical server
-* Example URL: http://192.168.1.100:6610/~init
+`The ip address is the external ip address of the server`
+* Example URL: http://192.168.1.100:6610
 * Create Administrator Account
   * `Login Name` 
   * `Password` 
