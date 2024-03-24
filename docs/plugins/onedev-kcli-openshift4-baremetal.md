@@ -77,3 +77,23 @@ install-config.yaml  ocp             scripts
 ```
 
 
+![20240324151019](https://i.imgur.com/ASoWhOt.png)
+
+## Option Deploy OpenShift Workloads 
+**OpenShift Virtulization**
+*Ensure you are using Openshift version 4.15 for menu option 5*
+```
+git clone https://github.com/tosin2013/sno-quickstarts.git
+cd sno-quickstarts/gitops
+./configure-redhat-labs.sh
+
+1) ./aap-instance		   7) ./kafka-plus-db
+2) ./acm-gitops-deployment	   8) ./middleware-ocpv
+3) ./developer-env		   9) ./rhel-edge-management
+4) ./device-edge-demos		  10) ./sno-ocp-virt
+5) ./equinix-cnv-virtualization	  11) ./standard-sno-deployment
+6) ./equinix-developer-env	  12) ./vmware-odf-deployment
+#? 8
+```
+
+## Check the status of the deployment in ArgoCD
