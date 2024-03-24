@@ -50,7 +50,7 @@ Git Repo: [https://github.com/tosin2013/kcli-pipelines.git](https://github.com/t
 
 **Configure DNS**
 ```
-$ 
+$ /opt/kcli-pipelines/configure-dns.sh
 ```
 
 **SSH into the bastion node to get the kubeconfig**
@@ -67,7 +67,7 @@ sudo kcli ssh lab-installer
 bin                  machineconfigs  openshift_pull.json  version.txt
 cluster_ready.txt    manifests       original-ks.cfg
 install-config.yaml  ocp             scripts
-[root@lab-installer ~]#
+[root@lab-installer ~]# cat ocp/.openshift_install.log
 ```
 
 
