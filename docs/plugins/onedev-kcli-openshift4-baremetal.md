@@ -40,3 +40,4 @@ Git Repo: [https://github.com/tosin2013/kcli-pipelines.git](https://github.com/t
 ![20240323193635](https://i.imgur.com/qOR2ZO9.png)
 
 **Wait for deployment to complete it should take 45 minutes to 1 hour**
+![20240323194135](https://i.imgur.com/dsLFUqO.png)
