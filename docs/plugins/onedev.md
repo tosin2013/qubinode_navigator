@@ -16,7 +16,7 @@ nav_order: 3
   * `Full Name` 
   * `Email Address`
 ![20240320092532](https://i.imgur.com/AIZ1pG6.png)
-**Add IP address to URL**
+**Add External IP address to URL**
 ![20240320092812](https://i.imgur.com/zMKVwrq.png)
 
 # Add a agent for build pipelines 

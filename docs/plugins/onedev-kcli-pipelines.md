@@ -7,6 +7,16 @@ nav_order: 3
 
 ## Kcli Pipelines using OneDev 
 
+## Requirements
+* [OneDev - Kcli Pipelines](../plugins/onedev-kcli-pipelines.html)  - is configured and running.  
+  
+**ssh into vm and run the following**
+```
+$ sudo kcli download image rhel8
+$ sudo kcli download image rhel9
+```
+
+
 ## Example pipelines
 
 Trigger kcli-pipelines to deploy VMs on Baremetal server using OneDev pipelines.
