@@ -26,7 +26,7 @@ xrdp_remote_user_password: password
 ```
 **Add the following to .bashrc as lab-user**
 ```
-$ SSH_PASSOWRD=DontForgetToChangeMe
+$ SSH_PASSOWRD=DontForgetToChangeMe # Use the password of the lab-user
 $ cat >notouch.env<<EOF
 export SSH_USER=lab-user
 export CICD_PIPELINE='true'

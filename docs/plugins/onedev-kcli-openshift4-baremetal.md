@@ -97,3 +97,9 @@ cd sno-quickstarts/gitops
 ```
 
 ## Check the status of the deployment in ArgoCD
+*NOTE: You may have to set the default stroage based on deployment Type*
+```
+# oc patch storageclass ocs-storagecluster-cephfs -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+# Recommened for Openshift Virtualization
+# oc patch storageclass ocs-storagecluster-ceph-rbd -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+```
