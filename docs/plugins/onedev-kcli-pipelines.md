@@ -10,7 +10,7 @@ nav_order: 3
 ## Requirements
 * [OneDev - Kcli Pipelines](../plugins/onedev-kcli-pipelines.html)  - is configured and running.  
   
-**ssh into vm and run the following**
+**ssh into baremetl server and run the following**
 ```
 $ sudo kcli download image rhel8
 $ sudo kcli download image rhel9
