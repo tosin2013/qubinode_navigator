@@ -47,10 +47,10 @@ EOF
 # git clone https://github.com/gpakosz/.tmux.git
 # ln -s -f .tmux/.tmux.conf
 # cp .tmux/.tmux.conf.local .
-# curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/rocky-linux-hypervisor.sh 
+# curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/rhel8-linux-hypervisor.sh 
 # chmod +x rhel8-linux-hypervisor.sh
-# tmux new-session -d -s rocky-linux-hypervisor 'source notouch.env && sudo -E  ./rhel8-linux-hypervisor.sh'
-# tmux attach -t rocky-linux-hypervisor
+# tmux new-session -d -s rhel8-linux-hypervisor 'source notouch.env && sudo -E  ./rhel8-linux-hypervisor.sh'
+# tmux attach -t rhel8-linux-hypervisor
 ```
 
 *The install will fail on the first time to re-run un the following below*
