@@ -82,3 +82,8 @@ Login via RDP using the remote user and password you set in the config.yml file.
 `You can also use Remmina to login to the VM`
 
 See [OneDev - Git Server with CI/CD, Kanban, and Packages](../plugins/onedev.html) 
+
+## Post Steps 
+* Configure Onedev for CI/CD - [OneDev - Git Server with CI/CD, Kanban, and Packages](../plugins/onedev.html)
+* Deploy FreeIPA and other VMs - [FreeIPA - Identity Management](../plugins/onedev-kcli-pipelines.html) 
+* Deploy OpenShift on KVM - [OpenShift - KVM](../plugins/onedev-kcli-openshift4-baremetal.html)
