@@ -4,7 +4,7 @@
 # Use n2.xlarge.x86 on Equinix
 lab: true
 version: stable
-tag: "4.14"
+tag: "4.15"
 virtual_protocol: redfish
 virtual_ctlplanes: true
 launch_steps: true
