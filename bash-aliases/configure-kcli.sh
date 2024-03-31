@@ -12,8 +12,10 @@ function kcli_configure_images(){
     dependency_check
     echo "Downloading Fedora"
     sudo kcli download image fedora38
+    sudo kcli download image fedora40
     #echo "Downloading Centos Streams"
     sudo kcli download image centos9stream
+    sudo kcli download image centos8stream
     sudo kcli download image ubuntu -u https://cloud-images.ubuntu.com/releases/jammy/release/ubuntu-22.04-server-cloudimg-amd64.img
     kcli list available-images
 
