@@ -26,7 +26,7 @@ xrdp_remote_user_password: password
 ```
 **Add the following to .bashrc as lab-user**
 ```
-$ SSH_PASSOWRD=DontForgetToChangeMe # Use the password of the lab-user
+$ SSH_PASSWORD=DontForgetToChangeMe # Use the password of the lab-user
 $ cat >notouch.env<<EOF
 export SSH_USER=lab-user
 export CICD_PIPELINE='true'
@@ -37,7 +37,7 @@ export ACTIVE_BRIDGE='false'
 export INTERFACE=bond0
 export GIT_REPO=https://github.com/tosin2013/qubinode_navigator.git
 export INVENTORY=rhel8-equinix
-export SSH_PASSWORD=${SSH_PASSOWRD}
+export SSH_PASSWORD=${SSH_PASSWORD}
 EOF
 ```
 
