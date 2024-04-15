@@ -10,6 +10,7 @@ This repository provides a plan which deploys a vm where:
 * openshift-baremetal-install is downloaded with the specific version and tag specified (and renamed openshift-install)
 * stop the nodes to deploy through redfish
 * launch the install against a set of baremetal nodes. Virtual ctlplanes and workers can also be deployed
+* OpenShift is deployed using the ipi method
 
 
 # Prerequisites
@@ -39,25 +40,17 @@ Git Repo: [https://github.com/tosin2013/kcli-pipelines.git](https://github.com/t
 
 # Start Job 
 **Click .onedev-buildspec.yml**
-![20240323193344](https://i.imgur.com/mi3udC6.png)
+![20240412135703](https://i.imgur.com/1PzXO6a.png)
 
 *Click on `kcli-openshift4-baremetal` - Deploy OpenShift on KVM*
-![20240323193525](https://i.imgur.com/ZmyBOo6.png)
-![20240323193635](https://i.imgur.com/qOR2ZO9.png)
+![20240412135736](https://i.imgur.com/B4puUCU.png)
+![20240412135958](https://i.imgur.com/yL6hiQD.png)
 
 **Wait for deployment to complete it should take 45 minutes to 1 hour**
 ![20240323194135](https://i.imgur.com/dsLFUqO.png)
 
 ![20240323213443](https://i.imgur.com/NnqvNFx.png)
 
-
-*Click on `Deploy VM` - Deploy FreeIPA VM first this will allow you to access the vms*
-![20240320100623](https://i.imgur.com/kigo2L3.png)
-
-**Configure DNS**
-```
-$ /opt/kcli-pipelines/configure-dns.sh
-```
 
 **SSH into the bastion node to get the kubeconfig**
 ```

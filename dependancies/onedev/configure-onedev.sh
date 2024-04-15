@@ -9,26 +9,32 @@ open_firewall_ports() {
         echo "Opening port $PORT in firewalld..."
         firewall-cmd --zone=public --add-port=${PORT}/tcp --permanent
     done
-
-    # Reload firewalld to apply the changes
     echo "Reloading firewalld to apply changes..."
     firewall-cmd --reload
 }
 
-# Function to run the Podman container
-run_podman_container() {
-    echo "Running the Podman container..."
+# Function to create Podman container and systemd service
+create_podman_service() {
+    local container_name="onedev-server"
+    local service_path="/etc/systemd/system/"
+
+    # Remove existing container if exists
+    podman rm -f $container_name
+
+    # Create container but do not start it
     mkdir -p /opt/onedev
-    podman run -id --rm -v /opt/onedev:/opt/onedev -p ${PORTS[0]}:${PORTS[0]} -p ${PORTS[1]}:${PORTS[1]} 1dev/server
+    podman run  --name $container_name  -id --rm -v /opt/onedev:/opt/onedev -p ${PORTS[0]}:${PORTS[0]} -p ${PORTS[1]}:${PORTS[1]} 1dev/server || exit $?
+
+    # Generate systemd service file using podman generate
+    podman generate systemd --new --files --name  $container_name 
+    cp container-$container_name.service $service_path
+
+    # Reload systemd to recognize new service
+    systemctl daemon-reload
+    systemctl enable container-$container_name.service
+    systemctl start container-$container_name.service
 }
 
-# Main script execution starts here
-#mkdir -p $HOME/agent/work
-#podman run -t -v $(pwd)/agent/work:/agent/work -e serverUrl=http://192.168.1.10:6610 -e agentToken=example-token -h myagent 1dev/agent
-
-# Step 1: Open necessary ports in firewalld
+# Main script execution
 open_firewall_ports
-
-# Step 2: Run the Podman container
-# Note: This will run in the foreground, so the script will not proceed until the container is stopped
-run_podman_container
+create_podman_service
