@@ -52,8 +52,8 @@ Access step-ca server using
 ```
 $ sudo kcli ssh step-ca-server
 $ sudo su -
-$ cat /root/.step/config/defaults.json
-$ cat step-ca.log 
+$ systemctl status step-ca
+$  cat /var/log/step-ca.log 
 ```
 
 Allow jumpbox to use root certificate
