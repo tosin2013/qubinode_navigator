@@ -78,15 +78,20 @@ install-config.yaml  ocp             scripts
 ```
 git clone https://github.com/tosin2013/sno-quickstarts.git
 cd sno-quickstarts/gitops
-./configure-redhat-labs.sh
 
-1) ./aap-instance		   7) ./kafka-plus-db
-2) ./acm-gitops-deployment	   8) ./middleware-ocpv
-3) ./developer-env		   9) ./rhel-edge-management
-4) ./device-edge-demos		  10) ./sno-ocp-virt
-5) ./equinix-cnv-virtualization	  11) ./standard-sno-deployment
-6) ./equinix-developer-env	  12) ./vmware-odf-deployment
-#? 8
+
+# To deploy storage and tag infra nodes
+./configure-redhat-labs.sh --configure-infra-nodes --configure-storage 
+
+# To deploy workloads
+./configure-redhat-labs.sh 
+1) Exit				   8) ./aap-instance
+2) ./middleware-ocpv		   9) ./acm-gitops-deployment
+3) ./vmware-odf-deployment	  10) ./equinix-developer-env
+4) ./kafka-plus-db		  11) ./device-edge-demos
+5) ./rhel-edge-management	  12) ./developer-env
+6) ./sno-ocp-virt		  13) ./standard-sno-deployment
+7) ./equinix-cnv-virtualization
 ```
 
 ## Check the status of the deployment in ArgoCD
