@@ -20,6 +20,7 @@ rhsm_activationkey: activationkey
 admin_user_password: password # Change to the lab-user password
 offline_token: offlinetoken
 openshift_pull_secret: pullsecret
+automation_hub_offline_token: automationhubtoken
 freeipa_server_admin_password: password # Change to the lab-user password
 xrdp_remote_user: remoteuser
 xrdp_remote_user_password: password

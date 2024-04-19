@@ -37,13 +37,14 @@ ssh-copy-id lab-user@${IP_ADDRESS}
 ## Before running pipeline create /tmp/config.yml as lab-user
 ```bash
 $ vi /tmp/config.yml
-rhsm_username: rheluser
-rhsm_password: rhelpassword
-rhsm_org: orgid
-rhsm_activationkey: activationkey
+rhsm_username: rheluser # optional
+rhsm_password: rhelpassword # optional
+rhsm_org: orgid # optional
+rhsm_activationkey: activationkey # optional
 admin_user_password: password # Change to the lab-user password
-offline_token: offlinetoken 
-openshift_pull_secret: pullsecret
+offline_token: offlinetoken # optional
+automation_hub_offline_token: automationhubtoken # optional
+openshift_pull_secret: pullsecret # optional
 freeipa_server_admin_password: password # Change to the lab-user password
 xrdp_remote_user: remoteuser
 xrdp_remote_user_password: password
