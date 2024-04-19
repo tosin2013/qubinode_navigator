@@ -35,6 +35,8 @@ ssh-copy-id lab-user@${IP_ADDRESS}
 ```
 
 ## Before running pipeline create /tmp/config.yml as lab-user
+[Ansible Vault Secrets Documentation](https://dev.to/tosin2013/ansible-vault-secrets-documentation-3g1a)
+
 ```bash
 $ vi /tmp/config.yml
 rhsm_username: rheluser # optional

@@ -9,8 +9,10 @@ Deploy to [Red Hat Product Demo System](https://connect.redhat.com/en/training/p
 
 **SSH into Equinix Metal baremetal**
 
-**create /tmp/config.yml as lab-user**  
-`you can uae ansiblesafe to generate the content of this file` - [link](https://github.com/tosin2013/ansiblesafe) 
+**create /tmp/config.yml as lab-user**   
+`you can uae ansiblesafe to generate the content of this file` - [link](https://github.com/tosin2013/ansiblesafe)   
+[Ansible Vault Secrets Documentation](https://dev.to/tosin2013/ansible-vault-secrets-documentation-3g1a)
+
 ```
 $ vi /tmp/config.yml
 rhsm_username: rheluser
