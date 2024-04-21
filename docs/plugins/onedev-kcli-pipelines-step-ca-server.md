@@ -56,7 +56,7 @@ $ systemctl status step-ca
 $ cat /var/log/step-ca.log 
 ```
 
-Extend the step-ca server certificate
+Extend the step-ca server certificate maxTLSCertDuration ```2000h``` and defaultTLSCertDuration ```2000h```
 ``` 
 jq '.authority.provisioners[0].claims = {"minTLSCertDuration": "5m", "maxTLSCertDuration": "2000h", "defaultTLSCertDuration": "2000h"}' .step/config/ca.json > .step/config/ca.json.tmp
 mv .step/config/ca.json .step/config/ca.json.bak
