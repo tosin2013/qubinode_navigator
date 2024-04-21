@@ -56,6 +56,15 @@ $ systemctl status step-ca
 $ cat /var/log/step-ca.log 
 ```
 
+Extend the step-ca server certificate
+``` 
+jq '.authority.provisioners[0].claims = {"minTLSCertDuration": "5m", "maxTLSCertDuration": "2000h", "defaultTLSCertDuration": "2000h"}' .step/config/ca.json > .step/config/ca.json.tmp
+mv .step/config/ca.json .step/config/ca.json.bak
+mv .step/config/ca.json.tmp .step/config/ca.json
+systemctl restart step-ca
+systemctl status step-ca
+```
+
 Allow jumpbox to use root certificate
 ```
 $ sudo su - remoteuser 
