@@ -1,6 +1,6 @@
 ---
 layout: default
-title:  "OneDev - kcli-openshift4-baremetal Pipelines"
+title:  "OneDev - kcli-openshift4-baremetal Pipelines Externally"
 parent: Plugins
 nav_order: 3
 ---
@@ -74,7 +74,7 @@ install-config.yaml  ocp             scripts
 
 ## Option Deploy OpenShift Workloads 
 **OpenShift Virtulization**
-*Ensure you are using Openshift version 4.15 for menu option 5*
+*Ensure you are using Openshift version 4.15 for menu option 7*
 ```
 git clone https://github.com/tosin2013/sno-quickstarts.git
 cd sno-quickstarts/gitops
