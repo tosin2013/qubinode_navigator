@@ -16,7 +16,7 @@ This repository provides a plan which deploys a vm where:
 # Prerequisites
 * [OneDev - Kcli Pipelines](../plugins/onedev-kcli-pipelines.html)  - is configured and running.  
 
-**ssh into  baremetl server and run the following**
+**Optional: ssh into  baremetl server and run the following**
 ```
 $ sudo kcli download image rhel8
 $ sudo kcli download image rhel9
@@ -40,16 +40,24 @@ Git Repo: [https://github.com/tosin2013/kcli-pipelines.git](https://github.com/t
 
 # Start Job 
 **Click .onedev-buildspec.yml**
-![20240412135703](https://i.imgur.com/1PzXO6a.png)
+![20240429154843](https://i.imgur.com/N5BYqN2.png)
 
-*Click on `kcli-openshift4-baremetal` - Deploy OpenShift on KVM*
-![20240412135736](https://i.imgur.com/B4puUCU.png)
-![20240412135958](https://i.imgur.com/yL6hiQD.png)
+*Click on `External - kcli-openshift4-baremetal` - Deploy OpenShift on KVM and expose it via Route53*
+
+**Requirements**
+* `GUID` - x0c0f
+* `IP_ADDRESS` - SERVER_ADDRES
+* `ZONE_NAME` - DNS ZONE NAME
+* `AWS_ACCESS_KEY` - AWS ACCESS KEY
+* `AWS_SECRET_KEY` - AWS SECRET KEY
+
+![20240429160328](https://i.imgur.com/BJj9JnY.png)
+![20240429160353](https://i.imgur.com/3JaeagL.png)
 
 **Wait for deployment to complete it should take 45 minutes to 1 hour**
 ![20240323194135](https://i.imgur.com/dsLFUqO.png)
 
-![20240415113845](https://i.imgur.com/N0DXbE3.png)
+![20240430115451](https://i.imgur.com/yWNi4tr.png)
 
 
 **SSH into the bastion node to get the kubeconfig**
@@ -69,10 +77,12 @@ install-config.yaml  ocp             scripts
 [root@lab-installer ~]# cat ocp/.openshift_install.log
 ```
 
+To validate access to the cluster view the ha proxy stats page:
+* https://<hostname>:1936/haproxy?stats  
 
-![20240324151019](https://i.imgur.com/ASoWhOt.png)
+*username and password `admin`:`password`*
 
-## Option Deploy OpenShift Workloads 
+## Optional: Deploy OpenShift Workloads 
 **OpenShift Virtulization**
 *Ensure you are using Openshift version 4.15 for menu option 7*
 ```
