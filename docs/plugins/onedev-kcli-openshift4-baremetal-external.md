@@ -78,7 +78,7 @@ install-config.yaml  ocp             scripts
 ```
 
 To validate access to the cluster view the ha proxy stats page:
-* https://<hostname>:1936/haproxy?stats  
+* `https://<your-hostname>:1936/haproxy?stats`
 
 *username and password `admin`:`password`*
 
