@@ -40,7 +40,7 @@ Git Repo: [https://github.com/tosin2013/kcli-pipelines.git](https://github.com/t
 
 # Start Job 
 **Click .onedev-buildspec.yml**
-![20240412135703](https://i.imgur.com/1PzXO6a.png)
+![20240429154854](https://i.imgur.com/ca9lFEk.png)
 
 *Click on `kcli-openshift4-baremetal` - Deploy OpenShift on KVM*
 ![20240412135736](https://i.imgur.com/B4puUCU.png)
@@ -74,7 +74,7 @@ install-config.yaml  ocp             scripts
 
 ## Option Deploy OpenShift Workloads 
 **OpenShift Virtulization**
-*Ensure you are using Openshift version 4.15 for menu option 7*
+*Ensure you are using Openshift version 4.15 for menu option `equinix-cnv-virtualization`*
 ```
 git clone https://github.com/tosin2013/sno-quickstarts.git
 cd sno-quickstarts/gitops

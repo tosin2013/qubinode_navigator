@@ -84,7 +84,7 @@ To validate access to the cluster view the ha proxy stats page:
 
 ## Optional: Deploy OpenShift Workloads 
 **OpenShift Virtulization**
-*Ensure you are using Openshift version 4.15 for menu option 7*
+*Ensure you are using Openshift version 4.15 for menu option `equinix-cnv-virtualization`*
 ```
 git clone https://github.com/tosin2013/sno-quickstarts.git
 cd sno-quickstarts/gitops
