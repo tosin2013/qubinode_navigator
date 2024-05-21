@@ -1,6 +1,6 @@
 ---
 layout: default
-title:  "OneDev - Agent based Installer Pipelines"
+title:  "OneDev - Agent based Installer Pipelines - Internal Deployment"
 parent: Plugins
 nav_order: 3
 ---
@@ -37,20 +37,10 @@ Git Repo: [https://github.com/tosin2013/kcli-pipelines.git](https://github.com/t
 
 # Start Job 
 **Click .onedev-buildspec.yml**
+*Click on `Internal - OpenShift Agent Based Installer Helper` 
 
-
-*Click on `External - OpenShift Agent Based Installer Helper` - Deploy OpenShift on KVM and expose it via Route53*
-
-**Requirements**
-* `GUID` - x0c0f
-* `IP_ADDRESS` - SERVER_ADDRES
-* `ZONE_NAME` - DNS ZONE NAME
-* `AWS_ACCESS_KEY` - AWS ACCESS KEY
-* `AWS_SECRET_KEY` - AWS SECRET KEY
-
-
-![20240515111213](https://i.imgur.com/466gzik.png)
-![20240515111233](https://i.imgur.com/OCwXY5W.png)
+![20240515111103](https://i.imgur.com/V6s8MnO.png)
+![20240515111122](https://i.imgur.com/3fJYPIe.png)
 
 **When vyos router is waiting to be configured run the steps below**
 **Configure Networking on host**
@@ -71,6 +61,11 @@ $ vbash /tmp/vyos-config.sh
 ssh admin@baremetalhost.com
 ```
 
+
+To validate access to the cluster view the ha proxy stats page:
+* `https://<your-hostname>:1936/haproxy?stats`
+
+*username and password `admin`:`password`*
 
 ## Optional: Deploy OpenShift Workloads 
 **OpenShift Virtulization**
