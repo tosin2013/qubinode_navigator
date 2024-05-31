@@ -11,7 +11,7 @@ OpenShift Agent Based Installer Helper
 
 
 # Prerequisites
-* [OneDev - Kcli Pipelines](plugins/onedev-kcli-pipelines.html)  - is configured and running.  
+* [OneDev - Kcli Pipelines](../plugins/onedev-kcli-pipelines.html)  - is configured and running.  
 
 **Optional: ssh into  baremetl server and run the following**
 ```

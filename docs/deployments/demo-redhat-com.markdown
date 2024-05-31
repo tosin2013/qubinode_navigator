@@ -89,10 +89,8 @@ Login via RDP using the remote user and password you set in the config.yml file.
 
 `You can also use Remmina to login to the VM`
 
-See [OneDev - Git Server with CI/CD, Kanban, and Packages](../plugins/onedev.html) 
-
 ## Post Steps 
-* Configure Onedev for CI/CD - [OneDev - Git Server with CI/CD, Kanban, and Packages](../plugins/onedev.html)
+* Configure Onedev for CI/CD - [OneDev - Git Server with CI/CD, Kanban, and Packages](../plugins/onedev-kcli-pipelines.html)
 
 ## OneDev - Deploying Generic VMs
 - **Deploying Generic VMs**: Guide for deploying generic VMs using OneDev.

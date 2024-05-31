@@ -111,4 +111,4 @@ You may also use Remmina or any other RDP client to access the server.
 ![alt text](image.png)
 ![alt text](<Screenshot from 2024-03-20 18-06-28.png>)
 
-See [OneDev - Git Server with CI/CD, Kanban, and Packages](../plugins/onedev.html) 
+See [OneDev - Git Server with CI/CD, Kanban, and Packages](../plugins/onedev-kcli-pipelines.html) 
