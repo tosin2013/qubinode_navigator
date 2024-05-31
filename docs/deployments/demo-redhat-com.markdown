@@ -77,9 +77,9 @@ Once deployment is complete you can run [kcli](https://kcli.readthedocs.io/en/la
 $ kcli --help
 ```
 
-## To Access the Baremetal Node you mad do the Following
-**Option 1: Access the VM via the console**
-Login to the VM using ssh or cockpit console. The endpoint will be https://SERVER_ADDRESS:9090
+## To Access the Baremetal Node 
+**Option 1: Access the VM via the console**  
+Login to the VM using ssh or cockpit console. The endpoint will be `https://SERVER_ADDRESS:9090` and the username and password are the same as the lab-user password you set in the config.yml file.
 ![20240531095517](https://i.imgur.com/Z9WimBp.png)
 
 **Option 2: RDP into Server on  Red Hat Product Demo System**  
@@ -110,6 +110,6 @@ See [OneDev - Git Server with CI/CD, Kanban, and Packages](../plugins/onedev.htm
 - **Internally**: Steps to deploy OpenShift 4 on baremetal using kcli pipelines for internal environments.
   - [OneDev - Agent based Installer Pipelines - Internal Deployment](../plugins/onedev-kcli-openshift4-baremetal-internal.html)
 
-## Deploy Step CA Server using Kcli Pipelines
+### Deploy Step CA Server using Kcli Pipelines
 Detailed guide on deploying a Step CA server using Kcli pipelines.
   - [Deploy Step CA Server using Kcli Pipelines](../plugins/onedev-kcli-pipelines.html)

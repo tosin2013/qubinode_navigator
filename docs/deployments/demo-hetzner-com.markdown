@@ -94,7 +94,14 @@ When the prompt below comes up follow the link and look for the corresponding rh
 right click on the link and copy the link address
 ![20230607131930](https://i.imgur.com/83Gar1k.png)
 
-## Access the Server GUI
+
+## To Access the Baremetal Node 
+**Option 1: Access the VM via the console**
+
+Login to the VM using ssh or cockpit console. The endpoint will be `https://SERVER_ADDRESS:9090` and the username and password are the same as the lab-user password you set in the config.yml file.
+![20240531101946](https://i.imgur.com/YuPbVpO.png)
+
+**Option 2: Access the Server GUI**
 ```
 IP_ADDRESS=192.168.1.100
 xfreerdp /v:${IP_ADDRESS}:3389 /u:remoteuser
