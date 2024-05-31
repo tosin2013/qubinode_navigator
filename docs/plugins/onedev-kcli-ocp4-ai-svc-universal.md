@@ -1,6 +1,6 @@
 ---
 layout: default
-title:  "OneDev - OpenShift Assisted Installer Service, Universal Deploye - WIP"
+title:  "OneDev - OpenShift Assisted Installer Service, Universal Deployer - WIP"
 parent: Plugins
 nav_order: 3
 ---
