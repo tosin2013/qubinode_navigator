@@ -92,7 +92,7 @@ Login via RDP using the remote user and password you set in the config.yml file.
 ## Post Steps 
 * Configure Onedev for CI/CD - [OneDev - Git Server with CI/CD, Kanban, and Packages](../plugins/onedev-kcli-pipelines.html)
 
-## OneDev - Deploying Generic VMs
+### OneDev - Deploying Generic VMs
 - **Deploying Generic VMs**: Guide for deploying generic VMs using OneDev.
   - [OneDev - Deploying Generic VMs](../plugins/onedev-generic-vm.html)
 
