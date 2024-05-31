@@ -1,6 +1,6 @@
 ---
 layout: default
-title:  "OneDev - kcli-openshift4-baremetal Pipelines"
+title:  "OneDev - OpenShift Assisted Installer Service, Universal Deploye - WIP"
 parent: Plugins
 nav_order: 3
 ---
