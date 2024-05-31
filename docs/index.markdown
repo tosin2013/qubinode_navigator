@@ -62,7 +62,3 @@ We welcome contributions from the community! Please read our [Contributing Guide
 ## License
 
 This project is licensed under the [MIT License](link-to-license).
-
-For more information, visit our [official documentation](link-to-official-documentation) or join our [community forum](link-to-community-forum) to connect with other users and developers.
-
-Happy deploying with Qubinode Navigator!
