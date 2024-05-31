@@ -110,4 +110,4 @@ Login via RDP using the remote user and password you set in the config.yml file.
 
 ### Deploy Step CA Server using Kcli Pipelines
 Detailed guide on deploying a Step CA server using Kcli pipelines.
-  - [Deploy Step CA Server using Kcli Pipelines](../plugins/onedev-kcli-pipelines.html)
+  - [Deploy Step CA Server using Kcli Pipelines](../plugins/onedev-kcli-pipelines-step-ca-server.html)
