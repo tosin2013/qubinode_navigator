@@ -77,7 +77,12 @@ Once deployment is complete you can run [kcli](https://kcli.readthedocs.io/en/la
 $ kcli --help
 ```
 
-**RDP into Server on  Red Hat Product Demo System**  
+## To Access the Baremetal Node you mad do the Following
+**Option 1: Access the VM via the console**
+Login to the VM using ssh or cockpit console. The endpoint will be https://SERVER_ADDRESS:9090
+![20240531095517](https://i.imgur.com/Z9WimBp.png)
+
+**Option 2: RDP into Server on  Red Hat Product Demo System**  
 Login via RDP using the remote user and password you set in the config.yml file.  
 
 ![20230610101107](https://i.imgur.com/DjPE6NR.png)
@@ -89,4 +94,20 @@ See [OneDev - Git Server with CI/CD, Kanban, and Packages](../plugins/onedev.htm
 ## Post Steps 
 * Configure Onedev for CI/CD - [OneDev - Git Server with CI/CD, Kanban, and Packages](../plugins/onedev.html)
 * Deploy FreeIPA and other VMs - [FreeIPA - Identity Management](../plugins/onedev-kcli-pipelines.html) 
-* Deploy OpenShift on KVM - [OpenShift - KVM](../plugins/onedev-kcli-openshift4-baremetal.html)
+
+
+### OneDev - Agent Based Installer Pipelines
+- **External Deployment**: Guide for deploying OpenShift using OneDev's agent-based installer pipelines for external environments.
+  - [OneDev - Agent based Installer Pipelines - External Deployment](../plugins/onedev-agent-based-external-deployment.html)
+- **Internal Deployment**: Instructions for deploying OpenShift using OneDev's agent-based installer pipelines for internal environments.
+  - [OneDev - Agent based Installer Pipelines - Internal Deployment](../plugins/onedev-agent-based-internal-deployment.html)
+
+### OneDev - kcli-openshift4-baremetal Pipelines
+- **Externally**: Steps to deploy OpenShift 4 on baremetal using kcli pipelines for external environments.
+  - [OneDev - kcli-openshift4-baremetal Pipelines Externally](../plugins/onedev-kcli-openshift4-baremetal-external.html)
+- **Internally**: Steps to deploy OpenShift 4 on baremetal using kcli pipelines for internal environments.
+  - [OneDev - Agent based Installer Pipelines - Internal Deployment](../plugins/onedev-kcli-openshift4-baremetal-internal.html)
+
+## Deploy Step CA Server using Kcli Pipelines
+Detailed guide on deploying a Step CA server using Kcli pipelines.
+  - [Deploy Step CA Server using Kcli Pipelines](../plugins/onedev-kcli-pipelines.html)
