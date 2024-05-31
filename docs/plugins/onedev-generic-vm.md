@@ -1,6 +1,6 @@
 ---
 layout: default
-title:  "OneDev - Kcli Pipelines"
+title:  "OneDev - Deploying Generic VMs"
 parent: Plugins
 nav_order: 3
 ---

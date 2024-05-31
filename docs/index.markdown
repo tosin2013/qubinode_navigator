@@ -45,16 +45,19 @@ Explore the Kcli pipelines available in Qubinode Navigator. These pipelines stre
 ### Deploy Step CA Server using Kcli Pipelines
 Detailed guide on deploying a Step CA server using Kcli pipelines.
 
+### OneDev - Deploying Generic VMs
+Guide for deploying generic VMs using OneDev.
+
 ### OneDev - Git Server with CI/CD, Kanban, and Packages
 Instructions for setting up a Git server with CI/CD capabilities, Kanban boards, and package management using OneDev.
 
 ## Getting Started
 
-To get started with Qubinode Navigator, please refer to the [Getting Started Guide](link-to-getting-started-guide). This guide will help you set up your environment and begin deploying OpenShift using Qubinode Navigator.
+To get started with Qubinode Navigator, please refer to the [Deployment Documentation](https://tosin2013.github.io/qubinode_navigator/deployments/). This guide will help you set up your environment and begin deploying OpenShift using Qubinode Navigator.
 
 ## Contributing
 
-We welcome contributions from the community! Please read our [Contributing Guide](link-to-contributing-guide) to learn how you can get involved.
+We welcome contributions from the community! Please read our [Contributing Guide](https://tosin2013.github.io/qubinode_navigator/development/developers_guide.html) to learn how you can get involved.
 
 ## License
 

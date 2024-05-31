@@ -93,8 +93,10 @@ See [OneDev - Git Server with CI/CD, Kanban, and Packages](../plugins/onedev.htm
 
 ## Post Steps 
 * Configure Onedev for CI/CD - [OneDev - Git Server with CI/CD, Kanban, and Packages](../plugins/onedev.html)
-* Deploy FreeIPA and other VMs - [FreeIPA - Identity Management](../plugins/onedev-kcli-pipelines.html) 
 
+## OneDev - Deploying Generic VMs
+- **Deploying Generic VMs**: Guide for deploying generic VMs using OneDev.
+  - [OneDev - Deploying Generic VMs](../plugins/onedev-generic-vm.html)
 
 ### OneDev - Agent Based Installer Pipelines
 - **External Deployment**: Guide for deploying OpenShift using OneDev's agent-based installer pipelines for external environments.
