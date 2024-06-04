@@ -40,5 +40,25 @@ cd /opt/qubinode_navigator/
 ![20240320095851](https://i.imgur.com/BCMbk87.png)
 ![20240320100009](https://i.imgur.com/CfcrhHh.png)
 
-* See [OneDev - Kcli Pipelines](../plugins/onedev-kcli-pipelines.html)
-* For OpenShift Deployments see [OneDev - kcli-openshift4-baremetal Pipelines](../plugins/onedev-kcli-openshift4-baremetal.html)
+
+# You can now run the following pipelines 
+
+### OneDev - Deploying Generic VMs
+- **Deploying Generic VMs**: Guide for deploying generic VMs using OneDev.
+  - [OneDev - Deploying Generic VMs](plugins/onedev-generic-vm.html)
+
+### OneDev - Agent Based Installer Pipelines
+- **External Deployment**: Guide for deploying OpenShift using OneDev's agent-based installer pipelines for external environments.
+  - [OneDev - Agent based Installer Pipelines - External Deployment](plugins/onedev-agent-based-external-deployment.html)
+- **Internal Deployment**: Instructions for deploying OpenShift using OneDev's agent-based installer pipelines for internal environments.
+  - [OneDev - Agent based Installer Pipelines - Internal Deployment](plugins/onedev-agent-based-internal-deployment.html)
+
+### OneDev - kcli-openshift4-baremetal Pipelines
+- **Externally**: Steps to deploy OpenShift 4 on baremetal using kcli pipelines for external environments.
+  - [OneDev - kcli-openshift4-baremetal Pipelines Externally](plugins/onedev-kcli-openshift4-baremetal-external.html)
+- **Internally**: Steps to deploy OpenShift 4 on baremetal using kcli pipelines for internal environments.
+  - [OneDev - Agent based Installer Pipelines - Internal Deployment](plugins/onedev-kcli-openshift4-baremetal-internal.html)
+
+### Deploy Step CA Server using Kcli Pipelines
+Detailed guide on deploying a Step CA server using Kcli pipelines.
+  - [Deploy Step CA Server using Kcli Pipelines](plugins/onedev-kcli-pipelines-step-ca-server.html)
