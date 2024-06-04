@@ -45,20 +45,20 @@ cd /opt/qubinode_navigator/
 
 ### OneDev - Deploying Generic VMs
 - **Deploying Generic VMs**: Guide for deploying generic VMs using OneDev.
-  - [OneDev - Deploying Generic VMs](plugins/onedev-generic-vm.html)
+  - [OneDev - Deploying Generic VMs](onedev-generic-vm.html)
 
 ### OneDev - Agent Based Installer Pipelines
 - **External Deployment**: Guide for deploying OpenShift using OneDev's agent-based installer pipelines for external environments.
-  - [OneDev - Agent based Installer Pipelines - External Deployment](plugins/onedev-agent-based-external-deployment.html)
+  - [OneDev - Agent based Installer Pipelines - External Deployment](onedev-agent-based-external-deployment.html)
 - **Internal Deployment**: Instructions for deploying OpenShift using OneDev's agent-based installer pipelines for internal environments.
-  - [OneDev - Agent based Installer Pipelines - Internal Deployment](plugins/onedev-agent-based-internal-deployment.html)
+  - [OneDev - Agent based Installer Pipelines - Internal Deployment](onedev-agent-based-internal-deployment.html)
 
 ### OneDev - kcli-openshift4-baremetal Pipelines
 - **Externally**: Steps to deploy OpenShift 4 on baremetal using kcli pipelines for external environments.
-  - [OneDev - kcli-openshift4-baremetal Pipelines Externally](plugins/onedev-kcli-openshift4-baremetal-external.html)
+  - [OneDev - kcli-openshift4-baremetal Pipelines Externally](onedev-kcli-openshift4-baremetal-external.html)
 - **Internally**: Steps to deploy OpenShift 4 on baremetal using kcli pipelines for internal environments.
-  - [OneDev - Agent based Installer Pipelines - Internal Deployment](plugins/onedev-kcli-openshift4-baremetal-internal.html)
+  - [OneDev - Agent based Installer Pipelines - Internal Deployment](onedev-kcli-openshift4-baremetal-internal.html)
 
 ### Deploy Step CA Server using Kcli Pipelines
 Detailed guide on deploying a Step CA server using Kcli pipelines.
-  - [Deploy Step CA Server using Kcli Pipelines](plugins/onedev-kcli-pipelines-step-ca-server.html)
+  - [Deploy Step CA Server using Kcli Pipelines](onedev-kcli-pipelines-step-ca-server.html)
