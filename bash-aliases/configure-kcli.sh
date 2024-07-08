@@ -15,7 +15,7 @@ function kcli_configure_images(){
     #echo "Downloading Centos Streams"
     sudo kcli download image centos9stream
     sudo kcli download image centos8stream
-    sudo kcli download image ubuntu -u https://cloud-images.ubuntu.com/releases/jammy/release/ubuntu-22.04-server-cloudimg-amd64.img
+    sudo kcli download image ubuntu2204
     kcli list available-images
 
   #if [[ $LINUX_VERSION == "rhel"  &&  "A${INSTALL_RHEL_IMAGES}" != "Atrue" ]]; then
