@@ -171,6 +171,8 @@ function configure_python() {
         sudo alternatives --set python /usr/bin/python3.9
         sudo alternatives --set python3 /usr/bin/python3.9
 
+        sudo dnf install python3-pip -y
+
         curl -sSL https://raw.githubusercontent.com/ansible/ansible-navigator/v3.6.0/requirements.txt| sudo python3 -m pip install -r /dev/stdin
         sudo python3 -m pip install -r $HOME/qubinode_navigator/bash-aliases/bastion-requirements.txt
     else
@@ -268,7 +270,15 @@ function configure_ansible_vault_setup() {
     echo "*****************************"
     if [ ! -f /root/qubinode_navigator/ansible_vault_setup.sh ];
     then 
-        curl -OL https://gist.githubusercontent.com/tosin2013/022841d90216df8617244ab6d6aceaf8/raw/92400b9e459351d204feb67b985c08df6477d7fa/ansible_vault_setup.sh
+
+# Check if the script is run as root
+# Source environment variables if .env file exists
+# Set default values for CICD_PIPELINE and INVENTORY if not already set
+# Set GUID if not already set
+# Check if USE_HASHICORP_VAULT is set and validate VAULT_ADDRESS and SECRET_PATH
+ros    # Generate inventory
+S# @description This function installs necessary packages
+         curl -OL https://gist.githubusercontent.com/tosin2013/022841d90216df8617244ab6d6aceaf8/raw/92400b9e459351d204feb67b985c08df6477d7fa/ansible_vault_setup.sh
         chmod +x ansible_vault_setup.sh
     fi
     rm -f ~/.vault_password
