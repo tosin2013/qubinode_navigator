@@ -194,6 +194,7 @@ function configure_navigator() {
     echo "******************************"
     if [ -d "$HOME"/qubinode_navigator ]; then
         echo "Qubinode Navigator already exists"
+        git -C "$HOME/qubinode_navigator" pull
     else
         cd "$HOME"
         sudo usermod -aG users $USER

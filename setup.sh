@@ -82,6 +82,7 @@ function get_qubinode_navigator() {
     echo "Cloning qubinode_navigator"
     if [ -d $1/qubinode_navigator ]; then
         echo "Qubinode Installer already exists"
+        git -C "$HOME/qubinode_navigator" pull
     else
         git clone ${GIT_REPO}
     fi
