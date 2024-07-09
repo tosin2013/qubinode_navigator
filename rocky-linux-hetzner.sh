@@ -65,7 +65,7 @@ function generate_inventory() {
             mkdir -p inventories/${INVENTORY}/group_vars/control
             cp -r inventories/localhost/group_vars/control/* inventories/${INVENTORY}/group_vars/control/
         fi
-        sed -i 's|export CURRENT_INVENTORY="localhost"|export CURRENT_INVENTORY="'${INVENTORY}'"|g' bash-aliases/random-functions.sh
+        
         # set the values
         control_host="$(hostname -I | awk '{print $1}')"
         # Check if running as root
