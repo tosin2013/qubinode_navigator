@@ -47,14 +47,11 @@ EOF
 **Run the following commands as lab-user**  
 ```
 sudo dnf install -y tmux curl git
-git clone https://github.com/gpakosz/.tmux.git
-ln -s -f .tmux/.tmux.conf
-cp .tmux/.tmux.conf.local .
 curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/rhel9-linux-hypervisor.sh 
 chmod +x rhel9-linux-hypervisor.sh
-# tmux new-session  -s rhel8-linux-hypervisor 
-# source notouch.env && sudo -E  ./rhel9-linux-hypervisor.sh
-# tmux attach -t rhel8-linux-hypervisor
+tmux new-session -s rhel9-linux-hypervisor 
+source notouch.env && sudo -E  ./rhel9-linux-hypervisor.sh
+tmux attach -t rhel9-linux-hypervisor
 ```
 
 *The install will fail on the first time to re-run un the following below*
