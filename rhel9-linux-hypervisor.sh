@@ -294,8 +294,6 @@ setup_kcli_base() {
     source ~/.bash_aliases
     qubinode_setup_kcli
     kcli_configure_images
-    check_kcli_plan
-    update_profiles_file
 }
 
 # Function to configure OneDev
