@@ -1,5 +1,5 @@
 #!/bin/bash
-
+source random-functions.sh
 function kcli_configure_images() {
     echo "Configuring images"
     dependency_check
