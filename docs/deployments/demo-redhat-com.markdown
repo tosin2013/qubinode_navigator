@@ -39,26 +39,27 @@ export FORWARDER='1.1.1.1'
 export ACTIVE_BRIDGE='false'
 export INTERFACE=bond0
 export GIT_REPO=https://github.com/tosin2013/qubinode_navigator.git
-export INVENTORY=rhel8-equinix
+export INVENTORY=rhel9-equinix
 export SSH_PASSWORD=${SSH_PASSWORD}
 EOF
 ```
 
 **Run the following commands as lab-user**  
 ```
-# sudo dnf install -y tmux curl
-# git clone https://github.com/gpakosz/.tmux.git
-# ln -s -f .tmux/.tmux.conf
-# cp .tmux/.tmux.conf.local .
-# curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/rhel8-linux-hypervisor.sh 
-# chmod +x rhel8-linux-hypervisor.sh
-# tmux new-session -d -s rhel8-linux-hypervisor 'source notouch.env && sudo -E  ./rhel8-linux-hypervisor.sh'
+sudo dnf install -y tmux curl git
+git clone https://github.com/gpakosz/.tmux.git
+ln -s -f .tmux/.tmux.conf
+cp .tmux/.tmux.conf.local .
+curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/rhel9-linux-hypervisor.sh 
+chmod +x rhel9-linux-hypervisor.sh
+# tmux new-session  -s rhel8-linux-hypervisor 
+# source notouch.env && sudo -E  ./rhel9-linux-hypervisor.sh
 # tmux attach -t rhel8-linux-hypervisor
 ```
 
 *The install will fail on the first time to re-run un the following below*
 ```
-source notouch.env && sudo -E  ./rhel8-linux-hypervisor.sh
+source notouch.env && sudo -E  ./rhel9-linux-hypervisor.sh
 ```
 
 **ssh into vm and run the following**
