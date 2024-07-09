@@ -31,6 +31,7 @@ function qubinode_setup_kcli() {
         echo "kcli is installed"
         kcli --help
     fi
+}
 
 function check_kcli_plan() {
     if [ -d /opt/kcli-plan-samples ]; then
