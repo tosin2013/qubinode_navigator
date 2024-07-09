@@ -23,7 +23,7 @@ create_podman_service() {
 
     # Create container but do not start it
     mkdir -p /opt/onedev
-    podman run  --name $container_name  -id --rm -v /opt/onedev:/opt/onedev -p ${PORTS[0]}:${PORTS[0]} -p ${PORTS[1]}:${PORTS[1]} 1dev/server || exit $?
+    podman run --name $container_name -id --rm -v /opt/onedev:/opt/onedev -p ${PORTS[0]}:${PORTS[0]} -p ${PORTS[1]}:${PORTS[1]} docker.io/1dev/server:latest || exit $?
 
     # Generate systemd service file using podman generate
     podman generate systemd --new --files --name  $container_name 
