@@ -183,6 +183,19 @@ function configure_bash_aliases() {
     fi
 }
 
+function confiure_lvm_storage(){
+    echo "Configuring Storage"
+    echo "************************"
+    if [ ! -f /tmp/configure-lvm.sh ];
+    then 
+        curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/dependancies/equinix-rocky/configure-lvm.sh
+        mv configure-lvm.sh /tmp/configure-lvm.sh
+        sudo chmod +x /tmp/configure-lvm.sh
+    fi 
+    /tmp/configure-lvm.sh || exit 1
+}
+
+
 # Function to configure Qubinode Navigator
 configure_navigator() {
     log_message "Configuring Qubinode Navigator..."
@@ -317,6 +330,7 @@ main() {
     handle_hashicorp_vault
     install_packages
     configure_firewalld
+    confiure_lvm_storage
     clone_repository
     configure_ansible_navigator
     configure_ansible_vault
