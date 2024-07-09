@@ -31,12 +31,6 @@ function qubinode_setup_kcli() {
         echo "kcli is installed"
         kcli --help
     fi
-}
-
-function install_dependencies() {
-    cd /opt/kcli-plan-samples
-    sudo pip3 install -r profile_generator/requirements.txt
-}
 
 function check_kcli_plan() {
     if [ -d /opt/kcli-plan-samples ]; then

@@ -292,7 +292,6 @@ setup_kcli_base() {
     echo "Configuring Kcli"
     echo "****************"
     source ~/.bash_aliases
-    install_dependencies
     qubinode_setup_kcli
     kcli_configure_images
     check_kcli_plan
