@@ -364,13 +364,23 @@ function configure_bash_aliases() {
     else
         echo "Current directory is /root/qubinode_navigator."
     fi
+    # Source the function definitions
+    source bash-aliases/functions.sh
+
+    # Source the alias definitions
+    source bash-aliases/aliases.sh
+
+    # Source .bash_aliases to apply changes
     if [ -f ~/.bash_aliases ]; then
-        echo "bash_aliases already exists"
-        ./bash-aliases/setup-commands.sh || exit 1
-    else
-        ./bash-aliases/setup-commands.sh || exit 1
+        . ~/.bash_aliases
+    fi
+
+    # Ensure .bash_aliases is sourced from .bashrc
+    if ! grep -qF "source ~/.bash_aliases" ~/.bashrc; then
+        echo "source ~/.bash_aliases" >> ~/.bashrc
     fi
 }
+
 
 function confiure_lvm_storage(){
     echo "Configuring Storage"
@@ -395,9 +405,10 @@ function setup_kcli_base() {
     echo "Configuring Kcli"
     echo "****************"
     source ~/.bash_aliases
-    kcli-utils setup
-    kcli-utils configure-images
-    kcli-utils check-kcli-plan
+    qubinode_setup_kcli
+    kcli_configure_images
+    check_kcli_plan
+    update_profiles_file
 }
 
 function show_help() {

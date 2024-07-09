@@ -375,37 +375,45 @@ function deploy_kvmhost() {
 function configure_bash_aliases() {
     echo "Configuring bash aliases"
     echo "************************"
-    if [ "$(pwd)" != "$1/qubinode_navigator" ]; then
-        echo "Current directory is not $1/qubinode_navigator."
-        echo "Changing to $1/qubinode_navigator..."
-        cd $1/qubinode_navigator
+    if [ "$(pwd)" != "/root/qubinode_navigator" ]; then
+        echo "Current directory is not /root/qubinode_navigator."
+        echo "Changing to /root/qubinode_navigator..."
+        cd /root/qubinode_navigator
     else
-        echo "Current directory is $1/qubinode_navigator."
+        echo "Current directory is /root/qubinode_navigator."
     fi
-    if [ -f $1/.bash_aliases ]; then
-        echo "bash_aliases already exists"
-         ./bash-aliases/setup-commands.sh || exit 1
-    else
-        ./bash-aliases/setup-commands.sh || exit 1
+    # Source the function definitions
+    source bash-aliases/functions.sh
+
+    # Source the alias definitions
+    source bash-aliases/aliases.sh
+
+    # Source .bash_aliases to apply changes
+    if [ -f ~/.bash_aliases ]; then
+        . ~/.bash_aliases
+    fi
+
+    # Ensure .bash_aliases is sourced from .bashrc
+    if ! grep -qF "source ~/.bash_aliases" ~/.bashrc; then
+        echo "source ~/.bash_aliases" >> ~/.bashrc
     fi
 }
 
-
 function setup_kcli_base() {
-    if [ "$(pwd)" != "$1/qubinode_navigator" ]; then
-        echo "Current directory is not $1/qubinode_navigator."
-        echo "Changing to $1/qubinode_navigator..."
-        cd $1/qubinode_navigator
+    if [ "$(pwd)" != "/root/qubinode_navigator" ]; then
+        echo "Current directory is not /root/qubinode_navigator."
+        echo "Changing to /root/qubinode_navigator..."
+        cd /root/qubinode_navigator
     else
-        echo "Current directory is $1/qubinode_navigator."
+        echo "Current directory is /root/qubinode_navigator."
     fi
     echo "Configuring Kcli"
     echo "****************"
-    #source $1/.profile
-    source $1/.bash_aliases
-    kcli-utils setup
-    kcli-utils configure-images
-    kcli-utils check-kcli-plan
+    source ~/.bash_aliases
+    qubinode_setup_kcli
+    kcli_configure_images
+    check_kcli_plan
+    update_profiles_file
 }
 
 function show_help() {
