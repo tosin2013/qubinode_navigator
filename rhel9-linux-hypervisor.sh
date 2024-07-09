@@ -292,9 +292,11 @@ setup_kcli_base() {
     echo "Configuring Kcli"
     echo "****************"
     source ~/.bash_aliases
-    kcli_utils setup
-    kcli_utils configure-images
-    kcli_utils check-kcli-plan
+    install_dependencies
+    qubinode_setup_kcli
+    kcli_configure_images
+    check_kcli_plan
+    update_profiles_file
 }
 
 # Function to configure OneDev
