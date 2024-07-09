@@ -11,7 +11,7 @@ on:
       target_server:
         description: 'target_server'
         required: true
-        default: rhel8-equinix
+        default: rhel9-equinix
       forwarder:
         description: 'forwarder'
         required: true
@@ -28,7 +28,7 @@ env:
     INTERFACE: 'bond0'
    
 jobs:
-  configure-rhel8-equinix:
+  configure-rhel9-equinix:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
