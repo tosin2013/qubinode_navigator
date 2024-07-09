@@ -1,7 +1,7 @@
 #!/bin/bash
 # Uncomment for debugging
-export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
-set -x
+#export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+#set -x
 
 KVM_VERSION=0.8.0
 export ANSIBLE_SAFE_VERSION="0.0.7"
@@ -171,7 +171,7 @@ function configure_python() {
         sudo alternatives --set python /usr/bin/python3.9
         sudo alternatives --set python3 /usr/bin/python3.9
 
-        sudo dnf install python3-pip -y
+        #sudo dnf install python3-pip -y
 
         curl -sSL https://raw.githubusercontent.com/ansible/ansible-navigator/v3.6.0/requirements.txt| sudo python3 -m pip install -r /dev/stdin
         sudo python3 -m pip install -r $HOME/qubinode_navigator/bash-aliases/bastion-requirements.txt

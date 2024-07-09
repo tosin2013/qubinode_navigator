@@ -1,4 +1,4 @@
-name: Configure RHEL 8 Equinix Server
+name: Configure RHEL 9 Equinix Server
 on:
   repository_dispatch:
     types: [custom_restart]
@@ -45,8 +45,8 @@ jobs:
           echo "FORWARDER=${{ github.event.client_payload.data_key.forwarder }}" >> $GITHUB_ENV
           echo "HOSTNAME=${{ github.event.client_payload.data_key.hostname }}" >> $GITHUB_ENV
         fi
-    - name: Configure RHEL 8 Equinix Server
-      uses: appleboy/ssh-action@v0.1.10
+    - name: Configure RHEL 9 Equinix Server
+      uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ env.HOSTNAME }}
         username: ${{ secrets.USERNAME }}
@@ -75,11 +75,11 @@ jobs:
           echo "export FORWARDER=${{ env.FORWARDER }}" >> /opt/quibinode_navigator/.env
           echo "export ACTIVE_BRIDGE=${{ env.ACTIVE_BRIDGE }}" >> /opt/quibinode_navigator/.env
           echo "export INTERFACE=${{ env.INTERFACE }}" >> /opt/quibinode_navigator/.env
-          source /opt/quibinode_navigator/.env && sudo -E /opt/quibinode_navigator/rhel8-linux-hypervisor.sh || exit $?
+          source /opt/quibinode_navigator/.env && sudo -E /opt/quibinode_navigator/rhel9-linux-hypervisor.sh || exit $?
    
     - name: Send a repository dispatch event to restart the workflow if it failed
       if: ${{ failure() }}
-      uses: actions/github-script@v3
+      uses: actions/github-script@v7
       with:
         github-token: ${{ secrets.PAT }}
         script: |
