@@ -44,18 +44,30 @@ install_packages() {
     local packages=(openssl-devel bzip2-devel libffi-devel wget vim podman ncurses-devel sqlite-devel firewalld make gcc git unzip sshpass lvm2 python3 python3-pip)
     for package in "${packages[@]}"; do
         if ! rpm -q "$package" &>/dev/null; then
-            dnf install -y "$package"
+            if ! dnf install -y "$package"; then
+                log_message "Failed to install package: $package"
+                exit 1
+            fi
         fi
     done
-    dnf groupinstall -y "Development Tools"
-    dnf update -y
+    if ! dnf groupinstall -y "Development Tools"; then
+        log_message "Failed to install Development Tools"
+        exit 1
+    fi
+    if ! dnf update -y; then
+        log_message "Failed to update packages"
+        exit 1
+    fi
 }
 
 # Function to clone the repository
 clone_repository() {
     if [ ! -d "$HOME/qubinode_navigator" ]; then
         log_message "Cloning qubinode_navigator repository..."
-        git clone "$GIT_REPO" "$HOME/qubinode_navigator"
+        if ! git clone "$GIT_REPO" "$HOME/qubinode_navigator"; then
+            log_message "Failed to clone repository"
+            exit 1
+        fi
     fi
 }
 
@@ -63,13 +75,19 @@ clone_repository() {
 configure_ansible_navigator() {
     if ! command -v ansible-navigator &>/dev/null; then
         log_message "Installing ansible-navigator..."
-        pip3 install ansible-navigator --user
+        if ! pip3 install ansible-navigator --user; then
+            log_message "Failed to install ansible-navigator"
+            exit 1
+        fi
         echo 'export PATH=$HOME/.local/bin:$PATH' >> ~/.profile
         source ~/.profile
     fi
     log_message "Configuring ansible-navigator..."
     cd "$HOME/qubinode_navigator"
-    pip3 install -r requirements.txt
+    if ! pip3 install -r requirements.txt; then
+        log_message "Failed to install Ansible Navigator requirements"
+        exit 1
+    fi
 
     log_message "Configuring Ansible Navigator settings"
     cat >~/.ansible-navigator.yml <<EOF
@@ -99,17 +117,102 @@ configure_ansible_vault() {
     log_message "Configuring Ansible Vault..."
     if ! command -v ansiblesafe &>/dev/null; then
         local ansiblesafe_url="https://github.com/tosin2013/ansiblesafe/releases/download/v${ANSIBLE_SAFE_VERSION}/ansiblesafe-v${ANSIBLE_SAFE_VERSION}-linux-amd64.tar.gz"
-        curl -OL "$ansiblesafe_url"
-        tar -zxvf "ansiblesafe-v${ANSIBLE_SAFE_VERSION}-linux-amd64.tar.gz"
+        if ! curl -OL "$ansiblesafe_url"; then
+            log_message "Failed to download ansiblesafe"
+            exit 1
+        fi
+        if ! tar -zxvf "ansiblesafe-v${ANSIBLE_SAFE_VERSION}-linux-amd64.tar.gz"; then
+            log_message "Failed to extract ansiblesafe"
+            exit 1
+        fi
         chmod +x ansiblesafe-linux-amd64
         mv ansiblesafe-linux-amd64 /usr/local/bin/ansiblesafe
     fi
     if [ ! -f "$HOME/qubinode_navigator/ansible_vault_setup.sh" ]; then
-        curl -OL https://gist.githubusercontent.com/tosin2013/022841d90216df8617244ab6d6aceaf8/raw/92400b9e459351d204feb67b985c08df6477d7fa/ansible_vault_setup.sh
+        if ! curl -OL https://gist.githubusercontent.com/tosin2013/022841d90216df8617244ab6d6aceaf8/raw/92400b9e459351d204feb67b985c08df6477d7fa/ansible_vault_setup.sh; then
+            log_message "Failed to download ansible_vault_setup.sh"
+            exit 1
+        fi
         chmod +x ansible_vault_setup.sh
     fi
     rm -f ~/.vault_password
-    ./ansible_vault_setup.sh
+    if [ "$CICD_PIPELINE" == "true" ]; then 
+        if [ -z "$SSH_PASSWORD" ]; then
+            log_message "SSH_PASSWORD environment variable is not set"
+            exit 1
+        fi   
+        echo "$SSH_PASSWORD" > ~/.vault_password
+        sudo cp ~/.vault_password /home/lab-user/.vault_password 
+        if ! bash ./ansible_vault_setup.sh; then
+            log_message "Failed to execute ansible_vault_setup.sh"
+            exit 1
+        fi
+    else 
+        if ! bash ./ansible_vault_setup.sh; then
+            log_message "Failed to execute ansible_vault_setup.sh"
+            exit 1
+        fi
+    fi
+}
+
+function configure_bash_aliases() {
+    echo "Configuring bash aliases"
+    echo "************************"
+    if [ "$(pwd)" != "/root/qubinode_navigator" ]; then
+        echo "Current directory is not /root/qubinode_navigator."
+        echo "Changing to /root/qubinode_navigator..."
+        cd /root/qubinode_navigator
+    else
+        echo "Current directory is /root/qubinode_navigator."
+    fi
+    if [ -f ~/.bash_aliases ]; then
+        echo "bash_aliases already exists"
+        ./bash-aliases/setup-commands.sh || exit 1
+    else
+        ./bash-aliases/setup-commands.sh || exit 1
+    fi
+}
+
+# Function to configure Qubinode Navigator
+configure_navigator() {
+    log_message "Configuring Qubinode Navigator..."
+    echo "******************************"
+    if [ -d "$HOME/qubinode_navigator" ]; then
+        log_message "Qubinode Navigator already exists"
+    else
+        cd "$HOME"
+        sudo usermod -aG users "$USER"
+        sudo chown -R root:users /opt
+        sudo chmod -R g+w /opt
+        if ! git clone "${GIT_REPO}"; then
+            log_message "Failed to clone repository"
+            exit 1
+        fi
+    fi
+    cd "$HOME/qubinode_navigator"
+    if ! sudo pip3 install -r requirements.txt; then
+        log_message "Failed to install Qubinode Navigator requirements"
+        exit 1
+    fi
+    log_message "Current DNS Server: $(cat /etc/resolv.conf | grep nameserver | awk '{print $2}' | head -1)"
+    log_message "Load variables"
+    echo "**************"
+    if [ "$CICD_PIPELINE" == "false" ]; then
+        read -t 360 -p "Press Enter to continue, or wait 5 minutes for the script to continue automatically" || true
+        if ! python3 load-variables.py; then
+            log_message "Failed to load variables"
+            exit 1
+        fi
+    else 
+        if [[ -z "$ENV_USERNAME" || -z "$DOMAIN" || -z "$FORWARDER" || -z "$INTERFACE" ]]; then
+            log_message "Error: One or more environment variables are not set"
+            exit 1
+        fi
+        if ! python3 load-variables.py --username "${ENV_USERNAME}" --domain "${DOMAIN}" --forwarder "${FORWARDER}" --interface "${INTERFACE}"; then
+            log_message "Failed to load variables with environment parameters"
+            exit 1
+        fi
+    fi
 }
 
 # Function to generate inventory
@@ -122,23 +225,38 @@ generate_inventory() {
     local control_user="$USER"
     echo "[control]" > "$HOME/qubinode_navigator/inventories/$INVENTORY/hosts"
     echo "control ansible_host=$control_host ansible_user=$control_user" >> "$HOME/qubinode_navigator/inventories/$INVENTORY/hosts"
-    ansible-navigator inventory --list -m stdout --vault-password-file ~/.vault_password
+    if ! ansible-navigator inventory --list -m stdout --vault-password-file ~/.vault_password; then
+        log_message "Failed to list Ansible inventory"
+        exit 1
+    fi
 }
 
 # Function to configure SSH
 configure_ssh() {
     log_message "Configuring SSH..."
     if [ ! -f ~/.ssh/id_rsa ]; then
-        ssh-keygen -t rsa -N '' -f ~/.ssh/id_rsa
-        ssh-copy-id "$USER@$(hostname -I | awk '{print $1}')"
+        if ! ssh-keygen -t rsa -N '' -f ~/.ssh/id_rsa; then
+            log_message "Failed to generate SSH key"
+            exit 1
+        fi
+        if ! ssh-copy-id "$USER@$(hostname -I | awk '{print $1}')"; then
+            log_message "Failed to copy SSH key"
+            exit 1
+        fi
     fi
 }
 
 # Function to configure firewalld
 configure_firewalld() {
     log_message "Configuring firewalld..."
-    systemctl start firewalld
-    systemctl enable firewalld
+    if ! systemctl start firewalld; then
+        log_message "Failed to start firewalld"
+        exit 1
+    fi
+    if ! systemctl enable firewalld; then
+        log_message "Failed to enable firewalld"
+        exit 1
+    fi
 }
 
 # Function to deploy KVM host
@@ -147,7 +265,41 @@ deploy_kvmhost() {
     eval $(ssh-agent)
     ssh-add ~/.ssh/id_rsa
     cd "$HOME/qubinode_navigator"
-    ansible-navigator run ansible-navigator/setup_kvmhost.yml --vault-password-file ~/.vault_password -m stdout
+    if ! ansible-navigator run ansible-navigator/setup_kvmhost.yml --vault-password-file ~/.vault_password -m stdout; then
+        log_message "Failed to deploy KVM host"
+        exit 1
+    fi
+}
+
+# Function to set up KCLI base
+setup_kcli_base() {
+    if [ "$(pwd)" != "/root/qubinode_navigator" ]; then
+        echo "Current directory is not /root/qubinode_navigator."
+        echo "Changing to /root/qubinode_navigator..."
+        cd /root/qubinode_navigator
+    else
+        echo "Current directory is /root/qubinode_navigator."
+    fi
+    echo "Configuring Kcli"
+    echo "****************"
+    source ~/.bash_aliases
+    kcli_utils setup
+    kcli_utils configure-images
+    kcli_utils check-kcli-plan
+}
+
+# Function to configure OneDev
+configure_onedev() {
+    if [ "$(pwd)" != "/root/qubinode_navigator" ]; then
+        echo "Current directory is not /root/qubinode_navigator."
+        echo "Changing to /root/qubinode_navigator..."
+        cd /root/qubinode_navigator
+    else
+        echo "Current directory is /root/qubinode_navigator."
+    fi
+    echo "Configuring OneDev"
+    echo "******************"
+    ./dependancies/onedev/configure-onedev.sh
 }
 
 # Main function
@@ -160,8 +312,12 @@ main() {
     configure_ansible_navigator
     configure_ansible_vault
     generate_inventory
+    configure_navigator
     configure_ssh
     deploy_kvmhost
+    configure_bash_aliases
+    setup_kcli_base
+    configure_onedev
 }
 
 main "$@"

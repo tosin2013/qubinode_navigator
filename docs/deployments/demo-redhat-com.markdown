@@ -51,7 +51,6 @@ curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/rhe
 chmod +x rhel9-linux-hypervisor.sh
 tmux new-session -s rhel9-linux-hypervisor 
 source notouch.env && sudo -E  ./rhel9-linux-hypervisor.sh
-tmux attach -t rhel9-linux-hypervisor
 ```
 
 *The install will fail on the first time to re-run un the following below*
