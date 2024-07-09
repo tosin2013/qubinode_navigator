@@ -201,6 +201,7 @@ function configure_navigator() {
         sudo chown -R root:users /opt
         sudo chmod -R g+w /opt
         git clone ${GIT_REPO}
+        ln -s /root/qubinode_navigator /opt/qubinode_navigator
     fi
     cd "$HOME"/qubinode_navigator
     sudo pip3 install -r requirements.txt

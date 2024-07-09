@@ -85,6 +85,7 @@ function get_qubinode_navigator() {
         git -C "$HOME/qubinode_navigator" pull
     else
         git clone ${GIT_REPO}
+        ln -s /root/qubinode_navigator /opt/qubinode_navigator
     fi
 }
 

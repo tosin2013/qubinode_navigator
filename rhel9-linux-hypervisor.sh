@@ -212,6 +212,7 @@ configure_navigator() {
             log_message "Failed to clone repository"
             exit 1
         fi
+        ln -s /root/qubinode_navigator /opt/qubinode_navigator
     fi
     cd "$HOME/qubinode_navigator"
     if ! sudo pip3 install -r requirements.txt; then
