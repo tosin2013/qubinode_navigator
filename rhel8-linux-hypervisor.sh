@@ -12,9 +12,9 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
-if [ -f /opt/quibinode_navigator/.env ];
+if [ -f /opt/qubinode_navigator/.env ];
 then
-    source /opt/quibinode_navigator/.env
+    source /opt/qubinode_navigator/.env
 fi
 
 if [ -z "$CICD_PIPELINE" ]; then

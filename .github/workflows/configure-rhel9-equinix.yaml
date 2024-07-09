@@ -55,9 +55,9 @@ jobs:
         command_timeout: 30m
         script: | 
           sudo yum install -y git
-          if [ -d "/opt/quibinode_navigator" ]; then
-            cd /opt/quibinode_navigator
-            git config --global --add safe.directory /opt/quibinode_navigator
+          if [ -d "/opt/qubinode_navigator" ]; then
+            cd /opt/qubinode_navigator
+            git config --global --add safe.directory /opt/qubinode_navigator
             git config pull.rebase false
             git pull
           else
@@ -65,17 +65,17 @@ jobs:
             sudo usermod -aG users ${{ secrets.USERNAME }}
             sudo chown -R root:users /opt
             sudo chmod -R g+w /opt
-            git clone https://github.com/tosin2013/quibinode_navigator.git
+            git clone https://github.com/tosin2013/qubinode_navigator.git
           fi
-          echo "export CICD_PIPELINE=true" > /opt/quibinode_navigator/.env
-          echo "export SSH_PASSWORD=${{ secrets.SSH_PASSWORD }}" >> /opt/quibinode_navigator/.env
-          echo "export INVENTORY='${{ env.TARGET_SERVER }}'" >> /opt/quibinode_navigator/.env
-          echo "export ENV_USERNAME=${{ secrets.USERNAME }}" >> /opt/quibinode_navigator/.env
-          echo "export DOMAIN=${{ env.DOMAIN }}" >> /opt/quibinode_navigator/.env
-          echo "export FORWARDER=${{ env.FORWARDER }}" >> /opt/quibinode_navigator/.env
-          echo "export ACTIVE_BRIDGE=${{ env.ACTIVE_BRIDGE }}" >> /opt/quibinode_navigator/.env
-          echo "export INTERFACE=${{ env.INTERFACE }}" >> /opt/quibinode_navigator/.env
-          source /opt/quibinode_navigator/.env && sudo -E /opt/quibinode_navigator/rhel9-linux-hypervisor.sh || exit $?
+          echo "export CICD_PIPELINE=true" > /opt/qubinode_navigator/.env
+          echo "export SSH_PASSWORD=${{ secrets.SSH_PASSWORD }}" >> /opt/qubinode_navigator/.env
+          echo "export INVENTORY='${{ env.TARGET_SERVER }}'" >> /opt/qubinode_navigator/.env
+          echo "export ENV_USERNAME=${{ secrets.USERNAME }}" >> /opt/qubinode_navigator/.env
+          echo "export DOMAIN=${{ env.DOMAIN }}" >> /opt/qubinode_navigator/.env
+          echo "export FORWARDER=${{ env.FORWARDER }}" >> /opt/qubinode_navigator/.env
+          echo "export ACTIVE_BRIDGE=${{ env.ACTIVE_BRIDGE }}" >> /opt/qubinode_navigator/.env
+          echo "export INTERFACE=${{ env.INTERFACE }}" >> /opt/qubinode_navigator/.env
+          source /opt/qubinode_navigator/.env && sudo -E /opt/qubinode_navigator/rhel9-linux-hypervisor.sh || exit $?
    
     - name: Send a repository dispatch event to restart the workflow if it failed
       if: ${{ failure() }}
