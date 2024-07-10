@@ -63,9 +63,9 @@ install_packages() {
 
 # Function to clone the repository
 clone_repository() {
-    if [ ! -d "$HOME/qubinode_navigator" ]; then
+    if [ ! -d "/opt/qubinode_navigator" ]; then
         log_message "Cloning qubinode_navigator repository..."
-        if ! git clone "$GIT_REPO" "$HOME/qubinode_navigator"; then
+        if ! git clone "$GIT_REPO" "/opt/qubinode_navigator"; then
             log_message "Failed to clone repository"
             exit 1
         fi
@@ -84,7 +84,7 @@ configure_ansible_navigator() {
         source ~/.profile
     fi
     log_message "Configuring ansible-navigator..."
-    cd "$HOME/qubinode_navigator"
+    cd "/opt/qubinode_navigator"
     if ! pip3 install -r requirements.txt; then
         log_message "Failed to install Ansible Navigator requirements"
         exit 1
@@ -129,7 +129,7 @@ configure_ansible_vault() {
         chmod +x ansiblesafe-linux-amd64
         mv ansiblesafe-linux-amd64 /usr/local/bin/ansiblesafe
     fi
-    if [ ! -f "$HOME/qubinode_navigator/ansible_vault_setup.sh" ]; then
+    if [ ! -f "/opt/qubinode_navigator/ansible_vault_setup.sh" ]; then
         if ! curl -OL https://gist.githubusercontent.com/tosin2013/022841d90216df8617244ab6d6aceaf8/raw/92400b9e459351d204feb67b985c08df6477d7fa/ansible_vault_setup.sh; then
             log_message "Failed to download ansible_vault_setup.sh"
             exit 1
@@ -150,9 +150,9 @@ configure_ansible_vault() {
         fi
         if [ -f /tmp/config.yml ]; then
             log_message "Copying config.yml to vault.yml"
-            cp -avi /tmp/config.yml "$HOME/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml"
-            ls -l "$HOME/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" || exit $?
-            if ! /usr/local/bin/ansiblesafe -f "$HOME/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 1; then
+            cp -avi /tmp/config.yml "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml"
+            ls -l "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" || exit $?
+            if ! /usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 1; then
                 log_message "Failed to encrypt vault.yml"
                 exit 1
             fi
@@ -165,7 +165,7 @@ configure_ansible_vault() {
             log_message "Failed to execute ansible_vault_setup.sh"
             exit 1
         fi
-        if ! /usr/local/bin/ansiblesafe -f "$HOME/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml"; then
+        if ! /usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml"; then
             log_message "Failed to encrypt vault.yml"
             exit 1
         fi
@@ -216,9 +216,9 @@ function confiure_lvm_storage(){
 configure_navigator() {
     log_message "Configuring Qubinode Navigator..."
     echo "******************************"
-    if [ -d "$HOME/qubinode_navigator" ]; then
+    if [ -d "/opt/qubinode_navigator" ]; then
         log_message "Qubinode Navigator already exists"
-        git -C "$HOME/qubinode_navigator" pull
+        git -C "/opt/qubinode_navigator" pull
     else
         cd "$HOME"
         sudo usermod -aG users "$USER"
@@ -230,7 +230,7 @@ configure_navigator() {
         fi
         ln -s /root/qubinode_navigator /opt/qubinode_navigator
     fi
-    cd "$HOME/qubinode_navigator"
+    cd "/opt/qubinode_navigator"
     if ! sudo pip3 install -r requirements.txt; then
         log_message "Failed to install Qubinode Navigator requirements"
         exit 1
@@ -259,13 +259,13 @@ configure_navigator() {
 # Function to generate inventory
 generate_inventory() {
     log_message "Generating inventory..."
-    if [ ! -d "$HOME/qubinode_navigator/inventories/$INVENTORY" ]; then
-        mkdir -p "$HOME/qubinode_navigator/inventories/$INVENTORY/group_vars/control"
+    if [ ! -d "/opt/qubinode_navigator/inventories/$INVENTORY" ]; then
+        mkdir -p "/opt/qubinode_navigator/inventories/$INVENTORY/group_vars/control"
     fi
     local control_host="$(hostname -I | awk '{print $1}')"
     local control_user="$USER"
-    echo "[control]" > "$HOME/qubinode_navigator/inventories/$INVENTORY/hosts"
-    echo "control ansible_host=$control_host ansible_user=$control_user" >> "$HOME/qubinode_navigator/inventories/$INVENTORY/hosts"
+    echo "[control]" > "/opt/qubinode_navigator/inventories/$INVENTORY/hosts"
+    echo "control ansible_host=$control_host ansible_user=$control_user" >> "/opt/qubinode_navigator/inventories/$INVENTORY/hosts"
     if ! ansible-navigator inventory --list -m stdout --vault-password-file ~/.vault_password; then
         log_message "Failed to list Ansible inventory"
         exit 1
@@ -305,7 +305,7 @@ deploy_kvmhost() {
     log_message "Deploying KVM Host..."
     eval $(ssh-agent)
     ssh-add ~/.ssh/id_rsa
-    cd "$HOME/qubinode_navigator"
+    cd "/opt/qubinode_navigator"
     if ! ansible-navigator run ansible-navigator/setup_kvmhost.yml --vault-password-file ~/.vault_password -m stdout; then
         log_message "Failed to deploy KVM host"
         exit 1
