@@ -1,6 +1,6 @@
 #!/bin/bash
-export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
-set -x
+#export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+#set -x
 set -euo pipefail
 
 # Global variables
@@ -154,7 +154,7 @@ configure_ansible_vault() {
             exit 1
         fi
     fi
-    
+
     if [ $CICD_PIPELINE == "true" ];
     then 
         if [ -f /tmp/config.yml ];
