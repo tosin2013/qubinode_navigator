@@ -148,25 +148,26 @@ configure_ansible_vault() {
             log_message "Failed to execute ansible_vault_setup.sh"
             exit 1
         fi
+        if [ -f /tmp/config.yml ]; then
+            log_message "Copying config.yml to vault.yml"
+            cp /tmp/config.yml "$HOME/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml"
+            if ! /usr/local/bin/ansiblesafe -f "$HOME/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 1; then
+                log_message "Failed to encrypt vault.yml"
+                exit 1
+            fi
+        else
+            log_message "Error: config.yml file not found"
+            exit 1
+        fi
     else 
         if ! bash ./ansible_vault_setup.sh; then
             log_message "Failed to execute ansible_vault_setup.sh"
             exit 1
         fi
-    fi
-
-    if [ $CICD_PIPELINE == "true" ];
-    then 
-        if [ -f /tmp/config.yml ];
-        then
-            cp /tmp/config.yml /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml
-            /usr/local/bin/ansiblesafe -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml -o 1
-        else
-            echo "Error: config.yml file not found"
+        if ! /usr/local/bin/ansiblesafe -f "$HOME/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml"; then
+            log_message "Failed to encrypt vault.yml"
             exit 1
         fi
-    else
-        /usr/local/bin/ansiblesafe -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml
     fi
 }
 
