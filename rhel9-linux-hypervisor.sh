@@ -42,7 +42,7 @@ handle_hashicorp_vault() {
 # Function to install packages
 install_packages() {
     log_message "Installing required packages..."
-    local packages=(openssl-devel bzip2-devel libffi-devel wget vim podman ncurses-devel sqlite-devel firewalld make gcc git unzip sshpass lvm2 python3 python3-pip java-11-openjdk-devel)
+    local packages=(openssl-devel bzip2-devel libffi-devel wget vim podman ncurses-devel sqlite-devel firewalld make gcc git unzip sshpass lvm2 python3 python3-pip java-11-openjdk-devel ansible-core)
     for package in "${packages[@]}"; do
         if ! rpm -q "$package" &>/dev/null; then
             if ! dnf install -y "$package"; then
