@@ -150,7 +150,8 @@ configure_ansible_vault() {
         fi
         if [ -f /tmp/config.yml ]; then
             log_message "Copying config.yml to vault.yml"
-            cp /tmp/config.yml "$HOME/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml"
+            cp -avi /tmp/config.yml "$HOME/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml"
+            ls -l "$HOME/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" || exit $?
             if ! /usr/local/bin/ansiblesafe -f "$HOME/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 1; then
                 log_message "Failed to encrypt vault.yml"
                 exit 1
