@@ -5,7 +5,7 @@ set -euo pipefail
 
 # Global variables
 readonly KVM_VERSION="0.8.0"
-readonly ANSIBLE_SAFE_VERSION="0.0.7"
+readonly ANSIBLE_SAFE_VERSION="0.0.9"
 readonly GIT_REPO="https://github.com/tosin2013/qubinode_navigator.git"
 
 # Set default values for environment variables if they are not already set
