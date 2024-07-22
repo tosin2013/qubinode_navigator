@@ -5,7 +5,7 @@ set -euo pipefail
 
 # Global variables
 readonly KVM_VERSION="0.8.0"
-readonly ANSIBLE_SAFE_VERSION="0.0.12"
+#readonly ANSIBLE_SAFE_VERSION="0.0.12"
 readonly GIT_REPO="https://github.com/tosin2013/qubinode_navigator.git"
 
 # Set default values for environment variables if they are not already set
@@ -122,7 +122,7 @@ configure_ansible_vault() {
             log_message "Failed to download ansiblesafe"
             exit 1
         fi
-        if ! tar -zxvf "ansiblesafe-v${ANSIBLE_SAFE_VERSION}-linux-amd64.tar.gz"; then
+        if ! tar -zxvf "ansiblesafe-v0.0.12-linux-amd64.tar.gz"; then
             log_message "Failed to extract ansiblesafe"
             exit 1
         fi
