@@ -97,7 +97,7 @@ ansible-navigator:
   ansible:
     inventory:
       entries:
-      - /root/qubinode_navigator/inventories/${INVENTORY}
+      - /opt/qubinode_navigator/inventories/${INVENTORY}
   execution-environment:
     container-engine: podman
     enabled: true
@@ -175,12 +175,12 @@ configure_ansible_vault() {
 function configure_bash_aliases() {
     echo "Configuring bash aliases"
     echo "************************"
-    if [ "$(pwd)" != "/root/qubinode_navigator" ]; then
-        echo "Current directory is not /root/qubinode_navigator."
-        echo "Changing to /root/qubinode_navigator..."
-        cd /root/qubinode_navigator
+    if [ "$(pwd)" != "/opt/qubinode_navigator" ]; then
+        echo "Current directory is not /opt/qubinode_navigator."
+        echo "Changing to /opt/qubinode_navigator..."
+        cd /opt/qubinode_navigator
     else
-        echo "Current directory is /root/qubinode_navigator."
+        echo "Current directory is /opt/qubinode_navigator."
     fi
     # Source the function definitions
     source bash-aliases/functions.sh
@@ -228,7 +228,7 @@ configure_navigator() {
             log_message "Failed to clone repository"
             exit 1
         fi
-        ln -s /root/qubinode_navigator /opt/qubinode_navigator
+        ln -s /opt/qubinode_navigator /opt/qubinode_navigator
     fi
     cd "/opt/qubinode_navigator"
     if ! sudo pip3 install -r requirements.txt; then
@@ -314,12 +314,12 @@ deploy_kvmhost() {
 
 # Function to set up KCLI base
 setup_kcli_base() {
-    if [ "$(pwd)" != "/root/qubinode_navigator" ]; then
-        echo "Current directory is not /root/qubinode_navigator."
-        echo "Changing to /root/qubinode_navigator..."
-        cd /root/qubinode_navigator
+    if [ "$(pwd)" != "/opt/qubinode_navigator" ]; then
+        echo "Current directory is not /opt/qubinode_navigator."
+        echo "Changing to /opt/qubinode_navigator..."
+        cd /opt/qubinode_navigator
     else
-        echo "Current directory is /root/qubinode_navigator."
+        echo "Current directory is /opt/qubinode_navigator."
     fi
     echo "Configuring Kcli"
     echo "****************"
@@ -330,12 +330,12 @@ setup_kcli_base() {
 
 # Function to configure OneDev
 configure_onedev() {
-    if [ "$(pwd)" != "/root/qubinode_navigator" ]; then
-        echo "Current directory is not /root/qubinode_navigator."
-        echo "Changing to /root/qubinode_navigator..."
-        cd /root/qubinode_navigator
+    if [ "$(pwd)" != "/opt/qubinode_navigator" ]; then
+        echo "Current directory is not /opt/qubinode_navigator."
+        echo "Changing to /opt/qubinode_navigator..."
+        cd /opt/qubinode_navigator
     else
-        echo "Current directory is /root/qubinode_navigator."
+        echo "Current directory is /opt/qubinode_navigator."
     fi
     echo "Configuring OneDev"
     echo "******************"
