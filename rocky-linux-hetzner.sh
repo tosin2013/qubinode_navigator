@@ -4,7 +4,7 @@
 #set -x
 
 KVM_VERSION=0.8.0
-export ANSIBLE_SAFE_VERSION="0.0.7"
+export ANSIBLE_SAFE_VERSION="0.0.9"
 
 export GIT_REPO="https://github.com/tosin2013/qubinode_navigator.git"
 if [[ $EUID -ne 0 ]]; then

@@ -5,7 +5,7 @@ set -euo pipefail
 
 # Global variables
 readonly KVM_VERSION="0.8.0"
-readonly ANSIBLE_SAFE_VERSION="0.0.7"
+#readonly ANSIBLE_SAFE_VERSION="0.0.12"
 readonly GIT_REPO="https://github.com/tosin2013/qubinode_navigator.git"
 
 # Set default values for environment variables if they are not already set
@@ -42,7 +42,7 @@ handle_hashicorp_vault() {
 # Function to install packages
 install_packages() {
     log_message "Installing required packages..."
-    local packages=(openssl-devel bzip2-devel libffi-devel wget vim podman ncurses-devel sqlite-devel firewalld make gcc git unzip sshpass lvm2 python3 python3-pip java-11-openjdk-devel)
+    local packages=(openssl-devel bzip2-devel libffi-devel wget vim podman ncurses-devel sqlite-devel firewalld make gcc git unzip sshpass lvm2 python3 python3-pip java-11-openjdk-devel ansible-core)
     for package in "${packages[@]}"; do
         if ! rpm -q "$package" &>/dev/null; then
             if ! dnf install -y "$package"; then
@@ -97,7 +97,7 @@ ansible-navigator:
   ansible:
     inventory:
       entries:
-      - /root/qubinode_navigator/inventories/${INVENTORY}
+      - /opt/qubinode_navigator/inventories/${INVENTORY}
   execution-environment:
     container-engine: podman
     enabled: true
@@ -117,12 +117,12 @@ EOF
 configure_ansible_vault() {
     log_message "Configuring Ansible Vault..."
     if ! command -v ansiblesafe &>/dev/null; then
-        local ansiblesafe_url="https://github.com/tosin2013/ansiblesafe/releases/download/v${ANSIBLE_SAFE_VERSION}/ansiblesafe-v${ANSIBLE_SAFE_VERSION}-linux-amd64.tar.gz"
+        local ansiblesafe_url="https://github.com/tosin2013/ansiblesafe/releases/download/v0.0.11/ansiblesafe-v0.0.12-linux-amd64.tar.gz"
         if ! curl -OL "$ansiblesafe_url"; then
             log_message "Failed to download ansiblesafe"
             exit 1
         fi
-        if ! tar -zxvf "ansiblesafe-v${ANSIBLE_SAFE_VERSION}-linux-amd64.tar.gz"; then
+        if ! tar -zxvf "ansiblesafe-v0.0.12-linux-amd64.tar.gz"; then
             log_message "Failed to extract ansiblesafe"
             exit 1
         fi
@@ -150,6 +150,11 @@ configure_ansible_vault() {
         fi
         if [ -f /tmp/config.yml ]; then
             log_message "Copying config.yml to vault.yml"
+            if [ -f /opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml ];
+            then 
+              rm -rf /opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml
+            fi 
+            
             cp -avi /tmp/config.yml "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml"
             ls -l "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" || exit $?
             if ! /usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 1; then
@@ -175,12 +180,12 @@ configure_ansible_vault() {
 function configure_bash_aliases() {
     echo "Configuring bash aliases"
     echo "************************"
-    if [ "$(pwd)" != "/root/qubinode_navigator" ]; then
-        echo "Current directory is not /root/qubinode_navigator."
-        echo "Changing to /root/qubinode_navigator..."
-        cd /root/qubinode_navigator
+    if [ "$(pwd)" != "/opt/qubinode_navigator" ]; then
+        echo "Current directory is not /opt/qubinode_navigator."
+        echo "Changing to /opt/qubinode_navigator..."
+        cd /opt/qubinode_navigator
     else
-        echo "Current directory is /root/qubinode_navigator."
+        echo "Current directory is /opt/qubinode_navigator."
     fi
     # Source the function definitions
     source bash-aliases/functions.sh
@@ -228,7 +233,7 @@ configure_navigator() {
             log_message "Failed to clone repository"
             exit 1
         fi
-        ln -s /root/qubinode_navigator /opt/qubinode_navigator
+        ln -s /opt/qubinode_navigator /opt/qubinode_navigator
     fi
     cd "/opt/qubinode_navigator"
     if ! sudo pip3 install -r requirements.txt; then
@@ -314,12 +319,12 @@ deploy_kvmhost() {
 
 # Function to set up KCLI base
 setup_kcli_base() {
-    if [ "$(pwd)" != "/root/qubinode_navigator" ]; then
-        echo "Current directory is not /root/qubinode_navigator."
-        echo "Changing to /root/qubinode_navigator..."
-        cd /root/qubinode_navigator
+    if [ "$(pwd)" != "/opt/qubinode_navigator" ]; then
+        echo "Current directory is not /opt/qubinode_navigator."
+        echo "Changing to /opt/qubinode_navigator..."
+        cd /opt/qubinode_navigator
     else
-        echo "Current directory is /root/qubinode_navigator."
+        echo "Current directory is /opt/qubinode_navigator."
     fi
     echo "Configuring Kcli"
     echo "****************"
@@ -330,12 +335,12 @@ setup_kcli_base() {
 
 # Function to configure OneDev
 configure_onedev() {
-    if [ "$(pwd)" != "/root/qubinode_navigator" ]; then
-        echo "Current directory is not /root/qubinode_navigator."
-        echo "Changing to /root/qubinode_navigator..."
-        cd /root/qubinode_navigator
+    if [ "$(pwd)" != "/opt/qubinode_navigator" ]; then
+        echo "Current directory is not /opt/qubinode_navigator."
+        echo "Changing to /opt/qubinode_navigator..."
+        cd /opt/qubinode_navigator
     else
-        echo "Current directory is /root/qubinode_navigator."
+        echo "Current directory is /opt/qubinode_navigator."
     fi
     echo "Configuring OneDev"
     echo "******************"
