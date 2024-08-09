@@ -26,6 +26,8 @@ automation_hub_offline_token: automationhubtoken
 freeipa_server_admin_password: password # Change to the lab-user password
 xrdp_remote_user: remoteuser
 xrdp_remote_user_password: password
+aws_access_key: accesskey # optional used for aws credentials and route53
+aws_secret_key: secretkey # optional used for aws credentials and route53
 ```
 **Add the following to .bashrc as lab-user**
 ```
@@ -34,6 +36,7 @@ $ cat >notouch.env<<EOF
 export SSH_USER=lab-user
 export CICD_PIPELINE='true'
 export ENV_USERNAME=lab-user
+export CICD_ENVIORNMENT="gitlab" # or onedev change this vault for default cicd enviornment to deploy VMS
 export DOMAIN=qubinodelab.io  # Change to your domain if you want to use your own domain
 export FORWARDER='1.1.1.1'
 export ACTIVE_BRIDGE='false'
