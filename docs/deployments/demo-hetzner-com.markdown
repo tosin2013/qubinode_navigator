@@ -61,6 +61,8 @@ $ cat >notouch.env<<EOF
 export SSH_USER=lab-user
 export CICD_PIPELINE='true'
 export CICD_ENVIORNMENT="gitlab" # or onedev change this vault for default cicd enviornment to deploy VMS
+export USE_ROUTE53=true
+export USE_HASHICORP_CLOUD=false
 export ENV_USERNAME=lab-user
 export DOMAIN=qubinodelab.io  # Change to your domain if you want to use your own domain
 export FORWARDER='1.1.1.1'
