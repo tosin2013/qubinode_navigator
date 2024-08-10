@@ -11,8 +11,12 @@ readonly GIT_REPO="https://github.com/tosin2013/qubinode_navigator.git"
 # Set default values for environment variables if they are not already set
 : "${CICD_PIPELINE:="false"}"
 : "${USE_HASHICORP_VAULT:="false"}"
+: "${USE_HASHICORP_CLOUD:="false"}"
 : "${VAULT_ADDRESS:=""}"
 : "${VAULT_TOKEN:=""}"
+: "${USE_ROUTE53:="false"}"
+: "${ROUTE_53_DOMAIN:=""}"
+: "${CICD_ENVIORNMENT:="gitlab"}"
 : "${SECRET_PATH:=""}"
 : "${INVENTORY:="localhost"}"
 
@@ -36,6 +40,31 @@ handle_hashicorp_vault() {
             log_message "VAULT environment variables are not set"
             exit 1
         fi
+    fi
+}
+
+# Function to handle HashiCorp Cloud Vault flag
+hcp_cloud_vault() {
+  # Check if the required environment variables are set
+    if [[ -z "${HCP_CLIENT_ID}" ]]; then
+        echo "Error: HCP_CLIENT_ID is not set."
+        exit 1
+    fi
+    if [[ -z "${HCP_CLIENT_SECRET}" ]]; then
+        echo "Error: HCP_CLIENT_SECRET is not set."
+        exit 1
+    fi
+    if [[ -z "${HCP_ORG_ID}" ]]; then
+        echo "Error: HCP_ORG_ID is not set."
+        exit 1
+    fi
+    if [[ -z "${HCP_PROJECT_ID}" ]]; then
+        echo "Error: HCP_PROJECT_ID is not set."
+        exit 1
+    fi
+    if [[ -z "${APP_NAME}" ]]; then
+        echo "Error: APP_NAME is not set."
+        exit 1
     fi
 }
 
@@ -117,12 +146,12 @@ EOF
 configure_ansible_vault() {
     log_message "Configuring Ansible Vault..."
     if ! command -v ansiblesafe &>/dev/null; then
-        local ansiblesafe_url="https://github.com/tosin2013/ansiblesafe/releases/download/v0.0.11/ansiblesafe-v0.0.12-linux-amd64.tar.gz"
+        local ansiblesafe_url="https://github.com/tosin2013/ansiblesafe/releases/download/v0.0.12/ansiblesafe-v0.0.14-linux-amd64.tar.gz"
         if ! curl -OL "$ansiblesafe_url"; then
             log_message "Failed to download ansiblesafe"
             exit 1
         fi
-        if ! tar -zxvf "ansiblesafe-v0.0.12-linux-amd64.tar.gz"; then
+        if ! tar -zxvf "ansiblesafe-v0.0.14-linux-amd64.tar.gz"; then
             log_message "Failed to extract ansiblesafe"
             exit 1
         fi
@@ -156,6 +185,23 @@ configure_ansible_vault() {
             fi 
             
             cp -avi /tmp/config.yml "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml"
+            ls -l "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" || exit $?
+            if ! /usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 1; then
+                log_message "Failed to encrypt vault.yml"
+                exit 1
+            fi
+        else
+            log_message "Error: config.yml file not found"
+            exit 1
+        fi
+        if [ "$USE_HASHICORP_CLOUD" == "true" ]; then
+            log_message "Copying config.yml to vault.yml"
+            if [ -f /opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml ];
+            then 
+              rm -rf /opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml
+            fi 
+            
+            /usr/local/bin/ansiblesafe - -o 5  --file= "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml"
             ls -l "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" || exit $?
             if ! /usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 1; then
                 log_message "Failed to encrypt vault.yml"
@@ -351,6 +397,9 @@ configure_onedev() {
 main() {
     check_root
     handle_hashicorp_vault
+    if [ "$USE_HASHICORP_CLOUD" == "true" ]; then
+        hcp_cloud_vault
+    fi
     install_packages
     configure_firewalld
     confiure_lvm_storage
@@ -363,7 +412,9 @@ main() {
     deploy_kvmhost
     configure_bash_aliases
     setup_kcli_base
-    configure_onedev
+    if [ "$CICD_ENVIORNMENT" == "onedev" ]; then
+        configure_onedev
+    fi
 }
 
 main "$@"
