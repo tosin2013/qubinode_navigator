@@ -20,10 +20,20 @@ on:
         description: 'domain'
         required: true
         default: example.com
+      cicd_env:
+        description: 'CICD_ENVIORNMENT'
+        required: true
+        default: gitlab
+      use_route53:
+        description: 'USE_ROUTE53'
+        required: true
+        default: false
 env:
     TARGET_SERVER: ${{ inputs.target_server }}
     DOMAIN: ${{ inputs.domain }}
     FORWARDER: ${{ inputs.forwarder }}
+    CICD_ENVIORNMENT: ${{ inputs.cicd_env }}
+    USE_ROUTE53: ${{ inputs.use_route53 }}
     ACTIVE_BRIDGE: 'false'
     INTERFACE: 'bond0'
    
@@ -39,11 +49,15 @@ jobs:
           echo "DOMAIN=${{ github.event.inputs.domain }}" >> $GITHUB_ENV
           echo "FORWARDER=${{ github.event.inputs.forwarder }}" >> $GITHUB_ENV
           echo "HOSTNAME=${{ github.event.inputs.hostname }}" >> $GITHUB_ENV
+          echo "CICD_ENVIORNMENT=${{ github.event.inputs.cicd_env }}" >> $GITHUB_ENV
+          echo "USE_ROUTE53=${{ github.event.inputs.use_route53 }}" >> $GITHUB_ENV
         elif [ "${{ github.event_name }}" == "repository_dispatch" ]; then
           echo "TARGET_SERVER=${{ github.event.client_payload.data_key.target_server }}" >> $GITHUB_ENV
           echo "DOMAIN=${{ github.event.client_payload.data_key.domain }}" >> $GITHUB_ENV
           echo "FORWARDER=${{ github.event.client_payload.data_key.forwarder }}" >> $GITHUB_ENV
           echo "HOSTNAME=${{ github.event.client_payload.data_key.hostname }}" >> $GITHUB_ENV
+          echo "CICD_ENVIORNMENT=${{ github.event.inputs.cicd_env }}" >> $GITHUB_ENV
+          echo "USE_ROUTE53=${{ github.event.inputs.use_route53 }}" >> $GITHUB_ENV
         fi
     - name: Configure RHEL 9 Equinix Server
       uses: appleboy/ssh-action@v1.0.3
@@ -80,6 +94,7 @@ jobs:
           echo "export HCP_CLIENT_SECRET=${{ secrets.HCP_CLIENT_SECRET }}" >> /opt/qubinode_navigator/.env
           echo "export HCP_CLIENT_ID=${{ secrets.HCP_CLIENT_ID }}" >> /opt/qubinode_navigator/.env
           echo "export APP_NAME=${{ secrets.APP_NAME }}" >> /opt/qubinode_navigator/.env
+          echo "export USE_HASHICORP_CLOUD='true'" >> /opt/qubinode_navigator/.env
           source /opt/qubinode_navigator/.env && sudo -E /opt/qubinode_navigator/rhel9-linux-hypervisor.sh || exit $?
    
     - name: Send a repository dispatch event to restart the workflow if it failed
