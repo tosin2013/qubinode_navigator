@@ -402,6 +402,7 @@ configure_route53() {
     fi
     echo "Configuring OneDev"
     echo "******************"
+    export ZONE_NAME="${ZONE_NAME}"
     ./dependancies/route53/deployment-script.sh
 }
 # Function to configure GitLab
