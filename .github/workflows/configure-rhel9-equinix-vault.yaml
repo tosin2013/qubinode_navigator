@@ -102,6 +102,7 @@ jobs:
           echo "export HCP_CLIENT_ID=${{ secrets.HCP_CLIENT_ID }}" >> /opt/qubinode_navigator/.env
           echo "export APP_NAME=${{ secrets.APP_NAME }}" >> /opt/qubinode_navigator/.env
           echo "export USE_HASHICORP_CLOUD='true'" >> /opt/qubinode_navigator/.env
+          echo "ZONE_NAME=${{ github.event.inputs.zone_name }}" >> $GITHUB_ENV
           source /opt/qubinode_navigator/.env && sudo -E /opt/qubinode_navigator/rhel9-linux-hypervisor.sh || exit $?
    
     - name: Send a repository dispatch event to restart the workflow if it failed
