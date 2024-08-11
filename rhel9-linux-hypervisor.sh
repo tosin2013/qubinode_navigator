@@ -197,7 +197,7 @@ configure_ansible_vault() {
               rm -rf /opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml
             fi 
             
-            /usr/local/bin/ansiblesafe - -o 5  --file= "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml"
+            /usr/local/bin/ansiblesafe -o 5  --file= "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" || exit $?
             ls -l "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" || exit $?
             if ! /usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 1; then
                 log_message "Failed to encrypt vault.yml"
