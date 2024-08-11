@@ -10,6 +10,7 @@ collections:
 EOF
 fi
 
+sudo ansible-galaxy install -r /tmp/requirements.yml --force -vv
 ansible-galaxy install -r /tmp/requirements.yml --force -vv
 
 if [ ! -d /opt/podman-gitlab-server-role ];
