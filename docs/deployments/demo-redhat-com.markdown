@@ -61,7 +61,6 @@ export CICD_PIPELINE='true'
 export ENV_USERNAME=lab-user
 export CICD_ENVIORNMENT="gitlab" # or onedev change this vault for default cicd enviornment to deploy VMS
 export DOMAIN=qubinodelab.io  # Change to your domain if you want to use your own domain
-export USE_HASHICORP_CLOUD='false' 
 export FORWARDER='1.1.1.1'
 export ACTIVE_BRIDGE='false'
 export INTERFACE=bond0
