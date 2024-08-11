@@ -8,6 +8,7 @@ collections:
 - community.crypto
 - ansible.posix
 EOF
+fi
 
 if [ ! -d /etc/ansible/roles/podman-gitlab-server-role ];
 then
