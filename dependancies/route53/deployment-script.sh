@@ -1,12 +1,5 @@
 #!/bin/bash 
 
-if [ ! -f .env ]; then
-  echo "Environment file not found"
-  exit 1
-else
-    source .env
-fi
-
 if [ ! -f /tmp/requirements.yml ]; then
   cat >/tmp/requirements.yml<<EOF
 ---
