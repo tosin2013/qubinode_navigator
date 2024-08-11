@@ -26,6 +26,7 @@ cat > /etc/ansible/roles/podman-gitlab-server-role/defaults/main.yml <<EOF
 # Username Variables
 gitlab_service_account: ${GILAB_SERVICE_ACCOUNT}
 gitlab_service_account_uid: 1001
+specific_user: lab-user
 
 # Container Image Variables
 gitlab_server_image_name: docker.io/gitlab/gitlab-ce:latest
