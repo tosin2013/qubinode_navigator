@@ -16,7 +16,6 @@ then
   git clone https://github.com/tosin2013/ansible-podman-gitlab-server-role.git
   cd /opt/ansible-podman-gitlab-server-role
   cp -r podman-gitlab-server-role /etc/ansible/roles/
-  cp /opt/ansible-podman-gitlab-server-role/playbooks/gitlab-mgmt.yml $HOME 
 fi
 GILAB_SERVICE_ACCOUNT=gitlab
 cat > /etc/ansible/roles/podman-gitlab-server-role/defaults/main.yml <<EOF
@@ -50,4 +49,4 @@ gitlab_firewall_ssh_port: '2222/tcp'
 gitlab_server_restart_policy: always
 EOF
 
-ansible-playbook gitlab-mgmt.yml
+ansible-playbook /opt/ansible-podman-gitlab-server-role/playbooks/gitlab-mgmt.yml
