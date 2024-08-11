@@ -190,11 +190,7 @@ configure_ansible_vault() {
                 log_message "Failed to encrypt vault.yml"
                 exit 1
             fi
-        else
-            log_message "Error: config.yml file not found"
-            exit 1
-        fi
-        if [ "$USE_HASHICORP_CLOUD" == "true" ]; then
+        elif [ "$USE_HASHICORP_CLOUD" == "true" ]; then
             log_message "Copying config.yml to vault.yml"
             if [ -f /opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml ];
             then 
@@ -207,6 +203,11 @@ configure_ansible_vault() {
                 log_message "Failed to encrypt vault.yml"
                 exit 1
             fi
+        else
+            log_message "Error:/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml  not created"
+            exit 1
+        fi
+        
         else
             log_message "Error: config.yml file not found"
             exit 1
