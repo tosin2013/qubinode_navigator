@@ -13,13 +13,13 @@ roles:
   version: master
 EOF
 fi
-/usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 1
+/usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 2
 AWS_ACCESS_KEY=$(yq eval '.aws_access_key' "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml")
 AWS_SECRET_KEY=$(yq eval '.aws_secret_key' "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml")
 IP_ADDRESS=$(hostname -I | awk '{print $1}')
 VERBOSE_LEVEL="-v"
 ACTION="create"
-/usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 2
+/usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 1
 
 # Ensure required environment variables are set
 : "${ZONE_NAME:?Environment variable ZONE_NAME is required}"
@@ -38,7 +38,7 @@ cat >/tmp/playbook.yml<<EOF
   become: yes
 
   vars:
-  - update_ip_r53_aws_access_key:  ${AWS_ACCESS_KEY}
+  - update_ip_r53_aws_access_key: ${AWS_ACCESS_KEY}
   - update_ip_r53_aws_secret_key: ${AWS_SECRET_KEY}
   - use_public_ip: true
   - private_ip: "${IP_ADDRESS}"
@@ -52,3 +52,5 @@ EOF
 if [ "${ACTION}" != "delete" ]; then 
   ansible-playbook  /tmp/playbook.yml ${VERBOSE_LEVEL} || exit $?
 fi
+
+rm -rf /tmp/playbook.yml

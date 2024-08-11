@@ -400,11 +400,9 @@ configure_route53() {
     else
         echo "Current directory is /opt/qubinode_navigator."
     fi
-    echo "Configuring OneDev"
-    echo "******************"
     echo "Configuring Route53"
-    echo "ZONE_NAME: $ZONE_NAME
-    "
+    echo "******************"
+    echo "ZONE_NAME: $ZONE_NAME"
     ./dependancies/route53/deployment-script.sh
 }
 # Function to configure GitLab
