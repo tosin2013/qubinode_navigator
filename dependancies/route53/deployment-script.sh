@@ -46,6 +46,8 @@ cat >/tmp/playbook.yml<<EOF
   - update_ip_r53_records:
     - zone: ${ZONE_NAME}
       record: cockpit.${GUID}.${ZONE_NAME}
+    - zone: ${ZONE_NAME}
+      record: gitlab.${GUID}.${ZONE_NAME}
   roles:
   - ansible_role_update_ip_route53
 EOF

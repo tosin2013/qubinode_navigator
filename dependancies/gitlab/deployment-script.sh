@@ -37,7 +37,7 @@ gitlab_server_name: gitlab_server
 gitlab_server_hostname: gitlab
 
 # Domain
-domain: '${GUID}.${DOMAIN}'
+domain: '.${GUID}.${DOMAIN}'
 
 # Podman Ports
 gitlab_container_ssl_port: '8443:8443/tcp'
