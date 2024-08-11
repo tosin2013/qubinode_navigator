@@ -10,7 +10,7 @@ collections:
 EOF
 fi
 
-if [ ! -d /etc/ansible/roles/podman-gitlab-server-role ];
+if [ ! -d /opt/ansible/roles/podman-gitlab-server-role ];
 then
   git clone https://github.com/tosin2013/ansible-podman-gitlab-server-role.git
   cd /opt/ansible-podman-gitlab-server-role
