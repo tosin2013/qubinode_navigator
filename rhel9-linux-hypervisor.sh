@@ -392,6 +392,32 @@ configure_onedev() {
     echo "******************"
     ./dependancies/onedev/configure-onedev.sh
 }
+# Function to configure Route53
+configure_route53() {
+    if [ "$(pwd)" != "/opt/qubinode_navigator" ]; then
+        echo "Current directory is not /opt/qubinode_navigator."
+        echo "Changing to /opt/qubinode_navigator..."
+        cd /opt/qubinode_navigator
+    else
+        echo "Current directory is /opt/qubinode_navigator."
+    fi
+    echo "Configuring OneDev"
+    echo "******************"
+    ./dependancies/route53/deployment-script.sh
+}
+# Function to configure GitLab
+configure_gitlab() {
+    if [ "$(pwd)" != "/opt/qubinode_navigator" ]; then
+        echo "Current directory is not /opt/qubinode_navigator."
+        echo "Changing to /opt/qubinode_navigator..."
+        cd /opt/qubinode_navigator
+    else
+        echo "Current directory is /opt/qubinode_navigator."
+    fi
+    echo "Configuring GitLab"
+    echo "******************"
+    ./dependancies/gitlab/deployment-script.sh
+}
 
 # Main function
 main() {
@@ -412,8 +438,14 @@ main() {
     deploy_kvmhost
     configure_bash_aliases
     setup_kcli_base
+    configure_route53
     if [ "$CICD_ENVIORNMENT" == "onedev" ]; then
         configure_onedev
+    elif [ "$CICD_ENVIORNMENT" == "gitlab" ]; then
+        configure_gitlab
+    else
+        log_message "Error: CICD_ENVIORNMENT is not set"
+        exit 1
     fi
 }
 
