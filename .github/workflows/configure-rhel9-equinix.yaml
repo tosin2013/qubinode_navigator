@@ -26,6 +26,7 @@ env:
     FORWARDER: ${{ inputs.forwarder }}
     ACTIVE_BRIDGE: 'false'
     INTERFACE: 'bond0'
+    USE_HASHICORP_CLOUD: 'false'
    
 jobs:
   configure-rhel9-equinix:
@@ -39,11 +40,13 @@ jobs:
           echo "DOMAIN=${{ github.event.inputs.domain }}" >> $GITHUB_ENV
           echo "FORWARDER=${{ github.event.inputs.forwarder }}" >> $GITHUB_ENV
           echo "HOSTNAME=${{ github.event.inputs.hostname }}" >> $GITHUB_ENV
+          echo "USE_HASHICORP_CLOUD=${{ github.event.inputs.use_hashicorp_cloud }}" >> $GITHUB_ENV
         elif [ "${{ github.event_name }}" == "repository_dispatch" ]; then
           echo "TARGET_SERVER=${{ github.event.client_payload.data_key.target_server }}" >> $GITHUB_ENV
           echo "DOMAIN=${{ github.event.client_payload.data_key.domain }}" >> $GITHUB_ENV
           echo "FORWARDER=${{ github.event.client_payload.data_key.forwarder }}" >> $GITHUB_ENV
           echo "HOSTNAME=${{ github.event.client_payload.data_key.hostname }}" >> $GITHUB_ENV
+          echo "USE_HASHICORP_CLOUD=${{ github.event.inputs.use_hashicorp_cloud }}" >> $GITHUB_ENV
         fi
     - name: Configure RHEL 9 Equinix Server
       uses: appleboy/ssh-action@v1.0.3

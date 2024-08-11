@@ -177,7 +177,7 @@ configure_ansible_vault() {
             log_message "Failed to execute ansible_vault_setup.sh"
             exit 1
         fi
-        if [ -f /tmp/config.yml ] && [ -z "$USE_HASHICORP_CLOUD" ]; then
+        if [ -f /tmp/config.yml ] && [  "$USE_HASHICORP_CLOUD"  == "false" ]; then
             log_message "Copying config.yml to vault.yml"
             if [ -f /opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml ];
             then 
