@@ -19,6 +19,7 @@ readonly GIT_REPO="https://github.com/tosin2013/qubinode_navigator.git"
 : "${CICD_ENVIORNMENT:="gitlab"}"
 : "${SECRET_PATH:=""}"
 : "${INVENTORY:="localhost"}"
+: "${DEVELOPMENT_MODEL:="false"}"
 
 # Function to log messages
 log_message() {
@@ -313,9 +314,11 @@ generate_inventory() {
     local control_user="$USER"
     echo "[control]" > "/opt/qubinode_navigator/inventories/$INVENTORY/hosts"
     echo "control ansible_host=$control_host ansible_user=$control_user" >> "/opt/qubinode_navigator/inventories/$INVENTORY/hosts"
-    if ! ansible-navigator inventory --list -m stdout --vault-password-file ~/.vault_password; then
-        log_message "Failed to list Ansible inventory"
-        exit 1
+    if [ "${DEVELOPMENT_MODEL}" == "true" ]; then
+        if ! ansible-navigator inventory --list -m stdout --vault-password-file ~/.vault_password; then
+            log_message "Failed to list Ansible inventory"
+            exit 1
+        fi
     fi
 }
 
