@@ -13,7 +13,7 @@ Deploy to [Red Hat Product Demo System](https://connect.redhat.com/en/training/p
 `you can uae ansiblesafe to generate the content of this file` - [link](https://github.com/tosin2013/ansiblesafe)   
 [Ansible Vault Secrets Documentation](https://dev.to/tosin2013/ansible-vault-secrets-documentation-3g1a)
 
-```
+```bash
 $ vi /tmp/config.yml
 rhsm_username: rheluser
 rhsm_password: rhelpassword
@@ -29,8 +29,9 @@ xrdp_remote_user_password: password
 aws_access_key: accesskey # optional used for aws credentials and route53
 aws_secret_key: secretkey # optional used for aws credentials and route53
 ```
-**Add the following to .bashrc as lab-user**
-```
+
+**Add the following to .bashrc as lab-user when using /tmp/config.yml file**
+```bash
 $ SSH_PASSWORD=DontForgetToChangeMe # Use the password of the lab-user
 $ cat >notouch.env<<EOF
 export SSH_USER=lab-user
@@ -47,11 +48,41 @@ export GIT_REPO=https://github.com/tosin2013/qubinode_navigator.git
 export INVENTORY=rhel9-equinix
 export SSH_PASSWORD=${SSH_PASSWORD}
 EOF
+$ vi notouch.env
+```
+
+**Recommned option: Setting Up Variables in HashiCorp Cloud Platform (HCP) Vault Secrets**
+[Setting Up Variables in HashiCorp Cloud Platform (HCP) Vault Secrets](https://github.com/tosin2013/ansiblesafe/blob/main/docs/hashicorp_cloud_secret_setup.md)
+```bash
+$ SSH_PASSWORD=DontForgetToChangeMe # Use the password of the lab-user
+$ cat >notouch.env<<EOF
+export SSH_USER=lab-user
+export CICD_PIPELINE='true'
+export ENV_USERNAME=lab-user
+export CICD_ENVIORNMENT="gitlab" # or onedev change this vault for default cicd enviornment to deploy VMS
+export DOMAIN=qubinodelab.io  # Change to your domain if you want to use your own domain
+export USE_HASHICORP_CLOUD='false' 
+export FORWARDER='1.1.1.1'
+export ACTIVE_BRIDGE='false'
+export INTERFACE=bond0
+export USE_ROUTE53=true
+export ZONE_NAME=aws.example.com
+export USE_HASHICORP_CLOUD='true'
+export GIT_REPO=https://github.com/tosin2013/qubinode_navigator.git
+export INVENTORY=rhel9-equinix
+export SSH_PASSWORD=${SSH_PASSWORD}
+export HCP_CLIENT_ID="your-client-id"
+export HCP_CLIENT_SECRET="your-client-secret"
+export HCP_ORG_ID="your-org-id"
+export HCP_PROJECT_ID="your-project-id"
+export APP_NAME="appname"
+EOF
+$ vi notouch.env
 ```
 
 **Run the following commands as lab-user**  
-```
-sudo dnf install -y tmux curl git
+```bash
+sudo dnf install -y tmux curl git vim 
 curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/rhel9-linux-hypervisor.sh 
 chmod +x rhel9-linux-hypervisor.sh
 tmux new-session -s rhel9-linux-hypervisor 

@@ -34,19 +34,20 @@ ssh-keygen -f ~/.ssh/id_rsa -t rsa -N ''
 ssh-copy-id lab-user@${IP_ADDRESS}
 ```
 
-## Before running pipeline create /tmp/config.yml as lab-user
+**create /tmp/config.yml as lab-user**   
+`you can uae ansiblesafe to generate the content of this file` - [link](https://github.com/tosin2013/ansiblesafe)   
 [Ansible Vault Secrets Documentation](https://dev.to/tosin2013/ansible-vault-secrets-documentation-3g1a)
 
 ```bash
 $ vi /tmp/config.yml
-rhsm_username: rheluser # optional
-rhsm_password: rhelpassword # optional
-rhsm_org: orgid # optional
-rhsm_activationkey: activationkey # optional
+rhsm_username: rheluser
+rhsm_password: rhelpassword
+rhsm_org: orgid
+rhsm_activationkey: activationkey
 admin_user_password: password # Change to the lab-user password
-offline_token: offlinetoken # optional
-automation_hub_offline_token: automationhubtoken # optional
-openshift_pull_secret: pullsecret # optional
+offline_token: offlinetoken
+openshift_pull_secret: pullsecret
+automation_hub_offline_token: automationhubtoken
 freeipa_server_admin_password: password # Change to the lab-user password
 xrdp_remote_user: remoteuser
 xrdp_remote_user_password: password
@@ -54,25 +55,53 @@ aws_access_key: accesskey # optional used for aws credentials and route53
 aws_secret_key: secretkey # optional used for aws credentials and route53
 ```
 
-## Add the following to .bashrc as lab-user
+**Add the following to .bashrc as lab-user when using /tmp/config.yml file**
 ```bash
-$ SSH_PASSOWRD='DontForgetToChangeMe' # Use the password of the lab-user
+$ SSH_PASSWORD=DontForgetToChangeMe # Use the password of the lab-user
 $ cat >notouch.env<<EOF
 export SSH_USER=lab-user
 export CICD_PIPELINE='true'
-export CICD_ENVIORNMENT="gitlab" # or onedev change this vault for default cicd enviornment to deploy VMS
-export USE_ROUTE53=true
-export USE_HASHICORP_CLOUD=false
 export ENV_USERNAME=lab-user
+export CICD_ENVIORNMENT="gitlab" # or onedev change this vault for default cicd enviornment to deploy VMS
 export DOMAIN=qubinodelab.io  # Change to your domain if you want to use your own domain
+export USE_HASHICORP_CLOUD='false' 
 export FORWARDER='1.1.1.1'
 export ACTIVE_BRIDGE='false'
-export INTERFACE=enp4s0
+export INTERFACE=bond0
+export USE_ROUTE53=true
 export GIT_REPO=https://github.com/tosin2013/qubinode_navigator.git
 export INVENTORY=hetzner
-export TARGET_SERVER=${INVENTORY}
-export SSH_PASSWORD=${SSH_PASSOWRD}
+export SSH_PASSWORD=${SSH_PASSWORD}
 EOF
+$ vi notouch.env
+```
+
+**Recommned Option: Setting Up Variables in HashiCorp Cloud Platform (HCP) Vault Secrets**
+[Setting Up Variables in HashiCorp Cloud Platform (HCP) Vault Secrets](https://github.com/tosin2013/ansiblesafe/blob/main/docs/hashicorp_cloud_secret_setup.md)
+```bash
+$ SSH_PASSWORD=DontForgetToChangeMe # Use the password of the lab-user
+$ cat >notouch.env<<EOF
+export SSH_USER=lab-user
+export CICD_PIPELINE='true'
+export ENV_USERNAME=lab-user
+export CICD_ENVIORNMENT="gitlab" # or onedev change this vault for default cicd enviornment to deploy VMS
+export DOMAIN=qubinodelab.io  # Change to your domain if you want to use your own domain
+export ZONE_NAME=aws.example.com
+export USE_HASHICORP_CLOUD='true'
+export FORWARDER='1.1.1.1'
+export ACTIVE_BRIDGE='false'
+export INTERFACE=bond0
+export USE_ROUTE53=true
+export GIT_REPO=https://github.com/tosin2013/qubinode_navigator.git
+export INVENTORY=hetzner
+export SSH_PASSWORD=${SSH_PASSWORD}
+export HCP_CLIENT_ID="your-client-id"
+export HCP_CLIENT_SECRET="your-client-secret"
+export HCP_ORG_ID="your-org-id"
+export HCP_PROJECT_ID="your-project-id"
+export APP_NAME="appname"
+EOF
+$ vi notouch.env
 ```
 
 ## Run the following commands as lab-user

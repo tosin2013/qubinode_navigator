@@ -9,8 +9,8 @@ collections:
 - ansible.posix
 roles: 
 - name: ansible_role_update_ip_route53
-    src: https://github.com/tosin2013/ansible-role-update-ip-route53.git
-    version: master
+  src: https://github.com/tosin2013/ansible-role-update-ip-route53.git
+  version: master
 EOF
 fi
 /usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 1
