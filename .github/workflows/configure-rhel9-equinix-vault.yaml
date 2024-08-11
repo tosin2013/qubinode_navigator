@@ -64,6 +64,7 @@ jobs:
           echo "HOSTNAME=${{ github.event.client_payload.data_key.hostname }}" >> $GITHUB_ENV
           echo "CICD_ENVIORNMENT=${{ github.event.inputs.cicd_env }}" >> $GITHUB_ENV
           echo "USE_ROUTE53=${{ github.event.inputs.use_route53 }}" >> $GITHUB_ENV
+          echo "ZONE_NAME=${{ github.event.inputs.zone_name }}" >> $GITHUB_ENV
         fi
     - name: Configure RHEL 9 Equinix Server
       uses: appleboy/ssh-action@v1.0.3
@@ -95,7 +96,7 @@ jobs:
           echo "export FORWARDER=${{ env.FORWARDER }}" >> /opt/qubinode_navigator/.env
           echo "export ACTIVE_BRIDGE=${{ env.ACTIVE_BRIDGE }}" >> /opt/qubinode_navigator/.env
           echo "export INTERFACE=${{ env.INTERFACE }}" >> /opt/qubinode_navigator/.env
-          echo "export HCP_PROJECT_ID=${{ env.HCP_PROJECT_ID }}" >> /opt/qubinode_navigator/.env
+          echo "export HCP_PROJECT_ID=${{ secrets.HCP_PROJECT_ID }}" >> /opt/qubinode_navigator/.env
           echo "export HCP_ORG_ID=${{ secrets.HCP_ORG_ID  }}" >> /opt/qubinode_navigator/.env
           echo "export HCP_CLIENT_SECRET=${{ secrets.HCP_CLIENT_SECRET }}" >> /opt/qubinode_navigator/.env
           echo "export HCP_CLIENT_ID=${{ secrets.HCP_CLIENT_ID }}" >> /opt/qubinode_navigator/.env
