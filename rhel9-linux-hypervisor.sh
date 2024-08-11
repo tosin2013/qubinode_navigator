@@ -207,11 +207,6 @@ configure_ansible_vault() {
             log_message "Error:/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml  not created"
             exit 1
         fi
-        
-        else
-            log_message "Error: config.yml file not found"
-            exit 1
-        fi
     else 
         if ! bash ./ansible_vault_setup.sh; then
             log_message "Failed to execute ansible_vault_setup.sh"
