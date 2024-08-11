@@ -29,6 +29,7 @@ ACTION="create"
 
 
 ansible-galaxy install -r /tmp/requirements.yml --force -vv
+rm -rf /tmp/requirements.yml
 pip3 install boto3 botocore
 
 cat >/tmp/playbook.yml<<EOF
