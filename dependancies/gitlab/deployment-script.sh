@@ -28,7 +28,7 @@ gitlab_service_account: ${GILAB_SERVICE_ACCOUNT}
 gitlab_service_account_uid: 1001
 
 # Container Image Variables
-gitlab_server_image_name: gitlab/gitlab-ce:latest
+gitlab_server_image_name: docker.io/gitlab/gitlab-ce:latest
 
 # Container Name Variables
 gitlab_server_name: gitlab_server
