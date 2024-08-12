@@ -1,11 +1,6 @@
 #!/bin/bash
 set -xe 
 
-if [[ $# -ne 3 ]]; then
-    echo "Usage: $0 <AWS_ACCESS_KEY> <AWS_SECRET_ACCESS_KEY> <CONTAINER_RUN_TIME>"
-    exit 1
-fi
-
 /usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 2
 AWS_ACCESS_KEY=$(yq eval '.aws_access_key' "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml")
 AWS_SECRET_KEY=$(yq eval '.aws_secret_key' "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml")
