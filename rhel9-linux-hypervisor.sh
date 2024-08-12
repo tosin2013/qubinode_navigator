@@ -405,6 +405,21 @@ configure_route53() {
     echo "ZONE_NAME: $ZONE_NAME"
     ./dependancies/route53/deployment-script.sh
 }
+
+# Function to configure Cockpit SSL
+configure_cockpit_ssl() {
+    if [ "$(pwd)" != "/opt/qubinode_navigator" ]; then
+        echo "Current directory is not /opt/qubinode_navigator."
+        echo "Changing to /opt/qubinode_navigator..."
+        cd /opt/qubinode_navigator
+    else
+        echo "Current directory is /opt/qubinode_navigator."
+    fi
+    echo "Configuring Cockpit SSL"
+    echo "******************"
+    ./dependancies/cockpit-ssl/configure-cockpit-ssl.sh
+}
+
 # Function to configure GitLab
 configure_gitlab() {
     if [ "$(pwd)" != "/opt/qubinode_navigator" ]; then
@@ -439,6 +454,7 @@ main() {
     configure_bash_aliases
     setup_kcli_base
     configure_route53
+    configure_cockpit_ssl
     if [ "$CICD_ENVIORNMENT" == "onedev" ]; then
         configure_onedev
     elif [ "$CICD_ENVIORNMENT" == "gitlab" ]; then
