@@ -463,6 +463,12 @@ main() {
         log_message "Error: CICD_ENVIORNMENT is not set"
         exit 1
     fi
+    if [ "$OLLAMA_WORKLOAD" == "true" ]; then
+        # https://github.com/ollama/ollama/blob/main/docs/faq.md 
+        log_message "Configuring Ollama Workload..."
+        curl -fsSL https://ollama.com/install.sh | sh
+        echo "export OLLAMA_API_BASE=http://127.0.0.1:11434" >> ~/.bashrc
+    fi
 }
 
 main "$@"

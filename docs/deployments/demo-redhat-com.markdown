@@ -76,6 +76,7 @@ export HCP_CLIENT_SECRET="your-client-secret"
 export HCP_ORG_ID="your-org-id"
 export HCP_PROJECT_ID="your-project-id"
 export APP_NAME="appname"
+export OLLAMA_WORKLOAD="fasle"
 EOF
 $ vi notouch.env
 ```
