@@ -1,10 +1,6 @@
 #!/bin/bash
 # https://kenmoini.com/post/2021/12/custom-certificates-in-cockpit/
 set -xe
-
-#!/bin/bash
-set -xe
-
 # Decrypt the vault file to access AWS credentials
 /usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 2
 
