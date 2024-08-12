@@ -8,7 +8,7 @@ AWS_SECRET_ACCESS_KEY=$(yq eval '.aws_secret_key' "/opt/qubinode_navigator/inven
 CONTAINER_RUN_TIME="podman"
 
 # Obtain domain and API URL from Cockpit configurations
-export COCKPIT_DOMAIN="${DOMAIN}" # Update this with the actual domain
+export COCKPIT_DOMAIN=cockpit.${GUID}."${DOMAIN}" # Update this with the actual domain
 export COCKPIT_CERT_DIR="/etc/cockpit/ws-certs.d"
 
 if [[ "$CONTAINER_RUN_TIME" == "docker" ]]; then

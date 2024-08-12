@@ -417,7 +417,9 @@ configure_cockpit_ssl() {
     fi
     echo "Configuring Cockpit SSL"
     echo "******************"
-    ./dependancies/cockpit-ssl/configure-cockpit-ssl.sh
+    if [ ! -f /etc/letsencrypt/live/sandbox1609.opentlc.com/fullchain.pem  ]; then
+        ./dependancies/cockpit-ssl/configure-cockpit-ssl.sh
+    fi 
 }
 
 # Function to configure GitLab
