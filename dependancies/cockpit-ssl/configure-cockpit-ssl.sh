@@ -8,7 +8,7 @@ AWS_SECRET_KEY=$(yq eval '.aws_secret_key' "/opt/qubinode_navigator/inventories/
 CONTAINER_RUN_TIME="podman"
 
 # Obtain domain and API URL from Cockpit configurations
-export COCKPIT_DOMAIN="your-cockpit-domain.com" # Update this with the actual domain
+export COCKPIT_DOMAIN="${DOMAIN}" # Update this with the actual domain
 export COCKPIT_CERT_DIR="/etc/cockpit/ws-certs.d"
 
 if [[ "$CONTAINER_RUN_TIME" == "docker" ]]; then
@@ -25,7 +25,8 @@ elif [[ "$CONTAINER_RUN_TIME" == "podman" ]]; then
         certonly --dns-route53 \
         -d "$COCKPIT_DOMAIN" \
         -d "*.$COCKPIT_DOMAIN" \
-        --agree-tos 
+        --agree-tos \
+        --email "${EMAIL}"
 else
     echo "Invalid container runtime"
     exit 1

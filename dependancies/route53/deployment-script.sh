@@ -41,6 +41,7 @@ cat >/tmp/playbook.yml<<EOF
   vars:
   - update_ip_r53_aws_access_key: ${AWS_ACCESS_KEY}
   - update_ip_r53_aws_secret_key: ${AWS_SECRET_KEY}
+  - your_email: ${EMAIL}
   - use_public_ip: true
   - private_ip: "${IP_ADDRESS}"
   - update_ip_r53_records:
