@@ -17,7 +17,6 @@ fi
 AWS_ACCESS_KEY=$(yq eval '.aws_access_key' "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml")
 AWS_SECRET_KEY=$(yq eval '.aws_secret_key' "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml")
 IP_ADDRESS=$(hostname -I | awk '{print $1}')
-ZONE_NAME=$(yq eval '.domain' "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml")
 VERBOSE_LEVEL="-v"
 ACTION="create"
 /usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 1
