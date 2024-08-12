@@ -434,6 +434,27 @@ configure_gitlab() {
     ./dependancies/gitlab/deployment-script.sh
 }
 
+# Function to configure Ollama Workload
+configure_ollama() {
+    # Check if Ollama is already running
+    if curl -s "http://127.0.0.1:11434/api/health" >/dev/null; then
+        log_message "Ollama is already running. Skipping configuration."
+    else
+        log_message "Configuring Ollama Workload..."
+        
+        # Download and install Ollama
+        curl -fsSL https://ollama.com/install.sh | sh
+        
+        # Check if the line exists in ~/.bashrc
+        if grep -q "export OLLAMA_API_BASE=http://127.0.0.1:11434" ~/.bashrc; then
+            log_message "OLLAMA_API_BASE is already set in ~/.bashrc. Skipping."
+        else
+            # Set the OLLAMA_API_BASE environment variable
+            echo "export OLLAMA_API_BASE=http://127.0.0.1:11434" >> ~/.bashrc
+        fi
+    fi
+}
+
 # Main function
 main() {
     check_root
@@ -464,10 +485,7 @@ main() {
         exit 1
     fi
     if [ "$OLLAMA_WORKLOAD" == "true" ]; then
-        # https://github.com/ollama/ollama/blob/main/docs/faq.md 
-        log_message "Configuring Ollama Workload..."
-        curl -fsSL https://ollama.com/install.sh | sh
-        echo "export OLLAMA_API_BASE=http://127.0.0.1:11434" >> ~/.bashrc
+        configure_ollama
     fi
 }
 
