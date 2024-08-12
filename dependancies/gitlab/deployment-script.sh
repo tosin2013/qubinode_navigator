@@ -51,6 +51,9 @@ gitlab_firewall_ssh_port: '2222/tcp'
 
 # GitLab Container Specific Variables
 gitlab_server_restart_policy: always
+
+# Let's Encrypt Enabled
+letsencrypt_enabled: true
 EOF
 
 ansible-playbook /opt/ansible-podman-gitlab-server-role/playbooks/gitlab-mgmt.yml || exit 1
@@ -60,6 +63,6 @@ then
   sudo curl -L --output /usr/local/bin/gitlab-runner https://gitlab-runner-downloads.s3.amazonaws.com/latest/binaries/gitlab-runner-linux-amd64
   sudo chmod +x /usr/local/bin/gitlab-runner
   sudo useradd --comment 'GitLab Runner' --create-home gitlab-runner --shell /bin/bash
-  sudo /usr/local/bin/gitlab-runnerinstall --user=gitlab-runner --working-directory=/home/gitlab-runner
+  sudo /usr/local/bin/gitlab-runner install --user=gitlab-runner --working-directory=/home/gitlab-runner
   sudo /usr/local/bin/gitlab-runner start
 fi
