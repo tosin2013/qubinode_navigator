@@ -25,6 +25,7 @@ cat > /etc/ansible/roles/podman-gitlab-server-role/defaults/main.yml <<EOF
 ---
 # Username Variables
 gitlab_service_account: ${GILAB_SERVICE_ACCOUNT}
+postgres_service_account: ${GILAB_SERVICE_ACCOUNT}
 gitlab_service_account_uid: 1001
 specific_user: lab-user
 
