@@ -74,3 +74,5 @@ sudo chown root:cockpit-ws /etc/cockpit/ws-certs.d/99-${COCKPIT_DOMAIN}.*
 sudo systemctl restart cockpit
 
 echo "Cockpit SSL certificates updated successfully."
+
+echo "Cockpit URL: https://${COCKPIT_DOMAIN}" > /home/lab-user/cockpit-url.txt

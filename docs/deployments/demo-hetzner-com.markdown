@@ -80,14 +80,18 @@ $ vi notouch.env
 [Setting Up Variables in HashiCorp Cloud Platform (HCP) Vault Secrets](https://github.com/tosin2013/ansiblesafe/blob/main/docs/hashicorp_cloud_secret_setup.md)
 ```bash
 $ SSH_PASSWORD=DontForgetToChangeMe # Use the password of the lab-user
+$ DOMAIN=example-server.com
+$ EMAIL=user@example.com # used for letsencrypt
+$ GUID=your-guid
 $ cat >notouch.env<<EOF
 export SSH_USER=lab-user
 export CICD_PIPELINE='true'
 export ENV_USERNAME=lab-user
 export CICD_ENVIORNMENT="gitlab" # or onedev change this vault for default cicd enviornment to deploy VMS
-export DOMAIN=qubinodelab.io  # Change to your domain if you want to use your own domain
+export DOMAIN=${DOMAIN}  # Change to your domain if you want to use your own domain
 export ZONE_NAME=${DOMAIN}
-export EMAIL=user@example.com
+export EMAIL=${EMAIL}
+export GUID=$GUID
 export USE_HASHICORP_CLOUD='true'
 export FORWARDER='1.1.1.1'
 export ACTIVE_BRIDGE='false'
