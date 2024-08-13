@@ -21,6 +21,7 @@ then
   cp -r podman-gitlab-server-role /etc/ansible/roles/
 fi
 GILAB_SERVICE_ACCOUNT=gitlab
+POSTGRES_PASSWORD=$(cat /dev/urandom | tr -dc '[:graph:]' | fold -w 11 | head -n 1)
 cat > /etc/ansible/roles/podman-gitlab-server-role/defaults/main.yml <<EOF
 ---
 # Username Variables
@@ -41,6 +42,7 @@ gitlab_server_hostname: gitlab
 # Domain
 domain: '.${GUID}.${DOMAIN}'
 your_email: '${EMAIL}'
+gitlab_postgres_password:  '${POSTGRES_PASSWORD}'
 
 # Podman Ports
 gitlab_container_ssl_port: '8443:8443/tcp'
