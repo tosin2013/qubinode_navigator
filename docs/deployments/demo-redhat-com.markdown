@@ -57,6 +57,7 @@ $ vi notouch.env
 $ SSH_PASSWORD=DontForgetToChangeMe # Use the password of the lab-user
 $ DOMAIN=sandbox000.opentlc.com 
 $ EMAIL=user@example.com # used for letsencrypt
+$ GUID=your-guid
 $ cat >notouch.env<<EOF
 export SSH_USER=lab-user
 export CICD_PIPELINE='true'
