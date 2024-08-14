@@ -56,8 +56,8 @@ gitlab_firewall_ssh_port: '2222/tcp'
 # GitLab Container Specific Variables
 gitlab_server_restart_policy: always
 
-# Let's Encrypt Enabled
-letsencrypt_enabled: true
+# Use Custom SSL Certs
+custom_cert: false
 EOF
 
 /usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 2
