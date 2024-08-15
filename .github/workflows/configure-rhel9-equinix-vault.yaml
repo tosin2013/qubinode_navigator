@@ -32,6 +32,10 @@ on:
         description: 'ZONE_NAME'
         required: true
         default: aws.example.com
+      guid:
+        description: 'GUID'
+        required: true
+        default: 12345
 env:
     TARGET_SERVER: ${{ inputs.target_server }}
     DOMAIN: ${{ inputs.domain }}
@@ -41,6 +45,7 @@ env:
     ZONE_NAME: ${{ inputs.zone_name }}
     ACTIVE_BRIDGE: 'false'
     INTERFACE: 'bond0'
+    GUID: ${{ inputs.guid }}
    
 jobs:
   configure-rhel9-equinix:
@@ -57,6 +62,7 @@ jobs:
           echo "CICD_ENVIORNMENT=${{ github.event.inputs.cicd_env }}" >> $GITHUB_ENV
           echo "USE_ROUTE53=${{ github.event.inputs.use_route53 }}" >> $GITHUB_ENV
           echo "ZONE_NAME=${{ github.event.inputs.zone_name }}" >> $GITHUB_ENV
+          echo "GUID=${{ github.event.inputs.guid }}" >> $GITHUB_ENV
         elif [ "${{ github.event_name }}" == "repository_dispatch" ]; then
           echo "TARGET_SERVER=${{ github.event.client_payload.data_key.target_server }}" >> $GITHUB_ENV
           echo "DOMAIN=${{ github.event.client_payload.data_key.domain }}" >> $GITHUB_ENV
@@ -65,6 +71,7 @@ jobs:
           echo "CICD_ENVIORNMENT=${{ github.event.inputs.cicd_env }}" >> $GITHUB_ENV
           echo "USE_ROUTE53=${{ github.event.inputs.use_route53 }}" >> $GITHUB_ENV
           echo "ZONE_NAME=${{ github.event.inputs.zone_name }}" >> $GITHUB_ENV
+          echo "GUID=${{ github.event.inputs.guid }}" >> $GITHUB_ENV
         fi
     - name: Configure RHEL 9 Equinix Server
       uses: appleboy/ssh-action@v1.0.3
@@ -101,6 +108,7 @@ jobs:
           echo "export HCP_CLIENT_SECRET=${{ secrets.HCP_CLIENT_SECRET }}" >> /opt/qubinode_navigator/.env
           echo "export HCP_CLIENT_ID=${{ secrets.HCP_CLIENT_ID }}" >> /opt/qubinode_navigator/.env
           echo "export APP_NAME=${{ secrets.APP_NAME }}" >> /opt/qubinode_navigator/.env
+          echo "export EMAIL=${{ secrets.EMAIL }}" >> /opt/qubinode_navigator/.env
           echo "export USE_HASHICORP_CLOUD='true'" >> /opt/qubinode_navigator/.env
           echo "ZONE_NAME=${{ github.event.inputs.zone_name }}" >> $GITHUB_ENV
           source /opt/qubinode_navigator/.env && sudo -E /opt/qubinode_navigator/rhel9-linux-hypervisor.sh || exit $?
