@@ -110,7 +110,9 @@ jobs:
           echo "export APP_NAME=${{ secrets.APP_NAME }}" >> /opt/qubinode_navigator/.env
           echo "export EMAIL=${{ secrets.EMAIL }}" >> /opt/qubinode_navigator/.env
           echo "export USE_HASHICORP_CLOUD='true'" >> /opt/qubinode_navigator/.env
-          echo "export ZONE_NAME=${{ github.event.inputs.zone_name }}" >> $GITHUB_ENV
+          echo "export ZONE_NAME=${{ github.event.inputs.zone_name }}" >> /opt/qubinode_navigator/.env
+          echo "export GUID=${{ github.event.inputs.guid }}" >> /opt/qubinode_navigator/.env
+          echo "export USE_ROUTE53=${{ github.event.inputs.use_route53 }}" >> /opt/qubinode_navigator/.env
           source /opt/qubinode_navigator/.env && sudo -E /opt/qubinode_navigator/rhel9-linux-hypervisor.sh || exit $?
    
     - name: Send a repository dispatch event to restart the workflow if it failed
