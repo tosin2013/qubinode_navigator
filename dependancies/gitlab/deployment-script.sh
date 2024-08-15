@@ -57,11 +57,13 @@ gitlab_firewall_ssh_port: '2222/tcp'
 gitlab_server_restart_policy: always
 
 # Use Custom SSL Certs
-custom_cert: false
+letsencrypt_enabled: false
 EOF
 
 /usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 2
-ansible-playbook /opt/ansible-podman-gitlab-server-role/playbooks/gitlab-mgmt.yml --extra-vars  "@/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" || exit 1
+ansible-playbook /opt/ansible-podman-gitlab-server-role/playbooks/gitlab-mgmt.yml \
+  --extra-vars  "@/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" \
+  --skip-tags "custom_cert"|| exit 1
 /usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 1
 
 if [ ! -f /usr/local/bin/gitlab-runner ];
