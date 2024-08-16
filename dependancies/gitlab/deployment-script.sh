@@ -63,7 +63,7 @@ EOF
 /usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 2
 ansible-playbook /opt/ansible-podman-gitlab-server-role/playbooks/gitlab-mgmt.yml \
   --extra-vars  "@/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" \
-  --skip-tags "custom_cert" || exit 1
+  -t "initial_setup,create_gitlab" --skip-tags "custom_cert" || exit 1
 /usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 1
 
 if [ ! -f /usr/local/bin/gitlab-runner ];

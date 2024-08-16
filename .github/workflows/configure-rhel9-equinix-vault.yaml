@@ -27,7 +27,7 @@ on:
       use_route53:
         description: 'USE_ROUTE53'
         required: true
-        default: false
+        default: true
       zone_name:
         description: 'ZONE_NAME'
         required: true
@@ -36,6 +36,10 @@ on:
         description: 'GUID'
         required: true
         default: 12345
+      ollama:
+        description: 'ollama'
+        required: true
+        default: true
 env:
     TARGET_SERVER: ${{ inputs.target_server }}
     DOMAIN: ${{ inputs.domain }}
@@ -46,6 +50,7 @@ env:
     ACTIVE_BRIDGE: 'false'
     INTERFACE: 'bond0'
     GUID: ${{ inputs.guid }}
+    
    
 jobs:
   configure-rhel9-equinix:
@@ -113,6 +118,7 @@ jobs:
           echo "export ZONE_NAME=${{ github.event.inputs.zone_name }}" >> /opt/qubinode_navigator/.env
           echo "export GUID=${{ github.event.inputs.guid }}" >> /opt/qubinode_navigator/.env
           echo "export USE_ROUTE53=${{ github.event.inputs.use_route53 }}" >> /opt/qubinode_navigator/.env
+          echo "exprot OLLAMA_WORKLOAD=${{ github.event.inputs.ollama }}" >> /opt/qubinode_navigator/.env
           source /opt/qubinode_navigator/.env && sudo -E /opt/qubinode_navigator/rhel9-linux-hypervisor.sh || exit $?
    
     - name: Send a repository dispatch event to restart the workflow if it failed
