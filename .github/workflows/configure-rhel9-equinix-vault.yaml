@@ -118,7 +118,7 @@ jobs:
           echo "export ZONE_NAME=${{ github.event.inputs.zone_name }}" >> /opt/qubinode_navigator/.env
           echo "export GUID=${{ github.event.inputs.guid }}" >> /opt/qubinode_navigator/.env
           echo "export USE_ROUTE53=${{ github.event.inputs.use_route53 }}" >> /opt/qubinode_navigator/.env
-          echo "exprot OLLAMA_WORKLOAD=${{ github.event.inputs.ollama }}" >> /opt/qubinode_navigator/.env
+          echo "export OLLAMA_WORKLOAD=${{ github.event.inputs.ollama }}" >> /opt/qubinode_navigator/.env
           source /opt/qubinode_navigator/.env && sudo -E /opt/qubinode_navigator/rhel9-linux-hypervisor.sh || exit $?
    
     - name: Send a repository dispatch event to restart the workflow if it failed
