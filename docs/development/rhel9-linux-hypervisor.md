@@ -63,11 +63,11 @@ The script accepts the following input formats:
 
 For further information on the Qubinode Navigator script, please refer to:
 
-* The Qubinode Navigator documentation: https://tosin2013.github.io/qubinode_navigator/
-* HashiCorp Vault documentation: https://developer.hashicorp.com/vault/docs/what-is-vault
-* Ansible Navigator documentation: https://ansible-navigator.readthedocs.io/en/latest/
-* Cockpit SSL documentation:  https://cockpit-project.org/guide/latest/https.html
-* Route53 documentation: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/Welcome.html
-* GitLab documentation: https://docs.gitlab.com/
-* Github documentation: https://docs.github.com/en
-* Ollama Workload documentation: https://www.ollama.com/
+* [The Qubinode Navigator documentation](https://tosin2013.github.io/qubinode_navigator/)
+* [HashiCorp Vault documentation](https://developer.hashicorp.com/vault/docs/what-is-vault)
+* [Ansible Navigator documentation](https://ansible-navigator.readthedocs.io/en/latest/)
+* [Cockpit SSL documentation](https://cockpit-project.org/guide/latest/https.html)
+* [Route53 documentation](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/Welcome.html)
+* [GitLab documentation](https://docs.gitlab.com/)
+* [Github documentation](https://docs.github.com/en)
+* [Ollama Workload documentation](https://www.ollama.com/)
