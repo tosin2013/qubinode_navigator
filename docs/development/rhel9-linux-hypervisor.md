@@ -1,7 +1,7 @@
 ---
-layout: category
+layout: default
 title:  Rhel9 Linux Hypervisor
-parent: Development
+parent: Developer Documentation
 nav_order: 1
 ---
 

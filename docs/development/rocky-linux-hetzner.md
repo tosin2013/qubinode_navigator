@@ -1,7 +1,7 @@
 ---
-layout: category
+layout: default
 title: Documenting Rocky Linux Hetzner
-parent: Development
+parent: Developer Documentation
 nav_order: 1
 ---
 **Script Structure**
