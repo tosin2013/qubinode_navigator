@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Documenting Rocky Linux Hetzner
+title:  Rocky Linux on Hetzner
 parent: Developer Documentation
 nav_order: 1
 ---
