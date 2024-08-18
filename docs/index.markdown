@@ -61,4 +61,4 @@ We welcome contributions from the community! Please read our [Contributing Guide
 
 ## License
 
-This project is licensed under the [MIT License](link-to-license).
+This project is licensed under the [GNU GENERAL PUBLIC LICENSE](link-to-license).
