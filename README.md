@@ -16,4 +16,4 @@ curl https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/setup.s
 ```
 
 ## Contributing
-Please submit bug reports, suggestions, and improvements as GitHub issues.
+[Contributing to Qubinode Navigator: A Comprehensive Developer's Guide](https://tosin2013.github.io/qubinode_navigator/development/developers_guide.html)
