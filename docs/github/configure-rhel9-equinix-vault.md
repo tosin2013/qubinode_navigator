@@ -1,7 +1,7 @@
 ---
 layout: default
 title:  RHEL 9 Equinix Server Vault
-parent: Github
+parent: GitHub Actions
 nav_order: 4
 ---
 

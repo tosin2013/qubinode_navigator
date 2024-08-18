@@ -1,7 +1,7 @@
 ---
 layout: default
 title:  Configure Rhel9 Equinix
-parent: Github
+parent: GitHub Actions
 nav_order: 4
 ---
 
