@@ -14,6 +14,8 @@ The script consists of several major functions:
 * `setup_kcli_base`: Sets up KCLI (Kubernetes Cluster Lifecycle Interface) and configures images for the Qubinode cluster.
 * `show_help`: Displays help information for the script.
 
+[Full Script](https://github.com/tosin2013/qubinode_navigator/blob/main/rhel8-linux-hypervisor.sh)
+
 **Key Code Snippets**
 
 1. The `configure_bash_aliases` function uses a combination of `if` statements and `source` commands to configure bash aliases. For example:

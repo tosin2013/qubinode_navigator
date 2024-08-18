@@ -13,6 +13,8 @@ The script consists of several key components, including:
 * **Playbook creation**: The script creates a playbook file (`/tmp/playbook.yml`) that defines the OpenShift DNS entries to be created or updated.
 * **Ansible execution**: The script executes the playbook using Ansible, with options for verbose mode and action (create or delete).
 
+[Full Script](https://github.com/tosin2013/qubinode_navigator/blob/main/dependancies/route53/deployment-script.sh)
+
 ### Environment Variables
 
 The script relies on several environment variables to function correctly. These include:

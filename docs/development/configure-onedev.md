@@ -9,6 +9,8 @@ nav_order: 1
 
 The `qubinode_navigator.sh` script is a Bash shell script that configures and runs the OneDev server on a Qubinode device. This document provides an overview of the script's functionality, structure, and key components.
 
+[Full Script](https://github.com/tosin2013/qubinode_navigator/blob/main/dependancies/onedev/configure-onedev.sh)
+
 ## Purpose and Overview
 
 The `qubinode_navigator.sh` script is part of the Qubinode project, which aims to provide a comprehensive solution for managing and navigating Qubinode devices. The script's primary purpose is to configure and run the OneDev server on a Qubinode device, allowing users to access and manage their data.

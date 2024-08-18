@@ -17,6 +17,8 @@ The script is divided into several major functions or classes, each responsible 
 * `obtain_certificates`: Runs Certbot to obtain SSL certificates using Route53 based on the container runtime (Docker or Podman).
 * `update_cockpit_service`: Combines the server certificate and intermediate cert chain, copies over the key, sets proper permissions, and restarts the Cockpit service.
 
+[Full Script](https://github.com/tosin2013/qubinode_navigator/blob/main/dependancies/cockpit-ssl/configure-cockpit-ssl.sh)
+
 ### Key Code Snippets
 
 The script uses several key code snippets to achieve its goals. For example:

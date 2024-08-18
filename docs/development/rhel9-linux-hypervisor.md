@@ -28,6 +28,8 @@ The script consists of several major functions:
 * `configure_gitlab`: Configures GitLab settings (if CICD_ENVIORNMENT is set to "gitlab").
 * `configure_ollama`: Configures Ollama Workload settings (if OLLAMA_WORKLOAD is set to "true").
 
+[Full Script](https://github.com/tosin2013/qubinode_navigator/blob/main/rhel9-linux-hypervisor.sh)
+
 **Key Code Snippets and Algorithms**
 
 1. The script uses the `curl` command to check if Ollama is already running and skip configuration if it is.

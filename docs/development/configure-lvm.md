@@ -9,6 +9,8 @@ nav_order: 1
 
 The `configure_vg` function in the Qubinode Navigator script is responsible for configuring a logical volume manager (LVM) on a system. This documentation provides an overview of how the script works and what it does.
 
+[Full Script](https://github.com/tosin2013/qubinode_navigator/blob/main/dependancies/equinix-rocky/configure-lvm.sh)
+
 ## Overview
 
 The `configure_vg` function uses the `lsblk` command to get a list of all block devices on the system, excluding those that are already mounted. It then populates an associative array with device sizes and their counts. The function finds the largest size with the most devices of that size and uses these devices to create a new LVM volume group (VG) named `vg_qubi`.

@@ -13,6 +13,8 @@ The script consists of several major functions:
 * `setup_kcli_base`: Sets up KCLI (Kubernetes Cluster Lifecycle Interface) and configures images.
 * `show_help`: Displays help information for the script.
 
+[Full Script](https://github.com/tosin2013/qubinode_navigator/blob/main/rocky-linux-hetzner.sh)
+
 **Key Code Snippets**
 
 1. `bash_aliases`:
