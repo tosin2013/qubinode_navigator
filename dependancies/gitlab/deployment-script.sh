@@ -21,7 +21,7 @@ then
   cp -r podman-gitlab-server-role /etc/ansible/roles/
 fi
 GILAB_SERVICE_ACCOUNT=gitlab
-POSTGRES_PASSWORD=$(cat /dev/urandom | tr -dc '[:graph:]' | fold -w 11 | head -n 1)
+POSTGRES_PASSWORD=$(cat /dev/urandom | tr -dc 'A-Za-z0-9@%+=-_' | fold -w 11 | head -n 1)
 cat > /etc/ansible/roles/podman-gitlab-server-role/defaults/main.yml <<EOF
 ---
 # Username Variables
