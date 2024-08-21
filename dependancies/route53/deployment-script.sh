@@ -16,6 +16,15 @@ fi
 /usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 2
 AWS_ACCESS_KEY=$(yq eval '.aws_access_key' "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml")
 AWS_SECRET_KEY=$(yq eval '.aws_secret_key' "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml")
+# Get the output of the `ifconfig bond0` command
+OUTPUT=$(ifconfig bond0)
+
+# Extract the IPv4 address using grep and awk
+IP_ADDRESS=$(echo "$OUTPUT" | grep "inet " | awk '{print $2}')
+
+# Print the extracted IPv4 address
+echo "$IP_ADDRESS"
+
 IP_ADDRESS=$(hostname -I | awk '{print $1}')
 VERBOSE_LEVEL="-v"
 ACTION="create"
