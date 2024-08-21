@@ -21,7 +21,7 @@ then
   cp -r podman-gitlab-server-role /etc/ansible/roles/
 fi
 GILAB_SERVICE_ACCOUNT=gitlab
-POSTGRES_PASSWORD=$(cat /dev/urandom | tr -dc 'A-Za-z0-9@%+=-_' | fold -w 11 | head -n 1)
+POSTGRES_PASSWORD=$(cat /dev/urandom | tr -dc 'A-Za-z0-9%+=-_' | fold -w 11 | head -n 1)
 cat > /etc/ansible/roles/podman-gitlab-server-role/defaults/main.yml <<EOF
 ---
 # Username Variables
@@ -68,9 +68,9 @@ ansible-playbook /opt/ansible-podman-gitlab-server-role/playbooks/gitlab-mgmt.ym
 
 if [ ! -f /usr/local/bin/gitlab-runner ];
 then
-  sudo curl -L --output /usr/local/bin/gitlab-runner https://gitlab-runner-downloads.s3.amazonaws.com/latest/binaries/gitlab-runner-linux-amd64
-  sudo chmod +x /usr/local/bin/gitlab-runner
+  sudo curl -L --output /usr/bin/gitlab-runner https://gitlab-runner-downloads.s3.amazonaws.com/latest/binaries/gitlab-runner-linux-amd64
+  sudo chmod +x /usr/bin/gitlab-runner
   sudo useradd --comment 'GitLab Runner' --create-home gitlab-runner --shell /bin/bash
-  sudo /usr/local/bin/gitlab-runner install --user=gitlab-runner --working-directory=/home/gitlab-runner
-  sudo /usr/local/bin/gitlab-runner start
+  sudo /usr/bin/gitlab-runner install --user=gitlab-runner --working-directory=/home/gitlab-runner
+  # sudo systemctl start gitlab-runner.service
 fi
