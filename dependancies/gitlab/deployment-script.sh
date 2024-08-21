@@ -72,5 +72,9 @@ then
   sudo chmod +x /usr/bin/gitlab-runner
   sudo useradd --comment 'GitLab Runner' --create-home gitlab-runner --shell /bin/bash
   sudo /usr/bin/gitlab-runner install --user=gitlab-runner --working-directory=/home/gitlab-runner
+  # cat /home/lab-user/.gitlab-runner/config.toml
+  # sudo cp /home/lab-user/.gitlab-runner/config.toml /etc/gitlab-runner/config.toml
   # sudo systemctl start gitlab-runner.service
+  # sudo systemctl enable gitlab-runner.service
+  # sudo systemctl status gitlab-runner.service
 fi
