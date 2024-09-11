@@ -23,7 +23,7 @@ on:
       cicd_env:
         description: 'CICD_ENVIORNMENT'
         required: true
-        default: gitlab
+        default: onedev
       use_route53:
         description: 'USE_ROUTE53'
         required: true
