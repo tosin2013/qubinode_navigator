@@ -75,4 +75,4 @@ sudo systemctl restart cockpit
 
 echo "Cockpit SSL certificates updated successfully."
 
-echo "Cockpit URL: https://${COCKPIT_DOMAIN}" > /home/lab-user/cockpit-url.txt
+echo "Cockpit URL: https://${COCKPIT_DOMAIN}:9090" > /home/lab-user/cockpit-url.txt
