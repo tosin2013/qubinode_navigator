@@ -23,7 +23,12 @@ on:
       cicd_env:
         description: 'CICD_ENVIORNMENT'
         required: true
-        default: gitlab
+        default: github
+        type: choice
+        options:
+          - github
+          - gitlab
+          - onedev
       use_route53:
         description: 'USE_ROUTE53'
         required: true
@@ -115,6 +120,7 @@ jobs:
           echo "export APP_NAME=${{ secrets.APP_NAME }}" >> /opt/qubinode_navigator/.env
           echo "export EMAIL=${{ secrets.EMAIL }}" >> /opt/qubinode_navigator/.env
           echo "export USE_HASHICORP_CLOUD='true'" >> /opt/qubinode_navigator/.env
+          echo "export KCLI_PIPELINES_GITHUB_TOKEN=${{ secrets.KCLI_PIPELINES_GITHUB_TOKEN }}" >> /opt/qubinode_navigator/.env
           echo "export ZONE_NAME=${{ github.event.inputs.zone_name }}" >> /opt/qubinode_navigator/.env
           echo "export GUID=${{ github.event.inputs.guid }}" >> /opt/qubinode_navigator/.env
           echo "export USE_ROUTE53=${{ github.event.inputs.use_route53 }}" >> /opt/qubinode_navigator/.env
