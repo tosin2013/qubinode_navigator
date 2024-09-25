@@ -484,6 +484,7 @@ compare_yaml() {
     yq e 'select(. as $item | input | . == $item)' - <(yq e '.' "$file1") <(yq e '.' "$file2") -I0 | yq e 'del(select(. == null))' -I0
 }
 
+
 # Function to update file1 with differences from file2
 update_yaml() {
     local file1=$1
