@@ -203,20 +203,7 @@ configure_ansible_vault() {
             if [ -f /tmp/config.yml ]; then
                 file1_yaml="/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml"
                 file2_yaml="/tmp/config.yml"
-                # Compare the YAML files and get the differences
-                diff_output=$(compare_yaml "$file1_yaml" "$file2_yaml")
-                # Output the differences
-                if [[ -z "$diff_output" ]]; then
-                    echo "No differences found. No updates needed."
-                else
-                    echo "Differences found. Updating $file1_yaml:"
-                    echo "$diff_output"
-
-                    # Update file1 with differences from file2
-                    update_yaml "$file1_yaml" "$file2_yaml" "$diff_output"
-
-                    echo "Updated $file1_yaml with differences from $file2_yaml."
-                fi
+                bash-aliases/check-creds.sh "$file1_yaml" "$file2_yaml"
             fi
             if ! /usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 1; then
                 log_message "Failed to encrypt vault.yml"
@@ -475,28 +462,6 @@ configure_ollama() {
     fi
 }
 
-# Function to compare two YAML files and return differences
-compare_yaml() {
-    local file1=$1
-    local file2=$2
-
-    # Use yq to compare the two files and return the differences
-    yq e 'select(. as $item | input | . == $item)' - <(yq e '.' "$file1") <(yq e '.' "$file2") -I0 | yq e 'del(select(. == null))' -I0
-}
-
-
-# Function to update file1 with differences from file2
-update_yaml() {
-    local file1=$1
-    local file2=$2
-    local diff_output=$3
-
-    while IFS= read -r line; do
-        key=$(echo "$line" | cut -d':' -f1 | tr -d '[:space:]')
-        value=$(echo "$line" | cut -d':' -f2- | tr -d '[:space:]')
-        yq e ".\"$key\" = \"$value\"" -i "$file1"
-    done <<< "$diff_output"
-}
 
 # Main function
 main() {
