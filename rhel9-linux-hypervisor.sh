@@ -201,7 +201,7 @@ configure_ansible_vault() {
             /usr/local/bin/ansiblesafe -o 5  --file="/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" || exit $?
             ls -l "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" || exit $?
             if [ -f /tmp/config.yml ]; then
-                file1_yaml="file1.yaml"
+                file1_yaml="/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml"
                 file2_yaml="/tmp/config.yml"
                 # Compare the YAML files and get the differences
                 diff_output=$(compare_yaml "$file1_yaml" "$file2_yaml")
