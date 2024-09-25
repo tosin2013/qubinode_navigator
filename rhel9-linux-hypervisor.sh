@@ -187,6 +187,19 @@ configure_ansible_vault() {
             
             cp -avi /tmp/config.yml "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml"
             ls -l "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" || exit $?
+            if ! /usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 1; then
+                log_message "Failed to encrypt vault.yml"
+                exit 1
+            fi
+        elif [ "$USE_HASHICORP_CLOUD" == "true" ]; then
+            log_message "Copying config.yml to vault.yml"
+            if [ -f /opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml ];
+            then 
+              rm -rf /opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml
+            fi 
+            
+            /usr/local/bin/ansiblesafe -o 5  --file="/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" || exit $?
+            ls -l "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" || exit $?
             if [ -f /tmp/config.yml ]; then
                 file1_yaml="file1.yaml"
                 file2_yaml="/tmp/config.yml"
@@ -205,19 +218,6 @@ configure_ansible_vault() {
                     echo "Updated $file1_yaml with differences from $file2_yaml."
                 fi
             fi
-            if ! /usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 1; then
-                log_message "Failed to encrypt vault.yml"
-                exit 1
-            fi
-        elif [ "$USE_HASHICORP_CLOUD" == "true" ]; then
-            log_message "Copying config.yml to vault.yml"
-            if [ -f /opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml ];
-            then 
-              rm -rf /opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml
-            fi 
-            
-            /usr/local/bin/ansiblesafe -o 5  --file="/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" || exit $?
-            ls -l "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" || exit $?
             if ! /usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 1; then
                 log_message "Failed to encrypt vault.yml"
                 exit 1
