@@ -85,6 +85,16 @@ install_packages() {
         log_message "Failed to install Development Tools"
         exit 1
     fi
+    # Check if yq is installed
+    if ! command -v yq &> /dev/null; then
+        echo "yq is not installed. Installing..."
+        # Download and install yq
+        wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq
+        chmod +x /usr/bin/yq
+        echo "yq installed successfully."
+    else
+        echo "yq is already installed."
+    fi
     if ! dnf update -y; then
         log_message "Failed to update packages"
         exit 1
