@@ -512,7 +512,7 @@ main() {
     elif [ "$CICD_ENVIORNMENT" == "gitlab" ]; then
         configure_gitlab
     elif [ "$CICD_ENVIORNMENT" == "github" ]; then
-        configure_gitlab
+        configure_github
     else
         log_message "Error: CICD_ENVIORNMENT is not set"
         exit 1
