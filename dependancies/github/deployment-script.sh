@@ -24,4 +24,4 @@ tar xzf actions-runner-linux-x64-$RUNNER_VERSION.tar.gz
 echo "Configuring runner..."
 ./config.sh --url https://github.com/tosin2013/kcli-pipelines --token $KCLI_PIPELINES_GITHUB_TOKEN
 echo "Runner configured! Run the runner:"
-./run.sh
+echo "./run.sh"

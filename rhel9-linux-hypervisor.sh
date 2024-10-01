@@ -16,7 +16,7 @@ readonly GIT_REPO="https://github.com/tosin2013/qubinode_navigator.git"
 : "${VAULT_TOKEN:=""}"
 : "${USE_ROUTE53:="false"}"
 : "${ROUTE_53_DOMAIN:=""}"
-: "${CICD_ENVIORNMENT:="gitlab"}"
+: "${CICD_ENVIORNMENT:="github"}"
 : "${SECRET_PATH:=""}"
 : "${INVENTORY:="localhost"}"
 : "${DEVELOPMENT_MODEL:="false"}"
@@ -451,6 +451,19 @@ configure_gitlab() {
     ./dependancies/gitlab/deployment-script.sh
 }
 
+configure_github() {
+    if [ "$(pwd)" != "/opt/qubinode_navigator" ]; then
+        echo "Current directory is not /opt/qubinode_navigator."
+        echo "Changing to /opt/qubinode_navigator..."
+        cd /opt/qubinode_navigator
+    else
+        echo "Current directory is /opt/qubinode_navigator."
+    fi
+    echo "Configuring GitHub"
+    echo "******************"
+    ./dependancies/github/deployment-script.sh
+}
+
 # Function to configure Ollama Workload
 configure_ollama() {
     # Check if Ollama is already running
@@ -496,6 +509,8 @@ main() {
     configure_cockpit_ssl
     if [ "$CICD_ENVIORNMENT" == "onedev" ]; then
         configure_onedev
+    elif [ "$CICD_ENVIORNMENT" == "gitlab" ]; then
+        configure_gitlab
     elif [ "$CICD_ENVIORNMENT" == "gitlab" ]; then
         configure_gitlab
     else
