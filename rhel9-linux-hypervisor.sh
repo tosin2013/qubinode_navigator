@@ -511,7 +511,7 @@ main() {
         configure_onedev
     elif [ "$CICD_ENVIORNMENT" == "gitlab" ]; then
         configure_gitlab
-    elif [ "$CICD_ENVIORNMENT" == "gitlab" ]; then
+    elif [ "$CICD_ENVIORNMENT" == "github" ]; then
         configure_gitlab
     else
         log_message "Error: CICD_ENVIORNMENT is not set"
