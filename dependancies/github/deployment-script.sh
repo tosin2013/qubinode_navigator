@@ -3,7 +3,7 @@
 # Define variables
 RUNNER_VERSION="2.319.1"
 CONFIG_CHECKSUM_CHECKED="3f6efb7488a183e291fc2c62876e14c9ee732864173734facc85a1bfb1744464"
-RUNNER_USER="github_runner"
+RUNNER_USER="runner"
 RUNNER_HOME="/home/$RUNNER_USER"
 
 # Create the user if it doesn't exist
@@ -15,6 +15,10 @@ fi
 # Create a folder for the runner
 mkdir -p $RUNNER_HOME/actions-runner
 chown -R $RUNNER_USER:$RUNNER_USER $RUNNER_HOME/actions-runner
+
+usermod -aG wheel ${RUNNER_HOME}
+echo "${RUNNER_HOME} ALL=(root) NOPASSWD:ALL" | tee -a /etc/sudoers.d/${RUNNER_HOME}
+chmod 0440 /etc/sudoers.d/${RUNNER_HOME}
 
 # Switch to the runner user
 sudo -u $RUNNER_USER bash << EOF
