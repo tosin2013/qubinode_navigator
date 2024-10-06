@@ -461,7 +461,7 @@ configure_github() {
     fi
     echo "Configuring GitHub"
     echo "******************"
-    ./dependancies/github/deployment-script.sh
+    ./dependancies/github/deployment-script.sh || exit $?
 }
 
 # Function to configure Ollama Workload
