@@ -2,9 +2,12 @@
 # https://github.com/tosin2013/kcli-openshift4-baremetal/blob/master/paramfiles/lab.yml
 # https://github.com/tosin2013/kcli-openshift4-baremetal/blob/master/plans/kcli_plan_default.yml
 # Use n2.xlarge.x86 on Equinix
-lab: true
+fake_network: true
+pool: default
+virtual_hub: true
 version: stable
-tag: "4.16"
+tag: "4.17"
+dns: true
 virtual_protocol: redfish
 virtual_ctlplanes: true
 launch_steps: true
@@ -26,6 +29,7 @@ extra_disks:
 - size: 400
 api_ip: 192.168.130.253
 ingress_ip: 192.168.130.252
+installer_ip: 192.168.130.20
 baremetal_ips:
 - 192.168.130.20
 - 192.168.130.21
