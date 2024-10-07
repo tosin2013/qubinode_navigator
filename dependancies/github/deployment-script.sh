@@ -23,9 +23,9 @@ fi
 mkdir -p $RUNNER_HOME/actions-runner
 chown -R $RUNNER_USER:$RUNNER_USER $RUNNER_HOME/actions-runner
 
-usermod -aG wheel ${RUNNER_HOME}
-echo "${RUNNER_HOME} ALL=(root) NOPASSWD:ALL" | tee -a /etc/sudoers.d/${RUNNER_HOME}
-chmod 0440 /etc/sudoers.d/${RUNNER_HOME}
+usermod -aG wheel ${RUNNER_USER}
+echo "${RUNNER_USER} ALL=(root) NOPASSWD:ALL" | tee -a /etc/sudoers.d/${RUNNER_USER}
+chmod 0440 /etc/sudoers.d/${RUNNER_USER}
 
 # Switch to the runner user
 sudo -u $RUNNER_USER bash << EOF
