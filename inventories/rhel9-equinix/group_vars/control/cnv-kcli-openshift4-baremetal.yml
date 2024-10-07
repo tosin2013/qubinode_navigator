@@ -3,12 +3,14 @@
 # https://github.com/tosin2013/kcli-openshift4-baremetal/blob/master/plans/kcli_plan_default.yml
 # Use n2.xlarge.x86 on Equinix
 fake_network: true
+installer_wait: true
+image: centos9stream
 pool: default
+workflow_installer: true
 virtual_hub: true
 version: stable
-tag: "4.17"
-dns: true
-virtual_protocol: redfish
+tag: "4.16"
+redfish_address: http://127.0.0.1:9000/redfish/v1/Systems/local
 virtual_ctlplanes: true
 launch_steps: true
 deploy_openshift: true
@@ -26,30 +28,33 @@ virtual_workers_number: 6
 virtual_workers_numcpus: 12
 virtual_workers_disksize: 120
 extra_disks:
-- size: 400
+  - size: 400
 api_ip: 192.168.130.253
 ingress_ip: 192.168.130.252
-installer_ip: 192.168.130.20
+dns: true
+ztp_siteconfig: false
+deploy_hub: false
+installer_ip: 192.168.130.251
 baremetal_ips:
-- 192.168.130.20
-- 192.168.130.21
-- 192.168.130.22
-- 192.168.130.23
-- 192.168.130.24
-- 192.168.130.25
-- 192.168.130.26
-- 192.168.130.27
-- 192.168.130.28
+  - 192.168.130.20
+  - 192.168.130.21
+  - 192.168.130.22
+  - 192.168.130.23
+  - 192.168.130.24
+  - 192.168.130.25
+  - 192.168.130.26
+  - 192.168.130.27
+  - 192.168.130.28
 baremetal_macs:
-- aa:aa:aa:aa:bb:01
-- aa:aa:aa:aa:bb:02
-- aa:aa:aa:aa:bb:03
-- aa:aa:aa:aa:bb:04
-- aa:aa:aa:aa:bb:05
-- aa:aa:aa:aa:bb:06
-- aa:aa:aa:aa:bb:07
-- aa:aa:aa:aa:bb:08
-- aa:aa:aa:aa:bb:09
+  - aa:aa:aa:aa:bb:01
+  - aa:aa:aa:aa:bb:02
+  - aa:aa:aa:aa:bb:03
+  - aa:aa:aa:aa:bb:04
+  - aa:aa:aa:aa:bb:05
+  - aa:aa:aa:aa:bb:06
+  - aa:aa:aa:aa:bb:07
+  - aa:aa:aa:aa:bb:08
+  - aa:aa:aa:aa:bb:09
 notify: true
 nfs: false
 disconnected: false
