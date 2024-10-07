@@ -6,10 +6,14 @@ CONFIG_CHECKSUM_CHECKED="3f6efb7488a183e291fc2c62876e14c9ee732864173734facc85a1b
 RUNNER_USER="runner"
 RUNNER_HOME="/home/$RUNNER_USER"
 
+/usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 2
+PASSWORD=$(yq eval '.rhsm_password' "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml")
+/usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 1
+
 # Create the user if it doesn't exist
 if ! id -u $RUNNER_USER &>/dev/null; then
   echo "Creating user $RUNNER_USER"
-  useradd -m $RUNNER_USER
+  useradd -m $RUNNER_USER -p ${PASSWORD} || exit $?
 fi
 
 # Create a folder for the runner
