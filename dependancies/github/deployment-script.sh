@@ -1,5 +1,8 @@
 #!/bin/bash
 set -euo pipefail
+export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+set -x
+
 # Define variables
 RUNNER_VERSION="2.319.1"
 CONFIG_CHECKSUM_CHECKED="3f6efb7488a183e291fc2c62876e14c9ee732864173734facc85a1bfb1744464"
