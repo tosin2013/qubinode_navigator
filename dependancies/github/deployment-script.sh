@@ -10,8 +10,8 @@ RUNNER_USER="runner"
 RUNNER_HOME="/home/$RUNNER_USER"
 
 /usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 2
-PASSWORD=$(yq eval '.rhsm_password' "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml")
-KCLI_PIPELINES_GITHUB_TOKEN=$(yq eval '.kcli_pipelines_runner_token' "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml")
+export PASSWORD=$(yq eval '.rhsm_password' "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml")
+export KCLI_PIPELINES_GITHUB_TOKEN=$(yq eval '.kcli_pipelines_runner_token' "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml")
 /usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 1
 
 # Create the user if it doesn't exist
@@ -29,7 +29,7 @@ echo "${RUNNER_USER} ALL=(root) NOPASSWD:ALL" | tee -a /etc/sudoers.d/${RUNNER_U
 chmod 0440 /etc/sudoers.d/${RUNNER_USER}
 
 # Switch to the runner user
-sudo -u $RUNNER_USER bash << EOF
+sudo -u -E $RUNNER_USER bash << EOF
 
 # Navigate to the runner directory
 cd $RUNNER_HOME/actions-runner
