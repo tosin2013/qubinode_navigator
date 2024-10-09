@@ -50,7 +50,7 @@ tar xzf actions-runner-linux-x64-$RUNNER_VERSION.tar.gz
 # Create the runner and start the configuration experience
 echo "Configuring runner..."
 echo ./config.sh --unattended --url https://github.com/tosin2013/kcli-pipelines --token "$KCLI_PIPELINES_RUNNER_TOKEN" --labels "self-hosted,Linux,X64,${GUID}-github-runner" --name "${GUID}-github-runner" --replace 
-./config.sh --unattended --url https://github.com/tosin2013/kcli-pipelines --token "$KCLI_PIPELINES_RUNNER_TOKEN" --labels "self-hosted,Linux,X64,${GUID}-github-runner" --name "${GUID}-github-runner" --replace || exit $?
+nohup ./config.sh --unattended --url https://github.com/tosin2013/kcli-pipelines --token "$KCLI_PIPELINES_RUNNER_TOKEN" --labels "self-hosted,Linux,X64,${GUID}-github-runner" --name "${GUID}-github-runner" --replace || exit $?
 echo "Runner configured!"
 
 # Start the runner as a background job
