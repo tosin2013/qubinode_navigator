@@ -11,6 +11,7 @@ RUNNER_HOME="/home/$RUNNER_USER"
 
 /usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 2
 PASSWORD=$(yq eval '.rhsm_password' "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml")
+KCLI_PIPELINES_GITHUB_TOKEN=$(yq eval '.kcli_pipelines_runner_token' "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml")
 /usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 1
 
 # Create the user if it doesn't exist
@@ -48,8 +49,8 @@ tar xzf actions-runner-linux-x64-$RUNNER_VERSION.tar.gz
 
 # Create the runner and start the configuration experience
 echo "Configuring runner..."
-echo ./config.sh --unattended --url https://github.com/tosin2013/kcli-pipelines --token "$KCLI_PIPELINES_GITHUB_TOKEN" --labels "self-hosted,Linux,X64,${GUID}-github-runner" --name "${GUID}-github-runner" --replace 
-./config.sh --unattended --url https://github.com/tosin2013/kcli-pipelines --token "$KCLI_PIPELINES_GITHUB_TOKEN" --labels "self-hosted,Linux,X64,${GUID}-github-runner" --name "${GUID}-github-runner" --replace || exit $?
+echo ./config.sh --unattended --url https://github.com/tosin2013/kcli-pipelines --token "$KCLI_PIPELINES_RUNNER_TOKEN" --labels "self-hosted,Linux,X64,${GUID}-github-runner" --name "${GUID}-github-runner" --replace 
+./config.sh --unattended --url https://github.com/tosin2013/kcli-pipelines --token "$KCLI_PIPELINES_RUNNER_TOKEN" --labels "self-hosted,Linux,X64,${GUID}-github-runner" --name "${GUID}-github-runner" --replace || exit $?
 echo "Runner configured!"
 
 # Start the runner as a background job
