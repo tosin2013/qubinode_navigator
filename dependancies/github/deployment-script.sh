@@ -54,6 +54,7 @@ nohup ./config.sh --unattended --url https://github.com/tosin2013/kcli-pipelines
 echo "Runner configured!"
 
 # Start the runner as service
+cd $RUNNER_HOME/actions-runner
 sudo ./svc.sh  install
 sudo ./svc.sh start
 
