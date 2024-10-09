@@ -53,8 +53,10 @@ echo ./config.sh --unattended --url https://github.com/tosin2013/kcli-pipelines 
 nohup ./config.sh --unattended --url https://github.com/tosin2013/kcli-pipelines --token "$KCLI_PIPELINES_RUNNER_TOKEN" --labels "self-hosted,Linux,X64,${GUID}-github-runner" --name "${GUID}-github-runner" --replace &
 echo "Runner configured!"
 
-# Start the runner as a background job
-nohup ./run.sh | tee /tmp/runner.log > /dev/null 2>&1 &
+# Start the runner as service
+sudo ./svc.sh  install
+sudo ./svc.sh start
+
 
 # Log the process ID
 echo "Runner started with PID \$!"
@@ -62,4 +64,4 @@ echo "Runner started with PID \$!"
 EOF
 
 # Notify the user
-echo "Runner has been started as a background job for user $RUNNER_USER."
+echo "Runner has been started  as service for user $RUNNER_USER."
