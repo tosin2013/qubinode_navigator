@@ -29,7 +29,7 @@ echo "${RUNNER_USER} ALL=(root) NOPASSWD:ALL" | tee -a /etc/sudoers.d/${RUNNER_U
 chmod 0440 /etc/sudoers.d/${RUNNER_USER}
 
 # Switch to the runner user
-sudo -u -E $RUNNER_USER bash << EOF
+sudo -u  $RUNNER_USER bash << EOF
 
 # Navigate to the runner directory
 cd $RUNNER_HOME/actions-runner
