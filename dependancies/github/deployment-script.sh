@@ -11,7 +11,7 @@ RUNNER_HOME="/home/$RUNNER_USER"
 
 /usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 2
 export PASSWORD=$(yq eval '.rhsm_password' "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml")
-export KCLI_PIPELINES_GITHUB_TOKEN=$(yq eval '.kcli_pipelines_runner_token' "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml")
+export KCLI_PIPELINES_RUNNER_TOKEN=$(yq eval '.kcli_pipelines_runner_token' "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml")
 /usr/local/bin/ansiblesafe -f "/opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml" -o 1
 
 # Create the user if it doesn't exist
