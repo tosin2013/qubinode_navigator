@@ -2,4 +2,8 @@
 /ansible-navigator/roles/
 /ansible-navigator/collections/
 vault.*
-*.vault_password
+*.vault_passwordaider-env/
+aider-env/bin/activate
+aider_setup.sh
+aider-env/
+.aider*

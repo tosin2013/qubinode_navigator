@@ -54,7 +54,7 @@ nohup ./config.sh --unattended --url https://github.com/tosin2013/kcli-pipelines
 echo "Runner configured!"
 
 # Start the runner as a background job
-nohup ./run.sh & | tee /tmp/runner.log 
+nohup ./run.sh | tee /tmp/runner.log > /dev/null 2>&1 &
 
 # Log the process ID
 echo "Runner started with PID \$!"
