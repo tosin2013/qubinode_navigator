@@ -462,7 +462,8 @@ generate_inventory() {
     local control_host="$(hostname -I | awk '{print $1}')"
     local control_user="$USER"
     echo "[control]" > "/opt/qubinode_navigator/inventories/$INVENTORY/hosts"
-    echo "control ansible_host=$control_host ansible_user=$control_user" >> "/opt/qubinode_navigator/inventories/$INVENTORY/hosts"
+    #echo "control ansible_host=$control_host ansible_user=$control_user" >> "/opt/qubinode_navigator/inventories/$INVENTORY/hosts"
+    echo "control ansible_connection=local ansible_user=$control_user" >> "/opt/qubinode_navigator/inventories/$INVENTORY/hosts"
     if [ "${DEVELOPMENT_MODEL}" == "true" ]; then
         if ! ansible-navigator inventory --list -m stdout --vault-password-file ~/.vault_password; then
             log_message "Failed to list Ansible inventory"
