@@ -1,6 +1,7 @@
 ---
 collections:
-  - ansible.posix
+  - name: ansible.posix
+    version: 1.4.0
   - containers.podman
   - community.general
   - community.libvirt
