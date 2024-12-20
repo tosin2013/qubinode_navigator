@@ -7,3 +7,4 @@ aider-env/bin/activate
 aider_setup.sh
 aider-env/
 .aider*
+notouch.env
