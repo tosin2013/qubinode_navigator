@@ -1,4 +1,4 @@
-/ansible-builder/context/
+/ansible-builder/context/notouch.env
 /ansible-navigator/roles/
 /ansible-navigator/collections/
 vault.*
