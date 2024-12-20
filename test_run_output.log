@@ -1,0 +1,557 @@
++(./rhel9-linux-hypervisor.sh:5): set -euo pipefail
++(./rhel9-linux-hypervisor.sh:8): source scripts/common_functions.sh
++(./rhel9-linux-hypervisor.sh:9): source scripts/package_installation/install_packages.sh
++(./rhel9-linux-hypervisor.sh:10): source scripts/kvm_configuration/configure_kvm.sh
++(./rhel9-linux-hypervisor.sh:11): source scripts/ansible_navigator/configure_ansible_navigator.sh
++(./rhel9-linux-hypervisor.sh:12): source scripts/hashicorp_vault/configure_hashicorp_vault.sh
++(./rhel9-linux-hypervisor.sh:13): source scripts/ssh_configuration/configure_ssh.sh
++(./rhel9-linux-hypervisor.sh:14): source scripts/firewall_configuration/configure_firewalld.sh
++(./rhel9-linux-hypervisor.sh:15): source scripts/inventory_generation/generate_inventory.sh
++(./rhel9-linux-hypervisor.sh:16): source scripts/bash_aliases/configure_bash_aliases.sh
++(./rhel9-linux-hypervisor.sh:17): source scripts/route53_configuration/configure_route53.sh
++(./rhel9-linux-hypervisor.sh:18): source scripts/configure_navigator.sh
++(./rhel9-linux-hypervisor.sh:19): source scripts/cockpit_ssl/configure_cockpit_ssl.sh
++(./rhel9-linux-hypervisor.sh:20): source scripts/integration/configure_integration.sh
++(./rhel9-linux-hypervisor.sh:21): source scripts/lvm_configuration/configure_lvm_storage.sh
++(./rhel9-linux-hypervisor.sh:22): source scripts/deploy_kvmhost.sh
++(./rhel9-linux-hypervisor.sh:23): source scripts/clone_repository.sh
++(./rhel9-linux-hypervisor.sh:63): main
++(./rhel9-linux-hypervisor.sh:29): main(): check_root
++(scripts/common_functions.sh:20): check_root(): '[' 0 -ne 0 ']'
++(./rhel9-linux-hypervisor.sh:30): main(): handle_hashicorp_vault
++(scripts/hashicorp_vault/configure_hashicorp_vault.sh:13): handle_hashicorp_vault(): '[' false = true ']'
++(./rhel9-linux-hypervisor.sh:31): main(): '[' false == true ']'
++(./rhel9-linux-hypervisor.sh:34): main(): install_packages
++(scripts/package_installation/install_packages.sh:4): install_packages(): log_message 'Updating system packages...'
+++(scripts/package_installation/install_packages.sh:66): log_message(): date '+%Y-%m-%d %H:%M:%S'
++(scripts/package_installation/install_packages.sh:66): log_message(): echo '[2024-12-20 17:22:51] Updating system packages...'
+[2024-12-20 17:22:51] Updating system packages...
++(scripts/package_installation/install_packages.sh:5): install_packages(): dnf update -y
+Updating Subscription Management repositories.
+Unable to read consumer identity
+
+This system is not registered with an entitlement server. You can use "rhc" or "subscription-manager" to register.
+
+Last metadata expiration check: 0:43:27 ago on Fri Dec 20 16:39:25 2024.
+Dependencies resolved.
+Nothing to do.
+Complete!
++(scripts/package_installation/install_packages.sh:10): install_packages(): log_message 'Installing required packages...'
+++(scripts/package_installation/install_packages.sh:66): log_message(): date '+%Y-%m-%d %H:%M:%S'
++(scripts/package_installation/install_packages.sh:66): log_message(): echo '[2024-12-20 17:22:53] Installing required packages...'
+[2024-12-20 17:22:53] Installing required packages...
++(scripts/package_installation/install_packages.sh:11): install_packages(): packages=('bzip2-devel' 'libffi-devel' 'wget' 'vim' 'podman' 'ncurses-devel' 'sqlite-devel' 'firewalld' 'make' 'gcc' 'git' 'unzip' 'sshpass' 'lvm2' 'python3' 'python3-pip' 'java-11-openjdk-devel' 'perl-Digest-SHA')
++(scripts/package_installation/install_packages.sh:11): install_packages(): local packages
++(scripts/package_installation/install_packages.sh:14): install_packages(): rpm -q ansible-core
++(scripts/package_installation/install_packages.sh:22): install_packages(): for package in "${packages[@]}"
++(scripts/package_installation/install_packages.sh:23): install_packages(): install_package bzip2-devel
++(scripts/package_installation/install_packages.sh:56): install_package(): local package=bzip2-devel
++(scripts/package_installation/install_packages.sh:57): install_package(): rpm -q bzip2-devel
++(scripts/package_installation/install_packages.sh:22): install_packages(): for package in "${packages[@]}"
++(scripts/package_installation/install_packages.sh:23): install_packages(): install_package libffi-devel
++(scripts/package_installation/install_packages.sh:56): install_package(): local package=libffi-devel
++(scripts/package_installation/install_packages.sh:57): install_package(): rpm -q libffi-devel
++(scripts/package_installation/install_packages.sh:22): install_packages(): for package in "${packages[@]}"
++(scripts/package_installation/install_packages.sh:23): install_packages(): install_package wget
++(scripts/package_installation/install_packages.sh:56): install_package(): local package=wget
++(scripts/package_installation/install_packages.sh:57): install_package(): rpm -q wget
++(scripts/package_installation/install_packages.sh:22): install_packages(): for package in "${packages[@]}"
++(scripts/package_installation/install_packages.sh:23): install_packages(): install_package vim
++(scripts/package_installation/install_packages.sh:56): install_package(): local package=vim
++(scripts/package_installation/install_packages.sh:57): install_package(): rpm -q vim
++(scripts/package_installation/install_packages.sh:58): install_package(): dnf install -y vim
+Updating Subscription Management repositories.
+Unable to read consumer identity
+
+This system is not registered with an entitlement server. You can use "rhc" or "subscription-manager" to register.
+
+Last metadata expiration check: 0:43:28 ago on Fri Dec 20 16:39:25 2024.
+Package vim-enhanced-2:8.2.2637-21.el9.x86_64 is already installed.
+Dependencies resolved.
+Nothing to do.
+Complete!
++(scripts/package_installation/install_packages.sh:22): install_packages(): for package in "${packages[@]}"
++(scripts/package_installation/install_packages.sh:23): install_packages(): install_package podman
++(scripts/package_installation/install_packages.sh:56): install_package(): local package=podman
++(scripts/package_installation/install_packages.sh:57): install_package(): rpm -q podman
++(scripts/package_installation/install_packages.sh:22): install_packages(): for package in "${packages[@]}"
++(scripts/package_installation/install_packages.sh:23): install_packages(): install_package ncurses-devel
++(scripts/package_installation/install_packages.sh:56): install_package(): local package=ncurses-devel
++(scripts/package_installation/install_packages.sh:57): install_package(): rpm -q ncurses-devel
++(scripts/package_installation/install_packages.sh:22): install_packages(): for package in "${packages[@]}"
++(scripts/package_installation/install_packages.sh:23): install_packages(): install_package sqlite-devel
++(scripts/package_installation/install_packages.sh:56): install_package(): local package=sqlite-devel
++(scripts/package_installation/install_packages.sh:57): install_package(): rpm -q sqlite-devel
++(scripts/package_installation/install_packages.sh:22): install_packages(): for package in "${packages[@]}"
++(scripts/package_installation/install_packages.sh:23): install_packages(): install_package firewalld
++(scripts/package_installation/install_packages.sh:56): install_package(): local package=firewalld
++(scripts/package_installation/install_packages.sh:57): install_package(): rpm -q firewalld
++(scripts/package_installation/install_packages.sh:22): install_packages(): for package in "${packages[@]}"
++(scripts/package_installation/install_packages.sh:23): install_packages(): install_package make
++(scripts/package_installation/install_packages.sh:56): install_package(): local package=make
++(scripts/package_installation/install_packages.sh:57): install_package(): rpm -q make
++(scripts/package_installation/install_packages.sh:22): install_packages(): for package in "${packages[@]}"
++(scripts/package_installation/install_packages.sh:23): install_packages(): install_package gcc
++(scripts/package_installation/install_packages.sh:56): install_package(): local package=gcc
++(scripts/package_installation/install_packages.sh:57): install_package(): rpm -q gcc
++(scripts/package_installation/install_packages.sh:22): install_packages(): for package in "${packages[@]}"
++(scripts/package_installation/install_packages.sh:23): install_packages(): install_package git
++(scripts/package_installation/install_packages.sh:56): install_package(): local package=git
++(scripts/package_installation/install_packages.sh:57): install_package(): rpm -q git
++(scripts/package_installation/install_packages.sh:22): install_packages(): for package in "${packages[@]}"
++(scripts/package_installation/install_packages.sh:23): install_packages(): install_package unzip
++(scripts/package_installation/install_packages.sh:56): install_package(): local package=unzip
++(scripts/package_installation/install_packages.sh:57): install_package(): rpm -q unzip
++(scripts/package_installation/install_packages.sh:22): install_packages(): for package in "${packages[@]}"
++(scripts/package_installation/install_packages.sh:23): install_packages(): install_package sshpass
++(scripts/package_installation/install_packages.sh:56): install_package(): local package=sshpass
++(scripts/package_installation/install_packages.sh:57): install_package(): rpm -q sshpass
++(scripts/package_installation/install_packages.sh:22): install_packages(): for package in "${packages[@]}"
++(scripts/package_installation/install_packages.sh:23): install_packages(): install_package lvm2
++(scripts/package_installation/install_packages.sh:56): install_package(): local package=lvm2
++(scripts/package_installation/install_packages.sh:57): install_package(): rpm -q lvm2
++(scripts/package_installation/install_packages.sh:22): install_packages(): for package in "${packages[@]}"
++(scripts/package_installation/install_packages.sh:23): install_packages(): install_package python3
++(scripts/package_installation/install_packages.sh:56): install_package(): local package=python3
++(scripts/package_installation/install_packages.sh:57): install_package(): rpm -q python3
++(scripts/package_installation/install_packages.sh:22): install_packages(): for package in "${packages[@]}"
++(scripts/package_installation/install_packages.sh:23): install_packages(): install_package python3-pip
++(scripts/package_installation/install_packages.sh:56): install_package(): local package=python3-pip
++(scripts/package_installation/install_packages.sh:57): install_package(): rpm -q python3-pip
++(scripts/package_installation/install_packages.sh:22): install_packages(): for package in "${packages[@]}"
++(scripts/package_installation/install_packages.sh:23): install_packages(): install_package java-11-openjdk-devel
++(scripts/package_installation/install_packages.sh:56): install_package(): local package=java-11-openjdk-devel
++(scripts/package_installation/install_packages.sh:57): install_package(): rpm -q java-11-openjdk-devel
++(scripts/package_installation/install_packages.sh:22): install_packages(): for package in "${packages[@]}"
++(scripts/package_installation/install_packages.sh:23): install_packages(): install_package perl-Digest-SHA
++(scripts/package_installation/install_packages.sh:56): install_package(): local package=perl-Digest-SHA
++(scripts/package_installation/install_packages.sh:57): install_package(): rpm -q perl-Digest-SHA
++(scripts/package_installation/install_packages.sh:26): install_packages(): log_message 'Installing Ansible Core 2.13.1, Ansible Vault, and Navigator...'
+++(scripts/package_installation/install_packages.sh:66): log_message(): date '+%Y-%m-%d %H:%M:%S'
++(scripts/package_installation/install_packages.sh:66): log_message(): echo '[2024-12-20 17:22:54] Installing Ansible Core 2.13.1, Ansible Vault, and Navigator...'
+[2024-12-20 17:22:54] Installing Ansible Core 2.13.1, Ansible Vault, and Navigator...
++(scripts/package_installation/install_packages.sh:27): install_packages(): python3 -m pip install ansible-core==2.13.10 ansible-navigator ansible-vault
+Requirement already satisfied: ansible-core==2.13.10 in /usr/local/lib/python3.9/site-packages (2.13.10)
+Requirement already satisfied: ansible-navigator in /root/.local/lib/python3.9/site-packages (24.2.0)
+Requirement already satisfied: ansible-vault in /usr/local/lib/python3.9/site-packages (2.1.0)
+Requirement already satisfied: resolvelib<0.9.0,>=0.5.3 in /usr/local/lib/python3.9/site-packages (from ansible-core==2.13.10) (0.8.1)
+Requirement already satisfied: jinja2>=3.0.0 in /usr/local/lib/python3.9/site-packages (from ansible-core==2.13.10) (3.1.4)
+Requirement already satisfied: packaging in /root/.local/lib/python3.9/site-packages (from ansible-core==2.13.10) (24.2)
+Requirement already satisfied: cryptography in /usr/local/lib64/python3.9/site-packages (from ansible-core==2.13.10) (44.0.0)
+Requirement already satisfied: PyYAML>=5.1 in /usr/lib64/python3.9/site-packages (from ansible-core==2.13.10) (5.4.1)
+Requirement already satisfied: importlib-metadata in /root/.local/lib/python3.9/site-packages (from ansible-navigator) (6.2.1)
+Requirement already satisfied: jsonschema in /root/.local/lib/python3.9/site-packages (from ansible-navigator) (4.23.0)
+Requirement already satisfied: ansible-runner<3,>=2.3.1 in /root/.local/lib/python3.9/site-packages (from ansible-navigator) (2.4.0)
+Requirement already satisfied: ansible-lint>=6.19.0 in /root/.local/lib/python3.9/site-packages (from ansible-navigator) (6.22.2)
+Requirement already satisfied: tzdata in /root/.local/lib/python3.9/site-packages (from ansible-navigator) (2024.2)
+Requirement already satisfied: ansible-builder>=3.0.0 in /root/.local/lib/python3.9/site-packages (from ansible-navigator) (3.1.0)
+Requirement already satisfied: onigurumacffi<2,>=1.1.0 in /root/.local/lib/python3.9/site-packages (from ansible-navigator) (1.3.0)
+Requirement already satisfied: ansible in /usr/local/lib/python3.9/site-packages (from ansible-vault) (6.7.0)
+Requirement already satisfied: setuptools in /usr/lib/python3.9/site-packages (from ansible-vault) (53.0.0)
+Requirement already satisfied: bindep in /root/.local/lib/python3.9/site-packages (from ansible-builder>=3.0.0->ansible-navigator) (2.11.0)
+Requirement already satisfied: wcmatch>=8.1.2 in /root/.local/lib/python3.9/site-packages (from ansible-lint>=6.19.0->ansible-navigator) (10.0)
+Requirement already satisfied: rich>=12.0.0 in /root/.local/lib/python3.9/site-packages (from ansible-lint>=6.19.0->ansible-navigator) (13.9.4)
+Requirement already satisfied: yamllint>=1.30.0 in /root/.local/lib/python3.9/site-packages (from ansible-lint>=6.19.0->ansible-navigator) (1.35.1)
+Requirement already satisfied: filelock>=3.3.0 in /root/.local/lib/python3.9/site-packages (from ansible-lint>=6.19.0->ansible-navigator) (3.16.1)
+Requirement already satisfied: subprocess-tee>=0.4.1 in /root/.local/lib/python3.9/site-packages (from ansible-lint>=6.19.0->ansible-navigator) (0.4.2)
+Requirement already satisfied: ansible-compat>=4.1.11 in /usr/local/lib/python3.9/site-packages (from ansible-lint>=6.19.0->ansible-navigator) (24.5.1)
+Requirement already satisfied: ruamel.yaml>=0.18.5 in /root/.local/lib/python3.9/site-packages (from ansible-lint>=6.19.0->ansible-navigator) (0.18.6)
+Requirement already satisfied: pathspec>=0.10.3 in /root/.local/lib/python3.9/site-packages (from ansible-lint>=6.19.0->ansible-navigator) (0.12.1)
+Requirement already satisfied: black>=22.8.0 in /root/.local/lib/python3.9/site-packages (from ansible-lint>=6.19.0->ansible-navigator) (24.10.0)
+Requirement already satisfied: pexpect>=4.5 in /usr/lib/python3.9/site-packages (from ansible-runner<3,>=2.3.1->ansible-navigator) (4.8.0)
+Requirement already satisfied: python-daemon in /root/.local/lib/python3.9/site-packages (from ansible-runner<3,>=2.3.1->ansible-navigator) (3.1.2)
+Requirement already satisfied: zipp>=0.5 in /root/.local/lib/python3.9/site-packages (from importlib-metadata->ansible-navigator) (3.21.0)
+Requirement already satisfied: MarkupSafe>=2.0 in /usr/local/lib64/python3.9/site-packages (from jinja2>=3.0.0->ansible-core==2.13.10) (3.0.2)
+Requirement already satisfied: referencing>=0.28.4 in /root/.local/lib/python3.9/site-packages (from jsonschema->ansible-navigator) (0.35.1)
+Requirement already satisfied: jsonschema-specifications>=2023.03.6 in /root/.local/lib/python3.9/site-packages (from jsonschema->ansible-navigator) (2024.10.1)
+Requirement already satisfied: attrs>=22.2.0 in /root/.local/lib/python3.9/site-packages (from jsonschema->ansible-navigator) (24.3.0)
+Requirement already satisfied: rpds-py>=0.7.1 in /root/.local/lib/python3.9/site-packages (from jsonschema->ansible-navigator) (0.22.3)
+Requirement already satisfied: cffi>=1 in /usr/local/lib64/python3.9/site-packages (from onigurumacffi<2,>=1.1.0->ansible-navigator) (1.17.1)
+Requirement already satisfied: typing-extensions>=4.5.0 in /root/.local/lib/python3.9/site-packages (from ansible-compat>=4.1.11->ansible-lint>=6.19.0->ansible-navigator) (4.12.2)
+Requirement already satisfied: mypy-extensions>=0.4.3 in /root/.local/lib/python3.9/site-packages (from black>=22.8.0->ansible-lint>=6.19.0->ansible-navigator) (1.0.0)
+Requirement already satisfied: platformdirs>=2 in /root/.local/lib/python3.9/site-packages (from black>=22.8.0->ansible-lint>=6.19.0->ansible-navigator) (4.3.6)
+Requirement already satisfied: click>=8.0.0 in /root/.local/lib/python3.9/site-packages (from black>=22.8.0->ansible-lint>=6.19.0->ansible-navigator) (8.1.7)
+Requirement already satisfied: tomli>=1.1.0 in /root/.local/lib/python3.9/site-packages (from black>=22.8.0->ansible-lint>=6.19.0->ansible-navigator) (2.2.1)
+Requirement already satisfied: pycparser in /usr/local/lib/python3.9/site-packages (from cffi>=1->onigurumacffi<2,>=1.1.0->ansible-navigator) (2.22)
+Requirement already satisfied: pygments<3.0.0,>=2.13.0 in /root/.local/lib/python3.9/site-packages (from rich>=12.0.0->ansible-lint>=6.19.0->ansible-navigator) (2.18.0)
+Requirement already satisfied: markdown-it-py>=2.2.0 in /root/.local/lib/python3.9/site-packages (from rich>=12.0.0->ansible-lint>=6.19.0->ansible-navigator) (3.0.0)
+Requirement already satisfied: ruamel.yaml.clib>=0.2.7 in /root/.local/lib/python3.9/site-packages (from ruamel.yaml>=0.18.5->ansible-lint>=6.19.0->ansible-navigator) (0.2.12)
+Requirement already satisfied: bracex>=2.1.1 in /root/.local/lib/python3.9/site-packages (from wcmatch>=8.1.2->ansible-lint>=6.19.0->ansible-navigator) (2.5.post1)
+Requirement already satisfied: pbr>=2.0.0 in /root/.local/lib/python3.9/site-packages (from bindep->ansible-builder>=3.0.0->ansible-navigator) (6.1.0)
+Requirement already satisfied: distro>=1.7.0 in /root/.local/lib/python3.9/site-packages (from bindep->ansible-builder>=3.0.0->ansible-navigator) (1.9.0)
+Requirement already satisfied: Parsley in /root/.local/lib/python3.9/site-packages (from bindep->ansible-builder>=3.0.0->ansible-navigator) (1.3)
+Requirement already satisfied: lockfile>=0.10 in /root/.local/lib/python3.9/site-packages (from python-daemon->ansible-runner<3,>=2.3.1->ansible-navigator) (0.12.2)
+Requirement already satisfied: mdurl~=0.1 in /root/.local/lib/python3.9/site-packages (from markdown-it-py>=2.2.0->rich>=12.0.0->ansible-lint>=6.19.0->ansible-navigator) (0.1.2)
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
++(scripts/package_installation/install_packages.sh:33): install_packages(): log_message 'Adding /usr/local/bin to PATH...'
+++(scripts/package_installation/install_packages.sh:66): log_message(): date '+%Y-%m-%d %H:%M:%S'
++(scripts/package_installation/install_packages.sh:66): log_message(): echo '[2024-12-20 17:22:55] Adding /usr/local/bin to PATH...'
+[2024-12-20 17:22:55] Adding /usr/local/bin to PATH...
++(scripts/package_installation/install_packages.sh:34): install_packages(): echo 'export PATH=$PATH:/usr/local/bin'
++(scripts/package_installation/install_packages.sh:35): install_packages(): log_message 'Please run '\''source ~/.bashrc'\'' or restart your shell to apply PATH changes.'
+++(scripts/package_installation/install_packages.sh:66): log_message(): date '+%Y-%m-%d %H:%M:%S'
++(scripts/package_installation/install_packages.sh:66): log_message(): echo '[2024-12-20 17:22:55] Please run '\''source ~/.bashrc'\'' or restart your shell to apply PATH changes.'
+[2024-12-20 17:22:55] Please run 'source ~/.bashrc' or restart your shell to apply PATH changes.
++(scripts/package_installation/install_packages.sh:38): install_packages(): dnf groupinstall -y 'Development Tools'
+Updating Subscription Management repositories.
+Unable to read consumer identity
+
+This system is not registered with an entitlement server. You can use "rhc" or "subscription-manager" to register.
+
+Last metadata expiration check: 0:43:31 ago on Fri Dec 20 16:39:25 2024.
+Dependencies resolved.
+================================================================================
+ Package           Architecture     Version             Repository         Size
+================================================================================
+Installing Groups:
+ Development Tools                                                             
+
+Transaction Summary
+================================================================================
+
+Complete!
++(scripts/package_installation/install_packages.sh:44): install_packages(): YQ_VERSION=4.25.2
++(scripts/package_installation/install_packages.sh:45): install_packages(): command -v yq
++(scripts/package_installation/install_packages.sh:51): install_packages(): log_message 'yq is already installed.'
+++(scripts/package_installation/install_packages.sh:66): log_message(): date '+%Y-%m-%d %H:%M:%S'
++(scripts/package_installation/install_packages.sh:66): log_message(): echo '[2024-12-20 17:22:56] yq is already installed.'
+[2024-12-20 17:22:56] yq is already installed.
++(./rhel9-linux-hypervisor.sh:35): main(): configure_firewalld
++(scripts/firewall_configuration/configure_firewalld.sh:14): configure_firewalld(): log_message 'Configuring firewalld...'
+++(scripts/package_installation/install_packages.sh:66): log_message(): date '+%Y-%m-%d %H:%M:%S'
++(scripts/package_installation/install_packages.sh:66): log_message(): echo '[2024-12-20 17:22:56] Configuring firewalld...'
+[2024-12-20 17:22:56] Configuring firewalld...
++(scripts/firewall_configuration/configure_firewalld.sh:15): configure_firewalld(): systemctl start firewalld
++(scripts/firewall_configuration/configure_firewalld.sh:19): configure_firewalld(): systemctl enable firewalld
++(./rhel9-linux-hypervisor.sh:36): main(): configure_lvm_storage
++(scripts/lvm_configuration/configure_lvm_storage.sh:5): configure_lvm_storage(): log_message 'Configuring LVM storage...'
+++(scripts/package_installation/install_packages.sh:66): log_message(): date '+%Y-%m-%d %H:%M:%S'
++(scripts/package_installation/install_packages.sh:66): log_message(): echo '[2024-12-20 17:22:56] Configuring LVM storage...'
+[2024-12-20 17:22:56] Configuring LVM storage...
++(scripts/lvm_configuration/configure_lvm_storage.sh:6): configure_lvm_storage(): '[' '!' -f /tmp/configure-lvm.sh ']'
++(scripts/lvm_configuration/configure_lvm_storage.sh:11): configure_lvm_storage(): /tmp/configure-lvm.sh
++ sudo /usr/sbin/vgdisplay
++ grep -q vg_qubi
++ echo 'vg_qubi found'
+vg_qubi found
++(./rhel9-linux-hypervisor.sh:37): main(): clone_repository
++(scripts/clone_repository.sh:5): clone_repository(): '[' '!' -d /opt/qubinode_navigator ']'
++(./rhel9-linux-hypervisor.sh:38): main(): configure_ansible_navigator
++(scripts/ansible_navigator/configure_ansible_navigator.sh:31): configure_ansible_navigator(): command -v ansible-navigator
++(scripts/ansible_navigator/configure_ansible_navigator.sh:40): configure_ansible_navigator(): log_message 'Configuring ansible-navigator...'
+++(scripts/package_installation/install_packages.sh:66): log_message(): date '+%Y-%m-%d %H:%M:%S'
++(scripts/package_installation/install_packages.sh:66): log_message(): echo '[2024-12-20 17:22:56] Configuring ansible-navigator...'
+[2024-12-20 17:22:56] Configuring ansible-navigator...
++(scripts/ansible_navigator/configure_ansible_navigator.sh:41): configure_ansible_navigator(): cd /opt/qubinode_navigator
++(scripts/ansible_navigator/configure_ansible_navigator.sh:42): configure_ansible_navigator(): pip3 install -r requirements.txt
+Requirement already satisfied: fire in /usr/local/lib/python3.9/site-packages (from -r requirements.txt (line 1)) (0.7.0)
+Requirement already satisfied: netifaces in /usr/lib64/python3.9/site-packages (from -r requirements.txt (line 2)) (0.10.6)
+Requirement already satisfied: psutil in /usr/local/lib64/python3.9/site-packages (from -r requirements.txt (line 3)) (6.1.0)
+Requirement already satisfied: requests in /usr/lib/python3.9/site-packages (from -r requirements.txt (line 4)) (2.25.1)
+Requirement already satisfied: termcolor in /usr/local/lib/python3.9/site-packages (from fire->-r requirements.txt (line 1)) (2.5.0)
+Requirement already satisfied: idna<3,>=2.5 in /usr/lib/python3.9/site-packages (from requests->-r requirements.txt (line 4)) (2.10)
+Requirement already satisfied: urllib3<1.27,>=1.21.1 in /usr/lib/python3.9/site-packages (from requests->-r requirements.txt (line 4)) (1.26.5)
+Requirement already satisfied: chardet<5,>=3.0.2 in /usr/lib/python3.9/site-packages (from requests->-r requirements.txt (line 4)) (4.0.0)
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
++(scripts/ansible_navigator/configure_ansible_navigator.sh:47): configure_ansible_navigator(): log_message 'Configuring Ansible Navigator settings'
+++(scripts/package_installation/install_packages.sh:66): log_message(): date '+%Y-%m-%d %H:%M:%S'
++(scripts/package_installation/install_packages.sh:66): log_message(): echo '[2024-12-20 17:22:57] Configuring Ansible Navigator settings'
+[2024-12-20 17:22:57] Configuring Ansible Navigator settings
++(scripts/ansible_navigator/configure_ansible_navigator.sh:48): configure_ansible_navigator(): cat
++(./rhel9-linux-hypervisor.sh:39): main(): configure_ansible_vault
++(scripts/hashicorp_vault/configure_hashicorp_vault.sh:38): configure_ansible_vault(): log_message 'Configuring Ansible Vault...'
+++(scripts/package_installation/install_packages.sh:66): log_message(): date '+%Y-%m-%d %H:%M:%S'
++(scripts/package_installation/install_packages.sh:66): log_message(): echo '[2024-12-20 17:22:57] Configuring Ansible Vault...'
+[2024-12-20 17:22:57] Configuring Ansible Vault...
++(scripts/hashicorp_vault/configure_hashicorp_vault.sh:39): configure_ansible_vault(): command -v ansiblesafe
++(scripts/hashicorp_vault/configure_hashicorp_vault.sh:52): configure_ansible_vault(): '[' '!' -f /opt/qubinode_navigator/ansible_vault_setup.sh ']'
++(scripts/hashicorp_vault/configure_hashicorp_vault.sh:59): configure_ansible_vault(): rm -f /root/.vault_password
++(scripts/hashicorp_vault/configure_hashicorp_vault.sh:60): configure_ansible_vault(): '[' true == true ']'
++(scripts/hashicorp_vault/configure_hashicorp_vault.sh:61): configure_ansible_vault(): '[' -z ewM7az89cPE1 ']'
++(scripts/hashicorp_vault/configure_hashicorp_vault.sh:65): configure_ansible_vault(): echo ewM7az89cPE1
++(scripts/hashicorp_vault/configure_hashicorp_vault.sh:66): configure_ansible_vault(): sudo cp /root/.vault_password /home/lab-user/.vault_password
++(scripts/hashicorp_vault/configure_hashicorp_vault.sh:67): configure_ansible_vault(): bash ./ansible_vault_setup.sh
+The .vault_password file already exists. Skipping password setup.
+The ANSIBLE_VAULT_PASSWORD_FILE environment variable is not set. Please source your 'source ~/.bashrc' file to load the variable.
+Linking the password file to the current directory...
+ln: failed to create hard link './.vault_password': File exists
++(scripts/hashicorp_vault/configure_hashicorp_vault.sh:71): configure_ansible_vault(): '[' -f /tmp/config.yml ']'
++(scripts/hashicorp_vault/configure_hashicorp_vault.sh:71): configure_ansible_vault(): '[' false == false ']'
++(scripts/hashicorp_vault/configure_hashicorp_vault.sh:72): configure_ansible_vault(): log_message 'Copying config.yml to vault.yml'
+++(scripts/package_installation/install_packages.sh:66): log_message(): date '+%Y-%m-%d %H:%M:%S'
++(scripts/package_installation/install_packages.sh:66): log_message(): echo '[2024-12-20 17:22:57] Copying config.yml to vault.yml'
+[2024-12-20 17:22:57] Copying config.yml to vault.yml
++(scripts/hashicorp_vault/configure_hashicorp_vault.sh:73): configure_ansible_vault(): '[' -f /opt/qubinode_navigator/inventories/rhel9-equinix/group_vars/control/vault.yml ']'
++(scripts/hashicorp_vault/configure_hashicorp_vault.sh:75): configure_ansible_vault(): rm -rf /opt/qubinode_navigator/inventories/rhel9-equinix/group_vars/control/vault.yml
++(scripts/hashicorp_vault/configure_hashicorp_vault.sh:78): configure_ansible_vault(): cp -avi /tmp/config.yml /opt/qubinode_navigator/inventories/rhel9-equinix/group_vars/control/vault.yml
+'/tmp/config.yml' -> '/opt/qubinode_navigator/inventories/rhel9-equinix/group_vars/control/vault.yml'
++(scripts/hashicorp_vault/configure_hashicorp_vault.sh:79): configure_ansible_vault(): ls -l /opt/qubinode_navigator/inventories/rhel9-equinix/group_vars/control/vault.yml
+-rw-r--r--. 1 lab-user users 4836 Dec 18 10:22 /opt/qubinode_navigator/inventories/rhel9-equinix/group_vars/control/vault.yml
++(scripts/hashicorp_vault/configure_hashicorp_vault.sh:80): configure_ansible_vault(): /usr/local/bin/ansiblesafe -f /opt/qubinode_navigator/inventories/rhel9-equinix/group_vars/control/vault.yml -o 1
+ansible-vault found at: /usr/local/bin/ansible-vault
+
++(./rhel9-linux-hypervisor.sh:40): main(): generate_inventory
++(scripts/inventory_generation/generate_inventory.sh:13): generate_inventory(): log_message 'Generating inventory...'
+++(scripts/package_installation/install_packages.sh:66): log_message(): date '+%Y-%m-%d %H:%M:%S'
++(scripts/package_installation/install_packages.sh:66): log_message(): echo '[2024-12-20 17:22:57] Generating inventory...'
+[2024-12-20 17:22:57] Generating inventory...
++(scripts/inventory_generation/generate_inventory.sh:14): generate_inventory(): '[' '!' -d /opt/qubinode_navigator/inventories/rhel9-equinix ']'
+++(scripts/inventory_generation/generate_inventory.sh:17): generate_inventory(): hostname -I
+++(scripts/inventory_generation/generate_inventory.sh:17): generate_inventory(): awk '{print $1}'
++(scripts/inventory_generation/generate_inventory.sh:17): generate_inventory(): local control_host=145.40.90.237
++(scripts/inventory_generation/generate_inventory.sh:18): generate_inventory(): local control_user=root
++(scripts/inventory_generation/generate_inventory.sh:19): generate_inventory(): echo '[control]'
++(scripts/inventory_generation/generate_inventory.sh:20): generate_inventory(): echo 'control ansible_connection=local ansible_user=root'
++(scripts/inventory_generation/generate_inventory.sh:21): generate_inventory(): '[' rhel9-equinix == true ']'
++(./rhel9-linux-hypervisor.sh:41): main(): configure_navigator
++(scripts/configure_navigator.sh:16): configure_navigator(): log_message 'Configuring Qubinode Navigator...'
+++(scripts/package_installation/install_packages.sh:66): log_message(): date '+%Y-%m-%d %H:%M:%S'
++(scripts/package_installation/install_packages.sh:66): log_message(): echo '[2024-12-20 17:22:58] Configuring Qubinode Navigator...'
+[2024-12-20 17:22:58] Configuring Qubinode Navigator...
++(scripts/configure_navigator.sh:17): configure_navigator(): echo '******************************'
+******************************
++(scripts/configure_navigator.sh:18): configure_navigator(): '[' -d /opt/qubinode_navigator ']'
++(scripts/configure_navigator.sh:19): configure_navigator(): log_message 'Qubinode Navigator already exists'
+++(scripts/package_installation/install_packages.sh:66): log_message(): date '+%Y-%m-%d %H:%M:%S'
++(scripts/package_installation/install_packages.sh:66): log_message(): echo '[2024-12-20 17:22:58] Qubinode Navigator already exists'
+[2024-12-20 17:22:58] Qubinode Navigator already exists
++(scripts/configure_navigator.sh:20): configure_navigator(): git -C /opt/qubinode_navigator pull
+From https://github.com/tosin2013/qubinode_navigator
+ * [new branch]      dev        -> origin/dev
+Already up to date.
++(scripts/configure_navigator.sh:32): configure_navigator(): cd /opt/qubinode_navigator
++(scripts/configure_navigator.sh:33): configure_navigator(): sudo pip3 install -r requirements.txt
+Requirement already satisfied: fire in /usr/local/lib/python3.9/site-packages (from -r requirements.txt (line 1)) (0.7.0)
+Requirement already satisfied: netifaces in /usr/lib64/python3.9/site-packages (from -r requirements.txt (line 2)) (0.10.6)
+Requirement already satisfied: psutil in /usr/local/lib64/python3.9/site-packages (from -r requirements.txt (line 3)) (6.1.0)
+Requirement already satisfied: requests in /usr/lib/python3.9/site-packages (from -r requirements.txt (line 4)) (2.25.1)
+Requirement already satisfied: termcolor in /usr/local/lib/python3.9/site-packages (from fire->-r requirements.txt (line 1)) (2.5.0)
+Requirement already satisfied: chardet<5,>=3.0.2 in /usr/lib/python3.9/site-packages (from requests->-r requirements.txt (line 4)) (4.0.0)
+Requirement already satisfied: urllib3<1.27,>=1.21.1 in /usr/lib/python3.9/site-packages (from requests->-r requirements.txt (line 4)) (1.26.5)
+Requirement already satisfied: idna<3,>=2.5 in /usr/lib/python3.9/site-packages (from requests->-r requirements.txt (line 4)) (2.10)
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+++(scripts/configure_navigator.sh:37): configure_navigator(): cat /etc/resolv.conf
+++(scripts/configure_navigator.sh:37): configure_navigator(): grep nameserver
+++(scripts/configure_navigator.sh:37): configure_navigator(): awk '{print $2}'
+++(scripts/configure_navigator.sh:37): configure_navigator(): head -1
++(scripts/configure_navigator.sh:37): configure_navigator(): log_message 'Current DNS Server: 147.75.207.207'
+++(scripts/package_installation/install_packages.sh:66): log_message(): date '+%Y-%m-%d %H:%M:%S'
++(scripts/package_installation/install_packages.sh:66): log_message(): echo '[2024-12-20 17:22:59] Current DNS Server: 147.75.207.207'
+[2024-12-20 17:22:59] Current DNS Server: 147.75.207.207
++(scripts/configure_navigator.sh:38): configure_navigator(): log_message 'Load variables'
+++(scripts/package_installation/install_packages.sh:66): log_message(): date '+%Y-%m-%d %H:%M:%S'
++(scripts/package_installation/install_packages.sh:66): log_message(): echo '[2024-12-20 17:22:59] Load variables'
+[2024-12-20 17:22:59] Load variables
++(scripts/configure_navigator.sh:39): configure_navigator(): echo '**************'
+**************
++(scripts/configure_navigator.sh:40): configure_navigator(): '[' true == false ']'
++(scripts/configure_navigator.sh:47): configure_navigator(): [[ -z lab-user ]]
++(scripts/configure_navigator.sh:47): configure_navigator(): [[ -z sandbox2550.opentlc.com ]]
++(scripts/configure_navigator.sh:47): configure_navigator(): [[ -z 147.75.207.207 ]]
++(scripts/configure_navigator.sh:47): configure_navigator(): [[ -z bond0 ]]
++(scripts/configure_navigator.sh:51): configure_navigator(): python3 load-variables.py --username lab-user --domain sandbox2550.opentlc.com --forwarder 147.75.207.207 --interface bond0
+Error: Cannot set configure_bridge to True when running as root.
+configure_bridge is set to False
+{'kvm_host_gw': '145.40.90.236', 'kvm_host_interface': 'bond0', 'kvm_host_ip': '145.40.90.237', 'kvm_host_macaddr': 'e4:43:4b:de:10:60', 'kvm_host_mask_prefix': 31, 'kvm_host_netmask': '255.255.255.254'}
+Volume group 'vg_qubi' already exists.
+Selected disk:   --- Volume group ---
+  VG Name               vg_qubi
+  System ID             
+  Format                lvm2
+  Metadata Areas        1
+  Metadata Sequence No  2
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                1
+  Open LV               1
+  Max PV                0
+  Cur PV                1
+  Act PV                1
+  VG Size               3.49 TiB
+  PE Size               4.00 MiB
+  Total PE              915707
+  Alloc PE / Size       915707 / 3.49 TiB
+  Free  PE / Size       0 / 0   
+  VG UUID               05dKsu-7Cqc-HeBE-HMXc-839i-ZOvM-Zk72Io
+   
+
+Updated inventories/rhel9-equinix/group_vars/control/kvm_host.yml
++(./rhel9-linux-hypervisor.sh:42): main(): configure_ssh
++(scripts/ssh_configuration/configure_ssh.sh:16): configure_ssh(): log_message 'Configuring SSH...'
+++(scripts/package_installation/install_packages.sh:66): log_message(): date '+%Y-%m-%d %H:%M:%S'
++(scripts/package_installation/install_packages.sh:66): log_message(): echo '[2024-12-20 17:22:59] Configuring SSH...'
+[2024-12-20 17:22:59] Configuring SSH...
++(scripts/ssh_configuration/configure_ssh.sh:17): configure_ssh(): '[' '!' -f /root/.ssh/id_rsa ']'
++(./rhel9-linux-hypervisor.sh:43): main(): deploy_kvmhost
++(scripts/deploy_kvmhost.sh:5): deploy_kvmhost(): log_message 'Deploying KVM Host...'
+++(scripts/package_installation/install_packages.sh:66): log_message(): date '+%Y-%m-%d %H:%M:%S'
++(scripts/package_installation/install_packages.sh:66): log_message(): echo '[2024-12-20 17:22:59] Deploying KVM Host...'
+[2024-12-20 17:22:59] Deploying KVM Host...
+++(scripts/deploy_kvmhost.sh:6): deploy_kvmhost(): ssh-agent
++(scripts/deploy_kvmhost.sh:6): deploy_kvmhost(): eval 'SSH_AUTH_SOCK=/tmp/ssh-XXXXXXct1zRG/agent.173031;' export 'SSH_AUTH_SOCK;' 'SSH_AGENT_PID=173032;' export 'SSH_AGENT_PID;' echo Agent pid '173032;'
+++(scripts/deploy_kvmhost.sh:6): deploy_kvmhost(): SSH_AUTH_SOCK=/tmp/ssh-XXXXXXct1zRG/agent.173031
+++(scripts/deploy_kvmhost.sh:6): deploy_kvmhost(): export SSH_AUTH_SOCK
+++(scripts/deploy_kvmhost.sh:6): deploy_kvmhost(): SSH_AGENT_PID=173032
+++(scripts/deploy_kvmhost.sh:6): deploy_kvmhost(): export SSH_AGENT_PID
+++(scripts/deploy_kvmhost.sh:6): deploy_kvmhost(): echo Agent pid 173032
+Agent pid 173032
++(scripts/deploy_kvmhost.sh:7): deploy_kvmhost(): ssh-add /root/.ssh/id_rsa
+Identity added: /root/.ssh/id_rsa (root@hypervisor)
++(scripts/deploy_kvmhost.sh:8): deploy_kvmhost(): cd /opt/qubinode_navigator
++(scripts/deploy_kvmhost.sh:9): deploy_kvmhost(): ansible-navigator run ansible-navigator/setup_kvmhost.yml --vault-password-file /root/.vault_password -m stdout
+[1;35m[WARNING]:  * Failed to parse /opt/qubinode_navigator/inventories/rhel9-equinix/check_env.py with ini plugin:[0m
+[1;35m/opt/qubinode_navigator/inventories/rhel9-equinix/check_env.py:1: Expected key=value host variable assignment, got: os[0m
+[1;35m[WARNING]: Unable to parse /opt/qubinode_navigator/inventories/rhel9-equinix/check_env.py as an inventory source[0m
+[1;35m[WARNING]: Found both group and host with same name: control[0m
+[KeyJ1dWlkIjogIjc2OWY5MTMzLWJkMDEtNDQ4Zi1iZDE4LTBiZGVjOWJhZGY2YiJ9[64D[K[Ke30=[4D[K[KeyJ1dWlkIjogImVhZTQzMDBmLTI4MTYtYTczOS1mYzQ0LTAwMDAwMDAwMDAwNiJ9[64D[K
+PLAY [Setup KVM host] ***************************************************************************************************************************
+[Ke30=[4D[K[KeyJ1dWlkIjogIjEwYjIyMmI1LTY5ODEtNGFlZi04MzdhLWZiMzg5OTNlZWU2NiJ9[64D[K[1;35m[WARNING]: While constructing a mapping from /opt/qubinode_navigator/inventories/rhel9-equinix/group_vars/control/cnv-kcli-[0m
+[1;35mopenshift4-baremetal.yml, line 5, column 1, found a duplicate dict key (installer_wait). Using last defined value only.[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImVhZTQzMDBmLTI4MTYtYTczOS1mYzQ0LTAwMDAwMDAwMDAxMSJ9[64D[K
+TASK [Gathering Facts] **************************************************************************************************************************
+[Ke30=[4D[K[KeyJ1dWlkIjogIjU1M2ZhNmU2LTdkNjEtNDBhMy05OGFhLWJiYTcxMDI4YWRjOSJ9[64D[K[Ke30=[4D[K[KeyJ1dWlkIjogImU3NmQ2OTQ3LWQwMjMtNGM2Yy05YTVkLTliZGM3MDY3ZTg3MSJ9[64D[K[0;32mok: [control][0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImVhZTQzMDBmLTI4MTYtYTczOS1mYzQ0LTAwMDAwMDAwMDAwOCJ9[64D[K
+TASK [Ensure backup folder is created] **********************************************************************************************************
+[Ke30=[4D[K[KeyJ1dWlkIjogImExMmU3ZDUyLTcxNTctNGM1ZC04MjYzLTZlNTA4MjViOWZmNyJ9[64D[K[Ke30=[4D[K[KeyJ1dWlkIjogImViYTRiODZlLTNlMTktNDk4MC04ZWQ5LTlmMzJmNzE4MDAxYiJ9[64D[K[0;33mchanged: [control][0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImVhZTQzMDBmLTI4MTYtYTczOS1mYzQ0LTAwMDAwMDAwMDAwOSJ9[64D[K
+TASK [Checking to see if host_device is defined] ************************************************************************************************
+[Ke30=[4D[K[KeyJ1dWlkIjogImM0OTg4NjBiLTQ3OWUtNGVjNC1hZDE1LWQ4YzdlNDA2Yzc5YiJ9[64D[K[Ke30=[4D[K[KeyJ1dWlkIjogIjlmNTc0YjUxLWVjNGItNDRiNC1hZWJmLWY5Mjc5M2RiODExMyJ9[64D[K[0;36mskipping: [control][0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImVhZTQzMDBmLTI4MTYtYTczOS1mYzQ0LTAwMDAwMDAwMDAwYSJ9[64D[K
+TASK [Checking to see if vg_name is defined] ****************************************************************************************************
+[Ke30=[4D[K[KeyJ1dWlkIjogIjc5NmE2MGQwLWJkYzctNGJjNS1hMzI1LTZlMmU2OTVlOTQwMyJ9[64D[K[Ke30=[4D[K[KeyJ1dWlkIjogImU2NDRiNGYzLTNmYzktNGU1Yi05MWExLWNkNTE5NWYwYTI3YSJ9[64D[K[0;36mskipping: [control][0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImVhZTQzMDBmLTI4MTYtYTczOS1mYzQ0LTAwMDAwMDAwMDAwYiJ9[64D[K
+TASK [Create libvirt logical volume] ************************************************************************************************************
+[Ke30=[4D[K[KeyJ1dWlkIjogIjM2OWMwZGNiLTA4MWEtNDYxMi1hNTg4LWQ5MTFkOTIxYzA0NyJ9[64D[K[Ke30=[4D[K[KeyJ1dWlkIjogImE0MjExMTJhLWY0MGUtNGQ4Yi05YmVhLWJkOTJjNTU4ZjAwOSJ9[64D[K[0;36mskipping: [control][0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImVhZTQzMDBmLTI4MTYtYTczOS1mYzQ0LTAwMDAwMDAwMDAwYyJ9[64D[K
+TASK [Running KVM host setup] *******************************************************************************************************************
+[Ke30=[4D[K[KeyJ1dWlkIjogIjRlOGUxOWI1LTZhZWItNGFhOS1iZjFjLTk3ZjczYWRlZDVmNiJ9[64D[K[Ke30=[4D[K[KeyJ1dWlkIjogIjRiNmI4YjM2LWViMjItNDliNi1hNzhkLTljOTcxMWFiZThjYSJ9[64D[K[Ke30=[4D[K[KeyJ1dWlkIjogImY3NGM0NTc2LTQ2MzQtNDkwYS05NDY4LWU2NzY4NDExZjE2MCJ9[64D[K[1;35m[WARNING]: Collection tosin2013.qubinode_kvmhost_setup_collection does not support Ansible version 2.12.5.post0[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImVhZTQzMDBmLTI4MTYtYTczOS1mYzQ0LTAwMDAwMDAwMDAzOSJ9[64D[K
+TASK [tosin2013.qubinode_kvmhost_setup_collection.kvmhost_setup : Display all variables/facts known for a host] *********************************
+[Ke30=[4D[K[KeyJ1dWlkIjogImZiYTJjNjU0LTQ3OTUtNDI2Ni1iODc5LWUwZGU2MDQ4N2FiMyJ9[64D[K[Ke30=[4D[K[KeyJ1dWlkIjogIjZkZDBiMjc1LTI5NTgtNGJhZS05NmVhLWRkZjk1N2RhYmQ0YSJ9[64D[K[0;32mok: [control] => {[0m
+[0;32m    "libvirt_host_networks": [[0m
+[0;32m        {[0m
+[0;32m            "bridge_device": "qubibr0",[0m
+[0;32m            "bridge_slave_dev": "bond0",[0m
+[0;32m            "create": true,[0m
+[0;32m            "gateway": "145.40.90.236",[0m
+[0;32m            "ifcfg_bootproto": "static",[0m
+[0;32m            "ifcfg_type": "Bridge",[0m
+[0;32m            "ipaddress": "145.40.90.237",[0m
+[0;32m            "mac": "e4:43:4b:de:10:60",[0m
+[0;32m            "mask": "255.255.255.254",[0m
+[0;32m            "mask_prefix": 31,[0m
+[0;32m            "mode": "bridge",[0m
+[0;32m            "mtu": 1500,[0m
+[0;32m            "name": "qubinet",[0m
+[0;32m            "subnet": "not currently in use"[0m
+[0;32m        }[0m
+[0;32m    ][0m
+[0;32m}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImVhZTQzMDBmLTI4MTYtYTczOS1mYzQ0LTAwMDAwMDAwMDAzYSJ9[64D[K
+TASK [tosin2013.qubinode_kvmhost_setup_collection.kvmhost_setup : Validate variables are defined] ***********************************************
+[Ke30=[4D[K[KeyJ1dWlkIjogIjlmODk2OTFkLWJmMzQtNDg1ZC04NTliLTc3MTM2NjFhMTE4OCJ9[64D[K[Ke30=[4D[K[KeyJ1dWlkIjogImRmZTI1N2RjLTZmN2UtNGFmYy04YzM4LTc5ZjgwYmZlZWIzYiJ9[64D[K[Ke30=[4D[K[KeyJ1dWlkIjogIjQ0ZjI2Mzk0LWM2OWQtNDc4MS04YjczLWVkMjI4ZTEyNDhhMiJ9[64D[K[0;36mincluded: /usr/share/ansible/collections/ansible_collections/tosin2013/qubinode_kvmhost_setup_collection/roles/kvmhost_setup/tasks/verify_variables.yml for control[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImVhZTQzMDBmLTI4MTYtYTczOS1mYzQ0LTAwMDAwMDAwMDA3OCJ9[64D[K
+TASK [tosin2013.qubinode_kvmhost_setup_collection.kvmhost_setup : Testing 'kvm_host_ip' KVM host ip] ********************************************
+[Ke30=[4D[K[KeyJ1dWlkIjogIjMzMzRiMmNlLTMwMTMtNGM3Mi05N2EyLTBmYmM4NWU0MWVmOSJ9[64D[K[Ke30=[4D[K[KeyJ1dWlkIjogIjBkOGI5MmNkLTY2ZWEtNGMxMC05NTkzLWZiMTM2ZGNjNTU2NCJ9[64D[K[0;36mskipping: [control][0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImVhZTQzMDBmLTI4MTYtYTczOS1mYzQ0LTAwMDAwMDAwMDA3OSJ9[64D[K
+TASK [tosin2013.qubinode_kvmhost_setup_collection.kvmhost_setup : Testing 'kvm_host_interface' KVM host interface] ******************************
+[Ke30=[4D[K[KeyJ1dWlkIjogIjQ5YTYxMjZlLWRlMTktNDkyMy1iMmY5LWU1OWE5MzI1YjFmMiJ9[64D[K[Ke30=[4D[K[KeyJ1dWlkIjogIjZiODk4YjIyLTk4ZjAtNDlmZi04YjY3LThkNzc3MjZlNWY4MCJ9[64D[K[0;36mskipping: [control][0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImVhZTQzMDBmLTI4MTYtYTczOS1mYzQ0LTAwMDAwMDAwMDA3YSJ9[64D[K
+TASK [tosin2013.qubinode_kvmhost_setup_collection.kvmhost_setup : Testing 'kvm_host_mask_prefix' KVM subnet mask prefix"] ***********************
+[Ke30=[4D[K[KeyJ1dWlkIjogImU1MzgyNzZlLTgwMzMtNDA4Ny05ZmRmLTY5YzVmMzFmNTVmMSJ9[64D[K[Ke30=[4D[K[KeyJ1dWlkIjogIjIxOTg5YmUxLTcwZjEtNDU5ZC1iZWRiLTQ5NTcyM2UyZTRlMyJ9[64D[K[0;36mskipping: [control][0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImVhZTQzMDBmLTI4MTYtYTczOS1mYzQ0LTAwMDAwMDAwMDA3YiJ9[64D[K
+TASK [tosin2013.qubinode_kvmhost_setup_collection.kvmhost_setup : Testing 'kvm_host_gw' KVM host kvm host gateway"] *****************************
+[Ke30=[4D[K[KeyJ1dWlkIjogIjJiZTBmMzZjLWE4ZTUtNDFhOS1hMzJjLTc3NGQ4N2MwNmZiOCJ9[64D[K[Ke30=[4D[K[KeyJ1dWlkIjogIjBlNWE5YTdiLWJjMGQtNDRhYS04Zjg5LTRjZGMyNjFiNWQ3MyJ9[64D[K[0;36mskipping: [control][0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImVhZTQzMDBmLTI4MTYtYTczOS1mYzQ0LTAwMDAwMDAwMDA3YyJ9[64D[K
+TASK [tosin2013.qubinode_kvmhost_setup_collection.kvmhost_setup : Testing 'admin_user' ssh username"] *******************************************
+[Ke30=[4D[K[KeyJ1dWlkIjogIjdjYzRiMjFiLTA3NjUtNDFhNi04ZjczLTk3MzFjMDQ5MGMyMiJ9[64D[K[Ke30=[4D[K[KeyJ1dWlkIjogImRjNTBjOTNkLTYwNDQtNGE1Ni05NjAyLTk3NzgwODE5OTE0OSJ9[64D[K[0;36mskipping: [control][0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImVhZTQzMDBmLTI4MTYtYTczOS1mYzQ0LTAwMDAwMDAwMDA3ZCJ9[64D[K
+TASK [tosin2013.qubinode_kvmhost_setup_collection.kvmhost_setup : Testing 'kvm_host_domain' kvm host domain] ************************************
+[Ke30=[4D[K[KeyJ1dWlkIjogImFiY2ZmZTFkLTZkYmYtNGM0Ny04MDJjLWFmZGJjYmJlYmU0YiJ9[64D[K[Ke30=[4D[K[KeyJ1dWlkIjogImE0OTVlMDlkLTVhYjMtNDZjOS1hZGVkLWMwMjk4ZTAwNDYzZiJ9[64D[K[0;36mskipping: [control][0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImVhZTQzMDBmLTI4MTYtYTczOS1mYzQ0LTAwMDAwMDAwMDA3ZSJ9[64D[K
+TASK [tosin2013.qubinode_kvmhost_setup_collection.kvmhost_setup : Testing 'kvm_host_dns_server' kvm host dns server] ****************************
+[Ke30=[4D[K[KeyJ1dWlkIjogIjE2OGNiMDEzLTIyMzctNDAwNi1iYzk4LTFjZmQ2ZjAwYmU3MCJ9[64D[K[Ke30=[4D[K[KeyJ1dWlkIjogImU3ZTUxOTdhLTU2MzEtNGM3Yi1iZDIxLWU3NjZiMjk0MjhhNCJ9[64D[K[0;36mskipping: [control][0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImVhZTQzMDBmLTI4MTYtYTczOS1mYzQ0LTAwMDAwMDAwMDA3ZiJ9[64D[K
+TASK [tosin2013.qubinode_kvmhost_setup_collection.kvmhost_setup : Testing 'kvm_host_bootproto' KVM host bootproto] ******************************
+[Ke30=[4D[K[KeyJ1dWlkIjogImEzNDFjYTI5LTFjM2EtNGY5ZC04ZGI2LWY0NjE5NjJiODJhZCJ9[64D[K[Ke30=[4D[K[KeyJ1dWlkIjogImZlM2ZiYTlhLWZmY2ItNDM1OS04NmQ5LTM4NGE2YWE0ZjNjNCJ9[64D[K[0;36mskipping: [control][0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImVhZTQzMDBmLTI4MTYtYTczOS1mYzQ0LTAwMDAwMDAwMDA4MCJ9[64D[K
+TASK [tosin2013.qubinode_kvmhost_setup_collection.kvmhost_setup : Testing 'kvm_bridge_type' KVM  bridge type] ***********************************
+[Ke30=[4D[K[KeyJ1dWlkIjogIjE5MzY1ZWZhLWE4NTItNGZlMi1hODk4LTU0YTQ2M2JlM2E2OSJ9[64D[K[Ke30=[4D[K[KeyJ1dWlkIjogIjI0YjUzMWQ1LTBkZDUtNDU0Ny1iZWU0LWZjZGU1ZGMxOWRmMCJ9[64D[K[0;36mskipping: [control][0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImVhZTQzMDBmLTI4MTYtYTczOS1mYzQ0LTAwMDAwMDAwMDA4MSJ9[64D[K
+TASK [tosin2013.qubinode_kvmhost_setup_collection.kvmhost_setup : Testing 'qubinode_bridge_name' qubinode bridge name] **************************
+[Ke30=[4D[K[KeyJ1dWlkIjogIjAwMmYwN2JmLTg2YWUtNDQyZS05NTVhLWUzZjU5OWQwNTUzYSJ9[64D[K[Ke30=[4D[K[KeyJ1dWlkIjogImI2ZjRmMmE1LWFlYzItNDc3Zi1iY2I4LTgyZWJlNzRmOWE4MyJ9[64D[K[0;36mskipping: [control][0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImVhZTQzMDBmLTI4MTYtYTczOS1mYzQ0LTAwMDAwMDAwMDA4MiJ9[64D[K
+TASK [tosin2013.qubinode_kvmhost_setup_collection.kvmhost_setup : Get the index of a dict] ******************************************************
+[Ke30=[4D[K[KeyJ1dWlkIjogIjhhMWVlMTY2LTIzNTYtNGIxZC05ZWM5LTdkMjI2YzNiMDU1ZSJ9[64D[K[Ke30=[4D[K[KeyJ1dWlkIjogIjU3ZTY2MzQwLWU0ZDktNGYzYy1hZTcwLWQ0MmY3YTliNGI5ZiJ9[64D[K[0;32mok: [control] => (item={'bridge_device': 'qubibr0', 'bridge_slave_dev': 'bond0', 'create': True, 'gateway': '145.40.90.236', 'ifcfg_bootproto': 'static', 'ifcfg_type': 'Bridge', 'ipaddress': '145.40.90.237', 'mac': 'e4:43:4b:de:10:60', 'mask': '255.255.255.254', 'mask_prefix': 31, 'mode': 'bridge', 'mtu': 1500, 'name': 'qubinet', 'subnet': 'not currently in use'}) => {[0m
+[0;32m    "msg": "e4:43:4b:de:10:60"[0m
+[0;32m}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImRhY2NjODNhLTkwMWUtNDIxOS04MTQxLWIwOGUyNTA0OTQyNiJ9[64D[K[Ke30=[4D[K[KeyJ1dWlkIjogImVhZTQzMDBmLTI4MTYtYTczOS1mYzQ0LTAwMDAwMDAwMDA4MyJ9[64D[K
+TASK [tosin2013.qubinode_kvmhost_setup_collection.kvmhost_setup : Ensureing the libvirt_host_networks values are not empty if defined] **********
+[Ke30=[4D[K[KeyJ1dWlkIjogIjIwZTU2Y2NhLTk3NTItNDQ5Zi05OTJhLTYxM2ZhZGIyZmM4MiJ9[64D[K[Ke30=[4D[K[KeyJ1dWlkIjogImE0ODYyOWQ3LWQzNTQtNGU2ZC1hZTZhLWFkZGY1ZThhMmEwYiJ9[64D[K[0;32mok: [control] => (item={'bridge_device': 'qubibr0', 'bridge_slave_dev': 'bond0', 'create': True, 'gateway': '145.40.90.236', 'ifcfg_bootproto': 'static', 'ifcfg_type': 'Bridge', 'ipaddress': '145.40.90.237', 'mac': 'e4:43:4b:de:10:60', 'mask': '255.255.255.254', 'mask_prefix': 31, 'mode': 'bridge', 'mtu': 1500, 'name': 'qubinet', 'subnet': 'not currently in use'}) => {[0m
+[0;32m    "ansible_loop_var": "item",[0m
+[0;32m    "changed": false,[0m
+[0;32m    "item": {[0m
+[0;32m        "bridge_device": "qubibr0",[0m
+[0;32m        "bridge_slave_dev": "bond0",[0m
+[0;32m        "create": true,[0m
+[0;32m        "gateway": "145.40.90.236",[0m
+[0;32m        "ifcfg_bootproto": "static",[0m
+[0;32m        "ifcfg_type": "Bridge",[0m
+[0;32m        "ipaddress": "145.40.90.237",[0m
+[0;32m        "mac": "e4:43:4b:de:10:60",[0m
+[0;32m        "mask": "255.255.255.254",[0m
+[0;32m        "mask_prefix": 31,[0m
+[0;32m        "mode": "bridge",[0m
+[0;32m        "mtu": 1500,[0m
+[0;32m        "name": "qubinet",[0m
+[0;32m        "subnet": "not currently in use"[0m
+[0;32m    },[0m
+[0;32m    "msg": "'the libvirt_host_networks var is setup correctly'"[0m
+[0;32m}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImIyZTEzMTRjLTA5NzAtNDgyOS05YmEwLTM1ZTMzMzQzM2UwMyJ9[64D[K[Ke30=[4D[K[KeyJ1dWlkIjogImVhZTQzMDBmLTI4MTYtYTczOS1mYzQ0LTAwMDAwMDAwMDAzYiJ9[64D[K
+TASK [tosin2013.qubinode_kvmhost_setup_collection.kvmhost_setup : Ensure required packages are installed] ***************************************
+[Ke30=[4D[K[KeyJ1dWlkIjogIjkxY2M1ZGI5LTQ0MTAtNDZiZi1iMjQ5LTRiZTgzY2Q5MzdhMSJ9[64D[K[Ke30=[4D[K[KeyJ1dWlkIjogIjJmMzQ0YTgxLTFhNWYtNDNhYS04Nzg0LTRjZmY1NWJiODIxMiJ9[64D[K[0;31mfailed: [control] (item=virt-install) => {"ansible_loop_var": "item", "changed": false, "item": "virt-install", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogIjcyMWQzZmU2LWRlNzEtNGU5OS04MGFlLTQ1YjY2N2ExZDE1NiJ9[64D[K[0;31mfailed: [control] (item=libvirt-daemon-config-network) => {"ansible_loop_var": "item", "changed": false, "item": "libvirt-daemon-config-network", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogIjg4NWZiN2ZlLWFhYTQtNDg3ZC1iODY5LWY1NWI1MDRkZTBjNiJ9[64D[K[0;31mfailed: [control] (item=libvirt-daemon-kvm) => {"ansible_loop_var": "item", "changed": false, "item": "libvirt-daemon-kvm", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogIjY3ZDBlOGVjLTRlMDktNGQyNy1hNmJiLWU5NzA1MjdmZTM2YyJ9[64D[K[0;31mfailed: [control] (item=libguestfs-tools) => {"ansible_loop_var": "item", "changed": false, "item": "libguestfs-tools", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImU2MzI2NTcyLWMwNjUtNDc0My1hNTBkLWQ0N2FkMjNkY2IyMCJ9[64D[K[0;31mfailed: [control] (item=libvirt-client) => {"ansible_loop_var": "item", "changed": false, "item": "libvirt-client", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImNiNWZjMTg0LTA3NWItNDNmOC04YWNmLTY4MGQ5MDcyYWI4ZiJ9[64D[K[0;31mfailed: [control] (item=qemu-kvm) => {"ansible_loop_var": "item", "changed": false, "item": "qemu-kvm", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogIjcwOGNhZmUzLTg5Y2MtNDQwZC1hZDg3LWY4OGVlYWQ1ZGYzYSJ9[64D[K[0;31mfailed: [control] (item=nfs-utils) => {"ansible_loop_var": "item", "changed": false, "item": "nfs-utils", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImNmYjcwODE1LTEyYjAtNDIxZi05OTlmLTIwNTc4NDY3MzZhYSJ9[64D[K[0;31mfailed: [control] (item=libvirt-daemon) => {"ansible_loop_var": "item", "changed": false, "item": "libvirt-daemon", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogIjJhM2UzZDAyLTJiMDctNDk3My04N2UwLWQ1MWI1OTZhYmE3MiJ9[64D[K[0;31mfailed: [control] (item=libvirt-client) => {"ansible_loop_var": "item", "changed": false, "item": "libvirt-client", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImYyZmUwYWY0LTc1NWMtNDRlMy05MjBmLTFkZWIxYWZjYTU4NSJ9[64D[K[0;31mfailed: [control] (item=virt-top) => {"ansible_loop_var": "item", "changed": false, "item": "virt-top", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogIjRmMWZkYzFhLWE1MDAtNDkyOS04ZWQ5LWMyNDAyOGZlOTc0YyJ9[64D[K[0;31mfailed: [control] (item=tuned) => {"ansible_loop_var": "item", "changed": false, "item": "tuned", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImI0Zjc2YjVkLTY3MTMtNDU5NC05ZDFiLTkwZDRjNzk2MjdjMSJ9[64D[K[0;31mfailed: [control] (item=openssh-server) => {"ansible_loop_var": "item", "changed": false, "item": "openssh-server", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogIjJjZGRjZmIwLTJmYTktNGI5ZC1hMTRlLTY0YjA2YjRmMDVlNCJ9[64D[K[0;31mfailed: [control] (item=wget) => {"ansible_loop_var": "item", "changed": false, "item": "wget", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogIjVkODk0NGFjLWEwODYtNDcwNC04OTA5LTNjYWEyZjg3MjdlYSJ9[64D[K[0;31mfailed: [control] (item=git) => {"ansible_loop_var": "item", "changed": false, "item": "git", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogIjcxZGRhNjNjLWY0MTctNDVlNi05ZDNjLTRiNWVjNzI4YmJkMyJ9[64D[K[0;31mfailed: [control] (item=net-tools) => {"ansible_loop_var": "item", "changed": false, "item": "net-tools", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImQxMTY3ZmVlLTA3MzQtNDM2MS1iM2EwLWM2YTQ3MjMzNjViMCJ9[64D[K[0;31mfailed: [control] (item=bind-utils) => {"ansible_loop_var": "item", "changed": false, "item": "bind-utils", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImQ3NjgyMThlLWE3ZDctNDc3MS04YWU3LWQ2YmJmMzVkNDRhNSJ9[64D[K[0;31mfailed: [control] (item=yum-utils) => {"ansible_loop_var": "item", "changed": false, "item": "yum-utils", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImY5MGY2YmE5LTdjMWItNDEzNi1iNzkwLWI2YzAwNzUwNGEyYSJ9[64D[K[0;31mfailed: [control] (item=iptables-services) => {"ansible_loop_var": "item", "changed": false, "item": "iptables-services", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogIjUxN2ExNGY0LWU5YjYtNDQ2OS04ZmEwLTdlZjhkNmZjMTRlOSJ9[64D[K[0;31mfailed: [control] (item=bash-completion) => {"ansible_loop_var": "item", "changed": false, "item": "bash-completion", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImRmMTkzYWUzLTEyNWYtNDM0ZS1iNmRmLTM1NDE1ODljNGY1ZCJ9[64D[K[0;31mfailed: [control] (item=kexec-tools) => {"ansible_loop_var": "item", "changed": false, "item": "kexec-tools", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogIjE2YzU0NWU1LTgwMjEtNDhhZC1hNzZjLWMwMzliNTUyZGI4NiJ9[64D[K[0;31mfailed: [control] (item=sos) => {"ansible_loop_var": "item", "changed": false, "item": "sos", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImIwNzVkYzNkLTdjZDYtNGUxMC1iZjVkLWZlYzM0NzYwY2M0ZCJ9[64D[K[0;31mfailed: [control] (item=psacct) => {"ansible_loop_var": "item", "changed": false, "item": "psacct", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImNhYjEwYThmLTdjNWUtNGU3Yy1hZjRiLWJkNmRlMmFmZGZiZiJ9[64D[K[0;31mfailed: [control] (item=vim) => {"ansible_loop_var": "item", "changed": false, "item": "vim", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImVkODUyOTNjLTkwNGItNGIwNy1hNWNiLTUyNWZkYTI5ODc3YyJ9[64D[K[0;31mfailed: [control] (item=device-mapper-event-libs) => {"ansible_loop_var": "item", "changed": false, "item": "device-mapper-event-libs", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImE2ZjkyOThhLWU0NmUtNGFhYi04YjkzLTE2ODFlYzI4OGY5YiJ9[64D[K[0;31mfailed: [control] (item=device-mapper-libs) => {"ansible_loop_var": "item", "changed": false, "item": "device-mapper-libs", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogIjgwM2U3NTEzLTFmN2MtNDUwNS1hNTgwLTk2ZmExMmQ4OGVlMCJ9[64D[K[0;31mfailed: [control] (item=httpd-tools) => {"ansible_loop_var": "item", "changed": false, "item": "httpd-tools", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogIjExMzdiMjBiLTZiOTItNDY3Zi05ZTUzLTE4NWJjYzUyZDMzNiJ9[64D[K[0;31mfailed: [control] (item=tmux) => {"ansible_loop_var": "item", "changed": false, "item": "tmux", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogImIzZmE4NzFiLTZmZjctNGYyOS1hZDI2LWQ1ZTJjYzZkYWYwYyJ9[64D[K[0;31mfailed: [control] (item=python3-dns) => {"ansible_loop_var": "item", "changed": false, "item": "python3-dns", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogIjgxNzkzM2JiLWEzMDYtNDFiZC1iMjFhLTQ1MWU3MTc1ZTQwZiJ9[64D[K[0;31mfailed: [control] (item=python3-lxml) => {"ansible_loop_var": "item", "changed": false, "item": "python3-lxml", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogIjMwZTg2ZDY2LWRmODQtNGI5MC1iOWQyLTExNGI3ZTgzM2Y4NSJ9[64D[K[0;31mfailed: [control] (item=cockpit-machines) => {"ansible_loop_var": "item", "changed": false, "item": "cockpit-machines", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogIjEzY2FmNzZkLTUwOGQtNGUyMy1hNDYyLTc0Yjk5OTdlYTAwZiJ9[64D[K[0;31mfailed: [control] (item=bc) => {"ansible_loop_var": "item", "changed": false, "item": "bc", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogIjc5NTEwNjc0LTAzMTgtNGRjNy04YzUxLTBkMTE4NDEzZWQ4YiJ9[64D[K[0;31mfailed: [control] (item=nmap) => {"ansible_loop_var": "item", "changed": false, "item": "nmap", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogIjdiODk2OTMxLWZhYzUtNDk2NS04YjMwLTY4YTYwNzg3NTgyNiJ9[64D[K[0;31mfailed: [control] (item=ncurses-devel) => {"ansible_loop_var": "item", "changed": false, "item": "ncurses-devel", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogIjZkZjljYTMwLTQ5MDQtNDgwNy05MTAzLTA0MmYzOGE1ZjEzMiJ9[64D[K[0;31mfailed: [control] (item=curl) => {"ansible_loop_var": "item", "changed": false, "item": "curl", "msg": "Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: Curl error (6): Couldn't resolve host name for http://mirrorlist.centos.org/?release=8-stream&arch=x86_64&repo=AppStream&infra=stock [Could not resolve host: mirrorlist.centos.org]", "rc": 1, "results": []}[0m
+[Ke30=[4D[K[KeyJ1dWlkIjogIjE1YTVjNzA5LWFmMDUtNGU0ZS05NGU4LTJmZTk1NDM2Y2ZhMiJ9[64D[K[Ke30=[4D[K[KeyJ1dWlkIjogIjc2MWZjNWFmLWIxZGItNGE0ZS04MzE0LWZhZjU1OGM4ZWUwZCJ9[64D[K
+PLAY RECAP **************************************************************************************************************************************
+[0;31mcontrol[0m                    : [0;32mok=6   [0m [0;33mchanged=1   [0m unreachable=0    [0;31mfailed=1   [0m [0;36mskipped=13  [0m rescued=0    ignored=0   
+
+[Ke30=[4D[KPlease review the log for errors.
++(scripts/deploy_kvmhost.sh:10): deploy_kvmhost(): log_message 'Failed to deploy KVM host'
+++(scripts/package_installation/install_packages.sh:66): log_message(): date '+%Y-%m-%d %H:%M:%S'
++(scripts/package_installation/install_packages.sh:66): log_message(): echo '[2024-12-20 17:23:20] Failed to deploy KVM host'
+[2024-12-20 17:23:20] Failed to deploy KVM host
++(scripts/deploy_kvmhost.sh:11): deploy_kvmhost(): exit 1
