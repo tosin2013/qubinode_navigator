@@ -37,6 +37,7 @@ $ cat >notouch.env<<EOF
 export SSH_USER=lab-user
 export CICD_PIPELINE='true'
 export ENV_USERNAME=lab-user
+export KVM_VERSION="0.8.0"
 export CICD_ENVIORNMENT="gitlab" # or onedev change this vault for default cicd enviornment to deploy VMS
 export DOMAIN=qubinodelab.io  # Change to your domain if you want to use your own domain
 export USE_HASHICORP_VAULT='false' 
@@ -62,6 +63,7 @@ $ cat >notouch.env<<EOF
 export SSH_USER=lab-user
 export CICD_PIPELINE='true'
 export ENV_USERNAME=lab-user
+export KVM_VERSION="0.8.0"
 export CICD_ENVIORNMENT="gitlab" # or onedev change this vault for default cicd enviornment to deploy VMS
 export DOMAIN=${DOMAIN} # Change to your domain if you want to use your own domain
 export FORWARDER='$(awk '/^nameserver/ {print $2}' /etc/resolv.conf | head -1)'
