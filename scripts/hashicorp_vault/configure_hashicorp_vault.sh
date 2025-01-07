@@ -35,6 +35,8 @@ handle_hashicorp_vault() {
 #    a. Executes the 'ansible_vault_setup.sh' script.
 #    b. Encrypts 'vault.yml' using 'ansiblesafe'.
 configure_ansible_vault() {
+    # Ensure /usr/local/bin is in PATH for ansible-vault
+    export PATH="/usr/local/bin:$PATH"
     log_message "Configuring Ansible Vault..."
     if ! command -v ansiblesafe &>/dev/null; then
         local ansiblesafe_url="https://github.com/tosin2013/ansiblesafe/releases/download/v0.0.12/ansiblesafe-v0.0.14-linux-amd64.tar.gz"
