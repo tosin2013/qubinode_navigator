@@ -9,6 +9,36 @@ layout: home
 
 Welcome to the Qubinode Navigator repository! Qubinode Navigator is a powerful tool that allows you to deploy OpenShift on KVM using various deployment methods. This repository provides comprehensive guides and documentation to help you deploy OpenShift on RHEL 8 KVM efficiently.
 
+```mermaid
+graph TD
+    subgraph Control_Node
+        A[Ansible Controller] -->|Executes Playbooks| B[KVM Hosts]
+    end
+    
+    subgraph Environments
+        B --> C[Equinix Metal]
+        B --> D[Hetzner Cloud]
+        B --> E[RHEL Hosts]
+    end
+    
+    subgraph Configuration_Management
+        A -->|Manages| F[Package Installation]
+        A -->|Configures| G[Firewall Rules]
+        A -->|Sets Up| H[SSH Access]
+        A -->|Deploys| I[Hashicorp Vault]
+        A -->|Configures| J[Cockpit SSL]
+        A -->|Manages| K[LVM Storage]
+    end
+    
+    subgraph CI/CD
+        L[GitLab CI] -->|Triggers| A
+        M[GitHub Actions] -->|Triggers| A
+    end
+    
+    style A fill:#f9f,stroke:#333,stroke-width:4px
+    style B fill:#bbf,stroke:#333,stroke-width:4px
+```
+
 ## About
 
 Qubinode Navigator simplifies the process of deploying OpenShift on KVM by offering different deployment methods. Whether you are deploying on Hetzner, Red Hat Product Demo System, or baremetal servers, Qubinode Navigator has you covered. Our detailed guides and documentation ensure a smooth and successful deployment experience.
