@@ -50,7 +50,7 @@ configure_ansible_vault() {
         mv ansiblesafe-linux-amd64 /usr/local/bin/ansiblesafe
     fi
     if [ ! -f "/opt/qubinode_navigator/ansible_vault_setup.sh" ]; then
-        if ! curl -OL https://gist.githubusercontent.com/tosin2013/022841d90216df8617244ab6d6aceaf8/raw/924041d90216df8617244ab6d6aceaf8/ansible_vault_setup.sh; then
+        if ! curl -OL https://raw.githubusercontent.com/tosin2013/ansiblesafe/refs/heads/main/ansible_vault_setup.sh; then
             log_message "Failed to download ansible_vault_setup.sh"
             exit 1
         fi
