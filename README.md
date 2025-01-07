@@ -1,6 +1,35 @@
 # Qubinode Navigator
 This repository contains a quickstart script setup.sh to set up and configure Qubinode Navigator. Qubinode Navigator helps to automate the deployment and management of virtual machines, containers, and other infrastructure resources.
 
+```mermaid
+graph TD
+    subgraph Control_Node
+        A[Ansible Controller] -->|Executes Playbooks| B[KVM Hosts]
+    end
+    
+    subgraph Environments
+        B --> C[Equinix Metal]
+        B --> D[Hetzner Cloud]
+        B --> E[RHEL Hosts]
+    end
+    
+    subgraph Configuration_Management
+        A -->|Manages| F[Package Installation]
+        A -->|Configures| G[Firewall Rules]
+        A -->|Sets Up| H[SSH Access]
+        A -->|Deploys| I[Hashicorp Vault]
+        A -->|Configures| J[Cockpit SSL]
+        A -->|Manages| K[LVM Storage]
+    end
+    
+    subgraph CI/CD
+        L[GitLab CI] -->|Triggers| A
+        M[GitHub Actions] -->|Triggers| A
+    end
+    
+    style A fill:#f9f,stroke:#333,stroke-width:4px
+    style B fill:#bbf,stroke:#333,stroke-width:4px
+```
 ## Prerequisites
 * Linux-based operating system (RHEL 9.2, CentOS, Rocky Linux, or Fedora)
 * Git
