@@ -1,0 +1,54 @@
+# Qubinode Navigator Configuration Template
+# Generated: {{ generation_timestamp }}
+# Environment: {{ environment }}
+# Template: default.yml.j2
+
+# RHEL Subscription Management
+rhsm_username: {{ rhsm_username | default('') }}
+rhsm_password: {{ rhsm_password | default('') }}
+rhsm_org: {{ rhsm_org | default('') }}
+rhsm_activationkey: {{ rhsm_activationkey | default('') }}
+
+# User Management
+admin_user_password: {{ admin_user_password | default('changeme') }}
+xrdp_remote_user: {{ xrdp_remote_user | default('remoteuser') }}
+xrdp_remote_user_password: {{ xrdp_remote_user_password | default('changeme') }}
+
+# Service Tokens
+{% if vault_enabled %}
+# Using HashiCorp Vault for token retrieval
+offline_token: {{ vault_get('tokens/offline_token') or offline_token | default('') }}
+openshift_pull_secret: {{ vault_get('tokens/openshift_pull_secret') or openshift_pull_secret | default('') }}
+automation_hub_offline_token: {{ vault_get('tokens/automation_hub_token') or automation_hub_offline_token | default('') }}
+{% else %}
+# Using environment variables or interactive input
+offline_token: {{ offline_token | default('') }}
+openshift_pull_secret: {{ openshift_pull_secret | default('') }}
+automation_hub_offline_token: {{ automation_hub_offline_token | default('') }}
+{% endif %}
+
+# FreeIPA Configuration
+freeipa_server_admin_password: {{ freeipa_server_admin_password | default('changeme') }}
+
+# AWS Credentials (Optional)
+{% if aws_access_key %}
+aws_access_key: {{ aws_access_key }}
+aws_secret_key: {{ aws_secret_key | default('') }}
+{% endif %}
+
+# Environment-specific configurations
+{% if environment == "production" %}
+# Production-specific settings
+{% elif environment == "hetzner" %}
+# Hetzner-specific settings
+{% elif environment == "equinix" %}
+# Equinix-specific settings
+{% endif %}
+
+# Template metadata
+_template_info:
+  generated_by: enhanced-load-variables.py
+  template: default.yml.j2
+  timestamp: {{ generation_timestamp }}
+  environment: {{ environment }}
+  vault_enabled: {{ vault_enabled }}

@@ -7,3 +7,9 @@ aider-env/bin/activate
 aider_setup.sh
 aider-env/
 .aider*
+node_modules
+package-lock.json
+package.json
+mcp-shrimp-task-manager
+shrimp-rules.md
+.env

@@ -1,0 +1,213 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "name": "Universal Qubinode Navigator Setup Rules",
+    "description": "Comprehensive rules for repeatable setup across RHEL and Rocky Linux environments for any user",
+    "created": "2025-01-09T20:30:00.000Z",
+    "lastModified": "2025-01-09T20:30:00.000Z",
+    "author": "Qubinode Navigator Team",
+    "tags": ["universal", "rhel", "rocky-linux", "portability", "setup"]
+  },
+  "supportedOperatingSystems": [
+    {
+      "name": "Red Hat Enterprise Linux",
+      "versions": ["9.6", "9.x"],
+      "script": "rhel9-linux-hypervisor.sh",
+      "packageManager": "dnf",
+      "subscriptionRequired": true
+    },
+    {
+      "name": "Rocky Linux",
+      "versions": ["9.x", "8.x"],
+      "script": "rocky-linux-hetzner.sh",
+      "packageManager": "dnf/yum",
+      "subscriptionRequired": false
+    }
+  ],
+  "universalRules": [
+    {
+      "id": "os-detection-rule",
+      "name": "Operating System Detection",
+      "pattern": "cat /etc/os-release.*ID=",
+      "severity": "critical",
+      "message": "Must detect OS before any setup operations",
+      "description": "Automatically detect RHEL vs Rocky Linux to select appropriate setup path",
+      "category": "compatibility",
+      "implementation": "if grep -q 'ID=\"rhel\"' /etc/os-release; then use rhel9-linux-hypervisor.sh; elif grep -q 'ID=\"rocky\"' /etc/os-release; then use rocky-linux-hetzner.sh; fi",
+      "validation": "OS detection must occur before script selection"
+    },
+    {
+      "id": "user-agnostic-paths-rule",
+      "name": "User-Agnostic Path Resolution",
+      "pattern": "\\$USER|\\$HOME|whoami",
+      "severity": "error",
+      "message": "All paths must adapt to current user, not hardcoded to 'vpcuser'",
+      "description": "Replace hardcoded /home/vpcuser/ with dynamic $HOME or /home/$USER/",
+      "category": "portability",
+      "implementation": "Use $HOME instead of /home/vpcuser, use $USER instead of vpcuser",
+      "validation": "No hardcoded user paths in scripts"
+    },
+    {
+      "id": "subscription-handling-rule",
+      "name": "Subscription Management Handling",
+      "pattern": "subscription-manager status",
+      "severity": "error",
+      "message": "Handle subscription differences between RHEL and Rocky Linux",
+      "description": "RHEL requires subscription-manager, Rocky uses community repos",
+      "category": "prerequisites",
+      "implementation": "if RHEL: check subscription-manager status; if Rocky: verify repo access",
+      "validation": "Subscription validation appropriate for detected OS"
+    },
+    {
+      "id": "package-manager-adaptation-rule",
+      "name": "Package Manager Adaptation",
+      "pattern": "dnf install|yum install",
+      "severity": "warning",
+      "message": "Use appropriate package manager for OS version",
+      "description": "RHEL 9 uses dnf, older versions may use yum",
+      "category": "compatibility",
+      "implementation": "Detect package manager availability and use appropriate commands",
+      "validation": "Package installation uses correct package manager"
+    },
+    {
+      "id": "root-privilege-validation-rule",
+      "name": "Root Privilege Validation",
+      "pattern": "\\[\\[ \\$EUID -ne 0 \\]\\]",
+      "severity": "critical",
+      "message": "All setup scripts must validate root privileges",
+      "description": "System-level operations require root access",
+      "category": "security",
+      "implementation": "if [[ $EUID -ne 0 ]]; then echo 'This script must be run as root'; exit 1; fi",
+      "validation": "Root check at beginning of all setup scripts"
+    },
+    {
+      "id": "network-connectivity-rule",
+      "name": "Network Connectivity Validation",
+      "pattern": "ping.*|curl.*",
+      "severity": "warning",
+      "message": "Validate network connectivity before downloads",
+      "description": "Prevent setup failures due to network issues",
+      "category": "prerequisites",
+      "implementation": "ping -c 3 google.com || curl -s github.com",
+      "validation": "Network check before package downloads"
+    },
+    {
+      "id": "container-execution-rule",
+      "name": "Container-First Execution",
+      "pattern": "ansible-navigator.*podman",
+      "severity": "error",
+      "message": "All Ansible execution must use containers via ansible-navigator",
+      "description": "Based on ADR-0001: Container-First Execution Model",
+      "category": "deployment",
+      "implementation": "Use ansible-navigator run instead of ansible-playbook",
+      "validation": "No direct ansible-playbook usage"
+    },
+    {
+      "id": "inventory-separation-rule",
+      "name": "Environment-Specific Inventories",
+      "pattern": "inventories/[^/]+/group_vars",
+      "severity": "error",
+      "message": "Each environment must have separate inventory",
+      "description": "Based on ADR-0002: Multi-Cloud Inventory Strategy",
+      "category": "configuration",
+      "implementation": "Create separate inventory directories for each environment",
+      "validation": "Environment isolation in inventory structure"
+    },
+    {
+      "id": "vault-security-rule",
+      "name": "Encrypted Credential Storage",
+      "pattern": "vault\\.yml.*\\$ANSIBLE_VAULT",
+      "severity": "critical",
+      "message": "All sensitive data must be encrypted with Ansible Vault",
+      "description": "Based on ADR-0004: Security Architecture",
+      "category": "security",
+      "implementation": "Use ansible-vault encrypt for all sensitive files",
+      "validation": "No plain-text credentials in repository"
+    },
+    {
+      "id": "progressive-ssh-security-rule",
+      "name": "Progressive SSH Security Model",
+      "pattern": "enable_ssh_password_authentication|disable_ssh_password_authentication",
+      "severity": "critical",
+      "message": "Implement automated SSH security progression",
+      "description": "Based on ADR-0010: Progressive SSH Security Model",
+      "category": "security",
+      "implementation": "Enable password auth for setup, disable after key deployment",
+      "validation": "SSH security state transitions are automated"
+    }
+  ],
+  "setupWorkflow": {
+    "phase1_detection": {
+      "description": "Detect environment and validate prerequisites",
+      "steps": [
+        "Detect operating system (RHEL vs Rocky Linux)",
+        "Validate current user and adapt paths",
+        "Check root/sudo access",
+        "Validate network connectivity",
+        "Check subscription status (RHEL only)"
+      ]
+    },
+    "phase2_script_selection": {
+      "description": "Select appropriate setup script based on OS",
+      "steps": [
+        "If RHEL 9.x: use rhel9-linux-hypervisor.sh",
+        "If Rocky Linux: use rocky-linux-hetzner.sh",
+        "Adapt script paths for current user",
+        "Set environment variables appropriately"
+      ]
+    },
+    "phase3_execution": {
+      "description": "Execute setup with monitoring",
+      "steps": [
+        "Run selected setup script with root privileges",
+        "Monitor progress and handle errors",
+        "Validate security configurations",
+        "Test container execution",
+        "Verify inventory setup"
+      ]
+    },
+    "phase4_validation": {
+      "description": "Validate setup completion and rule compliance",
+      "steps": [
+        "Test Ansible Navigator functionality",
+        "Verify vault encryption",
+        "Validate SSH security progression",
+        "Check inventory separation",
+        "Confirm container-first execution"
+      ]
+    }
+  },
+  "userAdaptationGuidelines": {
+    "pathSubstitution": {
+      "from": "/home/vpcuser/",
+      "to": "$HOME/",
+      "description": "Replace hardcoded vpcuser paths with current user home"
+    },
+    "usernameSubstitution": {
+      "from": "vpcuser",
+      "to": "$USER",
+      "description": "Replace hardcoded username with current user"
+    },
+    "environmentVariables": {
+      "INVENTORY": "Set based on deployment target (localhost, hetzner, equinix)",
+      "CICD_PIPELINE": "Set to false for manual setup",
+      "BASE_OS": "Auto-detect from /etc/os-release"
+    }
+  },
+  "osSpecificConsiderations": {
+    "rhel": {
+      "subscriptionRequired": true,
+      "validationCommand": "subscription-manager status",
+      "packageManager": "dnf",
+      "repositories": "RHEL official repositories",
+      "securityFeatures": "SELinux enabled by default"
+    },
+    "rocky": {
+      "subscriptionRequired": false,
+      "validationCommand": "dnf repolist",
+      "packageManager": "dnf",
+      "repositories": "Rocky Linux community repositories",
+      "securityFeatures": "SELinux available"
+    }
+  }
+}

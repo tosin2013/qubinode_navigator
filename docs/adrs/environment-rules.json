@@ -1,0 +1,121 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "name": "Environment-Specific Architectural Rules",
+    "description": "Architectural rules based on environment analysis and ADRs for this specific machine",
+    "created": "2025-01-09T20:06:36.179Z",
+    "lastModified": "2025-01-09T20:06:36.179Z",
+    "author": "MCP ADR Analysis Server",
+    "tags": ["architecture", "rules", "environment", "machine-specific"]
+  },
+  "rules": [
+    {
+      "id": "container-execution-rule",
+      "name": "Container-First Execution",
+      "pattern": "ansible-navigator.*container-engine.*podman",
+      "severity": "error",
+      "message": "All Ansible execution must use containerized environments via ansible-navigator",
+      "description": "Based on ADR-0001: Container-First Execution Model",
+      "category": "deployment",
+      "source": "ADR-0001"
+    },
+    {
+      "id": "inventory-separation-rule",
+      "name": "Environment-Specific Inventories",
+      "pattern": "inventories/[^/]+/group_vars",
+      "severity": "error",
+      "message": "Each environment must have separate inventory directory with group_vars",
+      "description": "Based on ADR-0002: Multi-Cloud Inventory Strategy",
+      "category": "configuration",
+      "source": "ADR-0002"
+    },
+    {
+      "id": "vault-security-rule",
+      "name": "Encrypted Credential Storage",
+      "pattern": "vault\\.yml.*\\$ANSIBLE_VAULT",
+      "severity": "error",
+      "message": "All sensitive data must be stored in Ansible Vault encrypted files",
+      "description": "Based on ADR-0004: Security Architecture",
+      "category": "security",
+      "source": "ADR-0004"
+    },
+    {
+      "id": "environment-specific-rule",
+      "name": "Environment-Specific Configuration",
+      "pattern": "inventories/[^/]+/group_vars",
+      "severity": "error",
+      "message": "Environment configurations must be isolated per deployment target",
+      "description": "Based on environment analysis showing multi-cloud deployment needs",
+      "category": "environment",
+      "source": "environment-analysis"
+    },
+    {
+      "id": "container-security-rule",
+      "name": "Container Security Standards",
+      "pattern": "Dockerfile.*USER.*[^root]",
+      "severity": "error",
+      "message": "Containers must run as non-root users for security",
+      "description": "Security requirement from environment analysis",
+      "category": "security",
+      "source": "environment-analysis"
+    },
+    {
+      "id": "machine-setup-rule",
+      "name": "Machine Setup Validation",
+      "pattern": "setup\\.sh.*get_rhel_version",
+      "severity": "warning",
+      "message": "Setup scripts must detect and validate the current machine environment",
+      "description": "Machine-specific setup requirements",
+      "category": "setup",
+      "source": "machine-analysis"
+    },
+    {
+      "id": "dependency-validation-rule",
+      "name": "Dependency Validation",
+      "pattern": "requirements\\.txt|package\\.json",
+      "severity": "warning",
+      "message": "All dependencies must be explicitly declared and validated",
+      "description": "Environment dependency management",
+      "category": "dependencies",
+      "source": "environment-analysis"
+    }
+  ],
+  "categories": [
+    {
+      "name": "security",
+      "description": "Rules for security implementation and best practices",
+      "priority": "critical",
+      "ruleCount": 2
+    },
+    {
+      "name": "deployment",
+      "description": "Rules for deployment and execution patterns",
+      "priority": "high",
+      "ruleCount": 1
+    },
+    {
+      "name": "configuration",
+      "description": "Rules for configuration management",
+      "priority": "high",
+      "ruleCount": 1
+    },
+    {
+      "name": "environment",
+      "description": "Rules for environment-specific configurations",
+      "priority": "high",
+      "ruleCount": 1
+    },
+    {
+      "name": "setup",
+      "description": "Rules for machine setup and validation",
+      "priority": "medium",
+      "ruleCount": 1
+    },
+    {
+      "name": "dependencies",
+      "description": "Rules for dependency management",
+      "priority": "medium",
+      "ruleCount": 1
+    }
+  ]
+}

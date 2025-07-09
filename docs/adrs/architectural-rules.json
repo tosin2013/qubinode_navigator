@@ -1,0 +1,189 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "name": "Qubinode Navigator Architectural Rules",
+    "description": "Comprehensive architectural rules derived from ADRs and code patterns for Qubinode Navigator",
+    "created": "2025-01-09T20:02:42.395Z",
+    "lastModified": "2025-01-09T20:02:42.395Z",
+    "author": "MCP ADR Analysis Server",
+    "tags": ["architecture", "rules", "validation"]
+  },
+  "rules": [
+    {
+      "id": "container-execution-rule",
+      "name": "Container-First Execution",
+      "pattern": "ansible-navigator.*container-engine.*podman",
+      "severity": "error",
+      "message": "All Ansible execution must use containerized environments via ansible-navigator",
+      "description": "Based on ADR-0001: Container-First Execution Model",
+      "category": "deployment",
+      "source": "ADR-0001"
+    },
+    {
+      "id": "inventory-separation-rule",
+      "name": "Environment-Specific Inventories",
+      "pattern": "inventories/[^/]+/group_vars",
+      "severity": "error",
+      "message": "Each environment must have separate inventory directory with group_vars",
+      "description": "Based on ADR-0002: Multi-Cloud Inventory Strategy",
+      "category": "configuration",
+      "source": "ADR-0002"
+    },
+    {
+      "id": "dynamic-config-rule",
+      "name": "Python Configuration Management",
+      "pattern": "load-variables\\.py.*yaml\\.safe_load",
+      "severity": "warning",
+      "message": "Configuration management should use Python scripts for YAML manipulation",
+      "description": "Based on ADR-0003: Dynamic Configuration Management",
+      "category": "configuration",
+      "source": "ADR-0003"
+    },
+    {
+      "id": "vault-security-rule",
+      "name": "Encrypted Credential Storage",
+      "pattern": "vault\\.yml.*\\$ANSIBLE_VAULT",
+      "severity": "error",
+      "message": "All sensitive data must be stored in Ansible Vault encrypted files",
+      "description": "Based on ADR-0004: Security Architecture",
+      "category": "security",
+      "source": "ADR-0004"
+    },
+    {
+      "id": "kvm-virtualization-rule",
+      "name": "KVM/Libvirt Virtualization",
+      "pattern": "libvirt.*kvm.*kcli",
+      "severity": "warning",
+      "message": "Virtualization should use KVM/libvirt with kcli management",
+      "description": "Based on ADR-0005: KVM/Libvirt Platform Choice",
+      "category": "infrastructure",
+      "source": "ADR-0005"
+    },
+    {
+      "id": "modular-dependencies-rule",
+      "name": "Modular Service Integration",
+      "pattern": "dependancies/[^/]+/",
+      "severity": "warning",
+      "message": "External service integrations must be organized in separate modules",
+      "description": "Based on ADR-0006: Modular Dependency Management",
+      "category": "architecture",
+      "source": "ADR-0006"
+    },
+    {
+      "id": "bash-python-orchestration-rule",
+      "name": "Bash-Python Language Separation",
+      "pattern": "(setup\\.sh|.*\\.sh).*python3.*load-variables\\.py",
+      "severity": "info",
+      "message": "Use Bash for orchestration and Python for configuration management",
+      "description": "Based on ADR-0007: Bash-First Orchestration",
+      "category": "development",
+      "source": "ADR-0007"
+    },
+    {
+      "id": "root-privilege-rule",
+      "name": "Root Privilege Validation",
+      "pattern": "\\[\\[ \\$EUID -ne 0 \\]\\]",
+      "severity": "error",
+      "message": "System setup scripts must validate root privileges",
+      "description": "Pattern from setup scripts requiring root access",
+      "category": "security",
+      "source": "code-pattern"
+    },
+    {
+      "id": "os-detection-rule",
+      "name": "Operating System Detection",
+      "pattern": "get_rhel_version|BASE_OS=",
+      "severity": "warning",
+      "message": "Scripts should detect and adapt to different operating systems",
+      "description": "Pattern from OS detection functions",
+      "category": "compatibility",
+      "source": "code-pattern"
+    },
+    {
+      "id": "error-handling-rule",
+      "name": "Exit on Error",
+      "pattern": "\\|\\| exit 1",
+      "severity": "warning",
+      "message": "Critical operations should exit on failure",
+      "description": "Pattern from error handling in scripts",
+      "category": "reliability",
+      "source": "code-pattern"
+    },
+    {
+      "id": "environment-validation-rule",
+      "name": "Environment Variable Validation",
+      "pattern": "\\[ -z \"\\$[A-Z_]+\" \\]",
+      "severity": "warning",
+      "message": "Required environment variables should be validated",
+      "description": "Pattern from environment variable checks",
+      "category": "configuration",
+      "source": "code-pattern"
+    },
+    {
+      "id": "makefile-automation-rule",
+      "name": "Makefile Build Automation",
+      "pattern": "\\.PHONY:.*build-image",
+      "severity": "info",
+      "message": "Build processes should be automated via Makefile targets",
+      "description": "Pattern from Makefile build automation",
+      "category": "build",
+      "source": "code-pattern"
+    }
+  ],
+  "categories": [
+    {
+      "name": "security",
+      "description": "Rules for security implementation and best practices",
+      "priority": "critical",
+      "ruleCount": 2
+    },
+    {
+      "name": "deployment",
+      "description": "Rules for deployment and execution patterns",
+      "priority": "high",
+      "ruleCount": 1
+    },
+    {
+      "name": "configuration",
+      "description": "Rules for configuration management",
+      "priority": "high",
+      "ruleCount": 3
+    },
+    {
+      "name": "infrastructure",
+      "description": "Rules for infrastructure choices",
+      "priority": "medium",
+      "ruleCount": 1
+    },
+    {
+      "name": "architecture",
+      "description": "Rules for architectural patterns",
+      "priority": "medium",
+      "ruleCount": 1
+    },
+    {
+      "name": "development",
+      "description": "Rules for development practices",
+      "priority": "medium",
+      "ruleCount": 1
+    },
+    {
+      "name": "compatibility",
+      "description": "Rules for cross-platform compatibility",
+      "priority": "medium",
+      "ruleCount": 1
+    },
+    {
+      "name": "reliability",
+      "description": "Rules for system reliability",
+      "priority": "medium",
+      "ruleCount": 1
+    },
+    {
+      "name": "build",
+      "description": "Rules for build automation",
+      "priority": "low",
+      "ruleCount": 1
+    }
+  ]
+}

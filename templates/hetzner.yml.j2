@@ -1,0 +1,50 @@
+# Qubinode Navigator Configuration Template - Hetzner Environment
+# Generated: {{ generation_timestamp }}
+# Environment: {{ environment }}
+# Template: hetzner.yml.j2
+
+# RHEL Subscription Management
+rhsm_username: {{ rhsm_username | default('') }}
+rhsm_password: {{ rhsm_password | default('') }}
+rhsm_org: {{ rhsm_org | default('') }}
+rhsm_activationkey: {{ rhsm_activationkey | default('') }}
+
+# User Management
+admin_user_password: {{ admin_user_password | default('changeme') }}
+xrdp_remote_user: {{ xrdp_remote_user | default('remoteuser') }}
+xrdp_remote_user_password: {{ xrdp_remote_user_password | default('changeme') }}
+
+# Service Tokens
+{% if vault_enabled %}
+offline_token: {{ vault_get('hetzner/offline_token') or offline_token | default('') }}
+openshift_pull_secret: {{ vault_get('hetzner/openshift_pull_secret') or openshift_pull_secret | default('') }}
+automation_hub_offline_token: {{ vault_get('hetzner/automation_hub_token') or automation_hub_offline_token | default('') }}
+{% else %}
+offline_token: {{ offline_token | default('') }}
+openshift_pull_secret: {{ openshift_pull_secret | default('') }}
+automation_hub_offline_token: {{ automation_hub_offline_token | default('') }}
+{% endif %}
+
+# FreeIPA Configuration
+freeipa_server_admin_password: {{ freeipa_server_admin_password | default('changeme') }}
+
+# Hetzner-specific AWS/Route53 Configuration
+{% if aws_access_key or vault_enabled %}
+aws_access_key: {{ vault_get('hetzner/aws_access_key') or aws_access_key | default('') }}
+aws_secret_key: {{ vault_get('hetzner/aws_secret_key') or aws_secret_key | default('') }}
+{% endif %}
+
+# Hetzner-specific settings
+hetzner_config:
+  use_route53: true
+  interface: bond0
+  active_bridge: false
+  forwarder: '1.1.1.1'
+
+# Template metadata
+_template_info:
+  generated_by: enhanced-load-variables.py
+  template: hetzner.yml.j2
+  timestamp: {{ generation_timestamp }}
+  environment: {{ environment }}
+  vault_enabled: {{ vault_enabled }}

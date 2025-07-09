@@ -1,0 +1,190 @@
+# Qubinode Navigator Configuration Template - RHEL 9 Equinix Environment
+# Generated: {{ generation_timestamp }}
+# Environment: {{ environment }}
+# Template: rhel9-equinix.yml.j2
+# Optimized for: RHEL 9.x systems in cloud/virtualized environments
+
+# RHEL Subscription Management
+rhsm_username: {{ rhsm_username | default('') }}
+rhsm_password: {{ rhsm_password | default('') }}
+rhsm_org: {{ rhsm_org | default('') }}
+rhsm_activationkey: {{ rhsm_activationkey | default('') }}
+
+# User Management
+admin_user_password: {{ admin_user_password | default('changeme') }}
+xrdp_remote_user: {{ xrdp_remote_user | default('lab-user') }}
+xrdp_remote_user_password: {{ xrdp_remote_user_password | default('changeme') }}
+
+# Service Tokens
+{% if vault_enabled %}
+# Using HashiCorp Vault for token retrieval
+offline_token: {{ vault_get('rhel9-equinix/offline_token') or offline_token | default('') }}
+openshift_pull_secret: {{ vault_get('rhel9-equinix/openshift_pull_secret') or openshift_pull_secret | default('') }}
+automation_hub_offline_token: {{ vault_get('rhel9-equinix/automation_hub_token') or automation_hub_offline_token | default('') }}
+{% else %}
+# Using environment variables or interactive input
+offline_token: {{ offline_token | default('') }}
+openshift_pull_secret: {{ openshift_pull_secret | default('') }}
+automation_hub_offline_token: {{ automation_hub_offline_token | default('') }}
+{% endif %}
+
+# FreeIPA Configuration
+freeipa_server_admin_password: {{ freeipa_server_admin_password | default('changeme') }}
+
+# RHEL 9 Equinix-specific configurations
+rhel9_equinix_config:
+  # RHEL 9 specific settings
+  rhel_version: "9.6"
+  admin_user: "lab-user"
+  project_dir: "/opt/qubinode-installer"
+  
+  # Network configuration for cloud/virtualized environment
+  network:
+    interface: "eth0"  # Common for cloud instances
+    use_bridge: false
+    dns_forwarder: "1.1.1.1"
+    
+  # Storage configuration
+  storage:
+    logical_volumes:
+      - name: "qubi_images"
+        size: "+100%FREE"
+        mount_dir: "/var/lib/libvirt/images"
+        fstype: "xfs"
+  
+  # Cloud/virtualized environment settings
+  cloud_config:
+    run_on_rhpds: false
+    run_kni_lab_on_rhpds: false
+    one_redhat: false
+    
+  # Application dependencies
+  applications:
+    ansible_automation_platform: false
+    enable_ceph_deployment: false
+
+# AWS Credentials (Optional - for Route53 with cloud deployments)
+{% if aws_access_key or vault_enabled %}
+{% if vault_enabled %}
+aws_access_key: {{ vault_get('rhel9-equinix/aws_access_key') or aws_access_key | default('') }}
+aws_secret_key: {{ vault_get('rhel9-equinix/aws_secret_key') or aws_secret_key | default('') }}
+{% else %}
+aws_access_key: {{ aws_access_key | default('') }}
+aws_secret_key: {{ aws_secret_key | default('') }}
+{% endif %}
+{% endif %}
+
+# RHEL 9 system optimizations
+system_config:
+  # Package management
+  package_manager: "dnf"
+  
+  # Security settings
+  selinux: "enforcing"
+  firewall: "firewalld"
+  
+  # Container runtime
+  container_runtime: "podman"
+  
+  # Virtualization
+  virtualization: "kvm"
+  libvirt_dir: "/var/lib/libvirt/images"
+
+# Network configuration for cloud environment
+network_config:
+  # Primary interface (detected from system)
+  primary_interface: "eth0"
+  
+  # DNS configuration
+  dns_servers:
+    - "{{ dns_forwarder | default('1.1.1.1') }}"
+    - "8.8.8.8"
+  
+  # Firewall ports for Qubinode services
+  firewall_ports:
+    - "22/tcp"    # SSH
+    - "80/tcp"    # HTTP
+    - "443/tcp"   # HTTPS
+    - "8080/tcp"  # Alternative HTTP
+    - "9090/tcp"  # Cockpit
+    - "6443/tcp"  # Kubernetes API
+    - "8443/tcp"  # OpenShift console
+
+# OpenShift/Kubernetes specific settings for RHEL 9
+openshift_config:
+  # OpenShift version compatibility
+  supported_versions: ["4.12", "4.13", "4.14", "4.15"]
+  
+  # Container registry settings
+  registry_config:
+    insecure_registries: []
+    blocked_registries: []
+    
+  # Resource requirements for RHEL 9
+  minimum_requirements:
+    cpu_cores: 4
+    memory_gb: 16
+    disk_gb: 120
+
+# Development and CI/CD settings
+development_config:
+  # Git repository
+  git_repo: "https://github.com/tosin2013/qubinode_navigator.git"
+  
+  # CI/CD environment
+  cicd_pipeline: {{ cicd_pipeline | default('false') }}
+  
+  # Development tools
+  development_tools:
+    - "git"
+    - "vim"
+    - "curl"
+    - "wget"
+    - "jq"
+    - "python3-pip"
+
+# Monitoring and logging
+monitoring_config:
+  # System monitoring
+  enable_cockpit: true
+  cockpit_port: 9090
+  
+  # Log management
+  log_retention_days: 30
+  
+  # Performance monitoring
+  enable_performance_monitoring: false
+
+# Backup and maintenance
+maintenance_config:
+  # Automatic updates
+  auto_updates: false
+  
+  # Backup configuration
+  backup_enabled: false
+  backup_retention_days: 7
+  
+  # Maintenance windows
+  maintenance_window: "02:00-04:00"
+
+# Template metadata
+_template_info:
+  generated_by: enhanced-load-variables.py
+  template: rhel9-equinix.yml.j2
+  timestamp: {{ generation_timestamp }}
+  environment: {{ environment }}
+  vault_enabled: {{ vault_enabled }}
+  system_detected:
+    os: "RHEL 9.6"
+    hostname: "ocp4-disconnected-helper"
+    network_range: "10.240.64.x"
+    environment_type: "cloud/virtualized"
+
+# RHEL 9 specific metadata
+_rhel9_info:
+  version: "9.6"
+  codename: "Plow"
+  admin_user: "lab-user"
+  optimized_for: "cloud/virtualized environments"
+  inventory: "rhel9-equinix"
+  configuration_date: {{ generation_timestamp }}

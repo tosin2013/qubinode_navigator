@@ -1,0 +1,150 @@
+# Qubinode Navigator Configuration Template - OpenShift Environment
+# Generated: {{ generation_timestamp }}
+# Environment: {{ environment }}
+# Template: openshift.yml.j2
+# Vault Type: OpenShift Vault with Kubernetes Authentication
+
+# RHEL Subscription Management
+rhsm_username: {{ rhsm_username | default('') }}
+rhsm_password: {{ rhsm_password | default('') }}
+rhsm_org: {{ rhsm_org | default('') }}
+rhsm_activationkey: {{ rhsm_activationkey | default('') }}
+
+# User Management
+admin_user_password: {{ admin_user_password | default('changeme') }}
+xrdp_remote_user: {{ xrdp_remote_user | default('remoteuser') }}
+xrdp_remote_user_password: {{ xrdp_remote_user_password | default('changeme') }}
+
+# Service Tokens
+{% if vault_enabled and openshift_vault %}
+# Using OpenShift Vault with Kubernetes authentication
+offline_token: {{ vault_get('ansiblesafe/' + environment + '/offline_token') or offline_token | default('') }}
+openshift_pull_secret: {{ vault_get('ansiblesafe/' + environment + '/openshift_pull_secret') or openshift_pull_secret | default('') }}
+automation_hub_offline_token: {{ vault_get('ansiblesafe/' + environment + '/automation_hub_token') or automation_hub_offline_token | default('') }}
+{% elif vault_enabled %}
+# Using standard Vault integration
+offline_token: {{ vault_get('tokens/offline_token') or offline_token | default('') }}
+openshift_pull_secret: {{ vault_get('tokens/openshift_pull_secret') or openshift_pull_secret | default('') }}
+automation_hub_offline_token: {{ vault_get('tokens/automation_hub_token') or automation_hub_offline_token | default('') }}
+{% else %}
+# Using environment variables or interactive input
+offline_token: {{ offline_token | default('') }}
+openshift_pull_secret: {{ openshift_pull_secret | default('') }}
+automation_hub_offline_token: {{ automation_hub_offline_token | default('') }}
+{% endif %}
+
+# FreeIPA Configuration
+freeipa_server_admin_password: {{ freeipa_server_admin_password | default('changeme') }}
+
+# OpenShift-specific configurations
+{% if environment == "openshift" or openshift_vault %}
+openshift_config:
+  # OpenShift cluster integration
+  use_openshift_routes: true
+  vault_integration: kubernetes_auth
+  service_account: qubinode-navigator
+  
+  # Container registry configuration
+  registry_auth: pull_secret
+  
+  # Storage configuration
+  storage_class: {{ storage_class | default('gp2') }}
+  
+  # Network configuration
+  network_policy: enabled
+  
+  # Security context
+  security_context:
+    run_as_user: 1001
+    fs_group: 1001
+{% endif %}
+
+# AWS Credentials (Optional - for Route53 with OpenShift)
+{% if aws_access_key or vault_enabled %}
+{% if vault_enabled %}
+aws_access_key: {{ vault_get('ansiblesafe/' + environment + '/aws_access_key') or aws_access_key | default('') }}
+aws_secret_key: {{ vault_get('ansiblesafe/' + environment + '/aws_secret_key') or aws_secret_key | default('') }}
+{% else %}
+aws_access_key: {{ aws_access_key | default('') }}
+aws_secret_key: {{ aws_secret_key | default('') }}
+{% endif %}
+{% endif %}
+
+# OpenShift-specific network settings
+{% if environment == "openshift" %}
+network_config:
+  # Use OpenShift SDN/OVN
+  use_openshift_sdn: true
+  
+  # DNS configuration
+  dns_forwarder: {{ dns_forwarder | default('8.8.8.8') }}
+  
+  # Load balancer configuration
+  load_balancer: openshift_router
+  
+  # Ingress configuration
+  ingress_controller: openshift_router
+{% endif %}
+
+# Kubernetes/OpenShift specific settings
+kubernetes_config:
+  # Namespace for Qubinode Navigator
+  namespace: {{ kubernetes_namespace | default('qubinode-navigator') }}
+  
+  # Service account
+  service_account: {{ service_account | default('qubinode-navigator') }}
+  
+  # RBAC configuration
+  rbac_enabled: true
+  
+  # Pod security
+  pod_security_policy: restricted
+  
+  # Resource limits
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+
+# Vault configuration metadata
+{% if vault_enabled %}
+vault_config:
+  type: {% if openshift_vault %}openshift{% elif use_hcp %}hcp{% else %}local{% endif %}
+  
+  address: {{ vault_addr | default('') }}
+  
+  {% if openshift_vault %}
+  auth_method: kubernetes
+  role: {{ vault_role | default('qubinode-navigator') }}
+  service_account_token_path: /var/run/secrets/kubernetes.io/serviceaccount/token
+  {% endif %}
+  
+  secret_path: ansiblesafe/{{ environment }}
+  
+  # Vault Secrets Operator integration
+  {% if openshift_vault %}
+  vso_enabled: {{ vso_enabled | default('true') }}
+  vault_connection: vault-connection
+  vault_auth: vault-auth
+  {% endif %}
+{% endif %}
+
+# Template metadata
+_template_info:
+  generated_by: enhanced-load-variables.py
+  template: openshift.yml.j2
+  timestamp: {{ generation_timestamp }}
+  environment: {{ environment }}
+  vault_enabled: {{ vault_enabled }}
+  openshift_vault: {{ openshift_vault | default(false) }}
+  kubernetes_auth: {{ vault_auth_method == 'kubernetes' if vault_auth_method else false }}
+
+# OpenShift deployment metadata
+_openshift_info:
+  cluster_version: {{ openshift_version | default('4.x') }}
+  deployment_method: {{ deployment_method | default('operator') }}
+  vault_namespace: {{ vault_namespace | default('vault-system') }}
+  qubinode_namespace: {{ kubernetes_namespace | default('qubinode-navigator') }}
