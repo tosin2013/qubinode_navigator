@@ -11,6 +11,7 @@ psutil
 requests
 pyyaml
 jinja2
+hvac
 
 # Build and packaging tools
 setuptools

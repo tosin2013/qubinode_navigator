@@ -175,7 +175,27 @@ create_vault_yml_from_vault() {
     # Generate vault.yml content directly from vault using Python YAML generation
     print_status "Generating vault.yml with proper YAML formatting..."
 
+    # Debug: Check if Python and modules are available
+    print_status "DEBUG: Checking Python environment..."
+    python3 -c "
+import sys
+print(f'Python version: {sys.version}')
+print(f'Python path: {sys.path}')
+try:
+    import yaml
+    print('✅ yaml module available')
+except ImportError as e:
+    print(f'❌ yaml module error: {e}')
+try:
+    sys.path.append('/opt/qubinode_navigator')
+    from enhanced_load_variables import EnhancedConfigGenerator
+    print('✅ EnhancedConfigGenerator available')
+except ImportError as e:
+    print(f'❌ EnhancedConfigGenerator error: {e}')
+"
+
     # Use Python to generate properly formatted YAML
+    print_status "DEBUG: Starting YAML generation..."
     python3 -c "
 import os
 import yaml
@@ -184,10 +204,17 @@ sys.path.append('/opt/qubinode_navigator')
 from enhanced_load_variables import EnhancedConfigGenerator
 
 try:
+    print('DEBUG: Creating EnhancedConfigGenerator...')
     gen = EnhancedConfigGenerator()
+    print('DEBUG: EnhancedConfigGenerator created')
+
     if gen.vault_client:
+        print('DEBUG: Vault client available, getting variables...')
         vault_vars = gen._get_vault_variables()
+        print(f'DEBUG: Retrieved {len(vault_vars) if vault_vars else 0} variables')
+
         if vault_vars:
+            print('DEBUG: Writing YAML file...')
             # Write properly formatted YAML with header
             with open('${temp_vault_yml}', 'w') as f:
                 f.write('# Qubinode Navigator Vault Configuration\\n')
@@ -204,6 +231,8 @@ try:
         exit(1)
 except Exception as e:
     print(f'❌ Error generating vault.yml: {e}')
+    import traceback
+    traceback.print_exc()
     exit(1)
 " || {
         print_error "Failed to generate vault.yml with Python"

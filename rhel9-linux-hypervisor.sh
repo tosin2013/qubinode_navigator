@@ -22,7 +22,7 @@ set -euo pipefail
 # - Traditional mode: Fallback to original ansiblesafe approach
 #
 # Global variables
-readonly KVM_VERSION="0.8.0"
+readonly KVM_VERSION="${KVM_VERSION:-0.8.0}"
 readonly GIT_REPO="https://github.com/tosin2013/qubinode_navigator.git"
 
 # ENVIRONMENT VARIABLES:
