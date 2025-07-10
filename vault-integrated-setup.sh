@@ -184,32 +184,35 @@ EOF
     # Retrieve secrets from vault and append to vault.yml
     # Use Python YAML generation for proper formatting (more secure and reliable)
     print_status "Retrieving secrets from vault path: kv/ansiblesafe/${INVENTORY}"
-    python3 -c "
+
+    # Always use Python for reliable YAML formatting
 import os
 import yaml
 import sys
-sys.path.append('.')
+sys.path.append('/opt/qubinode_navigator')
 from enhanced_load_variables import EnhancedConfigGenerator
 
-gen = EnhancedConfigGenerator()
-if gen.vault_client:
-    vault_vars = gen._get_vault_variables()
-    if vault_vars:
-        with open('${temp_vault_yml}', 'a') as f:
-            # Use proper YAML formatting with quoted strings for complex values
-            for key, value in vault_vars.items():
-                if isinstance(value, str) and (':' in value or '{' in value or len(value) > 100):
-                    # Quote complex strings (JWT tokens, JSON, long strings)
-                    f.write(f'{key}: {yaml.dump(value).strip()}\n')
-                else:
-                    # Simple values can be unquoted
-                    f.write(f'{key}: {value}\n')
-        print('✅ Retrieved secrets from vault using Python client')
+try:
+    gen = EnhancedConfigGenerator()
+    if gen.vault_client:
+        vault_vars = gen._get_vault_variables()
+        if vault_vars:
+            with open('${temp_vault_yml}', 'a') as f:
+                # Use proper YAML formatting for all values
+                yaml.dump(vault_vars, f, default_flow_style=False, allow_unicode=True,
+                         default_style='\"' if any(':' in str(v) or '{' in str(v) for v in vault_vars.values()) else None)
+            print('✅ Retrieved secrets from vault using Python client')
+        else:
+            print('⚠️ No secrets retrieved from vault')
     else:
-        print('⚠️ No secrets retrieved from vault')
-else:
-    print('❌ Vault client not available')
-" || print_warning "Python vault integration failed"
+        print('❌ Vault client not available')
+except Exception as e:
+    print(f'❌ Error in Python vault integration: {e}')
+    exit(1)
+" || {
+        print_error "Python vault integration failed"
+        exit 1
+    }
     fi
     
     # Move to final location
