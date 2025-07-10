@@ -59,13 +59,16 @@ jobs:
         uses: ruby/setup-ruby@v1  # Use latest stable version
         with:
           ruby-version: '3.1.4'  # Specify exact version
+          bundler-version: '2.6.0'  # Specify Bundler 2.6 or higher
           bundler-cache: true
           cache-version: 1
         continue-on-error: false
         id: ruby-setup
 
-      - name: Check Ruby version
-        run: ruby -v
+      - name: Check Ruby and Bundler versions
+        run: |
+          ruby -v
+          bundle -v
 
       - name: Fallback Ruby installation (if setup-ruby fails)
         if: steps.ruby-setup.outcome == 'failure'
@@ -80,8 +83,8 @@ jobs:
           echo 'export PATH="$HOME/gems/bin:$PATH"' >> ~/.bashrc
           source ~/.bashrc
 
-          # Install bundler
-          gem install bundler
+          # Install specific version of bundler (2.6 or higher)
+          gem install bundler -v '>= 2.6.0'
 
           echo "Ruby version: $(ruby --version)"
           echo "Bundler version: $(bundle --version)"
@@ -107,22 +110,32 @@ jobs:
           cd docs
           echo "Ruby version: $(ruby --version)"
           echo "Bundler version: $(bundle --version)"
+
+          # Ensure we have Bundler 2.6 or higher
+          if [ "${{ steps.ruby-setup.outcome }}" != "failure" ]; then
+            echo "Updating bundler to ensure version 2.6+"
+            gem install bundler -v '>= 2.6.0' --conservative || true
+          fi
+
+          echo "Final Bundler version: $(bundle --version)"
           echo "Gem environment:"
           gem env
 
           echo "Installing dependencies with native extension support..."
-          # Configure bundler for native extensions
+          # Configure bundler for native extensions (Bundler 2.6+ compatible)
           bundle config set --local build.nokogiri --use-system-libraries
           bundle config set --local build.ffi --enable-system-libffi
           bundle config set --local build.bigdecimal --enable-shared
+          bundle config set --local jobs 4
+          bundle config set --local retry 3
 
           # Set environment variables for native compilation
           export MAKE="make -j$(nproc)"
           export CC=gcc
           export CXX=g++
 
-          # Install with increased verbosity and parallel jobs
-          bundle install --retry 3 --jobs 4 --verbose
+          # Install with Bundler 2.6+ optimizations
+          bundle install --verbose
 
           echo "Building Jekyll site..."
           bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}" --destination ../_site --verbose
