@@ -69,6 +69,8 @@ jobs:
         run: |
           echo "setup-ruby failed, installing Ruby manually..."
           sudo apt-get install -y ruby-full
+          sudo apt-get update && sudo apt-get install -y build-essential
+          sudo apt-get install -y ruby-dev
 
           # Set up gem installation directory for user
           echo 'export GEM_HOME="$HOME/gems"' >> ~/.bashrc
