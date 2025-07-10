@@ -89,12 +89,14 @@ rhsm_username: rheluser
 rhsm_password: rhelpassword
 
 # Recommended enhancement with Jinja2
+{% raw %}
 rhsm_username: {{ rhsm_username | default('') }}
 {% if environment == "production" %}
 rhsm_org: {{ prod_rhsm_org }}
 {% else %}
 rhsm_org: {{ dev_rhsm_org }}
 {% endif %}
+{% endraw %}
 ```
 
 **Q2.2**: How should the script handle optional vs required configuration values?
@@ -344,6 +346,7 @@ class ConfigGenerator:
 ### Template Example (templates/default.yml.j2)
 ```yaml
 # Qubinode Navigator Configuration Template
+{% raw %}
 # Generated: {{ generation_timestamp }}
 # Environment: {{ environment }}
 
@@ -377,6 +380,7 @@ freeipa_server_admin_password: {{ freeipa_server_admin_password | default('chang
 aws_access_key: {{ aws_access_key | default('') }}
 aws_secret_key: {{ aws_secret_key | default('') }}
 {% endif %}
+{% endraw %}
 ```
 
 ### Usage Examples

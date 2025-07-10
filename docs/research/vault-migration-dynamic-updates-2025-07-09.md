@@ -130,6 +130,7 @@ def migrate_ansiblesafe_to_vault(self):
 ### Example Template Usage
 ```yaml
 # templates/default.yml.j2
+{% raw %}
 {% if vault_enabled %}
 offline_token: {{ vault_get('tokens/offline_token') or offline_token | default('') }}
 {% else %}
@@ -141,6 +142,7 @@ offline_token: {{ offline_token | default('') }}
 {% elif environment == "hetzner" %}
 # Hetzner-specific settings
 {% endif %}
+{% endraw %}
 ```
 
 ## Security Considerations

@@ -315,9 +315,9 @@ package_mappings:
 
 - name: Install version-appropriate packages
   dnf:
-    name: "{{ package_mappings[ansible_distribution + ansible_distribution_major_version][item.key] }}"
+    name: "{% raw %}{{ package_mappings[ansible_distribution + ansible_distribution_major_version][item.key] }}{% endraw %}"
     state: present
-  loop: "{{ required_package_categories | dict2items }}"
+  loop: "{% raw %}{{ required_package_categories | dict2items }}{% endraw %}"
 ```
 
 ### Solution 2: Smart Package Detection with Fallbacks
@@ -350,9 +350,9 @@ package_mappings:
 
 - name: Filter out conflicting packages
   set_fact:
-    safe_packages: "{{ required_rpm_packages | difference(conflicting_packages) }}"
+    safe_packages: "{% raw %}{{ required_rpm_packages | difference(conflicting_packages) }}{% endraw %}"
   vars:
-    conflicting_packages: "{{ conflict_check.results | selectattr('stdout', 'search', 'conflict') | map(attribute='item') | list }}"
+    conflicting_packages: "{% raw %}{{ conflict_check.results | selectattr('stdout', 'search', 'conflict') | map(attribute='item') | list }}{% endraw %}"
 ```
 
 ## Research Methodology
