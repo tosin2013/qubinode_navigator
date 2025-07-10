@@ -1,0 +1,123 @@
+# Dependabot configuration for Qubinode Navigator
+# Automatically updates dependencies and creates pull requests for security patches
+# See: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  # Python dependencies - Main requirements.txt
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "tosin2013"
+    assignees:
+      - "tosin2013"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "python"
+      - "security"
+    allow:
+      - dependency-type: "all"
+    ignore:
+      # Ignore major version updates for critical packages that need manual testing
+      - dependency-name: "ansible-core"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "ansible-navigator"
+        update-types: ["version-update:semver-major"]
+
+  # Python dependencies - Ansible Builder requirements
+  - package-ecosystem: "pip"
+    directory: "/ansible-builder"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:30"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "tosin2013"
+    assignees:
+      - "tosin2013"
+    commit-message:
+      prefix: "deps(ansible-builder)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "python"
+      - "ansible-builder"
+      - "execution-environment"
+
+  # Python dependencies - Bash aliases requirements
+  - package-ecosystem: "pip"
+    directory: "/bash-aliases"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "10:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "tosin2013"
+    commit-message:
+      prefix: "deps(bash-aliases)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "python"
+      - "bash-aliases"
+
+  # GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "tosin2013"
+    assignees:
+      - "tosin2013"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "ci/cd"
+
+  # Docker dependencies (for any Dockerfiles)
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "tosin2013"
+    commit-message:
+      prefix: "deps(docker)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "containers"
+
+# Security-focused configuration
+# - Weekly updates to catch security patches quickly
+# - Separate schedules to avoid overwhelming with PRs
+# - Automatic assignment to maintainer
+# - Clear labeling for easy identification
+# - Ignores major version updates for critical Ansible components
