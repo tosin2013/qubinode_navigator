@@ -58,7 +58,7 @@ configure_bridge: true
 # Set to no prevent the installer from attempting
 # setup a LVM group for qubinode. Also set this to no
 # if you already have you storage for lvm setup
-create_lvm: true
+create_lvm: false
 
 ## Set to no if you don't want to configure libvirt storage
 create_libvirt_storage: true
