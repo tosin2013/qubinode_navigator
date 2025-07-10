@@ -182,18 +182,9 @@ create_vault_yml_from_vault() {
 EOF
     
     # Retrieve secrets from vault and append to vault.yml
-    if command -v vault &> /dev/null; then
-        print_status "Retrieving secrets from vault path: kv/ansiblesafe/${INVENTORY}"
-        
-        # Get all secrets from vault and format as properly quoted YAML
-        vault kv get -format=json "kv/ansiblesafe/${INVENTORY}" 2>/dev/null | \
-        jq -r '.data.data | to_entries[] | "\(.key): " + (@json "\(.value)")' >> "${temp_vault_yml}" 2>/dev/null || {
-            print_warning "Could not retrieve secrets from vault, using interactive mode"
-            echo "# No secrets retrieved from vault - using interactive setup" >> "${temp_vault_yml}"
-        }
-    else
-        print_warning "Vault CLI not available, using Python integration"
-        python3 -c "
+    # Use Python YAML generation for proper formatting (more secure and reliable)
+    print_status "Retrieving secrets from vault path: kv/ansiblesafe/${INVENTORY}"
+    python3 -c "
 import os
 import yaml
 import sys
@@ -205,8 +196,14 @@ if gen.vault_client:
     vault_vars = gen._get_vault_variables()
     if vault_vars:
         with open('${temp_vault_yml}', 'a') as f:
-            yaml.dump(vault_vars, f, default_flow_style=False, allow_unicode=True,
-                     default_style='\"' if any(':' in str(v) for v in vault_vars.values()) else None)
+            # Use proper YAML formatting with quoted strings for complex values
+            for key, value in vault_vars.items():
+                if isinstance(value, str) and (':' in value or '{' in value or len(value) > 100):
+                    # Quote complex strings (JWT tokens, JSON, long strings)
+                    f.write(f'{key}: {yaml.dump(value).strip()}\n')
+                else:
+                    # Simple values can be unquoted
+                    f.write(f'{key}: {value}\n')
         print('✅ Retrieved secrets from vault using Python client')
     else:
         print('⚠️ No secrets retrieved from vault')
