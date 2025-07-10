@@ -17,7 +17,7 @@ search_domains:
   - "{{ domain }}"
 
 libvirt_pool_name_check: true
-skip_libvirt_pool: false
+skip_libvirt_pool: true
 
 qubinode_bridge_name: qubibr0
 
@@ -61,7 +61,7 @@ configure_bridge: true
 create_lvm: false
 
 ## Set to no if you don't want to configure libvirt storage
-create_libvirt_storage: true
+create_libvirt_storage: false
 
 # used in playbook setup_kvmhost.yml
 network_interface_name: "{{ kvm_host_interface }}"
