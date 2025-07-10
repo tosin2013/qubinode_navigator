@@ -34,6 +34,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install development dependencies
+        run: |
+          echo "Installing development dependencies for native gem compilation..."
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            zlib1g-dev \
+            libyaml-dev \
+            libssl-dev \
+            libgdbm-dev \
+            libreadline-dev \
+            libncurses5-dev \
+            libffi-dev \
+            libgmp-dev \
+            libxml2-dev \
+            libxslt1-dev \
+            pkg-config \
+            autoconf \
+            bison \
+            rustc
+
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1  # Use latest stable version
         with:
@@ -42,12 +63,6 @@ jobs:
           cache-version: 1
         continue-on-error: true
         id: ruby-setup
-
-      - name: Install development dependencies
-        run: |
-          echo "Installing development dependencies for native gem compilation..."
-          sudo apt-get update
-          sudo apt-get install -y build-essential zlib1g-dev libyaml-dev libssl-dev libgdbm-dev libreadline-dev libncurses5-dev libffi-dev
 
       - name: Fallback Ruby installation (if setup-ruby fails)
         if: steps.ruby-setup.outcome == 'failure'
@@ -94,6 +109,12 @@ jobs:
           # Configure bundler for native extensions
           bundle config set --local build.nokogiri --use-system-libraries
           bundle config set --local build.ffi --enable-system-libffi
+          bundle config set --local build.bigdecimal --enable-shared
+
+          # Set environment variables for native compilation
+          export MAKE="make -j$(nproc)"
+          export CC=gcc
+          export CXX=g++
 
           # Install with increased verbosity and parallel jobs
           bundle install --retry 3 --jobs 4 --verbose
@@ -105,6 +126,11 @@ jobs:
           GEM_HOME: ${{ steps.ruby-setup.outcome == 'failure' && '$HOME/gems' || '' }}
           PATH: ${{ steps.ruby-setup.outcome == 'failure' && '$HOME/gems/bin:$PATH' || env.PATH }}
           MAKE: make -j4
+          CC: gcc
+          CXX: g++
+          BUNDLE_BUILD__BIGDECIMAL: --enable-shared
+          BUNDLE_BUILD__NOKOGIRI: --use-system-libraries
+          BUNDLE_BUILD__FFI: --enable-system-libffi
 
       - name: Verify build output
         run: |
