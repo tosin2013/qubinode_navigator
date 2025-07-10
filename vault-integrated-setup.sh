@@ -185,7 +185,22 @@ EOF
     # Use Python YAML generation for proper formatting (more secure and reliable)
     print_status "Retrieving secrets from vault path: kv/ansiblesafe/${INVENTORY}"
 
-    # Always use Python for reliable YAML formatting
+    # Note: YAML generation now handled in the ansiblesafe section below
+    print_status "Preparing for vault.yml generation..."
+    
+    # Move to final location
+    mv "${temp_vault_yml}" "${vault_yml_path}"
+    chmod 600 "${vault_yml_path}"
+    
+    print_status "✅ Created ${vault_yml_path} directly from vault"
+    
+    # Use our Python YAML generation instead of ansiblesafe for better formatting
+    if command -v ansiblesafe &> /dev/null; then
+        print_status "Using Python YAML generation for proper formatting..."
+        cd "$(dirname "${vault_yml_path}")"
+
+        # Generate properly formatted vault.yml using our Python code
+        python3 -c "
 import os
 import yaml
 import sys
@@ -197,42 +212,24 @@ try:
     if gen.vault_client:
         vault_vars = gen._get_vault_variables()
         if vault_vars:
-            with open('${temp_vault_yml}', 'a') as f:
-                # Use proper YAML formatting for all values
-                yaml.dump(vault_vars, f, default_flow_style=False, allow_unicode=True,
-                         default_style='\"' if any(':' in str(v) or '{' in str(v) for v in vault_vars.values()) else None)
-            print('✅ Retrieved secrets from vault using Python client')
+            # Write properly formatted YAML
+            with open('vault.yml', 'w') as f:
+                yaml.dump(vault_vars, f, default_flow_style=False, allow_unicode=True, default_style='\"')
+            print('✅ Generated properly formatted vault.yml from HashiCorp Vault')
         else:
             print('⚠️ No secrets retrieved from vault')
+            exit(1)
     else:
         print('❌ Vault client not available')
+        exit(1)
 except Exception as e:
-    print(f'❌ Error in Python vault integration: {e}')
+    print(f'❌ Error generating vault.yml: {e}')
     exit(1)
-" || {
-        print_error "Python vault integration failed"
-        exit 1
-    }
-    fi
-    
-    # Move to final location
-    mv "${temp_vault_yml}" "${vault_yml_path}"
-    chmod 600 "${vault_yml_path}"
-    
-    print_status "✅ Created ${vault_yml_path} directly from vault"
-    
-    # Use ansiblesafe to read from HashiCorp Vault and create encrypted vault.yml
-    if command -v ansiblesafe &> /dev/null; then
-        print_status "Using ansiblesafe to retrieve secrets from HashiCorp Vault..."
-        cd "$(dirname "${vault_yml_path}")"
+"
 
-        # Set required environment variables for ansiblesafe HashiCorp Vault integration
-        export VAULT_ADDRESS="${VAULT_ADDR}"
-        export SECRET_PATH="kv/ansiblesafe/${INVENTORY}"
-
-        # Use ansiblesafe operation 4: Read secrets from HashiCorp Vault and save to vault.yml
-        if /usr/local/bin/ansiblesafe -f vault.yml -o 4; then
-            print_status "✅ Secrets retrieved from HashiCorp Vault"
+        # Check if Python generation succeeded
+        if [ $? -eq 0 ] && [ -f vault.yml ]; then
+            print_status "✅ Secrets retrieved from HashiCorp Vault with proper YAML formatting"
 
             # Now encrypt the vault.yml file
             if /usr/local/bin/ansiblesafe -f vault.yml -o 1; then
@@ -241,9 +238,18 @@ except Exception as e:
                 print_warning "Failed to encrypt vault.yml, but secrets were retrieved"
             fi
         else
-            print_warning "Failed to retrieve secrets from HashiCorp Vault, falling back to manual creation"
-            # Fallback: create vault.yml manually and encrypt it
-            /usr/local/bin/ansiblesafe -f vault.yml -o 1
+            print_warning "Python YAML generation failed, falling back to ansiblesafe"
+            # Fallback: use ansiblesafe operation 4
+            export VAULT_ADDRESS="${VAULT_ADDR}"
+            export SECRET_PATH="kv/ansiblesafe/${INVENTORY}"
+
+            if /usr/local/bin/ansiblesafe -f vault.yml -o 4; then
+                print_status "✅ Secrets retrieved from HashiCorp Vault (ansiblesafe fallback)"
+                /usr/local/bin/ansiblesafe -f vault.yml -o 1
+            else
+                print_warning "Failed to retrieve secrets, creating empty vault.yml"
+                /usr/local/bin/ansiblesafe -f vault.yml -o 1
+            fi
         fi
     else
         print_warning "ansiblesafe not found, vault.yml left unencrypted"
