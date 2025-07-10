@@ -62,7 +62,7 @@ jobs:
           echo "Bundler version: $(bundle --version)"
       - name: Setup Pages
         id: pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v5
       - name: Check docs directory structure
         run: |
           echo "Current directory: $(pwd)"
