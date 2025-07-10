@@ -1,15 +1,25 @@
-version: 1
+version: 3
 
-ansible_config: 'ansible.cfg'
+images:
+  base_image:
+    name: registry.access.redhat.com/ubi9/ubi:latest
 
 dependencies:
   galaxy: requirements.yml
   python: requirements.txt
   system: bindep.txt
+  ansible_core:
+    package_pip: ansible-core>=2.18.1
+  ansible_runner:
+    package_pip: ansible-runner
 
 additional_build_steps:
-  prepend: |
-    RUN whoami
-    RUN cat /etc/os-release
-  append:
-    - RUN echo This is a post-install command!
+  prepend_base:
+    - RUN whoami
+    - RUN cat /etc/os-release
+    - RUN dnf install -y python3.11 python3.11-pip git && dnf clean all
+    - RUN ln -sf /usr/bin/python3.11 /usr/bin/python3 && ln -sf /usr/bin/pip3.11 /usr/bin/pip3
+  append_base:
+    - RUN python3.11 -m pip install -U pip>=20.3
+  append_final:
+    - RUN echo "Qubinode Navigator EE v${EE_VERSION:-1.0.0}"

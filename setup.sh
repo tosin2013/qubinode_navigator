@@ -333,11 +333,17 @@ function configure_os(){
     elif [ ${1} == "CENTOS8" ]; then
         sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make sshpass -y
     elif [ ${1} == "RHEL9" ]; then
-        sudo dnf update -y 
-        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make sshpass -y
+        sudo dnf update -y
+        sudo dnf install git vim unzip wget bind-utils python3.11 python3.11-pip python3.11-devel tar util-linux-user gcc podman ansible-core make sshpass -y
+        # Set Python 3.11 as default for ansible-navigator v25.5.0+ compatibility
+        sudo alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
+        sudo alternatives --install /usr/bin/pip3 pip3 /usr/bin/pip3.11 1
     elif [ ${1} == "CENTOS9" ]; then
-        sudo dnf update -y 
-        sudo dnf install git vim unzip wget bind-utils python3-pip tar util-linux-user  gcc python3-devel podman ansible-core make sshpass -y
+        sudo dnf update -y
+        sudo dnf install git vim unzip wget bind-utils python3.11 python3.11-pip python3.11-devel tar util-linux-user gcc podman ansible-core make sshpass -y
+        # Set Python 3.11 as default for ansible-navigator v25.5.0+ compatibility
+        sudo alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
+        sudo alternatives --install /usr/bin/pip3 pip3 /usr/bin/pip3.11 1
     fi
 }
 

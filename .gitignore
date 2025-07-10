@@ -13,3 +13,4 @@ package.json
 mcp-shrimp-task-manager
 shrimp-rules.md
 .env
+notouch.env

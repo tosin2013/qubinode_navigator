@@ -1,15 +1,43 @@
 ---
 collections:
-  - ansible.posix
-  - containers.podman
-  - community.general
-  - community.libvirt
-  - fedora.linux_system_roles
+  # Exact version pinning for reproducible builds and Galaxy API reliability
+  - name: ansible.posix
+    version: "==1.6.2"
+  - name: containers.podman
+    version: "==1.15.4"
+  - name: community.general
+    version: "==10.1.0"
+  - name: community.libvirt
+    version: "==1.3.0"
+  - name: fedora.linux_system_roles
+    version: ">=1.20.0"
+  # Use Git source for custom collection not yet published to Galaxy
+  # Temporarily commented out until Git dependencies are resolved
+  # - name: https://github.com/Qubinode/qubinode_kvmhost_setup_collection.git
+  #   type: git
+  #   version: main
+
+# Git-based fallback sources for Galaxy API reliability
+# Uncomment these if Galaxy API fails during collection installation:
+# - name: https://github.com/ansible-collections/ansible.posix.git
+#   type: git
+#   version: "1.6.2"
+# - name: https://github.com/containers/ansible-podman-collections.git
+#   type: git
+#   version: "1.15.4"
+# - name: https://github.com/ansible-collections/community.general.git
+#   type: git
+#   version: "10.1.0"
+# - name: https://github.com/ansible-collections/community.libvirt.git
+#   type: git
+#   version: "1.3.0"
 # - name: https://github.com/Qubinode/qubinode_kvmhost_setup_collection.git
-#  type: git
-#  version: main
-  - tosin2013.qubinode_kvmhost_setup_collection
+#   type: git
+#   version: main
 roles:
-  - linux-system-roles.network
-  - linux-system-roles.firewall
-  - linux-system-roles.cockpit
+  - name: linux-system-roles.network
+    version: "1.17.4"
+  - name: linux-system-roles.firewall
+    version: "1.10.1"
+  - name: linux-system-roles.cockpit
+    version: "1.7.0"

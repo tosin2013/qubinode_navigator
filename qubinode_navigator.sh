@@ -12,29 +12,153 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
-if [ -f /opt/qubinode_navigator/.env ];
-then
+# Load .env file if it exists
+if [ -f /opt/qubinode_navigator/.env ]; then
     source /opt/qubinode_navigator/.env
 fi
 
-if [ -z "$CICD_PIPELINE" ]; then
-  export CICD_PIPELINE="false"
-  export INVENTORY="localhost"
-fi
-echo "CICD_PIPELINE is set to $CICD_PIPELINE" 
+# Environment Variables with defaults
+: "${CICD_PIPELINE:="false"}"
+: "${USE_HASHICORP_VAULT:="false"}"
+: "${USE_HASHICORP_CLOUD:="false"}"
+: "${VAULT_ADDR:=""}"
+: "${VAULT_TOKEN:=""}"
+: "${USE_ROUTE53:="false"}"
+: "${ROUTE_53_DOMAIN:=""}"
+: "${CICD_ENVIORNMENT:="github"}"
+: "${SECRET_PATH:=""}"
+: "${INVENTORY:="localhost"}"
+: "${DEVELOPMENT_MODEL:="false"}"
+: "${CONFIG_TEMPLATE:="localhost.yml.j2"}"
+: "${VAULT_DEV_MODE:="false"}"
+
+echo "CICD_PIPELINE is set to $CICD_PIPELINE"
 
 if [ -z "$GUID" ]; then
   export GUID="$(uuidgen | cut -c 1-5)"
 fi
 
-if [ -z "$USE_HASHICORP_VAULT" ]; then
-  export USE_HASHICORP_VAULT="false"
-else
-    if [[ -z "$VAULT_ADDRESS" && -z "$VAULT_ADDRESS" && -z ${SECRET_PATH} ]]; then
-      echo "VAULT enviornment variables are not passed  is not set"
-      exit 1
+# Function: log_message
+# Description: Logs a message with timestamp
+log_message() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+}
+
+# Function: handle_hashicorp_vault
+# Description: Validates HashiCorp Vault environment variables when vault integration is enabled.
+# Environment Variables:
+#   USE_HASHICORP_VAULT - If set to "true", enables HashiCorp Vault integration.
+#   VAULT_ADDR - The address of the HashiCorp Vault server.
+#   VAULT_TOKEN - The token used to authenticate with the HashiCorp Vault server.
+#   SECRET_PATH - The path to the secret in HashiCorp Vault.
+# Outputs: Logs a message and exits with status 1 if required environment variables are not set.
+handle_hashicorp_vault() {
+    if [ "$USE_HASHICORP_VAULT" = "true" ]; then
+        if [[ -z "$VAULT_ADDR" || -z "$VAULT_TOKEN" || -z "$SECRET_PATH" ]]; then
+            log_message "VAULT environment variables are not set"
+            exit 1
+        fi
     fi
-fi  
+}
+
+# Function: configure_vault_integrated
+# Description: Configures Ansible Vault using the vault-integrated setup approach.
+#              This function replaces the traditional configure_ansible_vault_setup() method
+#              by using vault-integrated-setup.sh script instead of /tmp/config.yml,
+#              eliminating security risks while maintaining backward compatibility.
+# Parameters: None
+# Environment Variables:
+#   USE_HASHICORP_VAULT - If set to "true", enables vault-integrated setup.
+#   VAULT_ADDR - The address of the HashiCorp Vault server.
+#   VAULT_TOKEN - The token used to authenticate with the HashiCorp Vault server.
+#   CICD_PIPELINE - Determines if running in CI/CD mode.
+#   INVENTORY - The inventory environment for vault path configuration.
+# Returns: None
+# Exit Codes:
+#   1 - If vault-integrated-setup.sh fails or required components are missing.
+# Security: Eliminates /tmp/config.yml plaintext credential exposure.
+configure_vault_integrated() {
+    log_message "Configuring Vault-Integrated Setup..."
+
+    # Determine the correct qubinode_navigator directory
+    local qubinode_dir
+    if [ -d "/opt/qubinode_navigator" ] && [ -f "/opt/qubinode_navigator/vault-integrated-setup.sh" ]; then
+        qubinode_dir="/opt/qubinode_navigator"
+    elif [ -f "./vault-integrated-setup.sh" ]; then
+        qubinode_dir="$(pwd)"
+    else
+        qubinode_dir="/opt/qubinode_navigator"
+    fi
+
+    log_message "Using qubinode directory: ${qubinode_dir}"
+    cd "${qubinode_dir}"
+
+    # Check if vault-integrated-setup.sh exists
+    if [ ! -f "vault-integrated-setup.sh" ]; then
+        log_message "vault-integrated-setup.sh not found in current directory"
+        log_message "Falling back to traditional ansible vault setup"
+        configure_ansible_vault_setup
+        return
+    fi
+
+    # Make sure the script is executable
+    chmod +x vault-integrated-setup.sh
+
+    # Validate vault environment variables if vault is enabled
+    if [ "$USE_HASHICORP_VAULT" = "true" ]; then
+        handle_hashicorp_vault
+        log_message "Using vault-integrated setup (secure method)"
+    else
+        log_message "Vault integration disabled, using traditional method"
+        configure_ansible_vault_setup
+        return
+    fi
+
+    # Execute vault-integrated setup script
+    if [ "$CICD_PIPELINE" = "true" ]; then
+        log_message "Running vault-integrated setup in CI/CD mode"
+        if ! ./vault-integrated-setup.sh; then
+            log_message "Failed to execute vault-integrated-setup.sh in CI/CD mode"
+            log_message "Attempting fallback to traditional method"
+            configure_ansible_vault_setup
+            return
+        fi
+    else
+        log_message "Running vault-integrated setup in interactive mode"
+        if ! ./vault-integrated-setup.sh; then
+            log_message "Failed to execute vault-integrated-setup.sh in interactive mode"
+            log_message "Attempting fallback to traditional method"
+            configure_ansible_vault_setup
+            return
+        fi
+    fi
+
+    log_message "Vault-integrated setup completed successfully"
+}
+
+# Function: check_for_lab_user
+# Description: Checks if the lab-user exists and creates it if it doesn't.
+#              This ensures compatibility regardless of the current system user.
+# Parameters: None
+# Returns: None
+# Exit Codes: 1 - If user creation fails
+check_for_lab_user() {
+    if id "lab-user" &>/dev/null; then
+        log_message "User lab-user exists"
+    else
+        log_message "Creating lab-user for system compatibility..."
+        if ! curl -OL https://gist.githubusercontent.com/tosin2013/385054f345ff7129df6167631156fa2a/raw/b67866c8d0ec220c393ea83d2c7056f33c472e65/configure-sudo-user.sh; then
+            log_message "Failed to download configure-sudo-user.sh"
+            exit 1
+        fi
+        chmod +x configure-sudo-user.sh
+        if ! ./configure-sudo-user.sh lab-user; then
+            log_message "Failed to create lab-user"
+            exit 1
+        fi
+        log_message "✅ lab-user created successfully"
+    fi
+}
 
 # @description This function generate_inventory function will generate the inventory
 function generate_inventory() {
@@ -154,10 +278,22 @@ function configure_python() {
     echo "Configuring Python"
     echo "******************"
     PYTHON_VERSION=$(python3 --version 2>&1 | awk '{print $2}')
+    OS_VERSION=$(cat /etc/os-release | grep VERSION_ID | cut -d'"' -f2)
 
-    # Check if the version is 3.6.8
-    if [ "$PYTHON_VERSION" == "3.6.8" ]; then
-        echo "Python version is 3.6.8. Upgrading..."
+    # Check if we're on RHEL/Rocky 9 and need Python 3.11 for ansible-navigator v25.5.0+
+    if [[ "$OS_VERSION" =~ ^9\. ]]; then
+        echo "Detected RHEL/Rocky Linux 9. Installing Python 3.11 for ansible-navigator compatibility..."
+
+        # Install Python 3.11 for ansible-navigator v25.5.0+ compatibility
+        sudo dnf install -y python3.11 python3.11-devel python3.11-pip
+
+        # Set Python 3.11 as the default python3
+        sudo alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
+        sudo alternatives --install /usr/bin/pip3 pip3 /usr/bin/pip3.11 1
+
+        echo "Python 3.11 installed and set as default"
+    elif [ "$PYTHON_VERSION" == "3.6.8" ]; then
+        echo "Python version is 3.6.8. Upgrading to 3.9..."
 
         # Enable the Python 3.9 Module
         sudo dnf module install -y python39
@@ -170,17 +306,14 @@ function configure_python() {
         # Set the default Python version to 3.9
         sudo alternatives --set python /usr/bin/python3.9
         sudo alternatives --set python3 /usr/bin/python3.9
-
-        curl -sSL https://raw.githubusercontent.com/ansible/ansible-navigator/v3.6.0/requirements.txt| sudo python3 -m pip install -r /dev/stdin
-        sudo python3 -m pip install -r $HOME/qubinode_navigator/bash-aliases/bastion-requirements.txt
     else
         echo "Python version ${PYTHON_VERSION}. Continuing..."
     fi
-    
+
     if ! command -v ansible-navigator &> /dev/null
     then
-        # - For Ansible-Navigator
-        curl -sSL https://raw.githubusercontent.com/ansible/ansible-navigator/v3.6.0/requirements.txt | sudo python3 -m pip install -r /dev/stdin
+        # - For Ansible-Navigator (use latest version for Python 3.11+ compatibility)
+        curl -sSL https://raw.githubusercontent.com/ansible/ansible-navigator/main/requirements.txt | sudo python3 -m pip install -r /dev/stdin
         sudo python3 -m pip install -r $HOME/qubinode_navigator/bash-aliases/bastion-requirements.txt
     else
         echo "ansible-navigator is already installed"
@@ -202,19 +335,32 @@ function configure_navigator() {
     cd "$HOME"/qubinode_navigator
     sudo pip3 install -r requirements.txt
     echo "Current DNS Server: $(cat /etc/resolv.conf | grep nameserver | awk '{print $2}' | head -1)"
-    echo "Load variables"
+    log_message "Load variables with template support"
     echo "**************"
     if [ $CICD_PIPELINE == "false" ];
     then
         read -t 360 -p "Press Enter to continue, or wait 5 minutes for the script to continue automatically" || true
-        python3 load-variables.py 
-    else 
+        log_message "Using enhanced configuration with template: ${CONFIG_TEMPLATE}"
+        if ! python3 enhanced_load_variables.py --generate-config --template "${CONFIG_TEMPLATE}"; then
+            log_message "Enhanced load variables failed, falling back to original method"
+            if ! python3 load-variables.py; then
+                log_message "Failed to load variables with both methods"
+                exit 1
+            fi
+        fi
+    else
         if [[ -z "$ENV_USERNAME" && -z "$DOMAIN" && -z "$FORWARDER" && -z "$INTERFACE" ]]; then
             echo "Error: One or more environment variables are not set"
             exit 1
         fi
-
-        python3 load-variables.py --username ${ENV_USERNAME} --domain ${DOMAIN} --forwarder ${FORWARDER} --interface ${INTERFACE} || exit $?
+        log_message "Using enhanced configuration with template: ${CONFIG_TEMPLATE} (CI/CD mode)"
+        if ! python3 enhanced_load_variables.py --generate-config --template "${CONFIG_TEMPLATE}" --username "${ENV_USERNAME}" --domain "${DOMAIN}" --forwarder "${FORWARDER}" --interface "${INTERFACE}"; then
+            log_message "Enhanced load variables failed, falling back to original method"
+            if ! python3 load-variables.py --username "${ENV_USERNAME}" --domain "${DOMAIN}" --forwarder "${FORWARDER}" --interface "${INTERFACE}"; then
+                log_message "Failed to load variables with both methods"
+                exit 1
+            fi
+        fi
     fi
 
 }
@@ -402,6 +548,7 @@ function show_help() {
 }
 
 if [ $# -eq 0 ]; then
+    check_for_lab_user
     install_packages
     configure_ssh || exit $?
     confiure_lvm_storage
@@ -409,7 +556,7 @@ if [ $# -eq 0 ]; then
     configure_firewalld
     configure_groups
     configure_navigator
-    configure_ansible_vault_setup
+    configure_vault_integrated
     test_inventory
     deploy_kvmhost
     configure_bash_aliases

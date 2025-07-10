@@ -3,43 +3,73 @@
 #set -x
 set -euo pipefail
 
-# This script is located at /Users/takinosh/workspace/qubinode_navigator/rhel9-linux-hypervisor.sh
+# RHEL 9 Linux Hypervisor Setup Script with Vault Integration
+# ============================================================
 #
-# Global variables:
-# KVM_VERSION: Specifies the version of KVM to be used.
-# GIT_REPO: URL of the Git repository for the Qubinode Navigator project.
+# This script automates the setup of a RHEL 9 hypervisor environment with enhanced
+# security through HashiCorp Vault integration and template-based configuration.
+#
+# SECURITY ENHANCEMENTS (v2.0):
+# - Vault-integrated setup eliminates /tmp/config.yml plaintext credential exposure
+# - Direct HashiCorp Vault integration for secure credential management
+# - Template-based configuration with enhanced_load_variables.py
+# - Backward compatibility with traditional ansiblesafe methods
+#
+# SUPPORTED DEPLOYMENT MODES:
+# - Interactive mode: Manual configuration with user prompts
+# - CI/CD mode: Automated deployment with environment variables
+# - Vault-integrated mode: Secure credential retrieval from HashiCorp Vault
+# - Traditional mode: Fallback to original ansiblesafe approach
+#
 # Global variables
 readonly KVM_VERSION="0.8.0"
-#readonly ANSIBLE_SAFE_VERSION="0.0.12"
 readonly GIT_REPO="https://github.com/tosin2013/qubinode_navigator.git"
 
-# This script sets default values for various environment variables used in the
-# rhel9-linux-hypervisor.sh script. If these variables are not already set in the
-# environment, the script will assign them the following default values:
+# ENVIRONMENT VARIABLES:
+# This script uses environment variables with secure defaults. Variables can be set
+# via .env file, notouch.env file, or direct environment variable export.
 #
+# CORE CONFIGURATION:
 # CICD_PIPELINE: Determines if the script is running in a CI/CD pipeline. Default is "false".
+# INVENTORY: The inventory host for Ansible. Default is "rhel9-equinix".
+# DEVELOPMENT_MODEL: Indicates if the development model is enabled. Default is "false".
+#
+# VAULT INTEGRATION (Enhanced Security):
 # USE_HASHICORP_VAULT: Indicates whether to use HashiCorp Vault. Default is "false".
 # USE_HASHICORP_CLOUD: Indicates whether to use HashiCorp Cloud. Default is "false".
-# VAULT_ADDRESS: The address of the HashiCorp Vault. Default is an empty string.
-# VAULT_TOKEN: The token for accessing the HashiCorp Vault. Default is an empty string.
+# VAULT_ADDR: The address of the HashiCorp Vault server. Default is empty.
+# VAULT_TOKEN: The token for accessing the HashiCorp Vault. Default is empty.
+# SECRET_PATH: The path to the secrets in the vault. Default is empty.
+# VAULT_DEV_MODE: Indicates if vault development mode is enabled. Default is "false".
+#
+# TEMPLATE CONFIGURATION:
+# CONFIG_TEMPLATE: Template file for configuration generation. Default is "rhel9-equinix.yml.j2".
+#
+# CLOUD INTEGRATION:
 # USE_ROUTE53: Indicates whether to use AWS Route 53. Default is "false".
+# ROUTE_53_DOMAIN: The domain name for AWS Route 53. Default is empty.
 # ROUTE_53_DOMAIN: The domain name for AWS Route 53. Default is an empty string.
 # CICD_ENVIORNMENT: Specifies the CI/CD environment. Default is "github".
 # SECRET_PATH: The path to the secrets in the vault. Default is an empty string.
-# INVENTORY: The inventory host for Ansible. Default is "localhost".
+# INVENTORY: The inventory host for Ansible. Default is "rhel9-equinix".
 # DEVELOPMENT_MODEL: Indicates if the development model is enabled. Default is "false".
+# CONFIG_TEMPLATE: Template file for configuration generation. Default is "rhel9-equinix.yml.j2".
+# VAULT_DEV_MODE: Indicates if vault development mode is enabled. Default is "false".
 # Set default values for environment variables if they are not already set
 : "${CICD_PIPELINE:="false"}"
 : "${USE_HASHICORP_VAULT:="false"}"
 : "${USE_HASHICORP_CLOUD:="false"}"
-: "${VAULT_ADDRESS:=""}"
+: "${VAULT_ADDR:=""}"
 : "${VAULT_TOKEN:=""}"
 : "${USE_ROUTE53:="false"}"
 : "${ROUTE_53_DOMAIN:=""}"
 : "${CICD_ENVIORNMENT:="github"}"
 : "${SECRET_PATH:=""}"
-: "${INVENTORY:="localhost"}"
+: "${INVENTORY:="rhel9-equinix"}"
 : "${DEVELOPMENT_MODEL:="false"}"
+: "${CONFIG_TEMPLATE:="rhel9-equinix.yml.j2"}"
+: "${VAULT_DEV_MODE:="false"}"
+: "${SSH_USER:="lab-user"}"
 
 # Function to log messages
 # This script defines a function `log_message` that takes a single argument.
@@ -71,13 +101,13 @@ check_root() {
 # Parameters: None
 # Environment Variables:
 #   USE_HASHICORP_VAULT - If set to "true", enables HashiCorp Vault integration.
-#   VAULT_ADDRESS - The address of the HashiCorp Vault server.
+#   VAULT_ADDR - The address of the HashiCorp Vault server.
 #   VAULT_TOKEN - The token used to authenticate with the HashiCorp Vault server.
 #   SECRET_PATH - The path to the secret in HashiCorp Vault.
 # Outputs: Logs a message and exits with status 1 if required environment variables are not set.
 handle_hashicorp_vault() {
     if [ "$USE_HASHICORP_VAULT" = "true" ]; then
-        if [[ -z "$VAULT_ADDRESS" || -z "$VAULT_TOKEN" || -z "$SECRET_PATH" ]]; then
+        if [[ -z "$VAULT_ADDR" || -z "$VAULT_TOKEN" || -z "$SECRET_PATH" ]]; then
             log_message "VAULT environment variables are not set"
             exit 1
         fi
@@ -116,6 +146,29 @@ hcp_cloud_vault() {
     fi
 }
 
+# Function: check_for_lab_user
+# Description: Checks if the lab-user exists and creates it if it doesn't.
+#              This ensures compatibility regardless of the current system user.
+# Parameters: None
+# Returns: None
+# Exit Codes: 1 - If user creation fails
+check_for_lab_user() {
+    if id "lab-user" &>/dev/null; then
+        log_message "User lab-user exists"
+    else
+        log_message "Creating lab-user for system compatibility..."
+        if ! curl -OL https://gist.githubusercontent.com/tosin2013/385054f345ff7129df6167631156fa2a/raw/b67866c8d0ec220c393ea83d2c7056f33c472e65/configure-sudo-user.sh; then
+            log_message "Failed to download configure-sudo-user.sh"
+            exit 1
+        fi
+        chmod +x configure-sudo-user.sh
+        if ! ./configure-sudo-user.sh lab-user; then
+            log_message "Failed to create lab-user"
+            exit 1
+        fi
+        log_message "✅ lab-user created successfully"
+    fi
+}
 
 #
 # Function: install_packages
@@ -142,7 +195,7 @@ hcp_cloud_vault() {
 #   install_packages
 install_packages() {
     log_message "Installing required packages..."
-    local packages=(bzip2-devel libffi-devel wget vim podman ncurses-devel sqlite-devel firewalld make gcc git unzip sshpass lvm2 python3 python3-pip java-11-openjdk-devel ansible-core perl-Digest-SHA)
+    local packages=(bzip2-devel libffi-devel wget vim podman ncurses-devel sqlite-devel firewalld make gcc git unzip sshpass lvm2 python3.11 python3.11-pip python3.11-devel java-11-openjdk-devel ansible-core perl-Digest-SHA)
     for package in "${packages[@]}"; do
         if ! rpm -q "$package" &>/dev/null; then
             if ! dnf install -y "$package"; then
@@ -155,6 +208,12 @@ install_packages() {
         log_message "Failed to install Development Tools"
         exit 1
     fi
+
+    # Configure Python 3.11 as default for ansible-navigator v25.5.0+ compatibility
+    log_message "Configuring Python 3.11 as default..."
+    alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
+    alternatives --install /usr/bin/pip3 pip3 /usr/bin/pip3.11 1
+    log_message "Python 3.11 configured as default"
     # Check if yq is installed
     if ! command -v yq &> /dev/null; then
         echo "yq is not installed. Installing..."
@@ -340,6 +399,81 @@ configure_ansible_vault() {
     fi
 }
 
+# Function: configure_vault_integrated
+# Description: Configures Ansible Vault using the vault-integrated setup approach.
+#              This function replaces the traditional configure_ansible_vault() method
+#              by using vault-integrated-setup.sh script instead of /tmp/config.yml,
+#              eliminating security risks while maintaining backward compatibility.
+# Parameters: None
+# Environment Variables:
+#   USE_HASHICORP_VAULT - If set to "true", enables vault-integrated setup.
+#   VAULT_ADDR - The address of the HashiCorp Vault server.
+#   VAULT_TOKEN - The token used to authenticate with the HashiCorp Vault server.
+#   CICD_PIPELINE - Determines if running in CI/CD mode.
+#   INVENTORY - The inventory environment for vault path configuration.
+# Returns: None
+# Exit Codes:
+#   1 - If vault-integrated-setup.sh fails or required components are missing.
+# Security: Eliminates /tmp/config.yml plaintext credential exposure.
+configure_vault_integrated() {
+    log_message "Configuring Vault-Integrated Setup..."
+
+    # Determine the correct qubinode_navigator directory
+    local qubinode_dir
+    if [ -d "/opt/qubinode_navigator" ] && [ -f "/opt/qubinode_navigator/vault-integrated-setup.sh" ]; then
+        qubinode_dir="/opt/qubinode_navigator"
+    elif [ -f "./vault-integrated-setup.sh" ]; then
+        qubinode_dir="$(pwd)"
+    else
+        qubinode_dir="/opt/qubinode_navigator"
+    fi
+
+    log_message "Using qubinode directory: ${qubinode_dir}"
+    cd "${qubinode_dir}"
+
+    # Check if vault-integrated-setup.sh exists
+    if [ ! -f "vault-integrated-setup.sh" ]; then
+        log_message "vault-integrated-setup.sh not found in current directory"
+        log_message "Falling back to traditional ansible vault setup"
+        configure_ansible_vault
+        return
+    fi
+
+    # Make sure the script is executable
+    chmod +x vault-integrated-setup.sh
+
+    # Validate vault environment variables if vault is enabled
+    if [ "$USE_HASHICORP_VAULT" = "true" ]; then
+        handle_hashicorp_vault
+        log_message "Using vault-integrated setup (secure method)"
+    else
+        log_message "Vault integration disabled, using traditional method"
+        configure_ansible_vault
+        return
+    fi
+
+    # Execute vault-integrated setup script
+    if [ "$CICD_PIPELINE" = "true" ]; then
+        log_message "Running vault-integrated setup in CI/CD mode"
+        if ! ./vault-integrated-setup.sh; then
+            log_message "Failed to execute vault-integrated-setup.sh in CI/CD mode"
+            log_message "Attempting fallback to traditional method"
+            configure_ansible_vault
+            return
+        fi
+    else
+        log_message "Running vault-integrated setup in interactive mode"
+        if ! ./vault-integrated-setup.sh; then
+            log_message "Failed to execute vault-integrated-setup.sh in interactive mode"
+            log_message "Attempting fallback to traditional method"
+            configure_ansible_vault
+            return
+        fi
+    fi
+
+    log_message "Vault-integrated setup completed successfully"
+}
+
 # This function configures bash aliases by performing the following steps:
 # 1. Prints a message indicating the start of the configuration process.
 # 2. Checks if the current directory is "/opt/qubinode_navigator".
@@ -398,10 +532,12 @@ function confiure_lvm_storage(){
 # 3. Changes the ownership and permissions of the /opt directory to allow the current user to write to it.
 # 4. Installs the required Python packages from the requirements.txt file using pip3.
 # 5. Logs the current DNS server being used.
-# 6. Loads variables either interactively or from environment variables based on the CICD_PIPELINE flag:
-#    - If CICD_PIPELINE is false, it waits for user input or continues after 5 minutes, then runs the load-variables.py script.
-#    - If CICD_PIPELINE is true, it checks for required environment variables and runs the load-variables.py script with those variables.
-# 7. Logs any errors encountered during the process and exits with a status of 1 if any step fails.
+# 6. Loads variables using enhanced template-based configuration:
+#    - If CICD_PIPELINE is false, it waits for user input or continues after 5 minutes, then runs enhanced_load_variables.py with template support.
+#    - If CICD_PIPELINE is true, it checks for required environment variables and runs enhanced_load_variables.py with template and parameters.
+#    - Falls back to original load-variables.py if enhanced version fails for backward compatibility.
+# 7. Uses CONFIG_TEMPLATE environment variable to specify which template to use for configuration generation.
+# 8. Logs any errors encountered during the process and exits with a status of 1 if any step fails.
 configure_navigator() {
     log_message "Configuring Qubinode Navigator..."
     echo "******************************"
@@ -425,22 +561,30 @@ configure_navigator() {
         exit 1
     fi
     log_message "Current DNS Server: $(cat /etc/resolv.conf | grep nameserver | awk '{print $2}' | head -1)"
-    log_message "Load variables"
+    log_message "Load variables with template support"
     echo "**************"
     if [ "$CICD_PIPELINE" == "false" ]; then
         read -t 360 -p "Press Enter to continue, or wait 5 minutes for the script to continue automatically" || true
-        if ! python3 load-variables.py; then
-            log_message "Failed to load variables"
-            exit 1
+        log_message "Using enhanced configuration with template: ${CONFIG_TEMPLATE}"
+        if ! python3 enhanced_load_variables.py --generate-config --template "${CONFIG_TEMPLATE}"; then
+            log_message "Enhanced load variables failed, falling back to original method"
+            if ! python3 load-variables.py; then
+                log_message "Failed to load variables with both methods"
+                exit 1
+            fi
         fi
     else
         if [[ -z "$ENV_USERNAME" || -z "$DOMAIN" || -z "$FORWARDER" || -z "$INTERFACE" ]]; then
             log_message "Error: One or more environment variables are not set"
             exit 1
         fi
-        if ! python3 load-variables.py --username "${ENV_USERNAME}" --domain "${DOMAIN}" --forwarder "${FORWARDER}" --interface "${INTERFACE}"; then
-            log_message "Failed to load variables with environment parameters"
-            exit 1
+        log_message "Using enhanced configuration with template: ${CONFIG_TEMPLATE} (CI/CD mode)"
+        if ! python3 enhanced_load_variables.py --generate-config --template "${CONFIG_TEMPLATE}" --username "${ENV_USERNAME}" --domain "${DOMAIN}" --forwarder "${FORWARDER}" --interface "${INTERFACE}"; then
+            log_message "Enhanced load variables failed, falling back to original method"
+            if ! python3 load-variables.py --username "${ENV_USERNAME}" --domain "${DOMAIN}" --forwarder "${FORWARDER}" --interface "${INTERFACE}"; then
+                log_message "Failed to load variables with both methods"
+                exit 1
+            fi
         fi
     fi
 }
@@ -706,7 +850,7 @@ configure_ollama() {
 # 6. confiure_lvm_storage: Configures LVM storage.
 # 7. clone_repository: Clones the required repository.
 # 8. configure_ansible_navigator: Sets up Ansible Navigator.
-# 9. configure_ansible_vault: Configures Ansible Vault.
+# 9. configure_vault_integrated: Configures Ansible Vault using vault-integrated approach.
 # 10. generate_inventory: Generates the inventory file.
 # 11. configure_navigator: Configures the navigator.
 # 12. configure_ssh: Sets up SSH configuration.
@@ -722,6 +866,7 @@ configure_ollama() {
 # 22. configure_ollama: Configures Ollama if OLLAMA_WORKLOAD is set to "true".
 main() {
     check_root
+    check_for_lab_user
     handle_hashicorp_vault
     if [ "$USE_HASHICORP_CLOUD" == "true" ]; then
         hcp_cloud_vault
@@ -731,7 +876,7 @@ main() {
     confiure_lvm_storage
     clone_repository
     configure_ansible_navigator
-    configure_ansible_vault
+    configure_vault_integrated
     generate_inventory
     configure_navigator
     configure_ssh

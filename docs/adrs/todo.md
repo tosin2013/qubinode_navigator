@@ -2,7 +2,7 @@
 
 Generated from ADRs and architectural rules for Qubinode Navigator project.
 
-## Overall Progress: 95% Complete
+## Overall Progress: 85% Complete (Updated 2025-07-10 - Critical Security Updates Required)
 
 ### Legend
 - `[ ]` Not Started
@@ -24,10 +24,44 @@ Generated from ADRs and architectural rules for Qubinode Navigator project.
 - [x] Update Makefile with container build targets
 - [/] Add performance monitoring for containerized execution
 - [x] Create troubleshooting guide for container issues
+- [ ] **CRITICAL**: Update to ansible-core 2.18.1+ (CVE-2024-11079 security fix)
+- [ ] **CRITICAL**: Migrate to UBI 9 base images with Python 3.11/3.12
+- [ ] **HIGH**: Update to ansible-navigator v25.5.0 and ansible-builder v3.1.0
+- [ ] **HIGH**: Implement strict version pinning for all collections
+- [ ] **MEDIUM**: Refactor playbooks for explicit boolean conditional logic
 - [ ] Implement automated container image updates
 
 ### Validation Rules
 - [x] **container-execution-rule**: All Ansible execution uses containerized environments
+
+---
+
+## 🔒 ADR-0025: Ansible Tooling Modernization and Security Strategy
+
+**Status**: 🚨 URGENT - Security Update Required | **Priority**: Critical
+
+### Critical Security Tasks
+- [ ] **IMMEDIATE**: Upgrade ansible-core to 2.18.1+ (CVE-2024-11079 fix)
+- [ ] **IMMEDIATE**: Audit all managed nodes for Python 3.8+ compatibility
+- [ ] **HIGH**: Build new execution environment with UBI 9 + Python 3.11
+- [ ] **HIGH**: Implement Private Automation Hub or Git-based collection sources
+- [ ] **HIGH**: Update all playbooks for explicit boolean conditional logic
+- [ ] **MEDIUM**: Establish bi-weekly EE rebuild schedule for security updates
+- [ ] **MEDIUM**: Implement automated vulnerability scanning (Dependabot)
+- [ ] **MEDIUM**: Test AnsibleSafe tool compatibility with updated tooling
+
+### Migration Tasks
+- [ ] **Phase 1**: Development environment testing (Week 1-2)
+- [ ] **Phase 2**: Staging environment validation (Week 3-4)
+- [ ] **Phase 3**: Production rollout with rollback capability (Week 5-6)
+- [ ] Create migration documentation and rollback procedures
+- [ ] Update CI/CD workflows with new tooling versions
+
+### Validation Rules
+- [ ] **security-update-rule**: ansible-core 2.18.1+ mandatory for CVE mitigation
+- [ ] **python-compatibility-rule**: Python 3.11+ for control nodes, 3.8+ for managed nodes
+- [ ] **base-image-standardization-rule**: UBI 9 minimal for all execution environments
+- [ ] **version-pinning-rule**: Strict version pinning for reproducible builds
 
 ---
 
@@ -218,11 +252,20 @@ Generated from ADRs and architectural rules for Qubinode Navigator project.
 
 ## 🚀 Next Phase Priorities
 
+### 🚨 CRITICAL PRIORITY (Immediate - This Week)
+1. **SECURITY**: Upgrade ansible-core to 2.18.1+ (CVE-2024-11079 mitigation)
+2. **COMPATIBILITY**: Build new execution environment with UBI 9 + Python 3.11
+3. **VALIDATION**: Test AnsibleSafe tool compatibility with updated tooling
+4. **AUDIT**: Check Python versions on all managed KVM nodes
+
 ### High Priority (Next Sprint)
-1. **CI/CD Pipeline Updates**: Update pipelines to use vault-integrated setup
-2. **Secret Rotation**: Implement automated secret rotation for vault
-3. **Performance Monitoring**: Add monitoring for containerized execution
-4. **Vault Monitoring**: Add monitoring for vault connectivity and access
+1. **MODERNIZATION**: Complete ansible-navigator v25.5.0 and ansible-builder v3.1.0 upgrade
+2. **DEPENDENCY MANAGEMENT**: Implement Private Automation Hub or Git-based collection sources
+3. **PLAYBOOK REFACTORING**: Update conditional logic for explicit boolean evaluation
+4. **CI/CD Pipeline Updates**: Update pipelines with new tooling versions
+5. **Secret Rotation**: Implement automated secret rotation for vault
+6. **Performance Monitoring**: Add monitoring for containerized execution
+7. **Vault Monitoring**: Add monitoring for vault connectivity and access
 
 ### Medium Priority (Next Month)
 1. **Testing Framework**: Comprehensive automated testing
@@ -292,7 +335,8 @@ Generated from ADRs and architectural rules for Qubinode Navigator project.
 - [x] **Research Findings Summary** - `/docs/research/research-findings-summary.md`
 - [x] **ADR Validation** - All 6 major ADRs confirmed as correctly implemented
 
-**Last Updated**: 2025-07-09
-**Next Review**: 2025-07-16
-**Research Status**: 95% Complete - Vault integration implemented
-**Security Status**: ✅ Enhanced - Vault-integrated setup eliminates plaintext credential exposure
+**Last Updated**: 2025-07-10
+**Next Review**: 2025-07-17
+**Research Status**: 100% Complete - Ansible modernization research completed
+**Security Status**: 🚨 CRITICAL UPDATE REQUIRED - CVE-2024-11079 in ansible-core <2.18.1
+**Modernization Status**: 🔄 IN PROGRESS - Ansible tooling stack upgrade required

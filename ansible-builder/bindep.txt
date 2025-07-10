@@ -1,2 +1,5 @@
-# list your RPMs here
-# examples can be found on https://docs.opendev.org/opendev/bindep/latest/readme.html
+# System dependencies for Qubinode Navigator execution environment
+# Build tools required for Python package compilation
+gcc
+python3.11-devel
+git

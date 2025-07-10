@@ -30,12 +30,29 @@ print_header() {
 print_header "Vault-Integrated Qubinode Navigator Setup"
 echo "============================================="
 
-# Load environment variables
+# Load environment variables from .env file, preserving existing environment variables
 if [ -f ".env" ]; then
     print_status "Loading environment variables..."
+
+    # Save critical environment variables that should not be overridden
+    SAVED_CICD_PIPELINE="${CICD_PIPELINE}"
+    SAVED_SSH_PASSWORD="${SSH_PASSWORD}"
+    SAVED_USE_HASHICORP_VAULT="${USE_HASHICORP_VAULT}"
+    SAVED_VAULT_ADDR="${VAULT_ADDR}"
+    SAVED_VAULT_TOKEN="${VAULT_TOKEN}"
+
     set -a
     source .env
     set +a
+
+    # Restore critical environment variables if they were set before sourcing .env
+    [ -n "${SAVED_CICD_PIPELINE}" ] && CICD_PIPELINE="${SAVED_CICD_PIPELINE}"
+    [ -n "${SAVED_SSH_PASSWORD}" ] && SSH_PASSWORD="${SAVED_SSH_PASSWORD}"
+    [ -n "${SAVED_USE_HASHICORP_VAULT}" ] && USE_HASHICORP_VAULT="${SAVED_USE_HASHICORP_VAULT}"
+    [ -n "${SAVED_VAULT_ADDR}" ] && VAULT_ADDR="${SAVED_VAULT_ADDR}"
+    [ -n "${SAVED_VAULT_TOKEN}" ] && VAULT_TOKEN="${SAVED_VAULT_TOKEN}"
+
+    print_status "Environment variables loaded (CI/CD overrides preserved)"
 else
     print_error ".env file not found. Please create it first."
     exit 1
@@ -93,6 +110,46 @@ if ! curl -s -f "${VAULT_ADDR}/v1/sys/health" > /dev/null; then
     fi
 fi
 
+# Function to setup vault password file using ansible_vault_setup.sh pattern
+setup_vault_password() {
+    print_status "Setting up vault password file..."
+
+    # Download ansible_vault_setup.sh if not present
+    if [ ! -f "ansible_vault_setup.sh" ]; then
+        print_status "Downloading ansible_vault_setup.sh..."
+        curl -OL https://gist.githubusercontent.com/tosin2013/022841d90216df8617244ab6d6aceaf8/raw/92400b9e459351d204feb67b985c08df6477d7fa/ansible_vault_setup.sh
+        chmod +x ansible_vault_setup.sh
+    fi
+
+    # Clean up any existing vault password files
+    rm -f ~/.vault_password
+    sudo rm -rf /root/.vault_password 2>/dev/null || true
+
+    if [ "${CICD_PIPELINE}" = "true" ]; then
+        if [ -z "$SSH_PASSWORD" ]; then
+            print_error "SSH_PASSWORD environment variable is not set for CI/CD mode"
+            exit 1
+        fi
+        print_status "Setting up vault password for CI/CD mode..."
+        echo "$SSH_PASSWORD" > ~/.vault_password
+        sudo cp ~/.vault_password /root/.vault_password 2>/dev/null || true
+        sudo cp ~/.vault_password /home/lab-user/.vault_password 2>/dev/null || true
+        chmod 600 ~/.vault_password
+        sudo chmod 600 /root/.vault_password 2>/dev/null || true
+
+        # Create symlink and set environment variable
+        ln -sf ~/.vault_password .vault_password 2>/dev/null || true
+        export ANSIBLE_VAULT_PASSWORD_FILE=.vault_password
+
+        print_status "✅ Vault password file created for CI/CD mode"
+    else
+        # Interactive mode - use ansible_vault_setup.sh
+        print_status "Running interactive vault password setup..."
+        bash ./ansible_vault_setup.sh
+        print_status "✅ Vault password setup completed"
+    fi
+}
+
 # Function to securely retrieve secrets from vault and create vault.yml
 create_vault_yml_from_vault() {
     # Use current directory structure for testing, adjust for production
@@ -102,11 +159,14 @@ create_vault_yml_from_vault() {
     fi
     local inventory_path="${base_path}/inventories/${INVENTORY}/group_vars/control"
     local vault_yml_path="${inventory_path}/vault.yml"
-    
+
     print_status "Creating vault.yml directly from HashiCorp Vault (no /tmp/config.yml needed)..."
-    
+
     # Ensure directory exists
     mkdir -p "${inventory_path}"
+
+    # Setup vault password file first
+    setup_vault_password
     
     # Create temporary secure file for vault.yml generation
     local temp_vault_yml=$(mktemp --suffix=.yml)
@@ -160,12 +220,30 @@ else:
     
     print_status "✅ Created ${vault_yml_path} directly from vault"
     
-    # Encrypt the vault.yml file using ansiblesafe
+    # Use ansiblesafe to read from HashiCorp Vault and create encrypted vault.yml
     if command -v ansiblesafe &> /dev/null; then
-        print_status "Encrypting vault.yml with ansiblesafe..."
+        print_status "Using ansiblesafe to retrieve secrets from HashiCorp Vault..."
         cd "$(dirname "${vault_yml_path}")"
-        /usr/local/bin/ansiblesafe -f vault.yml -o 1
-        print_status "✅ vault.yml encrypted successfully"
+
+        # Set required environment variables for ansiblesafe HashiCorp Vault integration
+        export VAULT_ADDRESS="${VAULT_ADDR}"
+        export SECRET_PATH="kv/ansiblesafe/${INVENTORY}"
+
+        # Use ansiblesafe operation 4: Read secrets from HashiCorp Vault and save to vault.yml
+        if /usr/local/bin/ansiblesafe -f vault.yml -o 4; then
+            print_status "✅ Secrets retrieved from HashiCorp Vault"
+
+            # Now encrypt the vault.yml file
+            if /usr/local/bin/ansiblesafe -f vault.yml -o 1; then
+                print_status "✅ vault.yml encrypted successfully"
+            else
+                print_warning "Failed to encrypt vault.yml, but secrets were retrieved"
+            fi
+        else
+            print_warning "Failed to retrieve secrets from HashiCorp Vault, falling back to manual creation"
+            # Fallback: create vault.yml manually and encrypt it
+            /usr/local/bin/ansiblesafe -f vault.yml -o 1
+        fi
     else
         print_warning "ansiblesafe not found, vault.yml left unencrypted"
     fi
@@ -217,6 +295,7 @@ handle_interactive_mode() {
                 ;;
             2)
                 print_status "Using traditional interactive setup..."
+                setup_vault_password
                 local base_path="${PWD}"
                 if [ -d "/root/qubinode_navigator" ]; then
                     base_path="/root/qubinode_navigator"
@@ -231,6 +310,7 @@ handle_interactive_mode() {
         esac
     else
         print_status "Using traditional interactive ansiblesafe setup..."
+        setup_vault_password
         local base_path="${PWD}"
         if [ -d "/root/qubinode_navigator" ]; then
             base_path="/root/qubinode_navigator"
