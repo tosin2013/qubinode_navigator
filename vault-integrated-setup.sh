@@ -195,7 +195,7 @@ EOF
     print_status "✅ Created ${vault_yml_path} directly from vault"
     
     # Use our Python YAML generation instead of ansiblesafe for better formatting
-    if command -v ansiblesafe &> /dev/null; then
+    if [ -f /usr/local/bin/ansiblesafe ]; then
         print_status "Using Python YAML generation for proper formatting..."
         cd "$(dirname "${vault_yml_path}")"
 
@@ -252,7 +252,7 @@ except Exception as e:
             fi
         fi
     else
-        print_warning "ansiblesafe not found, vault.yml left unencrypted"
+        print_warning "ansiblesafe not found at /usr/local/bin/ansiblesafe, vault.yml left unencrypted"
     fi
 }
 
