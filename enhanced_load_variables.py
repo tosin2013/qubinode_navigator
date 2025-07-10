@@ -5,7 +5,6 @@ Extends existing load-variables.py with template support and HashiCorp Vault int
 Based on repository analysis and HashiCorp Vault Secrets migration patterns
 """
 
-import fire
 import argparse
 import getpass
 import os
@@ -454,12 +453,106 @@ class EnhancedConfigGenerator:
 # Extend existing functionality
 class EnhancedLoadVariables(EnhancedConfigGenerator):
     """Enhanced version of original load-variables.py with template support"""
-    
+
     def update_inventory(self, username=None, domain_name=None, dnf_forwarder=None):
         """Original update_inventory function with enhancements"""
-        # ... (original implementation would go here)
-        # This maintains backward compatibility
-        pass
+        if username is None:
+            if os.geteuid() == 0:
+                username = input("Enter username: ")
+            else:
+                username = getpass.getuser()
+
+        if domain_name is None:
+            while True:
+                domain_name = input("Enter the domain name for your system: ")
+                regex = r"^(?:(?!-)[A-Za-z0-9-]{1,63}(?<!-)\.)+[A-Za-z]{2,}$"
+                if re.match(regex, domain_name):
+                    break
+                print("Invalid domain name format. Please try again.")
+
+        if dnf_forwarder is None:
+            dnf_forwarder = input("Enter the DNS forwarder for your system: ")
+
+        inventory_path = f'inventories/{self.inventory_env}/group_vars/all.yml'
+        with open(inventory_path, 'r') as f:
+            inventory = yaml.safe_load(f)
+
+        inventory['admin_user'] = username
+        inventory['domain'] = domain_name
+        inventory['dns_forwarder'] = dnf_forwarder
+
+        with open(inventory_path, 'w') as f:
+            yaml.dump(inventory, f, default_flow_style=False)
+
+    def get_interface_ips(self, configure_bridge=None, interface=None):
+        """Network interface detection and configuration with automatic discovery"""
+        if configure_bridge is None:
+            if os.geteuid() == 0:
+                print("Error: Cannot set configure_bridge to True when running as root.")
+                configure_bridge = False
+                print("configure_bridge is set to", configure_bridge)
+            else:
+                configure_bridge = True
+                print("configure_bridge is set to", configure_bridge)
+
+        # Get a list of network interfaces
+        interfaces = netifaces.interfaces()
+
+        # Filter out loopback interfaces and any that don't have an IPv4 address
+        interfaces = [i for i in interfaces if i != 'lo' and netifaces.AF_INET in netifaces.ifaddresses(i)]
+
+        if interface is None:
+            # If there's only one interface, use that
+            if len(interfaces) == 1:
+                interface = interfaces[0]
+            # If there's more than one, prompt the user to choose one
+            elif len(interfaces) > 1:
+                print("Multiple network interfaces found:")
+                for i, iface in enumerate(interfaces):
+                    print(f"{i+1}. {iface}")
+                choice = int(input("Choose an interface to use: "))
+                interface = interfaces[choice-1]
+            # If there are no interfaces, raise an exception
+            else:
+                raise Exception("No network interfaces found")
+
+        # Get the IPv4 address, netmask, and MAC address for the chosen interface
+        addrs = netifaces.ifaddresses(interface)
+        ip = addrs[netifaces.AF_INET][0]['addr']
+        netmask = addrs[netifaces.AF_INET][0]['netmask']
+        macaddr = addrs[netifaces.AF_LINK][0]['addr']
+
+        # Calculate the network address and prefix length from the netmask
+        netaddr = '.'.join(str(int(x) & int(y)) for x, y in zip(ip.split('.'), netmask.split('.')))
+        prefix_len = sum(bin(int(x)).count('1') for x in netmask.split('.'))
+
+        inventory_path = f'inventories/{self.inventory_env}/group_vars/control/kvm_host.yml'
+        with open(inventory_path, 'r') as f:
+            inventory = yaml.safe_load(f)
+
+        inventory['configure_bridge'] = configure_bridge
+        inventory['kvm_host_gw'] = netifaces.gateways()['default'][netifaces.AF_INET][0]
+        inventory['kvm_host_interface'] = interface
+        inventory['kvm_host_ip'] = ip
+        inventory['kvm_host_macaddr'] = macaddr
+        inventory['kvm_host_mask_prefix'] = prefix_len
+        inventory['kvm_host_netmask'] = netmask
+
+        with open(inventory_path, 'w') as f:
+            yaml.dump(inventory, f, default_flow_style=False)
+
+        network_config = {
+            "kvm_host_gw": netifaces.gateways()['default'][netifaces.AF_INET][0],
+            "kvm_host_interface": interface,
+            "kvm_host_ip": ip,
+            "kvm_host_macaddr": macaddr,
+            "kvm_host_mask_prefix": prefix_len,
+            "kvm_host_netmask": netmask,
+        }
+
+        print("🔧 Network configuration detected and updated:")
+        print(network_config)
+        return network_config
 
 if __name__ == '__main__':
     generator = EnhancedConfigGenerator()
@@ -486,10 +579,16 @@ if __name__ == '__main__':
     
     if args.generate_config:
         success = generator.generate_config_template(args.output, args.template)
-        
+
         if success and args.update_vault:
             generator.update_vault_with_config(args.output)
     else:
         # Run original functionality for backward compatibility
         print("Running original load-variables functionality...")
-        # Original functions would be called here
+        enhanced_loader = EnhancedLoadVariables()
+
+        # Update inventory with provided arguments
+        enhanced_loader.update_inventory(args.username, args.domain, args.forwarder)
+
+        # Detect and update network configuration
+        enhanced_loader.get_interface_ips(args.bridge, args.interface)
