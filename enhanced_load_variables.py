@@ -494,6 +494,11 @@ class EnhancedLoadVariables(EnhancedConfigGenerator):
             else:
                 configure_bridge = True
                 print("configure_bridge is set to", configure_bridge)
+        else:
+            # Handle string values from environment variables
+            if isinstance(configure_bridge, str):
+                configure_bridge = configure_bridge.lower() in ('true', '1', 'yes', 'on')
+            print(f"🔧 Bridge configuration from parameter: {configure_bridge}")
 
         # Get a list of network interfaces
         interfaces = netifaces.interfaces()
@@ -554,6 +559,96 @@ class EnhancedLoadVariables(EnhancedConfigGenerator):
         print(network_config)
         return network_config
 
+    def get_disk(self):
+        """Get available disks for storage configuration"""
+        disks = []
+        for device in psutil.disk_partitions():
+            if device.device.startswith('/dev/'):
+                disks.append(device.device)
+        return disks
+
+    def select_disk(self, disks=None):
+        """Disk selection and storage configuration with automatic detection"""
+        # Check if vg_qubi is present
+        try:
+            vgdisplay_output = subprocess.check_output(['sudo', 'vgdisplay']).decode()
+        except subprocess.CalledProcessError:
+            print("Error: Could not get volume group information.")
+            return False
+
+        inventory_path = f'inventories/{self.inventory_env}/group_vars/control/kvm_host.yml'
+
+        if 'vg_qubi' in vgdisplay_output:
+            print("✅ Volume group 'vg_qubi' already exists.")
+            # Update YAML file with storage settings
+            with open(inventory_path, 'r') as f:
+                inventory = yaml.safe_load(f)
+            inventory['create_libvirt_storage'] = False
+            inventory['create_lvm'] = False
+            inventory['skip_libvirt_pool'] = True
+            with open(inventory_path, 'w') as f:
+                yaml.dump(inventory, f, default_flow_style=False)
+            print(f"🔧 Storage configuration updated: LVM creation disabled (existing vg_qubi detected)")
+            print(f"📁 Updated {inventory_path}")
+            return True
+
+        elif disks == 'skip':
+            print("⏭️ Skipping disk selection.")
+            # Update YAML file with storage settings
+            with open(inventory_path, 'r') as f:
+                inventory = yaml.safe_load(f)
+            inventory['create_libvirt_storage'] = False
+            inventory['create_lvm'] = False
+            with open(inventory_path, 'w') as f:
+                yaml.dump(inventory, f, default_flow_style=False)
+            print(f"📁 Updated {inventory_path}")
+            return True
+        else:
+            # Get available disks
+            if disks is None:
+                disks = self.get_disk()
+            print(f"💾 Available disks: {disks}")
+
+            # Check if disk is already mounted
+            mounted = False
+            if disks:
+                for disk in disks:
+                    if os.path.ismount(f'/mnt/{disk}'):
+                        print(f"📁 Disk {disk} is already mounted.")
+                        disks = [disk]
+                        mounted = True
+                        break
+
+            # Skip disk selection if only one disk is available and already mounted
+            if mounted and len(disks) == 1:
+                print(f"💾 Using disk: {disks[0]}")
+                use_root_disk = True
+            else:
+                use_root_disk = False
+
+            # Update YAML file with selected disk
+            with open(inventory_path, 'r') as f:
+                inventory = yaml.safe_load(f)
+
+            if use_root_disk is True:
+                print('⚠️ No disk selected.')
+                inventory['create_libvirt_storage'] = False
+                inventory['create_lvm'] = False
+                with open(inventory_path, 'w') as f:
+                    yaml.dump(inventory, f, default_flow_style=False)
+                return False
+            else:
+                disks = disks.replace('/dev/', '')
+                inventory['create_libvirt_storage'] = True
+                inventory['create_lvm'] = True
+                inventory['kvm_host_libvirt_extra_disk'] = disks
+                with open(inventory_path, "w") as f:
+                    yaml.dump(inventory, f)
+
+                print(f"💾 Selected disk: {disks}")
+                print(f"📁 Updated {inventory_path}")
+                return True
+
 if __name__ == '__main__':
     generator = EnhancedConfigGenerator()
     
@@ -571,7 +666,7 @@ if __name__ == '__main__':
     parser.add_argument('--username', help='Username for the system')
     parser.add_argument('--domain', help='Domain name for the system')
     parser.add_argument('--forwarder', help='DNS forwarder for the system')
-    parser.add_argument('--bridge', type=bool, help='Configure bridge for the system')
+    parser.add_argument('--bridge', help='Configure bridge for the system (true/false)')
     parser.add_argument('--interface', help='Network interface to use')
     parser.add_argument('--disk', help='Disk to use, or "skip" to skip disk selection')
     
@@ -592,3 +687,6 @@ if __name__ == '__main__':
 
         # Detect and update network configuration
         enhanced_loader.get_interface_ips(args.bridge, args.interface)
+
+        # Detect and configure storage
+        enhanced_loader.select_disk(args.disk)

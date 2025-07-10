@@ -579,9 +579,9 @@ configure_navigator() {
             exit 1
         fi
         log_message "Using enhanced configuration with template: ${CONFIG_TEMPLATE} (CI/CD mode)"
-        if ! python3 enhanced_load_variables.py --generate-config --template "${CONFIG_TEMPLATE}" --username "${ENV_USERNAME}" --domain "${DOMAIN}" --forwarder "${FORWARDER}" --interface "${INTERFACE}"; then
+        if ! python3 enhanced_load_variables.py --generate-config --template "${CONFIG_TEMPLATE}" --username "${ENV_USERNAME}" --domain "${DOMAIN}" --forwarder "${FORWARDER}" --bridge "${ACTIVE_BRIDGE}" --interface "${INTERFACE}"; then
             log_message "Enhanced load variables failed, falling back to original method"
-            if ! python3 load-variables.py --username "${ENV_USERNAME}" --domain "${DOMAIN}" --forwarder "${FORWARDER}" --interface "${INTERFACE}"; then
+            if ! python3 load-variables.py --username "${ENV_USERNAME}" --domain "${DOMAIN}" --forwarder "${FORWARDER}" --bridge "${ACTIVE_BRIDGE}" --interface "${INTERFACE}"; then
                 log_message "Failed to load variables with both methods"
                 exit 1
             fi
