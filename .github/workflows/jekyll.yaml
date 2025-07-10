@@ -29,40 +29,84 @@ concurrency:
 jobs:
   # Build job
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04  # Use specific Ubuntu version for consistency
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Setup Ruby
-        uses: ruby/setup-ruby@8575951200e472d5f2d95c625da0c7bec8217c42 # Use the specific commit hash for a stable version
+        uses: ruby/setup-ruby@v1  # Use latest stable version
         with:
-          ruby-version: '3.1' # Match this with your .ruby-version file if you have one
-          bundler-cache: true # Automatically runs 'bundle install' and caches installed gems
-          cache-version: 0 # Increment to force a new cache if needed
+          ruby-version: '3.1.4'  # Specify exact version
+          bundler-cache: true
+          cache-version: 1
+        continue-on-error: true
+        id: ruby-setup
+
+      - name: Fallback Ruby installation (if setup-ruby fails)
+        if: steps.ruby-setup.outcome == 'failure'
+        run: |
+          echo "setup-ruby failed, installing Ruby manually..."
+          sudo apt-get update
+          sudo apt-get install -y ruby-full build-essential zlib1g-dev
+
+          # Set up gem installation directory for user
+          echo 'export GEM_HOME="$HOME/gems"' >> ~/.bashrc
+          echo 'export PATH="$HOME/gems/bin:$PATH"' >> ~/.bashrc
+          source ~/.bashrc
+
+          # Install bundler
+          gem install bundler
+
+          echo "Ruby version: $(ruby --version)"
+          echo "Bundler version: $(bundle --version)"
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v4
-      - name: Build with Jekyll
-        # Ensure you specify the correct source and destination directories
+      - name: Check docs directory structure
         run: |
-          ls -lath .
-          pwd
+          echo "Current directory: $(pwd)"
+          echo "Contents of current directory:"
+          ls -la
+          echo "Contents of docs directory:"
+          ls -la docs/ || echo "docs directory not found"
+
+      - name: Build with Jekyll
+        run: |
+          # Set up environment for manual Ruby installation if needed
+          if [ "${{ steps.ruby-setup.outcome }}" = "failure" ]; then
+            export GEM_HOME="$HOME/gems"
+            export PATH="$HOME/gems/bin:$PATH"
+          fi
+
           cd docs
-          bundle install
-          bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}" -d ../../_site
+          echo "Ruby version: $(ruby --version)"
+          echo "Bundler version: $(bundle --version)"
+          echo "Installing dependencies..."
+          bundle install --retry 3 --jobs 4
+          echo "Building Jekyll site..."
+          bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}" --destination ../_site --verbose
         env:
           JEKYLL_ENV: production
+          GEM_HOME: ${{ steps.ruby-setup.outcome == 'failure' && '$HOME/gems' || '' }}
+          PATH: ${{ steps.ruby-setup.outcome == 'failure' && '$HOME/gems/bin:$PATH' || env.PATH }}
+
+      - name: Verify build output
+        run: |
+          echo "Build output directory contents:"
+          ls -la _site/ || echo "_site directory not found"
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: /home/runner/work/qubinode_navigator/_site # Ensure this path points to the root directory where _site is generated
+          path: ./_site
 
   # Deployment job
   deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04  # Use same Ubuntu version as build job
     needs: build
     steps:
       - name: Deploy to GitHub Pages
