@@ -43,12 +43,17 @@ jobs:
         continue-on-error: true
         id: ruby-setup
 
+      - name: Install development dependencies
+        run: |
+          echo "Installing development dependencies for native gem compilation..."
+          sudo apt-get update
+          sudo apt-get install -y build-essential zlib1g-dev libyaml-dev libssl-dev libgdbm-dev libreadline-dev libncurses5-dev libffi-dev
+
       - name: Fallback Ruby installation (if setup-ruby fails)
         if: steps.ruby-setup.outcome == 'failure'
         run: |
           echo "setup-ruby failed, installing Ruby manually..."
-          sudo apt-get update
-          sudo apt-get install -y ruby-full build-essential zlib1g-dev
+          sudo apt-get install -y ruby-full
 
           # Set up gem installation directory for user
           echo 'export GEM_HOME="$HOME/gems"' >> ~/.bashrc
@@ -82,14 +87,24 @@ jobs:
           cd docs
           echo "Ruby version: $(ruby --version)"
           echo "Bundler version: $(bundle --version)"
-          echo "Installing dependencies..."
-          bundle install --retry 3 --jobs 4
+          echo "Gem environment:"
+          gem env
+
+          echo "Installing dependencies with native extension support..."
+          # Configure bundler for native extensions
+          bundle config set --local build.nokogiri --use-system-libraries
+          bundle config set --local build.ffi --enable-system-libffi
+
+          # Install with increased verbosity and parallel jobs
+          bundle install --retry 3 --jobs 4 --verbose
+
           echo "Building Jekyll site..."
           bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}" --destination ../_site --verbose
         env:
           JEKYLL_ENV: production
           GEM_HOME: ${{ steps.ruby-setup.outcome == 'failure' && '$HOME/gems' || '' }}
           PATH: ${{ steps.ruby-setup.outcome == 'failure' && '$HOME/gems/bin:$PATH' || env.PATH }}
+          MAKE: make -j4
 
       - name: Verify build output
         run: |
