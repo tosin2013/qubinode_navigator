@@ -115,7 +115,7 @@
               tags: |
                 ${{ inputs.EE_IMAGE_TAG }}
                 ${{ github.sha }}
-              registry: ${{ secrets.REGISTRY_HOSTNAME }}/${{ secrets.REGISTRY_PATH }}/
+              registry: ${{ secrets.REGISTRY_HOSTNAME }}/${{ secrets.REGISTRY_PATH }}
               username: ${{ secrets.REGISTRY_USERNAME }}
               password: ${{ secrets.REGISTRY_PASSWORD }} 
             
@@ -126,7 +126,7 @@
               echo "" >> $GITHUB_STEP_SUMMARY
               echo "Image pushed to repository: [${{ steps.push-to-registry.outputs.registry-path }}](https://${{ steps.push-to-registry.outputs.registry-path }})" >> $GITHUB_STEP_SUMMARY
               echo "> \`podman pull ${{ steps.push-to-registry.outputs.registry-path }}\`" >> $GITHUB_STEP_SUMMARY
-              echo "> \`podman pull ${{ secrets.REGISTRY_HOSTNAME }}/${{ inputs.REGISTRY_PATH }}/${{ inputs.EE_IMAGE_NAME }}:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+              echo "> \`podman pull ${{ secrets.REGISTRY_HOSTNAME }}/${{ secrets.REGISTRY_PATH }}/${{ inputs.EE_IMAGE_NAME }}:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
               echo "## :pushpin: Ansible info:" >> $GITHUB_STEP_SUMMARY
               echo "" >> $GITHUB_STEP_SUMMARY
               echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
