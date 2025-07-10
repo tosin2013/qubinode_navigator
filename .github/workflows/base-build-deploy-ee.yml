@@ -73,7 +73,7 @@
     
           - name: Log in to target registry
             id: registry-quay
-            uses: redhat-actions/podman-login@v1
+            uses: redhat-actions/podman-login@v1.7
             with:
               registry: ${{ secrets.REGISTRY_HOSTNAME }}
               username: ${{ secrets.REGISTRY_USERNAME }}
@@ -82,7 +82,7 @@
     #      - name: Log in to registry.redhat.io
     #        id: registry-redhat
     #        if: ${{ secrets.REDHAT_PASSWORD != 0 }}
-    #        uses: redhat-actions/podman-login@v1
+    #        uses: redhat-actions/podman-login@v1.7
     #        with:
     #          registry: registry.redhat.io
     #          username: ${{ secrets.REDHAT_USERNAME }}
@@ -109,7 +109,7 @@
     
           - name: Push To Target Registry
             id: push-to-registry
-            uses: redhat-actions/push-to-registry@v2
+            uses: redhat-actions/push-to-registry@v2.8
             with:
               image: ${{ inputs.EE_IMAGE_NAME }}
               tags: |
