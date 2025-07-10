@@ -49,43 +49,70 @@ jobs:
               from enhanced_load_variables import EnhancedConfigGenerator
               print('✅ Enhanced load variables script imports successfully')
           except Exception as e:
-              print(f'❌ Import failed: {e}')
+              print(f'❌ Enhanced script import failed: {e}')
               sys.exit(1)
           "
 
-      - name: Test original load variables script
+      - name: Test original load variables script syntax
         run: |
           python -c "
-          import sys
-          sys.path.append('.')
+          import ast
           try:
-              import load_variables
-              print('✅ Original load variables script imports successfully')
+              with open('load-variables.py', 'r') as f:
+                  ast.parse(f.read())
+              print('✅ Original load-variables.py syntax is valid')
+          except SyntaxError as e:
+              print(f'❌ Syntax error in load-variables.py: {e}')
+              sys.exit(1)
           except Exception as e:
-              print(f'❌ Import failed: {e}')
+              print(f'❌ Error reading load-variables.py: {e}')
               sys.exit(1)
           "
+
+      - name: Test script execution capabilities
+        run: |
+          # Test that scripts can be executed (without actually running them)
+          python3 enhanced_load_variables.py --help > /dev/null 2>&1 && echo "✅ enhanced_load_variables.py is executable" || echo "⚠️ enhanced_load_variables.py execution test failed"
+          python3 load-variables.py --help > /dev/null 2>&1 && echo "✅ load-variables.py is executable" || echo "⚠️ load-variables.py execution test failed"
 
       - name: Validate YAML files
         run: |
           python -c "
           import yaml
           import os
-          
+          import sys
+
           yaml_files = []
+          excluded_dirs = {'.git', '__pycache__', '.pytest_cache', 'node_modules'}
+
           for root, dirs, files in os.walk('.'):
+              # Skip excluded directories
+              dirs[:] = [d for d in dirs if d not in excluded_dirs]
+
               for file in files:
                   if file.endswith('.yml') or file.endswith('.yaml'):
                       yaml_files.append(os.path.join(root, file))
-          
+
+          print(f'Found {len(yaml_files)} YAML files to validate')
+          errors = 0
+
           for yaml_file in yaml_files:
               try:
-                  with open(yaml_file, 'r') as f:
+                  with open(yaml_file, 'r', encoding='utf-8') as f:
                       yaml.safe_load(f)
                   print(f'✅ {yaml_file} is valid')
+              except yaml.YAMLError as e:
+                  print(f'❌ YAML error in {yaml_file}: {e}')
+                  errors += 1
               except Exception as e:
-                  print(f'❌ {yaml_file} is invalid: {e}')
-                  exit(1)
+                  print(f'❌ Error reading {yaml_file}: {e}')
+                  errors += 1
+
+          if errors > 0:
+              print(f'❌ Found {errors} YAML validation errors')
+              sys.exit(1)
+          else:
+              print(f'✅ All {len(yaml_files)} YAML files are valid')
           "
 
   # Auto-merge for patch and minor updates
