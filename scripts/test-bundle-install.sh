@@ -132,22 +132,27 @@ echo "Ruby version: $(ruby --version)"
 
 # Set up user gem directory (exactly like new workflow)
 export GEM_HOME="$HOME/gems"
-export PATH="$HOME/gems/bin:$PATH"
+export PATH="$HOME/gems/bin:/usr/bin:$PATH"
+
+# Create gems directory
+mkdir -p "$HOME/gems"
 
 # Install bundler to user directory
 gem install bundler
 echo "Bundler version: $(bundle --version)"
+echo "Bundler path: $(command -v bundle)"
 
 # Navigate to docs
 cd /workspace/docs
 
 # Configure bundler (exactly like new workflow)
 export GEM_HOME="$HOME/gems"
-export PATH="$HOME/gems/bin:$PATH"
+export PATH="$HOME/gems/bin:/usr/bin:$PATH"
 
 # Verify bundler is available
-which bundle || echo "Bundle not found in PATH"
-bundle --version || echo "Bundle command failed"
+echo "PATH: $PATH"
+echo "GEM_HOME: $GEM_HOME"
+bundle --version
 
 bundle config set --local build.bigdecimal --with-gmp-dir=/usr
 bundle config set --local build.nokogiri --use-system-libraries

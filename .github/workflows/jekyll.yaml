@@ -30,30 +30,34 @@ jobs:
       - name: Setup Ruby and Bundler
         run: |
           echo "Ruby version: $(ruby --version)"
+          echo "Ruby path: $(command -v ruby)"
 
           # Set up user gem directory
-          echo 'export GEM_HOME="$HOME/gems"' >> ~/.bashrc
-          echo 'export PATH="$HOME/gems/bin:$PATH"' >> ~/.bashrc
           export GEM_HOME="$HOME/gems"
-          export PATH="$HOME/gems/bin:$PATH"
+          export PATH="$HOME/gems/bin:/usr/bin:$PATH"
+
+          # Create gems directory
+          mkdir -p "$HOME/gems"
 
           # Install bundler to user directory
           gem install bundler
           echo "Bundler version: $(bundle --version)"
+          echo "Bundler path: $(command -v bundle)"
         
       - name: Install Jekyll dependencies
         working-directory: ./docs
         env:
           GEM_HOME: $HOME/gems
-          PATH: $HOME/gems/bin:$PATH
+          PATH: $HOME/gems/bin:/usr/bin:$PATH
         run: |
           # Ensure gem directory is in PATH
           export GEM_HOME="$HOME/gems"
-          export PATH="$HOME/gems/bin:$PATH"
+          export PATH="$HOME/gems/bin:/usr/bin:$PATH"
 
           # Verify bundler is available
-          which bundle || echo "Bundle not found in PATH"
-          bundle --version || echo "Bundle command failed"
+          echo "PATH: $PATH"
+          echo "GEM_HOME: $GEM_HOME"
+          bundle --version
 
           # Configure bundler for native extensions
           bundle config set --local build.bigdecimal --with-gmp-dir=/usr
@@ -68,11 +72,11 @@ jobs:
         env:
           JEKYLL_ENV: production
           GEM_HOME: $HOME/gems
-          PATH: $HOME/gems/bin:$PATH
+          PATH: $HOME/gems/bin:/usr/bin:$PATH
         run: |
           # Ensure gem directory is in PATH
           export GEM_HOME="$HOME/gems"
-          export PATH="$HOME/gems/bin:$PATH"
+          export PATH="$HOME/gems/bin:/usr/bin:$PATH"
 
           # Build Jekyll site
           bundle exec jekyll build
