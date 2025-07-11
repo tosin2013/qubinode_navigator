@@ -144,6 +144,11 @@ cd /workspace/docs
 # Configure bundler (exactly like new workflow)
 export GEM_HOME="$HOME/gems"
 export PATH="$HOME/gems/bin:$PATH"
+
+# Verify bundler is available
+which bundle || echo "Bundle not found in PATH"
+bundle --version || echo "Bundle command failed"
+
 bundle config set --local build.bigdecimal --with-gmp-dir=/usr
 bundle config set --local build.nokogiri --use-system-libraries
 bundle config set --local build.ffi --enable-system-libffi

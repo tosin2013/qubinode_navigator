@@ -47,6 +47,14 @@ jobs:
           GEM_HOME: $HOME/gems
           PATH: $HOME/gems/bin:$PATH
         run: |
+          # Ensure gem directory is in PATH
+          export GEM_HOME="$HOME/gems"
+          export PATH="$HOME/gems/bin:$PATH"
+
+          # Verify bundler is available
+          which bundle || echo "Bundle not found in PATH"
+          bundle --version || echo "Bundle command failed"
+
           # Configure bundler for native extensions
           bundle config set --local build.bigdecimal --with-gmp-dir=/usr
           bundle config set --local build.nokogiri --use-system-libraries
@@ -61,7 +69,13 @@ jobs:
           JEKYLL_ENV: production
           GEM_HOME: $HOME/gems
           PATH: $HOME/gems/bin:$PATH
-        run: bundle exec jekyll build
+        run: |
+          # Ensure gem directory is in PATH
+          export GEM_HOME="$HOME/gems"
+          export PATH="$HOME/gems/bin:$PATH"
+
+          # Build Jekyll site
+          bundle exec jekyll build
         
       - name: Setup Pages
         uses: actions/configure-pages@v5
