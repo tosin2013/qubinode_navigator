@@ -10,7 +10,7 @@ jobs:
 
     steps:
       - name: Get the number of times the Configure RHEL 8 Equinix Server workflow has failed
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         id: get-num-failures
         with:
           script: |
@@ -30,7 +30,7 @@ jobs:
             return numFailures;
 
       - name: Restart the Configure RHEL 8 Equinix Server workflow if it has failed fewer than 3 times
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         if: ${{ steps.get-num-failures.outputs.result < 3 }}
         with:
           script: |
