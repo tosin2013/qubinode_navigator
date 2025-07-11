@@ -1,208 +1,68 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
-# Sample workflow for building and deploying a Jekyll site to GitHub Pages
+# Clean, minimal Jekyll workflow that actually works
 name: Deploy Jekyll site to Pages
 
 on:
-  # Runs on pushes targeting the default branch
   push:
     branches: ["main"]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
 concurrency:
   group: "pages"
   cancel-in-progress: false
 
 jobs:
-  # Build job
   build:
-    runs-on: ubuntu-22.04  # Use specific Ubuntu version for consistency
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Install development dependencies
+        
+      - name: Install minimal build dependencies
         run: |
-          echo "Installing development dependencies for native gem compilation..."
           sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            zlib1g-dev \
-            libyaml-dev \
-            libssl-dev \
-            libgdbm-dev \
-            libreadline-dev \
-            libncurses5-dev \
-            libffi-dev \
-            libgmp-dev \
-            libgmp3-dev \
-            libxml2-dev \
-            libxslt1-dev \
-            pkg-config \
-            autoconf \
-            bison \
-            rustc
-
-          # Verify build environment
-          echo "Verifying build environment..."
-          gcc --version
-          make --version
-          pkg-config --version
-          echo "GMP library check:"
-          pkg-config --exists gmp && echo "✅ GMP found" || echo "❌ GMP not found"
-          ls -la /usr/include/gmp* || echo "No GMP headers found"
-          ls -la /usr/lib/x86_64-linux-gnu/libgmp* || echo "No GMP libraries found"
-
-      - name: Setup Ruby
-        uses: ruby/setup-ruby@v1  # Use latest stable version
-        with:
-          ruby-version: '3.1.4'  # Specify exact version
-          bundler: 'latest'  # Use latest compatible Bundler
-          bundler-cache: true
-          cache-version: 1
-        continue-on-error: false
-        id: ruby-setup
-
-      - name: Check Ruby and Bundler versions
+          sudo apt-get install -y build-essential ruby-full ruby-dev libgmp-dev libffi-dev
+        
+      - name: Setup Ruby and Bundler
         run: |
-          ruby -v
-          bundle -v
-
-          # Verify Ruby can access build tools
-          echo "Verifying Ruby build environment..."
-          ruby -e "puts RbConfig::CONFIG['CC']" || echo "No CC config"
-          ruby -e "puts RbConfig::CONFIG['CXX']" || echo "No CXX config"
-          ruby -e "puts RbConfig::CONFIG['CFLAGS']" || echo "No CFLAGS config"
-
-          # Test basic compilation
-          echo "Testing basic compilation..."
-          echo 'puts "Hello from Ruby!"' | ruby
-
-          # Check if mkmf can find basic tools
-          ruby -e "require 'mkmf'; puts 'mkmf loaded successfully'" || echo "mkmf failed to load"
-
-      - name: Fallback Ruby installation (if setup-ruby fails)
-        if: steps.ruby-setup.outcome == 'failure'
-        run: |
-          echo "setup-ruby failed, installing Ruby manually..."
-          sudo apt-get install -y ruby-full
-          sudo apt-get update && sudo apt-get install -y build-essential
-          sudo apt-get install -y ruby-dev
-
-          # Set up gem installation directory for user
-          echo 'export GEM_HOME="$HOME/gems"' >> ~/.bashrc
-          echo 'export PATH="$HOME/gems/bin:$PATH"' >> ~/.bashrc
-          source ~/.bashrc
-
-          # Install latest compatible bundler
+          echo "Ruby version: $(ruby --version)"
           gem install bundler
-
-          echo "Ruby version: $(ruby --version)"
           echo "Bundler version: $(bundle --version)"
-      - name: Setup Pages
-        id: pages
-        uses: actions/configure-pages@v5
-      - name: Check docs directory structure
+        
+      - name: Install Jekyll dependencies
+        working-directory: ./docs
         run: |
-          echo "Current directory: $(pwd)"
-          echo "Contents of current directory:"
-          ls -la
-          echo "Contents of docs directory:"
-          ls -la docs/ || echo "docs directory not found"
-
-      - name: Build with Jekyll
-        run: |
-          # Set up environment for manual Ruby installation if needed
-          if [ "${{ steps.ruby-setup.outcome }}" = "failure" ]; then
-            export GEM_HOME="$HOME/gems"
-            export PATH="$HOME/gems/bin:$PATH"
-          fi
-
-          cd docs
-          echo "Ruby version: $(ruby --version)"
-          echo "Bundler version: $(bundle --version)"
-
-          echo "Final Bundler version: $(bundle --version)"
-          echo "Gem environment:"
-          gem env
-
-          echo "Installing dependencies with native extension support..."
-
-          # Test bigdecimal compilation first
-          echo "Testing bigdecimal compilation..."
-          gem install bigdecimal -v 3.1.7 -- --with-gmp-dir=/usr || {
-            echo "❌ BigDecimal compilation failed, trying alternative approach..."
-            gem install bigdecimal -v 3.1.6 -- --with-gmp-dir=/usr || {
-              echo "❌ BigDecimal 3.1.6 also failed, using system default..."
-              gem install bigdecimal || echo "❌ All bigdecimal installations failed"
-            }
-          }
-
           # Configure bundler for native extensions
+          bundle config set --local build.bigdecimal --with-gmp-dir=/usr
           bundle config set --local build.nokogiri --use-system-libraries
           bundle config set --local build.ffi --enable-system-libffi
-          bundle config set --local build.bigdecimal --with-gmp-dir=/usr
-
-          # Additional bigdecimal compilation flags
-          export BIGDECIMAL_CFLAGS="-I/usr/include"
-          export BIGDECIMAL_LDFLAGS="-L/usr/lib/x86_64-linux-gnu"
-
-          # Set environment variables for native compilation
-          export MAKE="make -j$(nproc)"
-          export CC=gcc
-          export CXX=g++
-
-          # Install with retry and parallel jobs
-          bundle install --retry 3 --jobs 4 --verbose
-
-          echo "Building Jekyll site..."
-          bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}" --destination ../_site --verbose
+          
+          # Install gems
+          bundle install --retry 3 --jobs 4
+        
+      - name: Build Jekyll site
+        working-directory: ./docs
+        run: bundle exec jekyll build
         env:
           JEKYLL_ENV: production
-          GEM_HOME: ${{ steps.ruby-setup.outcome == 'failure' && '$HOME/gems' || '' }}
-          PATH: ${{ steps.ruby-setup.outcome == 'failure' && '$HOME/gems/bin:$PATH' || env.PATH }}
-          MAKE: make -j4
-          CC: gcc
-          CXX: g++
-          CFLAGS: -I/usr/include
-          CXXFLAGS: -I/usr/include
-          LDFLAGS: -L/usr/lib/x86_64-linux-gnu
-          PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig
-          BUNDLE_BUILD__BIGDECIMAL: --with-gmp-dir=/usr
-          BUNDLE_BUILD__NOKOGIRI: --use-system-libraries
-          BUNDLE_BUILD__FFI: --enable-system-libffi
-          BIGDECIMAL_CFLAGS: -I/usr/include
-          BIGDECIMAL_LDFLAGS: -L/usr/lib/x86_64-linux-gnu
-
-      - name: Verify build output
-        run: |
-          echo "Build output directory contents:"
-          ls -la _site/ || echo "_site directory not found"
-
+        
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+        
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./_site
+          path: ./docs/_site
 
-  # Deployment job
   deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-22.04  # Use same Ubuntu version as build job
+    runs-on: ubuntu-latest
     needs: build
     steps:
       - name: Deploy to GitHub Pages

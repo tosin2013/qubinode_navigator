@@ -58,6 +58,16 @@ echo "Gemfile contents:"
 cat Gemfile
 echo
 
+# Test bigdecimal compilation first
+echo "Testing bigdecimal compilation..."
+gem install bigdecimal -v 3.1.7 -- --with-gmp-dir=/usr || {
+  echo "❌ BigDecimal 3.1.7 failed, trying 3.1.6..."
+  gem install bigdecimal -v 3.1.6 -- --with-gmp-dir=/usr || {
+    echo "❌ BigDecimal 3.1.6 failed, using default..."
+    gem install bigdecimal || echo "❌ All bigdecimal installations failed"
+  }
+}
+
 # Configure bundler
 echo "Configuring bundler..."
 bundle config set --local build.bigdecimal --with-gmp-dir=/usr
@@ -65,6 +75,10 @@ bundle config set --local build.nokogiri --use-system-libraries
 bundle config set --local build.ffi --enable-system-libffi
 
 # Set environment variables
+export CFLAGS="-I/usr/include"
+export CXXFLAGS="-I/usr/include"
+export LDFLAGS="-L/usr/lib/x86_64-linux-gnu"
+export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig"
 export BIGDECIMAL_CFLAGS="-I/usr/include"
 export BIGDECIMAL_LDFLAGS="-L/usr/lib/x86_64-linux-gnu"
 
@@ -98,25 +112,21 @@ EOF
     return $exit_code
 }
 
-# Test with minimal packages
+# Test with minimal packages (GitHub Actions approach)
 test_minimal_packages() {
     local container_name="minimal-test-$(date +%s)"
-    
-    log_info "Testing with minimal package set..."
-    
+
+    log_info "Testing GitHub Actions minimal approach..."
+
     cat > /tmp/minimal-test.sh << 'EOF'
 #!/bin/bash
 set -euo pipefail
 
-echo "=== Minimal Package Test ==="
+echo "=== GitHub Actions Minimal Test ==="
 
-# Install only essential packages
+# Install minimal dependencies (exactly like new workflow)
 apt-get update
-apt-get install -y \
-    build-essential \
-    ruby-full \
-    ruby-dev \
-    libgmp-dev
+apt-get install -y build-essential ruby-full ruby-dev libgmp-dev libffi-dev
 
 echo "Ruby version: $(ruby --version)"
 
@@ -127,30 +137,38 @@ echo "Bundler version: $(bundle --version)"
 # Navigate to docs
 cd /workspace/docs
 
-# Try bundle install with minimal config
+# Configure bundler (exactly like new workflow)
 bundle config set --local build.bigdecimal --with-gmp-dir=/usr
-bundle install --verbose
+bundle config set --local build.nokogiri --use-system-libraries
+bundle config set --local build.ffi --enable-system-libffi
 
-echo "✅ Minimal test successful!"
+# Install gems (exactly like new workflow)
+bundle install --retry 3 --jobs 4
+
+echo "✅ GitHub Actions minimal test successful!"
+
+# Test Jekyll build
+bundle exec jekyll build
+echo "✅ Jekyll build successful!"
 EOF
 
     chmod +x /tmp/minimal-test.sh
-    
+
     podman run --rm -it \
         -v "$(pwd)/docs:/workspace/docs:z" \
         -v "/tmp/minimal-test.sh:/test.sh:z" \
         ubuntu:22.04 \
         bash /test.sh
-    
+
     local exit_code=$?
     rm -f /tmp/minimal-test.sh
-    
+
     if [[ $exit_code -eq 0 ]]; then
-        log_success "Minimal package test passed!"
+        log_success "GitHub Actions minimal test passed!"
     else
-        log_error "Minimal package test failed with exit code: $exit_code"
+        log_error "GitHub Actions minimal test failed with exit code: $exit_code"
     fi
-    
+
     return $exit_code
 }
 
