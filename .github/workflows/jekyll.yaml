@@ -30,25 +30,38 @@ jobs:
       - name: Setup Ruby and Bundler
         run: |
           echo "Ruby version: $(ruby --version)"
+
+          # Set up user gem directory
+          echo 'export GEM_HOME="$HOME/gems"' >> ~/.bashrc
+          echo 'export PATH="$HOME/gems/bin:$PATH"' >> ~/.bashrc
+          export GEM_HOME="$HOME/gems"
+          export PATH="$HOME/gems/bin:$PATH"
+
+          # Install bundler to user directory
           gem install bundler
           echo "Bundler version: $(bundle --version)"
         
       - name: Install Jekyll dependencies
         working-directory: ./docs
+        env:
+          GEM_HOME: $HOME/gems
+          PATH: $HOME/gems/bin:$PATH
         run: |
           # Configure bundler for native extensions
           bundle config set --local build.bigdecimal --with-gmp-dir=/usr
           bundle config set --local build.nokogiri --use-system-libraries
           bundle config set --local build.ffi --enable-system-libffi
-          
+
           # Install gems
           bundle install --retry 3 --jobs 4
         
       - name: Build Jekyll site
         working-directory: ./docs
-        run: bundle exec jekyll build
         env:
           JEKYLL_ENV: production
+          GEM_HOME: $HOME/gems
+          PATH: $HOME/gems/bin:$PATH
+        run: bundle exec jekyll build
         
       - name: Setup Pages
         uses: actions/configure-pages@v5

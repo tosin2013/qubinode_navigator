@@ -130,7 +130,11 @@ apt-get install -y build-essential ruby-full ruby-dev libgmp-dev libffi-dev
 
 echo "Ruby version: $(ruby --version)"
 
-# Install bundler
+# Set up user gem directory (exactly like new workflow)
+export GEM_HOME="$HOME/gems"
+export PATH="$HOME/gems/bin:$PATH"
+
+# Install bundler to user directory
 gem install bundler
 echo "Bundler version: $(bundle --version)"
 
@@ -138,6 +142,8 @@ echo "Bundler version: $(bundle --version)"
 cd /workspace/docs
 
 # Configure bundler (exactly like new workflow)
+export GEM_HOME="$HOME/gems"
+export PATH="$HOME/gems/bin:$PATH"
 bundle config set --local build.bigdecimal --with-gmp-dir=/usr
 bundle config set --local build.nokogiri --use-system-libraries
 bundle config set --local build.ffi --enable-system-libffi
