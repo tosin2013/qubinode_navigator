@@ -59,7 +59,7 @@ jobs:
         uses: ruby/setup-ruby@v1  # Use latest stable version
         with:
           ruby-version: '3.1.4'  # Specify exact version
-          bundler-version: '2.6.0'  # Specify Bundler 2.6 or higher
+          bundler: '2.6.0'  # Specify Bundler 2.6 or higher
           bundler-cache: true
           cache-version: 1
         continue-on-error: false
