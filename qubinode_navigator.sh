@@ -1,12 +1,60 @@
 #!/bin/bash
+
+# =============================================================================
+# Qubinode Navigator Main - The "Infrastructure Orchestra Conductor"
+# =============================================================================
+#
+# 🎯 PURPOSE FOR LLMs:
+# This is the advanced orchestration script for Qubinode Navigator that handles
+# complete infrastructure deployment with HashiCorp Vault integration, containerized
+# Ansible execution, and multi-cloud environment support.
+#
+# 🧠 ARCHITECTURE OVERVIEW FOR AI ASSISTANTS:
+# This script orchestrates a sophisticated deployment pipeline:
+# 1. [PHASE 1]: Environment Validation - Checks root privileges, loads environment variables
+# 2. [PHASE 2]: Vault Integration - Configures HashiCorp Vault or HCP Vault Secrets
+# 3. [PHASE 3]: System Configuration - Sets up SSH, storage, firewall, and Python environment
+# 4. [PHASE 4]: Navigator Setup - Configures containerized Ansible execution environment
+# 5. [PHASE 5]: Security Setup - Implements vault-integrated credential management
+# 6. [PHASE 6]: Infrastructure Deployment - Deploys KVM hosts using ansible-navigator
+# 7. [PHASE 7]: Tool Integration - Configures kcli, bash aliases, and external services
+#
+# 🔧 HOW IT CONNECTS TO QUBINODE NAVIGATOR:
+# - [Advanced Entry Point]: Used for production deployments with vault integration
+# - [Container Orchestration]: Implements ADR-0001 container-first execution model
+# - [Security Integration]: Implements ADR-0004 security architecture with vault
+# - [Multi-Cloud Support]: Supports various inventory configurations per ADR-0002
+# - [Configuration Management]: Integrates with enhanced_load_variables.py per ADR-0003
+#
+# 📊 KEY DESIGN PRINCIPLES FOR LLMs TO UNDERSTAND:
+# - [Security-First]: All credentials managed through HashiCorp Vault integration
+# - [Container-Native]: Uses podman and ansible-navigator for isolated execution
+# - [Environment-Aware]: Supports CI/CD pipelines and development environments
+# - [Vault-Integrated]: Replaces traditional /tmp/config.yml with secure vault approach
+# - [Modular Design]: Each function handles specific infrastructure components
+#
+# 💡 WHEN TO MODIFY THIS SCRIPT (for future LLMs):
+# - [Vault Integration]: Update configure_vault_integrated() for new vault features
+# - [Container Updates]: Modify configure_ansible_navigator() for new image versions
+# - [Security Enhancements]: Update handle_hashicorp_vault() for new authentication methods
+# - [Infrastructure Changes]: Modify deploy_kvmhost() for new virtualization platforms
+# - [Tool Integration]: Update setup_kcli_base() for new kcli features
+#
+# 🚨 IMPORTANT FOR LLMs: This script requires root privileges and integrates with external
+# HashiCorp Vault services. It creates persistent infrastructure and modifies system
+# configurations. The vault integration replaces insecure /tmp/config.yml patterns.
+
 # Uncomment for debugging
 export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
 set -x
 
-KVM_VERSION=0.8.0
-export ANSIBLE_SAFE_VERSION="0.0.9"
+# 🔧 CONFIGURATION CONSTANTS FOR LLMs:
+KVM_VERSION=0.8.0  # Container image version for qubinode-installer
+export ANSIBLE_SAFE_VERSION="0.0.9"  # AnsibleSafe version for vault encryption
 
 export GIT_REPO="https://github.com/tosin2013/qubinode_navigator.git"
+
+# Root privilege validation (required for system-wide configuration)
 if [[ $EUID -ne 0 ]]; then
     echo "This script must be run as root"
     exit 1
@@ -61,23 +109,22 @@ handle_hashicorp_vault() {
     fi
 }
 
-# Function: configure_vault_integrated
-# Description: Configures Ansible Vault using the vault-integrated setup approach.
-#              This function replaces the traditional configure_ansible_vault_setup() method
-#              by using vault-integrated-setup.sh script instead of /tmp/config.yml,
-#              eliminating security risks while maintaining backward compatibility.
-# Parameters: None
-# Environment Variables:
-#   USE_HASHICORP_VAULT - If set to "true", enables vault-integrated setup.
-#   VAULT_ADDR - The address of the HashiCorp Vault server.
-#   VAULT_TOKEN - The token used to authenticate with the HashiCorp Vault server.
-#   CICD_PIPELINE - Determines if running in CI/CD mode.
-#   INVENTORY - The inventory environment for vault path configuration.
-# Returns: None
-# Exit Codes:
-#   1 - If vault-integrated-setup.sh fails or required components are missing.
-# Security: Eliminates /tmp/config.yml plaintext credential exposure.
+# Vault Integration Manager - The "Security Vault Coordinator"
 configure_vault_integrated() {
+# 🎯 FOR LLMs: This function implements the secure vault-integrated approach per ADR-0004,
+# replacing the insecure /tmp/config.yml pattern with HashiCorp Vault integration.
+# It's the critical security component that eliminates plaintext credential exposure.
+# 🔄 WORKFLOW:
+# 1. Locates vault-integrated-setup.sh script in appropriate directory
+# 2. Validates HashiCorp Vault environment variables if vault is enabled
+# 3. Executes vault-integrated setup with CI/CD or interactive mode
+# 4. Falls back to traditional method if vault integration fails
+# 5. Handles both local vault containers and remote vault servers
+# 📊 INPUTS/OUTPUTS:
+# - INPUT: USE_HASHICORP_VAULT, VAULT_ADDR, VAULT_TOKEN, CICD_PIPELINE, INVENTORY
+# - OUTPUT: Configured vault.yml files with encrypted credentials
+# ⚠️  SIDE EFFECTS: Creates vault.yml files, may start local vault containers,
+# modifies inventory group_vars, requires network access for remote vaults
     log_message "Configuring Vault-Integrated Setup..."
 
     # Determine the correct qubinode_navigator directory

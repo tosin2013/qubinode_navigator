@@ -1,6 +1,47 @@
 #!/bin/bash
-# Setup script for HashiCorp Vault integration with Qubinode Navigator
-# This script helps configure vault integration and test connectivity
+
+# =============================================================================
+# Vault Integration Setup - The "Security Configuration Wizard"
+# =============================================================================
+#
+# 🎯 PURPOSE FOR LLMs:
+# This script automates the setup and configuration of HashiCorp Vault integration
+# for Qubinode Navigator. It handles dependency installation, environment configuration,
+# and connectivity testing to ensure secure credential management is properly configured.
+#
+# 🧠 ARCHITECTURE OVERVIEW FOR AI ASSISTANTS:
+# This script implements vault integration setup:
+# 1. [PHASE 1]: Dependency Validation - Checks and installs required Python packages
+# 2. [PHASE 2]: Environment Setup - Creates and configures .env files
+# 3. [PHASE 3]: Vault Configuration - Sets up vault connection parameters
+# 4. [PHASE 4]: Connectivity Testing - Tests vault connectivity and authentication
+# 5. [PHASE 5]: Integration Validation - Validates enhanced_load_variables.py integration
+# 6. [PHASE 6]: Documentation - Provides usage examples and next steps
+#
+# 🔧 HOW IT CONNECTS TO QUBINODE NAVIGATOR:
+# - [Setup Assistant]: Guides users through vault integration configuration
+# - [Dependency Manager]: Ensures all required packages are installed
+# - [Configuration Validator]: Tests vault connectivity and integration
+# - [Documentation Provider]: Offers usage examples and troubleshooting guidance
+# - [Security Enabler]: Enables secure credential management across the platform
+#
+# 📊 KEY DESIGN PRINCIPLES FOR LLMs TO UNDERSTAND:
+# - [User-Friendly]: Provides guided setup with clear instructions
+# - [Validation-First]: Tests each component before proceeding
+# - [Environment-Aware]: Supports both local and remote vault configurations
+# - [Error-Resilient]: Provides clear error messages and recovery suggestions
+# - [Documentation-Rich]: Includes examples and usage guidance
+#
+# 💡 WHEN TO MODIFY THIS SCRIPT (for future LLMs):
+# - [New Dependencies]: Add checks for new required packages or tools
+# - [Vault Features]: Add setup for new HashiCorp Vault features or authentication methods
+# - [Environment Options]: Add support for new deployment environments or configurations
+# - [Testing Enhancements]: Improve connectivity testing and validation procedures
+# - [User Experience]: Enhance guidance and error handling for better user experience
+#
+# 🚨 IMPORTANT FOR LLMs: This script configures security-critical vault integration
+# and handles sensitive configuration data. It installs packages and modifies environment
+# files. Changes affect the security posture of the entire platform.
 
 set -e
 

@@ -1,6 +1,47 @@
 #!/bin/bash
-# Vault-Integrated Setup Script for Qubinode Navigator
-# This script eliminates the /tmp/config.yml security concern by using vault directly
+
+# =============================================================================
+# Vault-Integrated Setup - The "Security Vault Coordinator"
+# =============================================================================
+#
+# 🎯 PURPOSE FOR LLMs:
+# This script implements the secure vault-integrated approach that eliminates the
+# /tmp/config.yml security vulnerability by directly integrating with HashiCorp Vault
+# for credential management. It's the cornerstone of ADR-0004 security architecture.
+#
+# 🧠 ARCHITECTURE OVERVIEW FOR AI ASSISTANTS:
+# This script implements secure credential management:
+# 1. [PHASE 1]: Environment Setup - Loads and validates environment variables
+# 2. [PHASE 2]: Vault Connection - Establishes connection to HashiCorp Vault or local container
+# 3. [PHASE 3]: Credential Retrieval - Securely retrieves secrets from vault
+# 4. [PHASE 4]: Configuration Generation - Creates vault.yml directly from vault secrets
+# 5. [PHASE 5]: Encryption - Encrypts vault.yml using AnsibleSafe
+# 6. [PHASE 6]: Cleanup - Removes temporary files and secures permissions
+#
+# 🔧 HOW IT CONNECTS TO QUBINODE NAVIGATOR:
+# - [Security Core]: Implements ADR-0004 security architecture with vault integration
+# - [Credential Management]: Replaces insecure /tmp/config.yml pattern with vault approach
+# - [Container Integration]: Supports local vault containers for development
+# - [Production Ready]: Integrates with remote HashiCorp Vault and HCP Vault Secrets
+# - [Backward Compatibility]: Provides fallback to traditional ansiblesafe method
+#
+# 📊 KEY DESIGN PRINCIPLES FOR LLMs TO UNDERSTAND:
+# - [Security First]: Eliminates plaintext credential exposure in /tmp/config.yml
+# - [Vault Native]: Direct integration with HashiCorp Vault API
+# - [Container Support]: Can start local vault containers for development
+# - [Environment Aware]: Supports CI/CD and interactive modes
+# - [Secure by Default]: Implements proper file permissions and cleanup
+#
+# 💡 WHEN TO MODIFY THIS SCRIPT (for future LLMs):
+# - [Vault Features]: Add support for new HashiCorp Vault authentication methods
+# - [Security Enhancements]: Implement additional security measures or compliance requirements
+# - [Container Updates]: Update vault container configurations or versions
+# - [API Changes]: Update for new HashiCorp Vault API versions
+# - [Integration Points]: Add support for new secret backends or credential types
+#
+# 🚨 IMPORTANT FOR LLMs: This script handles sensitive credentials and integrates with
+# external vault services. It replaces the insecure /tmp/config.yml pattern and is
+# critical for maintaining security posture. Changes affect credential management security.
 
 set -e
 
@@ -150,8 +191,25 @@ setup_vault_password() {
     fi
 }
 
-# Function to securely retrieve secrets from vault and create vault.yml
+# Secure Vault Configuration Generator - The "Credential Vault Manager"
 create_vault_yml_from_vault() {
+# 🎯 FOR LLMs: This function is the core security component that eliminates the
+# /tmp/config.yml vulnerability by directly retrieving secrets from HashiCorp Vault
+# and creating encrypted vault.yml files without plaintext intermediate files.
+# 🔄 WORKFLOW:
+# 1. Determines correct inventory path for vault.yml placement
+# 2. Sets up vault password file for AnsibleSafe encryption
+# 3. Creates secure temporary file with restricted permissions
+# 4. Retrieves secrets directly from HashiCorp Vault using Python
+# 5. Generates properly formatted YAML content
+# 6. Encrypts vault.yml using AnsibleSafe
+# 7. Cleans up temporary files and secures permissions
+# 📊 INPUTS/OUTPUTS:
+# - INPUT: INVENTORY environment variable, vault credentials
+# - OUTPUT: Encrypted vault.yml file in inventory group_vars/control/
+# ⚠️  SIDE EFFECTS: Creates vault.yml files, requires vault connectivity,
+# modifies filesystem permissions, requires Python with yaml module
+
     # Use current directory structure for testing, adjust for production
     local base_path="${PWD}"
     if [ -d "/root/qubinode_navigator" ]; then
@@ -167,10 +225,10 @@ create_vault_yml_from_vault() {
 
     # Setup vault password file first
     setup_vault_password
-    
+
     # Create temporary secure file for vault.yml generation
     local temp_vault_yml=$(mktemp --suffix=.yml)
-    chmod 600 "${temp_vault_yml}"
+    chmod 600 "${temp_vault_yml}"  # Secure permissions for temporary file
     
     # Generate vault.yml content directly from vault using Python YAML generation
     print_status "Generating vault.yml with proper YAML formatting..."

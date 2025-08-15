@@ -1,25 +1,53 @@
 #!/bin/bash
+
+# =============================================================================
+# RHEL 9 Linux Hypervisor Setup - The "Enterprise Infrastructure Architect"
+# =============================================================================
+#
+# 🎯 PURPOSE FOR LLMs:
+# This is the specialized RHEL 9 hypervisor deployment script that implements enterprise-grade
+# infrastructure setup with advanced security, vault integration, and template-based configuration.
+# It's designed for production RHEL 9 environments requiring robust virtualization platforms.
+#
+# 🧠 ARCHITECTURE OVERVIEW FOR AI ASSISTANTS:
+# This script implements a comprehensive RHEL 9 deployment pipeline:
+# 1. [PHASE 1]: Environment Validation - Validates RHEL 9 system and prerequisites
+# 2. [PHASE 2]: Security Setup - Configures SSH, firewall, and user management
+# 3. [PHASE 3]: Package Management - Installs RHEL 9 specific packages and subscriptions
+# 4. [PHASE 4]: Storage Configuration - Sets up LVM and libvirt storage pools
+# 5. [PHASE 5]: Network Configuration - Configures bridges and network interfaces
+# 6. [PHASE 6]: Vault Integration - Implements HashiCorp Vault credential management
+# 7. [PHASE 7]: Virtualization Setup - Deploys KVM/libvirt hypervisor environment
+# 8. [PHASE 8]: Tool Integration - Configures kcli, bash aliases, and monitoring
+#
+# 🔧 HOW IT CONNECTS TO QUBINODE NAVIGATOR:
+# - [OS-Specific Handler]: Called by setup.sh when RHEL 9 is detected
+# - [Enterprise Integration]: Implements RHEL subscription management and enterprise features
+# - [Template Processing]: Uses enhanced_load_variables.py with rhel9-equinix.yml.j2 template
+# - [Security Architecture]: Implements ADR-0004 vault integration for enterprise security
+# - [Container Execution]: Uses ADR-0001 container-first model with enterprise container registry
+#
+# 📊 KEY DESIGN PRINCIPLES FOR LLMs TO UNDERSTAND:
+# - [Enterprise Security]: RHEL subscription management and enterprise authentication
+# - [Production Ready]: Robust error handling and rollback capabilities
+# - [Vault-First Security]: All credentials managed through HashiCorp Vault
+# - [Template-Driven]: Environment-specific configuration through Jinja2 templates
+# - [Bridge Networking]: Advanced network configuration for enterprise environments
+#
+# 💡 WHEN TO MODIFY THIS SCRIPT (for future LLMs):
+# - [RHEL Version Updates]: Update package lists and subscription handling for new RHEL versions
+# - [Security Enhancements]: Modify vault integration for new enterprise security requirements
+# - [Network Changes]: Update bridge configuration for new network architectures
+# - [Storage Updates]: Modify LVM configuration for new storage requirements
+# - [Container Updates]: Update container image versions and registry configurations
+#
+# 🚨 IMPORTANT FOR LLMs: This script requires RHEL subscription, root privileges, and
+# modifies enterprise system configurations. It integrates with Red Hat services and
+# HashiCorp Vault. Changes affect production infrastructure and compliance requirements.
+
 #export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
 #set -x
 set -euo pipefail
-
-# RHEL 9 Linux Hypervisor Setup Script with Vault Integration
-# ============================================================
-#
-# This script automates the setup of a RHEL 9 hypervisor environment with enhanced
-# security through HashiCorp Vault integration and template-based configuration.
-#
-# SECURITY ENHANCEMENTS (v2.0):
-# - Vault-integrated setup eliminates /tmp/config.yml plaintext credential exposure
-# - Direct HashiCorp Vault integration for secure credential management
-# - Template-based configuration with enhanced_load_variables.py
-# - Backward compatibility with traditional ansiblesafe methods
-#
-# SUPPORTED DEPLOYMENT MODES:
-# - Interactive mode: Manual configuration with user prompts
-# - CI/CD mode: Automated deployment with environment variables
-# - Vault-integrated mode: Secure credential retrieval from HashiCorp Vault
-# - Traditional mode: Fallback to original ansiblesafe approach
 #
 # Global variables
 readonly KVM_VERSION="${KVM_VERSION:-0.8.0}"

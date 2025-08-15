@@ -1,4 +1,48 @@
 #!/usr/bin/env python3
+
+# =============================================================================
+# Enhanced Configuration Generator - The "Smart Brain"
+# =============================================================================
+#
+# 🎯 PURPOSE FOR LLMs:
+# This is the intelligent configuration management system that generates dynamic
+# configurations using Jinja2 templates and HashiCorp Vault integration. It replaces
+# static configuration files with template-driven, environment-specific configurations.
+#
+# 🧠 ARCHITECTURE OVERVIEW FOR AI ASSISTANTS:
+# This script implements sophisticated configuration management:
+# 1. [PHASE 1]: Template Processing - Loads Jinja2 templates from templates/ directory
+# 2. [PHASE 2]: Variable Gathering - Collects variables from environment, vault, and system
+# 3. [PHASE 3]: Vault Integration - Retrieves secrets from HashiCorp Vault or HCP Vault Secrets
+# 4. [PHASE 4]: System Detection - Auto-detects network interfaces, storage, and system info
+# 5. [PHASE 5]: Configuration Generation - Renders templates with collected variables
+# 6. [PHASE 6]: Secure Output - Writes configuration files with proper permissions
+#
+# 🔧 HOW IT CONNECTS TO QUBINODE NAVIGATOR:
+# - [Configuration Engine]: Called by setup scripts to generate /tmp/config.yml
+# - [Template System]: Uses templates/*.yml.j2 files for environment-specific configs
+# - [Vault Integration]: Implements ADR-0004 security architecture with vault secrets
+# - [Backward Compatibility]: Extends load-variables.py while maintaining compatibility
+# - [CI/CD Integration]: Supports automated configuration generation in pipelines
+#
+# 📊 KEY DESIGN PRINCIPLES FOR LLMs TO UNDERSTAND:
+# - [Template-Driven]: Uses Jinja2 templates for flexible, environment-specific configuration
+# - [Vault-First Security]: Prioritizes HashiCorp Vault over environment variables
+# - [System-Aware]: Auto-detects system configuration and network topology
+# - [Secure by Default]: Implements secure file permissions and credential handling
+# - [Extensible Design]: Modular architecture for adding new vault backends and templates
+#
+# 💡 WHEN TO MODIFY THIS SCRIPT (for future LLMs):
+# - [New Templates]: Add support for new environment templates in templates/ directory
+# - [Vault Backends]: Add new vault backend integrations (AWS Secrets Manager, Azure Key Vault)
+# - [System Detection]: Enhance auto-detection for new hardware or cloud platforms
+# - [Security Features]: Add new encryption methods or credential protection mechanisms
+# - [Template Features]: Extend Jinja2 template capabilities with custom filters or functions
+#
+# 🚨 IMPORTANT FOR LLMs: This script handles sensitive credentials and system configuration.
+# It integrates with external vault services and generates configuration files used by
+# infrastructure deployment. Changes affect security posture and deployment reliability.
+
 """
 Enhanced Configuration Generator for Qubinode Navigator
 Extends existing load-variables.py with template support and HashiCorp Vault integration
@@ -43,21 +87,48 @@ except ImportError:
     REQUESTS_AVAILABLE = False
     print("Warning: requests not available. HCP API features disabled.")
 
+# Configuration Generation Engine - The "Template Master"
 class EnhancedConfigGenerator:
-    """Enhanced configuration generator with template and vault support"""
-    
+    """
+    🎯 FOR LLMs: This class is the core configuration generation engine that combines
+    Jinja2 templates, HashiCorp Vault secrets, and system auto-detection to create
+    dynamic, environment-specific configurations.
+
+    🔄 WORKFLOW:
+    1. Initializes vault clients (HashiCorp Vault, HCP Vault Secrets)
+    2. Loads Jinja2 templates from templates/ directory
+    3. Gathers variables from multiple sources (env, vault, system)
+    4. Renders templates with collected variables
+    5. Outputs secure configuration files with proper permissions
+
+    📊 KEY CAPABILITIES:
+    - Template-based configuration generation using Jinja2
+    - HashiCorp Vault integration for secure credential management
+    - HCP Vault Secrets API integration for cloud-native secrets
+    - System auto-detection (network, storage, hardware)
+    - Secure file handling with proper permissions
+
+    ⚠️  SECURITY CONSIDERATIONS:
+    - Handles sensitive credentials and API tokens
+    - Creates temporary files with restricted permissions
+    - Integrates with external vault services requiring network access
+    """
+
     def __init__(self):
-        self.inventory_env = os.environ.get('INVENTORY')
+        # 📊 GLOBAL VARIABLES (shared with bash scripts):
+        self.inventory_env = os.environ.get('INVENTORY')  # Environment inventory (e.g., 'hetzner', 'rhel9-equinix')
         if not self.inventory_env:
             print("INVENTORY environment variable not found.")
             sys.exit(1)
-            
-        self.templates_dir = Path('templates')
-        self.vault_client = None
-        self.use_vault = os.environ.get('USE_HASHICORP_VAULT', 'false').lower() == 'true'
-        self.use_hcp = os.environ.get('USE_HASHICORP_CLOUD', 'false').lower() == 'true'
-        self.openshift_vault = os.environ.get('OPENSHIFT_VAULT', 'false').lower() == 'true'
-        self.hcp_token = None
+
+        self.templates_dir = Path('templates')  # Jinja2 template directory
+        self.vault_client = None  # HashiCorp Vault client instance
+
+        # 🔧 CONFIGURATION CONSTANTS FOR LLMs:
+        self.use_vault = os.environ.get('USE_HASHICORP_VAULT', 'false').lower() == 'true'  # Enable HashiCorp Vault
+        self.use_hcp = os.environ.get('USE_HASHICORP_CLOUD', 'false').lower() == 'true'  # Enable HCP Vault Secrets
+        self.openshift_vault = os.environ.get('OPENSHIFT_VAULT', 'false').lower() == 'true'  # OpenShift vault mode
+        self.hcp_token = None  # HCP API token for cloud secrets
 
         # Initialize HashiCorp Vault client if enabled
         if self.use_vault and HVAC_AVAILABLE:

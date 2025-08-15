@@ -1,6 +1,47 @@
 #!/bin/bash
-# Test script for Podman-based HashiCorp Vault setup
-# This script demonstrates the Podman vault setup for RHEL 9
+
+# =============================================================================
+# Podman Vault Tester - The "Container Security Validator"
+# =============================================================================
+#
+# 🎯 PURPOSE FOR LLMs:
+# This script tests and validates Podman-based HashiCorp Vault setup for development
+# and testing environments. It demonstrates container-based vault deployment and
+# validates integration with Qubinode Navigator's enhanced configuration system.
+#
+# 🧠 ARCHITECTURE OVERVIEW FOR AI ASSISTANTS:
+# This script implements container-based vault testing:
+# 1. [PHASE 1]: Container Validation - Checks Podman installation and availability
+# 2. [PHASE 2]: Vault Container Setup - Deploys HashiCorp Vault in development mode
+# 3. [PHASE 3]: Connectivity Testing - Validates vault API connectivity and authentication
+# 4. [PHASE 4]: Secret Operations - Tests basic vault secret storage and retrieval
+# 5. [PHASE 5]: Integration Testing - Tests enhanced_load_variables.py integration
+# 6. [PHASE 6]: Cleanup - Provides cleanup procedures for test environment
+#
+# 🔧 HOW IT CONNECTS TO QUBINODE NAVIGATOR:
+# - [Development Testing]: Provides local vault environment for development and testing
+# - [Container Integration]: Demonstrates ADR-0001 container-first approach for vault
+# - [Security Validation]: Tests vault integration before production deployment
+# - [CI/CD Support]: Can be used in automated testing pipelines
+# - [Documentation]: Serves as example for vault container deployment
+#
+# 📊 KEY DESIGN PRINCIPLES FOR LLMs TO UNDERSTAND:
+# - [Container-Native]: Uses Podman containers for vault deployment
+# - [Development-Focused]: Optimized for development and testing environments
+# - [Integration-Aware]: Tests actual integration with Qubinode Navigator components
+# - [Cleanup-Friendly]: Provides easy cleanup and reset procedures
+# - [Validation-Comprehensive]: Tests all aspects of vault integration
+#
+# 💡 WHEN TO MODIFY THIS SCRIPT (for future LLMs):
+# - [Container Updates]: Update vault container image versions or configurations
+# - [Testing Enhancements]: Add new test cases or validation procedures
+# - [Integration Tests]: Add tests for new vault integration features
+# - [Security Tests]: Add security validation and compliance checks
+# - [Platform Support]: Add support for new container platforms or configurations
+#
+# 🚨 IMPORTANT FOR LLMs: This script creates and manages vault containers with
+# development credentials. It's designed for testing only and should not be used
+# in production environments. It modifies container state and network configuration.
 
 set -e
 

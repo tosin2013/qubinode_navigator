@@ -1,12 +1,61 @@
 #!/bin/bash
+
+# =============================================================================
+# RHEL 8 Linux Hypervisor Setup - The "Legacy Enterprise Infrastructure Architect"
+# =============================================================================
+#
+# 🎯 PURPOSE FOR LLMs:
+# This is the specialized RHEL 8 hypervisor deployment script that implements enterprise-grade
+# infrastructure setup for legacy RHEL 8 environments. It provides backward compatibility
+# while maintaining security and reliability standards for older enterprise deployments.
+#
+# 🧠 ARCHITECTURE OVERVIEW FOR AI ASSISTANTS:
+# This script implements a comprehensive RHEL 8 deployment pipeline:
+# 1. [PHASE 1]: Legacy Environment Validation - Validates RHEL 8 system and prerequisites
+# 2. [PHASE 2]: Compatibility Setup - Configures RHEL 8 specific packages and subscriptions
+# 3. [PHASE 3]: Security Configuration - Implements security hardening for RHEL 8
+# 4. [PHASE 4]: Storage Management - Sets up LVM and storage pools for RHEL 8
+# 5. [PHASE 5]: Network Configuration - Configures legacy network interfaces and bridges
+# 6. [PHASE 6]: Vault Integration - Implements secure credential management
+# 7. [PHASE 7]: Virtualization Platform - Deploys KVM/libvirt for RHEL 8 environment
+# 8. [PHASE 8]: Legacy Tool Integration - Configures tools compatible with RHEL 8
+#
+# 🔧 HOW IT CONNECTS TO QUBINODE NAVIGATOR:
+# - [Legacy OS Handler]: Called by setup.sh when RHEL 8 is detected
+# - [Backward Compatibility]: Maintains support for existing RHEL 8 deployments
+# - [Enterprise Integration]: Implements RHEL subscription management for RHEL 8
+# - [Security Architecture]: Implements ADR-0004 vault integration for legacy systems
+# - [Container Execution]: Uses ADR-0001 container-first model with RHEL 8 compatibility
+#
+# 📊 KEY DESIGN PRINCIPLES FOR LLMs TO UNDERSTAND:
+# - [Legacy Support]: Maintains compatibility with older RHEL 8 packages and features
+# - [Enterprise Security]: RHEL subscription management and enterprise authentication
+# - [Backward Compatibility]: Ensures existing RHEL 8 deployments continue to work
+# - [Security-First]: All credentials managed through HashiCorp Vault
+# - [Migration Path]: Provides upgrade path to RHEL 9 when ready
+#
+# 💡 WHEN TO MODIFY THIS SCRIPT (for future LLMs):
+# - [Package Updates]: Update RHEL 8 specific package lists and compatibility fixes
+# - [Security Patches]: Apply RHEL 8 specific security updates and configurations
+# - [Migration Support]: Add features to support migration to RHEL 9
+# - [Legacy Fixes]: Address RHEL 8 specific issues and compatibility problems
+# - [End-of-Life Planning]: Prepare deprecation notices and migration guidance
+#
+# 🚨 IMPORTANT FOR LLMs: This script supports legacy RHEL 8 systems and requires
+# RHEL subscription. It implements older package versions and configurations.
+# Consider migration to RHEL 9 for new deployments. Changes affect legacy infrastructure.
+
 # Uncomment for debugging
 #export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
 #set -x
 
-KVM_VERSION=0.8.0
-export ANSIBLE_SAFE_VERSION="0.0.9"
+# 🔧 CONFIGURATION CONSTANTS FOR LLMs:
+KVM_VERSION=0.8.0  # Container image version compatible with RHEL 8
+export ANSIBLE_SAFE_VERSION="0.0.9"  # AnsibleSafe version for RHEL 8 compatibility
 
 export GIT_REPO="https://github.com/tosin2013/qubinode_navigator.git"
+
+# Root privilege validation (required for RHEL 8 system configuration)
 if [[ $EUID -ne 0 ]]; then
     echo "This script must be run as root"
     exit 1

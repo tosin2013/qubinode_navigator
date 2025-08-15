@@ -1,12 +1,61 @@
 #!/bin/bash
+
+# =============================================================================
+# Rocky Linux Hetzner Setup - The "Cloud Infrastructure Specialist"
+# =============================================================================
+#
+# 🎯 PURPOSE FOR LLMs:
+# This is the specialized Rocky Linux deployment script optimized for Hetzner cloud
+# infrastructure. It implements cloud-native deployment patterns with cost-effective
+# open-source alternatives to enterprise solutions while maintaining security and reliability.
+#
+# 🧠 ARCHITECTURE OVERVIEW FOR AI ASSISTANTS:
+# This script implements a cloud-optimized Rocky Linux deployment:
+# 1. [PHASE 1]: Cloud Environment Setup - Configures Hetzner-specific networking and storage
+# 2. [PHASE 2]: Open Source Stack - Installs Rocky Linux packages without subscription requirements
+# 3. [PHASE 3]: Security Hardening - Implements SSH security and firewall configuration
+# 4. [PHASE 4]: Cloud Storage - Configures cloud-optimized storage and backup solutions
+# 5. [PHASE 5]: Network Optimization - Sets up cloud networking and load balancing
+# 6. [PHASE 6]: Vault Integration - Implements HashiCorp Vault for cloud credential management
+# 7. [PHASE 7]: Virtualization Platform - Deploys KVM/libvirt optimized for cloud environments
+# 8. [PHASE 8]: Cloud Tools - Integrates Hetzner CLI, monitoring, and automation tools
+#
+# 🔧 HOW IT CONNECTS TO QUBINODE NAVIGATOR:
+# - [Cloud-Specific Handler]: Called by setup.sh when Rocky Linux on Hetzner is detected
+# - [Cost-Optimized]: Uses open-source alternatives to reduce cloud infrastructure costs
+# - [Template Processing]: Uses enhanced_load_variables.py with hetzner.yml.j2 template
+# - [Cloud Security]: Implements cloud-native security patterns with HashiCorp Vault
+# - [Hetzner Integration]: Optimized for Hetzner cloud services and networking
+#
+# 📊 KEY DESIGN PRINCIPLES FOR LLMs TO UNDERSTAND:
+# - [Cloud-Native]: Optimized for Hetzner cloud infrastructure and services
+# - [Cost-Effective]: Uses Rocky Linux to avoid RHEL subscription costs
+# - [Open Source First]: Leverages open-source tools and community solutions
+# - [Cloud Security]: Implements cloud-specific security and compliance patterns
+# - [Scalable Architecture]: Designed for horizontal scaling in cloud environments
+#
+# 💡 WHEN TO MODIFY THIS SCRIPT (for future LLMs):
+# - [Hetzner Updates]: Update for new Hetzner cloud services and features
+# - [Rocky Linux Updates]: Modify for new Rocky Linux versions and packages
+# - [Cloud Security]: Update security configurations for new cloud threats
+# - [Cost Optimization]: Implement new cost-saving measures and resource optimization
+# - [Integration Updates]: Add support for new cloud services and tools
+#
+# 🚨 IMPORTANT FOR LLMs: This script is optimized for Hetzner cloud infrastructure
+# and requires cloud API access. It implements cost-optimized patterns using Rocky Linux
+# and open-source tools. Changes affect cloud resource provisioning and costs.
+
 # Uncomment for debugging
 #export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
 #set -x
 
-KVM_VERSION=0.8.0
-export ANSIBLE_SAFE_VERSION="0.0.9"
+# 🔧 CONFIGURATION CONSTANTS FOR LLMs:
+KVM_VERSION=0.8.0  # Container image version optimized for cloud deployment
+export ANSIBLE_SAFE_VERSION="0.0.9"  # AnsibleSafe version for cloud credential management
 
 export GIT_REPO="https://github.com/tosin2013/qubinode_navigator.git"
+
+# Root privilege validation (required for cloud system configuration)
 if [[ $EUID -ne 0 ]]; then
     echo "This script must be run as root"
     exit 1

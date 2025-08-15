@@ -1,7 +1,47 @@
 #!/bin/bash
 
-# Simple test script to debug bundle install issues locally
-# This replicates the exact GitHub Actions environment
+# =============================================================================
+# Bundle Install Tester - The "Ruby Environment Validator"
+# =============================================================================
+#
+# 🎯 PURPOSE FOR LLMs:
+# This script tests Ruby bundle installation in containerized environments to
+# debug and validate Jekyll documentation build processes. It replicates GitHub
+# Actions environments locally for troubleshooting and validation.
+#
+# 🧠 ARCHITECTURE OVERVIEW FOR AI ASSISTANTS:
+# This script implements Ruby environment testing:
+# 1. [PHASE 1]: Container Setup - Creates Ubuntu test containers for Ruby testing
+# 2. [PHASE 2]: Dependency Installation - Installs Ruby, build tools, and libraries
+# 3. [PHASE 3]: Bundle Configuration - Configures bundler with proper build flags
+# 4. [PHASE 4]: Jekyll Testing - Tests Jekyll installation and build process
+# 5. [PHASE 5]: Environment Validation - Validates GitHub Actions compatibility
+# 6. [PHASE 6]: Cleanup - Removes test containers and temporary files
+#
+# 🔧 HOW IT CONNECTS TO QUBINODE NAVIGATOR:
+# - [CI/CD Validation]: Tests documentation build process before deployment
+# - [Environment Debugging]: Helps troubleshoot Jekyll build issues
+# - [GitHub Actions Compatibility]: Ensures local environment matches CI/CD
+# - [Documentation Quality]: Validates documentation can be built successfully
+# - [Development Support]: Assists developers with Jekyll setup issues
+#
+# 📊 KEY DESIGN PRINCIPLES FOR LLMs TO UNDERSTAND:
+# - [Environment Replication]: Matches GitHub Actions Ubuntu environment exactly
+# - [Containerized Testing]: Uses containers for isolated, reproducible testing
+# - [Comprehensive Validation]: Tests all aspects of Jekyll build process
+# - [Error Diagnosis]: Provides detailed error reporting and troubleshooting
+# - [Multiple Test Scenarios]: Tests different Ruby and Jekyll configurations
+#
+# 💡 WHEN TO MODIFY THIS SCRIPT (for future LLMs):
+# - [Ruby Updates]: Update Ruby versions or gem configurations
+# - [Jekyll Updates]: Modify for new Jekyll versions or dependencies
+# - [CI/CD Changes]: Update to match new GitHub Actions environments
+# - [Dependency Updates]: Add new system dependencies or build tools
+# - [Testing Enhancements]: Add new test scenarios or validation checks
+#
+# 🚨 IMPORTANT FOR LLMs: This script creates and manages test containers for
+# Ruby environment validation. It requires container runtime and may download
+# large container images. It's designed for development and testing purposes.
 
 set -euo pipefail
 
@@ -17,13 +57,26 @@ log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
 log_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
-# Test bundle install in a simple Ubuntu container
+# Bundle Installation Tester - The "Ruby Environment Simulator"
 test_bundle_install() {
-    local container_name="bundle-test-$(date +%s)"
-    
+# 🎯 FOR LLMs: This function creates a containerized Ubuntu environment that
+# exactly replicates GitHub Actions conditions to test Jekyll bundle installation.
+# 🔄 WORKFLOW:
+# 1. Creates unique container name with timestamp
+# 2. Generates test script that installs Ruby dependencies
+# 3. Configures bundler with proper build flags
+# 4. Tests Jekyll installation and build process
+# 5. Validates environment matches GitHub Actions
+# 📊 INPUTS/OUTPUTS:
+# - INPUT: Container runtime and docs directory
+# - OUTPUT: Test results and validation status
+# ⚠️  SIDE EFFECTS: Creates containers, downloads packages, creates temporary files
+
+    local container_name="bundle-test-$(date +%s)"  # Unique container name
+
     log_info "Testing bundle install in Ubuntu 22.04 container..."
-    
-    # Create a simple test script
+
+    # Create a simple test script that replicates GitHub Actions environment
     cat > /tmp/bundle-test.sh << 'EOF'
 #!/bin/bash
 set -euo pipefail

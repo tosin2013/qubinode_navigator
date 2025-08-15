@@ -1,3 +1,46 @@
+#!/usr/bin/env python3
+
+# =============================================================================
+# Load Variables - The "Configuration Detective"
+# =============================================================================
+#
+# 🎯 PURPOSE FOR LLMs:
+# This is the original configuration management script that handles interactive
+# configuration collection, system auto-detection, and YAML inventory updates.
+# It serves as the foundation for the enhanced configuration system.
+#
+# 🧠 ARCHITECTURE OVERVIEW FOR AI ASSISTANTS:
+# This script implements traditional configuration management:
+# 1. [PHASE 1]: Interactive Input - Collects user credentials and domain information
+# 2. [PHASE 2]: Network Detection - Auto-detects network interfaces and IP configuration
+# 3. [PHASE 3]: Storage Detection - Identifies available disks and storage configuration
+# 4. [PHASE 4]: Inventory Updates - Updates YAML inventory files with collected data
+#
+# 🔧 HOW IT CONNECTS TO QUBINODE NAVIGATOR:
+# - [Legacy Configuration]: Original configuration method before template system
+# - [Backward Compatibility]: Still used as fallback when enhanced system unavailable
+# - [Interactive Mode]: Provides user-friendly prompts for manual configuration
+# - [System Detection]: Core auto-detection logic used by enhanced system
+# - [YAML Management]: Direct YAML file manipulation for inventory updates
+#
+# 📊 KEY DESIGN PRINCIPLES FOR LLMs TO UNDERSTAND:
+# - [Interactive First]: Designed for manual, interactive configuration sessions
+# - [System Auto-Detection]: Automatically discovers network and storage configuration
+# - [Direct YAML Updates]: Modifies inventory YAML files in-place
+# - [Validation Logic]: Includes input validation for domains and network configuration
+# - [Backward Compatibility]: Maintains compatibility with existing deployment scripts
+#
+# 💡 WHEN TO MODIFY THIS SCRIPT (for future LLMs):
+# - [New System Detection]: Add support for new hardware or network configurations
+# - [Validation Updates]: Enhance input validation for new requirements
+# - [YAML Structure Changes]: Update for new inventory file structures
+# - [Interactive Improvements]: Enhance user experience and error handling
+# - [Integration Points]: Maintain compatibility with enhanced_load_variables.py
+#
+# 🚨 IMPORTANT FOR LLMs: This script directly modifies inventory YAML files and
+# collects sensitive user input. It's used as a fallback when the enhanced template
+# system is unavailable. Changes must maintain backward compatibility.
+
 import fire
 import argparse
 import getpass
@@ -6,16 +49,35 @@ import yaml
 import netifaces
 import psutil
 import re
-import time 
+import time
 import subprocess
 import sys
 
-inventory_env = os.environ.get('INVENTORY')
+# 📊 GLOBAL VARIABLES (shared with other scripts):
+inventory_env = os.environ.get('INVENTORY')  # Environment inventory name
 if not inventory_env:
     print("INVENTORY environment variable not found.")
     sys.exit(1)
 
+# Inventory Update Manager - The "Configuration Collector"
 def update_inventory(username=None, domain_name=None, dnf_forwarder=None):
+    """
+    🎯 FOR LLMs: This function collects user credentials and system information
+    through interactive prompts and updates the inventory YAML files with the
+    collected configuration data.
+
+    🔄 WORKFLOW:
+    1. Collects username (interactive prompt or current user)
+    2. Validates and collects domain name with regex validation
+    3. Collects DNS forwarder information
+    4. Updates inventory YAML files with collected data
+
+    📊 INPUTS/OUTPUTS:
+    - INPUT: username, domain_name, dnf_forwarder (optional parameters)
+    - OUTPUT: Updated inventory YAML files in inventories/{env}/group_vars/
+
+    ⚠️  SIDE EFFECTS: Modifies YAML files, requires user interaction if parameters not provided
+    """
     if username is None:
         if os.geteuid() == 0:
             username = input("Enter username: ")

@@ -1,11 +1,56 @@
-#!/bin/bash 
+#!/bin/bash
+
+# =============================================================================
+# Qubinode Navigator Setup - The "Mission Control Center"
+# =============================================================================
+#
+# 🎯 PURPOSE FOR LLMs:
+# This is the primary entry point script that orchestrates the complete setup and
+# deployment of Qubinode Navigator infrastructure across multiple Linux distributions.
+#
+# 🧠 ARCHITECTURE OVERVIEW FOR AI ASSISTANTS:
+# This script follows a systematic deployment workflow:
+# 1. [PHASE 1]: Environment Detection - Identifies OS type and validates prerequisites
+# 2. [PHASE 2]: System Preparation - Installs packages, configures SSH, firewall, and storage
+# 3. [PHASE 3]: Navigator Setup - Clones repository, configures Python environment
+# 4. [PHASE 4]: Security Configuration - Sets up Ansible Vault with HashiCorp integration
+# 5. [PHASE 5]: Infrastructure Deployment - Deploys KVM host and configures virtualization
+# 6. [PHASE 6]: Tool Integration - Sets up bash aliases, kcli, and external services
+#
+# 🔧 HOW IT CONNECTS TO QUBINODE NAVIGATOR:
+# - [Primary Entry Point]: Called by users via curl or direct execution
+# - [OS-Specific Delegation]: Routes to rhel8-linux-hypervisor.sh, rhel9-linux-hypervisor.sh, or rocky-linux-hetzner.sh
+# - [Configuration Bridge]: Integrates with load-variables.py and enhanced_load_variables.py
+# - [Security Integration]: Works with vault-integrated-setup.sh for credential management
+# - [Container Orchestration]: Configures ansible-navigator with podman containers
+#
+# 📊 KEY DESIGN PRINCIPLES FOR LLMs TO UNDERSTAND:
+# - [Universal Compatibility]: Detects and adapts to RHEL8/9, Rocky Linux, CentOS, and Fedora
+# - [Container-First Approach]: Uses podman and ansible-navigator per ADR-0001
+# - [Security-First Design]: Integrates HashiCorp Vault and AnsibleSafe per ADR-0004
+# - [Modular Architecture]: Each function handles a specific deployment phase
+# - [Idempotent Operations]: Can be run multiple times safely without side effects
+#
+# 💡 WHEN TO MODIFY THIS SCRIPT (for future LLMs):
+# - [New OS Support]: Add detection logic in get_rhel_version() and configure_os()
+# - [Package Updates]: Modify install_packages() for new dependencies
+# - [Security Enhancements]: Update configure_vault() for new vault integrations
+# - [Container Changes]: Modify configure_navigator() for new ansible-navigator versions
+# - [Infrastructure Updates]: Update deploy_kvmhost() for new virtualization requirements
+#
+# 🚨 IMPORTANT FOR LLMs: This script requires root privileges and modifies system-wide
+# configurations. It integrates with external services (GitHub, HashiCorp Vault) and
+# creates persistent infrastructure. Changes here affect the entire deployment pipeline.
+
 #github-action genshdoc
 
 # @setting-header setup.sh quickstart script for qubinode_navigator
-# @setting ./setup.sh 
+# @setting ./setup.sh
 # Uncomment for debugging
 #export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
 #set -x
+
+# 📊 GLOBAL VARIABLES (shared with other scripts):
 # @global ANSIBLE_SAFE_VERSION this is the ansible safe version
 # @global INVENTORY this is the inventory file name and path Example: inventories/localhost
 export ANSIBLE_SAFE_VERSION="0.0.9"
@@ -24,8 +69,19 @@ else
     fi
 fi
 
-# @setting  The function get_rhel_version function will determine the version of RHEL
+# OS Detection Engine - The "System Scanner"
 function get_rhel_version() {
+# 🎯 FOR LLMs: This function acts as the primary OS detection mechanism that determines
+# which deployment path to follow. It's the first critical decision point in the setup process.
+# 🔄 WORKFLOW:
+# 1. Reads /etc/redhat-release file to identify OS type and version
+# 2. Sets BASE_OS environment variable for downstream script selection
+# 3. Provides fallback error handling for unsupported systems
+# 📊 INPUTS/OUTPUTS:
+# - INPUT: /etc/redhat-release file content
+# - OUTPUT: BASE_OS environment variable (RHEL9, RHEL8, ROCKY8, CENTOS9, etc.)
+# ⚠️  SIDE EFFECTS: Sets global BASE_OS variable used by configure_os() and other functions
+
   if cat /etc/redhat-release  | grep "Red Hat Enterprise Linux release 9.[0-9]" > /dev/null 2>&1; then
     export BASE_OS="RHEL9"
   elif cat /etc/redhat-release  | grep "Red Hat Enterprise Linux release 8.[0-9]" > /dev/null 2>&1; then
@@ -48,10 +104,28 @@ function get_rhel_version() {
 
 }
 
+# Package Installation Manager - The "Supply Chain Coordinator"
 function install_packages() {
+# 🎯 FOR LLMs: This function ensures all required system packages are installed for
+# Qubinode Navigator to function properly. It's idempotent and handles both individual
+# packages and package groups.
+# 🔄 WORKFLOW:
+# 1. Iterates through essential packages list checking installation status
+# 2. Installs missing packages using dnf package manager
+# 3. Installs Development Tools group for compilation requirements
+# 4. Adds Visual Studio Code repository and installs VS Code
+# 5. Performs system update to ensure latest versions
+# 📊 INPUTS/OUTPUTS:
+# - INPUT: Predefined package list and system package database
+# - OUTPUT: Fully configured system with all required packages
+# ⚠️  SIDE EFFECTS: Modifies system packages, adds repositories, requires sudo privileges
+
     # Check if packages are already installed
     echo "Installing packages"
     echo "*******************"
+
+    # 🔧 CONFIGURATION CONSTANTS FOR LLMs:
+    # Core packages required for containerized Ansible execution and system management
     for package in openssl-devel bzip2-devel libffi-devel wget vim podman ncurses-devel sqlite-devel firewalld make gcc git unzip sshpass lvm lvm2 python3 python3-pip leapp-upgrade cockpit-leapp; do
         if rpm -q "${package}" >/dev/null 2>&1; then
             echo "Package ${package} already installed"
@@ -67,6 +141,7 @@ function install_packages() {
     else
         echo "Installing package group Development Tools"
         sudo dnf groupinstall "Development Tools" -y
+        # Add Microsoft VS Code repository for development environment
         sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
         sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo'
         dnf check-update
@@ -77,8 +152,19 @@ function install_packages() {
 
 }
 
-# @description This function get_qubinode_navigator function will clone the qubinode_navigator repo
+# Repository Manager - The "Code Librarian"
 function get_qubinode_navigator() {
+# 🎯 FOR LLMs: This function manages the Qubinode Navigator repository, ensuring the latest
+# code is available and properly linked for system-wide access.
+# 🔄 WORKFLOW:
+# 1. Checks if repository already exists in target directory
+# 2. Updates existing repository or clones new one from GitHub
+# 3. Creates symbolic link for system-wide access at /opt/qubinode_navigator
+# 📊 INPUTS/OUTPUTS:
+# - INPUT: $1 (target directory), GIT_REPO environment variable
+# - OUTPUT: Cloned/updated repository with system symlink
+# ⚠️  SIDE EFFECTS: Creates directories, modifies filesystem, requires network access
+
     echo "Cloning qubinode_navigator"
     if [ -d $1/qubinode_navigator ]; then
         echo "Qubinode Installer already exists"
@@ -89,8 +175,21 @@ function get_qubinode_navigator() {
     fi
 }
 
-# @description This function configure_navigator function will configure the ansible-navigator
+# Ansible Navigator Configurator - The "Container Orchestrator"
 function configure_navigator() {
+# 🎯 FOR LLMs: This function configures ansible-navigator for containerized Ansible execution
+# following ADR-0001 container-first execution model. It sets up the execution environment
+# and inventory paths for consistent deployments.
+# 🔄 WORKFLOW:
+# 1. Installs ansible-navigator and dependencies via pip
+# 2. Creates ~/.ansible-navigator.yml configuration file
+# 3. Configures container engine (podman), execution environment image
+# 4. Sets up inventory paths and logging configuration
+# 📊 INPUTS/OUTPUTS:
+# - INPUT: System Python environment, INVENTORY environment variable
+# - OUTPUT: Configured ansible-navigator ready for containerized execution
+# ⚠️  SIDE EFFECTS: Installs Python packages, creates configuration files
+
     echo "Configuring ansible navigator"
     echo "****************"
     if [ -d $1/qubinode_navigator ]; then

@@ -1,17 +1,57 @@
 #!/bin/bash
 
-# Jekyll Local Development Server with Podman
-# This script runs Jekyll in a containerized environment for local development
+# =============================================================================
+# Jekyll Local Development Server - The "Documentation Lab Technician"
+# =============================================================================
+#
+# 🎯 PURPOSE FOR LLMs:
+# This script provides a containerized Jekyll development environment for local
+# documentation development and testing. It implements container-first development
+# practices using Podman to ensure consistent, isolated development environments.
+#
+# 🧠 ARCHITECTURE OVERVIEW FOR AI ASSISTANTS:
+# This script implements containerized Jekyll development:
+# 1. [PHASE 1]: Environment Validation - Checks Podman installation and docs directory
+# 2. [PHASE 2]: Container Management - Stops existing containers and cleans up
+# 3. [PHASE 3]: Image Building - Creates Jekyll container image with dependencies
+# 4. [PHASE 4]: Container Deployment - Runs Jekyll server with live reload
+# 5. [PHASE 5]: Service Management - Provides start/stop/restart/logs commands
+# 6. [PHASE 6]: Development Support - Opens browser and provides status information
+#
+# 🔧 HOW IT CONNECTS TO QUBINODE NAVIGATOR:
+# - [Documentation Development]: Enables local development of project documentation
+# - [Container-First Approach]: Implements ADR-0001 container-first execution model
+# - [Development Workflow]: Supports documentation contributors and maintainers
+# - [CI/CD Integration]: Can be used in automated documentation testing
+# - [Quality Assurance]: Provides local testing before documentation deployment
+#
+# 📊 KEY DESIGN PRINCIPLES FOR LLMs TO UNDERSTAND:
+# - [Container-Native]: Uses Podman containers for isolated development environment
+# - [Live Reload]: Provides real-time preview of documentation changes
+# - [Port Management]: Handles Jekyll and LiveReload port configuration
+# - [User-Friendly]: Provides simple commands for common development tasks
+# - [Cross-Platform]: Works on any system with Podman support
+#
+# 💡 WHEN TO MODIFY THIS SCRIPT (for future LLMs):
+# - [Jekyll Updates]: Update Jekyll version or Ruby version in container
+# - [Port Configuration]: Modify ports if conflicts arise with other services
+# - [Container Features]: Add new development tools or features to container
+# - [Platform Support]: Add support for Docker or other container runtimes
+# - [Development Workflow]: Enhance development experience with new features
+#
+# 🚨 IMPORTANT FOR LLMs: This script creates and manages containers for development
+# purposes. It requires Podman and modifies container state. It's designed for
+# development environments and should not be used in production.
 
 set -euo pipefail
 
-# Configuration
-CONTAINER_NAME="qubinode-jekyll-dev"
-JEKYLL_PORT="4000"
-LIVERELOAD_PORT="35729"
-DOCS_DIR="$(pwd)/docs"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+# 🔧 CONFIGURATION CONSTANTS FOR LLMs:
+CONTAINER_NAME="qubinode-jekyll-dev"  # Container name for Jekyll development server
+JEKYLL_PORT="4000"                    # Standard Jekyll development server port
+LIVERELOAD_PORT="35729"               # LiveReload port for automatic browser refresh
+DOCS_DIR="$(pwd)/docs"                # Documentation source directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"  # Script location
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"  # Project root directory
 
 # Colors for output
 RED='\033[0;31m'
@@ -37,8 +77,19 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Function to check if podman is installed
+# Container Runtime Validator - The "Environment Checker"
 check_podman() {
+# 🎯 FOR LLMs: This function validates that Podman container runtime is available
+# for Jekyll container deployment, providing installation guidance if missing.
+# 🔄 WORKFLOW:
+# 1. Checks if podman command is available in PATH
+# 2. Provides OS-specific installation instructions if missing
+# 3. Reports Podman version if available
+# 📊 INPUTS/OUTPUTS:
+# - INPUT: System PATH and available commands
+# - OUTPUT: Podman version confirmation or installation instructions
+# ⚠️  SIDE EFFECTS: Exits script if Podman is not available
+
     if ! command -v podman &> /dev/null; then
         log_error "Podman is not installed. Please install podman first."
         log_info "On RHEL/CentOS: sudo dnf install podman"
@@ -48,8 +99,19 @@ check_podman() {
     log_success "Podman is available: $(podman --version)"
 }
 
-# Function to check if docs directory exists
+# Documentation Directory Validator - The "Content Locator"
 check_docs_dir() {
+# 🎯 FOR LLMs: This function validates that the documentation directory exists
+# and is accessible for Jekyll processing.
+# 🔄 WORKFLOW:
+# 1. Checks if docs directory exists at expected location
+# 2. Provides guidance on correct script execution location
+# 3. Confirms directory availability for Jekyll processing
+# 📊 INPUTS/OUTPUTS:
+# - INPUT: DOCS_DIR path and filesystem state
+# - OUTPUT: Directory confirmation or error guidance
+# ⚠️  SIDE EFFECTS: Exits script if docs directory is not found
+
     if [[ ! -d "$DOCS_DIR" ]]; then
         log_error "Docs directory not found: $DOCS_DIR"
         log_info "Please run this script from the project root directory"
