@@ -82,7 +82,7 @@ jobs:
    
     - name: Send a repository dispatch event to restart the workflow if it failed
       if: ${{ failure() }}
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       with:
         github-token: ${{ secrets.PAT }}
         script: |
