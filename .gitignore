@@ -1,16 +1,74 @@
+# Build and runtime directories
 /ansible-builder/context/
 /ansible-navigator/roles/
 /ansible-navigator/collections/
-vault.*
-*.vault_passwordaider-env/
-aider-env/bin/activate
-aider_setup.sh
-aider-env/
-.aider*
 node_modules
 package-lock.json
 package.json
-mcp-shrimp-task-manager
-shrimp-rules.md
+
+# Separate collections (managed independently)
+qubinode_kvmhost_setup_collection/
+
+# Runtime data and state files
+data/
+
+# Sensitive files and credentials
+vault.*
+*.vault_password
 .env
 notouch.env
+/tmp/config.yml
+*.pem
+*.key
+*.crt
+*_rsa
+*_rsa.pub
+*.p12
+*.pfx
+.mcp-server-context.md
+
+# Developer notes and implementation plans
+docs/IMPLEMENTATION-PLAN.md
+docs/research/
+docs/development/
+TODO.md
+NOTES.md
+*.notes
+*.todo
+
+# AI Assistant data and models
+ai-assistant/models/
+ai-assistant/data/rag-docs/
+ai-assistant/data/vector-db/
+
+# Development tools
+aider-env/
+.aider*
+aider_setup.sh
+mcp-shrimp-task-manager
+shrimp-rules.md
+
+# Temporary and cache files
+*.tmp
+*.cache
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.coverage
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

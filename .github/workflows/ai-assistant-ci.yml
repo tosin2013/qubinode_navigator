@@ -1,0 +1,471 @@
+name: AI Assistant CI/CD Pipeline
+
+# Required GitHub Secrets:
+# - QUAY_USERNAME: Quay.io username for container registry authentication
+# - QUAY_PASSWORD: Quay.io password or robot token for container registry authentication
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'ai-assistant/**'
+      - 'plugins/services/ai_assistant_plugin.py'
+      - 'tests/test_ai_assistant_plugin.py'
+      - '.github/workflows/ai-assistant-ci.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'ai-assistant/**'
+      - 'plugins/services/ai_assistant_plugin.py'
+      - 'tests/test_ai_assistant_plugin.py'
+  workflow_dispatch:
+
+env:
+  REGISTRY_HOSTNAME: quay.io
+  REGISTRY_NAMESPACE: qubinode
+  AI_IMAGE_NAME: ai-assistant
+  PYTHON_VERSION: '3.12'
+
+jobs:
+  # Test AI Assistant Components
+  test-ai-components:
+    name: Test AI Assistant Components
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          
+      - name: Cache Python dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('ai-assistant/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+            
+      - name: Install AI Assistant dependencies
+        run: |
+          cd ai-assistant
+          pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-asyncio
+          
+      - name: Run diagnostic tools tests
+        run: |
+          cd ai-assistant
+          python -m pytest tests/test_diagnostic_tools.py -v --cov=src --cov-report=xml --cov-report=term
+          
+      - name: Upload diagnostic tools coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./ai-assistant/coverage.xml
+          flags: diagnostic-tools
+          name: diagnostic-tools-coverage
+
+  # Test Plugin Framework Integration
+  test-plugin-integration:
+    name: Test Plugin Framework Integration
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          
+      - name: Install plugin framework dependencies
+        run: |
+          pip install pytest pytest-cov pytest-mock pyyaml
+          
+      - name: Run AI Assistant plugin tests
+        run: |
+          python -m pytest tests/test_ai_assistant_plugin.py -v --cov=plugins/services --cov-report=xml --cov-report=term
+          
+      - name: Upload plugin integration coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: plugin-integration
+          name: plugin-integration-coverage
+
+  # Build and Test AI Assistant Container
+  build-and-test-container:
+    name: Build and Test AI Assistant Container
+    runs-on: ubuntu-latest
+    needs: [test-ai-components, test-plugin-integration]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: Log in to Quay.io
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY_HOSTNAME }}
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+        
+      - name: Build AI Assistant container
+        uses: docker/build-push-action@v5
+        with:
+          context: ./ai-assistant
+          file: ./ai-assistant/Dockerfile
+          push: false
+          tags: ${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.AI_IMAGE_NAME }}:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          
+      - name: Test container health
+        run: |
+          # Start container in background
+          docker run -d --name ai-test -p 8080:8080 ${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.AI_IMAGE_NAME }}:test
+          
+          # Wait for container to start
+          sleep 30
+          
+          # Test health endpoint
+          curl -f http://localhost:8080/health || exit 1
+          
+          # Test basic functionality
+          curl -f -X POST http://localhost:8080/chat \
+            -H "Content-Type: application/json" \
+            -d '{"message": "test"}' || exit 1
+            
+          # Stop container
+          docker stop ai-test
+          docker rm ai-test
+
+  # Security Scanning
+  security-scan:
+    name: Security Scan AI Assistant
+    runs-on: ubuntu-latest
+    needs: build-and-test-container
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: Log in to Quay.io
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY_HOSTNAME }}
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+        
+      - name: Build container for scanning
+        uses: docker/build-push-action@v5
+        with:
+          context: ./ai-assistant
+          file: ./ai-assistant/Dockerfile
+          push: false
+          tags: ${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.AI_IMAGE_NAME }}:scan
+          
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.AI_IMAGE_NAME }}:scan
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+          
+      - name: Run Hadolint Dockerfile linter
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: ./ai-assistant/Dockerfile
+          format: sarif
+          output-file: hadolint-results.sarif
+          no-fail: true
+          
+      - name: Upload Hadolint scan results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: hadolint-results.sarif
+
+  # Performance Benchmarking
+  performance-benchmark:
+    name: Performance Benchmark AI Assistant
+    runs-on: ubuntu-latest
+    needs: build-and-test-container
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: Log in to Quay.io
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY_HOSTNAME }}
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+        
+      - name: Build container for benchmarking
+        uses: docker/build-push-action@v5
+        with:
+          context: ./ai-assistant
+          file: ./ai-assistant/Dockerfile
+          push: false
+          tags: ${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.AI_IMAGE_NAME }}:benchmark
+          
+      - name: Run performance benchmarks
+        run: |
+          # Start container
+          docker run -d --name ai-benchmark -p 8080:8080 ${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.AI_IMAGE_NAME }}:benchmark
+          sleep 30
+          
+          # Install benchmarking tools
+          pip install requests
+          
+          # Create benchmark script
+          cat > benchmark.py << 'EOF'
+          import requests
+          import time
+          import statistics
+          import json
+          
+          def benchmark_health_endpoint():
+              """Benchmark health endpoint"""
+              times = []
+              for i in range(10):
+                  start = time.time()
+                  response = requests.get('http://localhost:8080/health')
+                  end = time.time()
+                  if response.status_code == 200:
+                      times.append(end - start)
+              return times
+          
+          def benchmark_chat_endpoint():
+              """Benchmark chat endpoint"""
+              times = []
+              for i in range(5):
+                  start = time.time()
+                  response = requests.post('http://localhost:8080/chat',
+                      json={'message': 'What is KVM?'})
+                  end = time.time()
+                  if response.status_code == 200:
+                      times.append(end - start)
+              return times
+          
+          # Run benchmarks
+          health_times = benchmark_health_endpoint()
+          chat_times = benchmark_chat_endpoint()
+          
+          results = {
+              'health_endpoint': {
+                  'mean': statistics.mean(health_times),
+                  'median': statistics.median(health_times),
+                  'min': min(health_times),
+                  'max': max(health_times)
+              },
+              'chat_endpoint': {
+                  'mean': statistics.mean(chat_times),
+                  'median': statistics.median(chat_times),
+                  'min': min(chat_times),
+                  'max': max(chat_times)
+              }
+          }
+          
+          print("Performance Benchmark Results:")
+          print(json.dumps(results, indent=2))
+          
+          # Write to GitHub step summary
+          with open('benchmark_results.json', 'w') as f:
+              json.dump(results, f, indent=2)
+          EOF
+          
+          # Run benchmark
+          python benchmark.py
+          
+          # Stop container
+          docker stop ai-benchmark
+          docker rm ai-benchmark
+          
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-benchmarks
+          path: benchmark_results.json
+
+  # Integration Tests
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [test-ai-components, test-plugin-integration]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          
+      - name: Install dependencies
+        run: |
+          pip install pytest pytest-asyncio pyyaml requests
+          cd ai-assistant && pip install -r requirements.txt
+          
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: Log in to Quay.io
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY_HOSTNAME }}
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+        
+      - name: Build AI Assistant container
+        uses: docker/build-push-action@v5
+        with:
+          context: ./ai-assistant
+          file: ./ai-assistant/Dockerfile
+          push: false
+          tags: ${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.AI_IMAGE_NAME }}:integration
+          
+      - name: Create integration test
+        run: |
+          cat > integration_test.py << 'EOF'
+          import pytest
+          import requests
+          import subprocess
+          import time
+          import json
+          import sys
+          import os
+          from pathlib import Path
+          
+          # Add project root to path
+          project_root = Path(__file__).parent
+          sys.path.insert(0, str(project_root))
+          
+          from plugins.services.ai_assistant_plugin import AIAssistantPlugin
+          from core.base_plugin import ExecutionContext
+          
+          class TestAIAssistantIntegration:
+              """Integration tests for AI Assistant"""
+              
+              @classmethod
+              def setup_class(cls):
+                  """Start AI Assistant container"""
+                  subprocess.run([
+                      'docker', 'run', '-d', '--name', 'ai-integration-test',
+                      '-p', '8080:8080', '${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.AI_IMAGE_NAME }}:integration'
+                  ], check=True)
+                  
+                  # Wait for container to start
+                  time.sleep(30)
+                  
+              @classmethod
+              def teardown_class(cls):
+                  """Stop AI Assistant container"""
+                  subprocess.run(['docker', 'stop', 'ai-integration-test'], check=False)
+                  subprocess.run(['docker', 'rm', 'ai-integration-test'], check=False)
+                  
+              def test_health_endpoint(self):
+                  """Test health endpoint"""
+                  response = requests.get('http://localhost:8080/health')
+                  assert response.status_code == 200
+                  data = response.json()
+                  assert data['status'] == 'healthy'
+                  
+              def test_chat_endpoint(self):
+                  """Test chat endpoint"""
+                  response = requests.post('http://localhost:8080/chat',
+                      json={'message': 'What is KVM virtualization?'})
+                  assert response.status_code == 200
+                  data = response.json()
+                  assert 'response' in data
+                  
+              def test_diagnostics_endpoint(self):
+                  """Test diagnostics endpoint"""
+                  response = requests.get('http://localhost:8080/diagnostics/tools')
+                  assert response.status_code == 200
+                  data = response.json()
+                  assert 'tools' in data
+                  assert len(data['tools']) > 0
+                  
+              def test_plugin_integration(self):
+                  """Test AI Assistant plugin integration"""
+                  config = {
+                      'ai_service_url': 'http://localhost:8080',
+                      'container_name': 'ai-integration-test',
+                      'auto_start': False,  # Container already running
+                      'health_check_timeout': 10
+                  }
+                  
+                  plugin = AIAssistantPlugin(config)
+                  context = ExecutionContext(
+                      inventory="localhost",
+                      environment="test",
+                      config={"test": True}
+                  )
+                  
+                  # Test plugin methods
+                  assert plugin.is_healthy()
+                  
+                  # Test AI query
+                  response = plugin.ask_ai("What is hypervisor?")
+                  assert response is not None
+                  assert len(response) > 0
+          EOF
+          
+      - name: Run integration tests
+        run: |
+          python -m pytest integration_test.py -v
+          
+  # Publish Results Summary
+  publish-results:
+    name: Publish Test Results
+    runs-on: ubuntu-latest
+    needs: [test-ai-components, test-plugin-integration, build-and-test-container, security-scan, performance-benchmark, integration-tests]
+    if: always()
+    
+    steps:
+      - name: Download benchmark results
+        uses: actions/download-artifact@v3
+        with:
+          name: performance-benchmarks
+          
+      - name: Create test summary
+        run: |
+          echo "# AI Assistant CI/CD Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ AI Components Tests: ${{ needs.test-ai-components.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Plugin Integration Tests: ${{ needs.test-plugin-integration.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Container Build & Test: ${{ needs.build-and-test-container.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Security Scan: ${{ needs.security-scan.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Performance Benchmark: ${{ needs.performance-benchmark.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Integration Tests: ${{ needs.integration-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f benchmark_results.json ]; then
+            echo "## Performance Benchmarks" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
+            cat benchmark_results.json >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          fi

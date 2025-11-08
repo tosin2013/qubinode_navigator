@@ -1,0 +1,260 @@
+#!/usr/bin/env python3
+"""
+Qubinode AI Assistant CLI Interface
+Based on ADR-0027: CPU-Based AI Deployment Assistant Architecture
+
+This CLI provides interactive access to the AI assistant for deployment guidance.
+"""
+
+import argparse
+import asyncio
+import json
+import sys
+from pathlib import Path
+
+import httpx
+
+
+class QubinodeAICLI:
+    """CLI interface for Qubinode AI Assistant."""
+    
+    def __init__(self, base_url: str = "http://localhost:8080"):
+        self.base_url = base_url
+        self.client = httpx.AsyncClient(timeout=30.0)
+    
+    async def chat(self, message: str, context: dict = None) -> dict:
+        """Send a chat message to the AI assistant."""
+        try:
+            response = await self.client.post(
+                f"{self.base_url}/chat",
+                json={
+                    "message": message,
+                    "context": context or {},
+                    "max_tokens": 512,
+                    "temperature": 0.7
+                }
+            )
+            response.raise_for_status()
+            return response.json()
+            
+        except httpx.RequestError as e:
+            return {"error": f"Connection error: {e}"}
+        except httpx.HTTPStatusError as e:
+            return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
+    
+    async def diagnostics(self, system_info: dict = None) -> dict:
+        """Run system diagnostics."""
+        try:
+            response = await self.client.post(
+                f"{self.base_url}/diagnostics",
+                json=system_info or {}
+            )
+            response.raise_for_status()
+            return response.json()
+            
+        except httpx.RequestError as e:
+            return {"error": f"Connection error: {e}"}
+        except httpx.HTTPStatusError as e:
+            return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
+    
+    async def health(self) -> dict:
+        """Check AI assistant health."""
+        try:
+            response = await self.client.get(f"{self.base_url}/health")
+            response.raise_for_status()
+            return response.json()
+            
+        except httpx.RequestError as e:
+            return {"error": f"Connection error: {e}"}
+        except httpx.HTTPStatusError as e:
+            return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
+    
+    async def interactive_mode(self):
+        """Start interactive chat mode."""
+        print("🤖 Qubinode AI Assistant - Interactive Mode")
+        print("Type 'exit', 'quit', or 'bye' to exit")
+        print("Type 'help' for available commands")
+        print("-" * 50)
+        
+        context = {}
+        
+        while True:
+            try:
+                user_input = input("\n💬 You: ").strip()
+                
+                if not user_input:
+                    continue
+                
+                if user_input.lower() in ['exit', 'quit', 'bye']:
+                    print("👋 Goodbye!")
+                    break
+                
+                if user_input.lower() == 'help':
+                    self.show_help()
+                    continue
+                
+                if user_input.lower() == 'diagnostics':
+                    print("🔍 Running system diagnostics...")
+                    result = await self.diagnostics()
+                    if "error" in result:
+                        print(f"❌ Error: {result['error']}")
+                    else:
+                        print(f"📊 Diagnostics: {json.dumps(result, indent=2)}")
+                    continue
+                
+                if user_input.lower() == 'health':
+                    result = await self.health()
+                    if "error" in result:
+                        print(f"❌ Error: {result['error']}")
+                    else:
+                        status = result.get('status', 'unknown')
+                        emoji = "✅" if status == "healthy" else "⚠️" if status == "degraded" else "❌"
+                        print(f"{emoji} Health Status: {status}")
+                    continue
+                
+                # Send message to AI
+                print("🤔 AI is thinking...")
+                result = await self.chat(user_input, context)
+                
+                if "error" in result:
+                    print(f"❌ Error: {result['error']}")
+                else:
+                    response = result.get("response", "No response")
+                    print(f"🤖 AI: {response}")
+                    
+                    # Update context for conversation continuity
+                    context = result.get("context", {})
+            
+            except KeyboardInterrupt:
+                print("\n👋 Goodbye!")
+                break
+            except Exception as e:
+                print(f"❌ Unexpected error: {e}")
+    
+    def show_help(self):
+        """Show help information."""
+        help_text = """
+🤖 Qubinode AI Assistant Commands:
+
+Chat Commands:
+  - Just type your question or request
+  - Ask about RHEL/CentOS/Rocky Linux configuration
+  - Get help with KVM/libvirt setup
+  - Troubleshoot Ansible issues
+  - Request deployment guidance
+
+Special Commands:
+  help        - Show this help message
+  diagnostics - Run system diagnostics
+  health      - Check AI assistant health
+  exit/quit   - Exit the program
+
+Examples:
+  "How do I configure KVM on RHEL 9?"
+  "My Ansible playbook is failing with permission errors"
+  "What are the requirements for RHEL 10 deployment?"
+  "Help me troubleshoot libvirt networking issues"
+        """
+        print(help_text)
+    
+    async def cleanup(self):
+        """Cleanup resources."""
+        await self.client.aclose()
+
+
+async def main():
+    """Main CLI entry point."""
+    parser = argparse.ArgumentParser(
+        description="Qubinode AI Assistant CLI",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  qubinode-ai                                    # Interactive mode
+  qubinode-ai --message "How do I setup KVM?"   # Single message
+  qubinode-ai --diagnostics                     # Run diagnostics
+  qubinode-ai --health                          # Check health
+        """
+    )
+    
+    parser.add_argument(
+        "--url",
+        default="http://localhost:8080",
+        help="AI assistant service URL (default: http://localhost:8080)"
+    )
+    
+    parser.add_argument(
+        "--message", "-m",
+        help="Send a single message to the AI assistant"
+    )
+    
+    parser.add_argument(
+        "--diagnostics", "-d",
+        action="store_true",
+        help="Run system diagnostics"
+    )
+    
+    parser.add_argument(
+        "--health",
+        action="store_true",
+        help="Check AI assistant health"
+    )
+    
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output in JSON format"
+    )
+    
+    args = parser.parse_args()
+    
+    # Initialize CLI
+    cli = QubinodeAICLI(args.url)
+    
+    try:
+        if args.health:
+            result = await cli.health()
+            if args.json:
+                print(json.dumps(result, indent=2))
+            else:
+                if "error" in result:
+                    print(f"❌ Error: {result['error']}")
+                    sys.exit(1)
+                else:
+                    status = result.get('status', 'unknown')
+                    emoji = "✅" if status == "healthy" else "⚠️" if status == "degraded" else "❌"
+                    print(f"{emoji} AI Assistant Status: {status}")
+        
+        elif args.diagnostics:
+            result = await cli.diagnostics()
+            if args.json:
+                print(json.dumps(result, indent=2))
+            else:
+                if "error" in result:
+                    print(f"❌ Error: {result['error']}")
+                    sys.exit(1)
+                else:
+                    print("🔍 System Diagnostics Results:")
+                    print(json.dumps(result, indent=2))
+        
+        elif args.message:
+            result = await cli.chat(args.message)
+            if args.json:
+                print(json.dumps(result, indent=2))
+            else:
+                if "error" in result:
+                    print(f"❌ Error: {result['error']}")
+                    sys.exit(1)
+                else:
+                    response = result.get("response", "No response")
+                    print(f"🤖 AI: {response}")
+        
+        else:
+            # Interactive mode
+            await cli.interactive_mode()
+    
+    finally:
+        await cli.cleanup()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
