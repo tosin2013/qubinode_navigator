@@ -84,6 +84,7 @@ jobs:
       - name: Install plugin framework dependencies
         run: |
           pip install pytest pytest-cov pytest-mock pyyaml
+          pip install -r requirements.txt
           
       - name: Run AI Assistant plugin tests
         run: |
