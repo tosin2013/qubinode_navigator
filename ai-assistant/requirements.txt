@@ -11,6 +11,9 @@ langchain==0.0.340
 langchain-community==0.0.1
 # Note: Using direct HTTP calls to llama.cpp server instead of llama-cpp-python
 
+# Multi-model API support
+litellm==1.44.22
+
 # HTTP client for external requests
 httpx==0.25.2
 requests==2.31.0
