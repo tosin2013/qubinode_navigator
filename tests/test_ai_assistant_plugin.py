@@ -126,11 +126,10 @@ class TestAIAssistantPlugin:
     @patch('subprocess.run')
     def test_container_running_false(self, mock_subprocess):
         """Test container running check - negative case"""
+        # Mock both docker and podman calls to return empty container list
         mock_result = MagicMock()
         mock_result.returncode = 0
-        mock_result.stdout = json.dumps([
-            {"Names": ["test-ai-assistant"], "State": "exited"}
-        ])
+        mock_result.stdout = json.dumps([])  # Empty list - no containers
         mock_subprocess.return_value = mock_result
         
         # Initialize plugin to set up attributes
