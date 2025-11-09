@@ -285,6 +285,55 @@ Provide helpful, accurate, and actionable guidance for infrastructure deployment
             logger.error(f"API model generation failed: {e}")
             raise
     
+    async def process_message(self, message: str, context: dict = None, **kwargs) -> dict:
+        """Process a user message and return AI response with RAG enhancement."""
+        try:
+            # Use the chat method which already handles RAG and context
+            response = await self.chat(message, context)
+            
+            # Return in the expected format for compatibility
+            return {
+                "text": response.get("response", ""),
+                "rag_context": response.get("rag_context", []),
+                "model_info": response.get("model_info", {}),
+                "timestamp": response.get("timestamp", time.time())
+            }
+        except Exception as e:
+            logger.error(f"Error processing message: {e}")
+            return {
+                "text": f"Error processing message: {str(e)}",
+                "rag_context": [],
+                "model_info": {},
+                "timestamp": time.time()
+            }
+
+    def get_available_diagnostic_tools(self) -> dict:
+        """Get list of available diagnostic tools."""
+        try:
+            return diagnostic_registry.list_tools()
+        except Exception as e:
+            logger.error(f"Error getting diagnostic tools: {e}")
+            return {}
+
+    async def run_diagnostics(self, request: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Run system diagnostics (compatibility method)"""
+        try:
+            tool_name = None
+            if request and isinstance(request, dict):
+                tool_name = request.get('tool_name')
+            return await self.get_diagnostics(tool_name)
+        except Exception as e:
+            logger.error(f"Error running diagnostics: {e}")
+            return {"error": str(e), "timestamp": time.time()}
+
+    async def run_specific_diagnostic_tool(self, tool_name: str, **kwargs) -> Dict[str, Any]:
+        """Run a specific diagnostic tool"""
+        try:
+            return await diagnostic_registry.run_diagnostic(tool_name)
+        except Exception as e:
+            logger.error(f"Error running diagnostic tool {tool_name}: {e}")
+            return {"error": str(e), "tool": tool_name, "timestamp": time.time()}
+
     async def get_diagnostics(self, tool_name: Optional[str] = None) -> Dict[str, Any]:
         """Get system diagnostics"""
         return await diagnostic_registry.run_diagnostic(tool_name)
@@ -296,6 +345,10 @@ Provide helpful, accurate, and actionable guidance for infrastructure deployment
     def get_hardware_info(self) -> Dict[str, Any]:
         """Get hardware capabilities and recommendations"""
         return self.model_manager.detect_hardware_capabilities()
+
+    async def cleanup(self):
+        """Cleanup method for compatibility (alias for shutdown)"""
+        await self.shutdown()
     
     async def shutdown(self):
         """Shutdown the AI service"""

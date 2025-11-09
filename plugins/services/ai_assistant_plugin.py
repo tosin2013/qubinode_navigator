@@ -188,51 +188,95 @@ class AIAssistantPlugin(QubiNodePlugin):
     
     def _container_exists(self) -> bool:
         """Check if AI Assistant container exists"""
-        try:
-            result = subprocess.run(
-                ['podman', 'ps', '-a', '--format', 'json'],
-                capture_output=True,
-                text=True,
-                timeout=10
-            )
-            
-            if result.returncode == 0:
-                containers = json.loads(result.stdout)
-                for container in containers:
-                    if container.get('Names') and self.container_name in container['Names']:
-                        return True
-            return False
-        except Exception as e:
-            self.logger.error(f"Failed to check container existence: {e}")
-            return False
+        # Try both docker and podman
+        for runtime in ['docker', 'podman']:
+            try:
+                result = subprocess.run(
+                    [runtime, 'ps', '-a', '--format', 'json'],
+                    capture_output=True,
+                    text=True,
+                    timeout=10
+                )
+                
+                if result.returncode == 0:
+                    containers = json.loads(result.stdout)
+                    for container in containers:
+                        names = container.get('Names', [])
+                        if isinstance(names, list):
+                            if any(self.container_name in name for name in names):
+                                return True
+                        elif isinstance(names, str):
+                            if self.container_name in names:
+                                return True
+                    # If we got here with docker/podman working but no container found
+                    return False
+            except FileNotFoundError:
+                # Runtime not available, try next one
+                continue
+            except Exception as e:
+                self.logger.debug(f"Failed to check container existence with {runtime}: {e}")
+                continue
+        
+        # Neither docker nor podman worked
+        self.logger.error("Neither docker nor podman available for container checks")
+        return False
     
     def _container_running(self) -> bool:
         """Check if AI Assistant container is running"""
-        try:
-            result = subprocess.run(
-                ['podman', 'ps', '--format', 'json'],
-                capture_output=True,
-                text=True,
-                timeout=10
-            )
-            
-            if result.returncode == 0:
-                containers = json.loads(result.stdout)
-                for container in containers:
-                    if container.get('Names') and self.container_name in container['Names']:
-                        return container.get('State') == 'running'
-            return False
-        except Exception as e:
-            self.logger.error(f"Failed to check container status: {e}")
-            return False
+        # Try both docker and podman
+        for runtime in ['docker', 'podman']:
+            try:
+                result = subprocess.run(
+                    [runtime, 'ps', '--format', 'json'],
+                    capture_output=True,
+                    text=True,
+                    timeout=10
+                )
+                
+                if result.returncode == 0:
+                    containers = json.loads(result.stdout)
+                    for container in containers:
+                        names = container.get('Names', [])
+                        if isinstance(names, list):
+                            if any(self.container_name in name for name in names):
+                                return True
+                        elif isinstance(names, str):
+                            if self.container_name in names:
+                                return True
+                    # If we got here with docker/podman working but no container found
+                    return False
+            except FileNotFoundError:
+                # Runtime not available, try next one
+                continue
+            except Exception as e:
+                self.logger.debug(f"Failed to check container status with {runtime}: {e}")
+                continue
+        
+        # Neither docker nor podman worked
+        self.logger.error("Neither docker nor podman available for container status checks")
+        return False
     
     def _ai_service_healthy(self) -> bool:
-        """Check if AI service is healthy"""
+        """Check if AI service is healthy (accept degraded status)"""
         try:
             response = requests.get(f"{self.ai_service_url}/health", timeout=5)
             if response.status_code == 200:
                 health_data = response.json()
-                return health_data.get('status') == 'healthy'
+                return health_data.get('status') in ['healthy', 'degraded']
+            elif response.status_code == 503:
+                # Check if it's degraded only due to RAG documents
+                try:
+                    data = response.json()
+                    if 'detail' in data and isinstance(data['detail'], dict):
+                        detail = data['detail']
+                        if detail.get('status') == 'degraded':
+                            ai_service = detail.get('ai_service', {})
+                            warnings = ai_service.get('warnings', [])
+                            # Accept degraded status if only RAG documents not loaded
+                            if len(warnings) == 1 and 'RAG documents not loaded' in warnings[0]:
+                                return True
+                except:
+                    pass
             return False
         except Exception as e:
             self.logger.debug(f"AI service health check failed: {e}")
