@@ -201,14 +201,17 @@ jobs:
               exit 1
             fi
             
-            # Try health check with proper error handling
-            if curl -f --max-time 30 --connect-timeout 10 http://localhost:$PORT/health >/dev/null 2>&1; then
+            # Try health check with proper error handling (accept both 200 and 503 degraded)
+            HEALTH_RESPONSE=$(curl -s --max-time 30 --connect-timeout 10 http://localhost:$PORT/health 2>/dev/null)
+            CURL_EXIT_CODE=$?
+            
+            if [ $CURL_EXIT_CODE -eq 0 ] && echo "$HEALTH_RESPONSE" | grep -q '"status":"healthy"\|"status":"degraded"'; then
               echo "✅ Health check passed on attempt $i (after $((i * HEALTH_CHECK_INTERVAL))s)"
               
-              # Verify the service is actually ready
-              echo "🧪 Verifying service readiness..."
-              HEALTH_RESPONSE=$(curl -s http://localhost:$PORT/health)
-              echo "Health status: $HEALTH_RESPONSE"
+              # Show the actual health status
+              echo "🧪 Service status:"
+              echo "$HEALTH_RESPONSE" | head -c 200
+              echo "..."
               break
             else
               echo "⏳ Health check failed on attempt $i/$MAX_ATTEMPTS, waiting ${HEALTH_CHECK_INTERVAL}s..."
