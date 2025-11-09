@@ -13,13 +13,14 @@ import os
 import sys
 import time
 from pathlib import Path
+from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from ai_service import AIService
+from enhanced_ai_service import create_enhanced_ai_service
 from config_manager import ConfigManager
 from health_monitor import HealthMonitor
 
@@ -30,11 +31,55 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Global services
+config_manager = None
+ai_service = None
+health_monitor = None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan context manager for startup and shutdown events."""
+    global config_manager, ai_service, health_monitor
+    
+    # Startup
+    try:
+        logger.info("Starting Qubinode AI Assistant...")
+        
+        # Initialize configuration manager
+        config_manager = ConfigManager()
+        await config_manager.load_config()
+        
+        # Initialize enhanced AI service
+        ai_service = create_enhanced_ai_service(config_manager.config)
+        await ai_service.initialize()
+        
+        # Initialize health monitor with AI service reference
+        health_monitor = HealthMonitor(ai_service)
+        
+        logger.info("Qubinode AI Assistant started successfully")
+        
+    except Exception as e:
+        logger.error(f"Failed to start AI Assistant: {e}")
+        sys.exit(1)
+    
+    yield
+    
+    # Shutdown
+    logger.info("Shutting down Qubinode AI Assistant...")
+    
+    if ai_service:
+        await ai_service.cleanup()
+    
+    logger.info("Shutdown complete")
+
+
 # Initialize FastAPI app
 app = FastAPI(
     title="Qubinode AI Assistant",
     description="CPU-based AI deployment assistant for infrastructure automation",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # Add CORS middleware
@@ -45,12 +90,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Global services
-config_manager = None
-ai_service = None
-health_monitor = None
-
 
 class ChatRequest(BaseModel):
     """Request model for chat interactions."""
@@ -65,43 +104,6 @@ class ChatResponse(BaseModel):
     response: str
     context: dict = {}
     metadata: dict = {}
-
-
-@app.on_event("startup")
-async def startup_event():
-    """Initialize services on startup."""
-    global config_manager, ai_service, health_monitor
-    
-    try:
-        logger.info("Starting Qubinode AI Assistant...")
-        
-        # Initialize configuration manager
-        config_manager = ConfigManager()
-        await config_manager.load_config()
-        
-        # Initialize AI service
-        ai_service = AIService(config_manager)
-        await ai_service.initialize()
-        
-        # Initialize health monitor with AI service reference
-        health_monitor = HealthMonitor(ai_service)
-        
-        logger.info("Qubinode AI Assistant started successfully")
-        
-    except Exception as e:
-        logger.error(f"Failed to start AI Assistant: {e}")
-        sys.exit(1)
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Cleanup on shutdown."""
-    logger.info("Shutting down Qubinode AI Assistant...")
-    
-    if ai_service:
-        await ai_service.cleanup()
-    
-    logger.info("Shutdown complete")
 
 
 @app.get("/health")
@@ -212,13 +214,38 @@ async def run_specific_diagnostic_tool(tool_name: str, request: dict = None):
         raise HTTPException(status_code=500, detail=f"Tool execution error: {str(e)}")
 
 
-@app.get("/models")
-async def list_models():
-    """List available AI models."""
+@app.get("/model/info")
+async def get_model_info():
+    """Get current model information."""
     if not ai_service:
         raise HTTPException(status_code=503, detail="AI service not available")
     
-    return await ai_service.list_models()
+    try:
+        model_info = ai_service.get_model_info()
+        return {
+            "model_info": model_info,
+            "timestamp": time.time()
+        }
+    except Exception as e:
+        logger.error(f"Model info error: {e}")
+        raise HTTPException(status_code=500, detail=f"Model info error: {str(e)}")
+
+
+@app.get("/model/hardware")
+async def get_hardware_info():
+    """Get hardware capabilities and recommendations."""
+    if not ai_service:
+        raise HTTPException(status_code=503, detail="AI service not available")
+    
+    try:
+        hardware_info = ai_service.get_hardware_info()
+        return {
+            "hardware_info": hardware_info,
+            "timestamp": time.time()
+        }
+    except Exception as e:
+        logger.error(f"Hardware info error: {e}")
+        raise HTTPException(status_code=500, detail=f"Hardware info error: {str(e)}")
 
 
 @app.get("/config")
