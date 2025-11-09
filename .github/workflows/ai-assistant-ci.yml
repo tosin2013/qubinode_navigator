@@ -22,6 +22,11 @@ on:
       - 'tests/test_ai_assistant_plugin.py'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
 env:
   REGISTRY_HOSTNAME: quay.io
   REGISTRY_NAMESPACE: takinosh
@@ -366,9 +371,11 @@ jobs:
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
+          category: trivy
           
       - name: Run Hadolint Dockerfile linter
         uses: hadolint/hadolint-action@v3.1.0
+        if: always()  # Always run Hadolint even if Trivy fails
         with:
           dockerfile: ./ai-assistant/Dockerfile
           format: sarif
@@ -377,9 +384,10 @@ jobs:
           
       - name: Upload Hadolint scan results
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        if: always() && hashFiles('hadolint-results.sarif') != ''
         with:
           sarif_file: hadolint-results.sarif
+          category: hadolint
 
   # Performance Benchmarking
   performance-benchmark:
@@ -421,31 +429,145 @@ jobs:
           
       - name: Run performance benchmarks
         run: |
-          # Start container with Hugging Face token
-          docker run -d --name ai-benchmark -p 8080:8080 \
+          set -e
+          
+          # Configuration (with model download)
+          CONTAINER_NAME="ai-benchmark"
+          PORT="8080"
+          MAX_WAIT_TIME=600  # 10 minutes for model download + startup
+          HEALTH_CHECK_INTERVAL=5  # Check every 5 seconds like container test
+          MAX_ATTEMPTS=$((MAX_WAIT_TIME / HEALTH_CHECK_INTERVAL))
+          
+          echo "🚀 Starting AI Assistant benchmark container with optimized settings..."
+          
+          # Start container with optimized settings for CI (same as container test)
+          docker run -d --name $CONTAINER_NAME -p $PORT:8080 \
             -e HUGGINGFACE_TOKEN=${{ secrets.HUGGINGFACE_TOKEN }} \
+            -e AI_MODEL_TYPE=granite-4.0-micro \
+            -e AI_LOG_LEVEL=info \
+            -e AI_THREADS=2 \
+            -e AI_CONTEXT_LENGTH=1024 \
+            -e AI_MAX_TOKENS=128 \
+            --memory=4g \
+            --cpus=2 \
+            --health-cmd 'curl -f --max-time 30 http://localhost:8080/health || exit 1' \
+            --health-interval '30s' \
+            --health-timeout '30s' \
+            --health-retries '5' \
             ${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.AI_IMAGE_NAME }}:benchmark
           
-          # Wait for container to be ready with health check (extended for model download)
-          echo "Waiting for benchmark container to start (allowing time for model download)..."
-          for i in {1..120}; do
-            if curl -f --max-time 30 --connect-timeout 10 http://localhost:8080/health >/dev/null 2>&1; then
-              echo "Benchmark container ready after $((i*5)) seconds"
-              break
-            else
-              echo "Waiting for container... attempt $i/120"
-              # Show download progress every 12 attempts (1 minute intervals)
-              if [ $((i % 12)) -eq 0 ]; then
-                echo "Container logs (showing download progress):"
-                docker logs ai-benchmark | tail -5
-              fi
-              sleep 5
-              if [ $i -eq 120 ]; then
-                echo "Container failed to start after 10 minutes, checking logs:"
-                docker logs ai-benchmark
-                exit 1
-              fi
+          # Function to check for critical errors
+          check_critical_errors() {
+            local logs=$(docker logs $CONTAINER_NAME 2>&1 | tail -20)
+            if echo "$logs" | grep -i "error\|exception\|failed\|traceback" | grep -v "Health check\|download"; then
+              echo "❌ Critical error detected in container logs:"
+              echo "$logs"
+              return 1
             fi
+            return 0
+          }
+          
+          # Function to show download progress
+          show_progress() {
+            local logs=$(docker logs $CONTAINER_NAME 2>&1 | grep -E "(Download progress|Model.*downloaded|Starting.*server)" | tail -3)
+            if [ -n "$logs" ]; then
+              echo "📥 Model download status:"
+              echo "$logs"
+            fi
+          }
+          
+          echo "⏳ Waiting for benchmark container startup and model download (max ${MAX_WAIT_TIME}s)..."
+          sleep 10
+          
+          # Initial error check and container verification
+          echo "🔍 Verifying container is running..."
+          if ! docker ps | grep -q $CONTAINER_NAME; then
+            echo "❌ Container failed to start or exited immediately"
+            docker logs $CONTAINER_NAME
+            docker rm $CONTAINER_NAME 2>/dev/null || true
+            exit 1
+          fi
+          
+          # Wait for service to be accessible before health checks
+          echo "🔌 Waiting for service to be accessible on port $PORT..."
+          for port_check in {1..12}; do
+            if curl -s --connect-timeout 3 --max-time 5 http://localhost:$PORT/health >/dev/null 2>&1; then
+              echo "✅ Service is accessible after $((port_check * 5)) seconds"
+              break
+            elif [ $port_check -eq 12 ]; then
+              echo "❌ Service not accessible after 60 seconds"
+              docker logs $CONTAINER_NAME | tail -20
+              docker stop $CONTAINER_NAME && docker rm $CONTAINER_NAME
+              exit 1
+            else
+              echo "⏳ Service check $port_check/12 - waiting 5 seconds..."
+              sleep 5
+            fi
+          done
+          
+          if ! check_critical_errors; then
+            echo "❌ Critical errors detected during startup"
+            docker logs $CONTAINER_NAME
+            docker stop $CONTAINER_NAME && docker rm $CONTAINER_NAME
+            exit 1
+          fi
+          
+          # Health check loop with intelligent retry logic
+          echo "🔍 Testing health endpoint (attempt interval: ${HEALTH_CHECK_INTERVAL}s)..."
+          for i in $(seq 1 $MAX_ATTEMPTS); do
+            # Verify container is still running
+            if ! docker ps | grep -q $CONTAINER_NAME; then
+              echo "❌ Container stopped running during health checks"
+              docker logs $CONTAINER_NAME | tail -20
+              docker rm $CONTAINER_NAME 2>/dev/null || true
+              exit 1
+            fi
+            
+            # Check for critical errors first
+            if ! check_critical_errors; then
+              echo "❌ Critical errors detected on attempt $i"
+              docker logs $CONTAINER_NAME | tail -10
+              docker stop $CONTAINER_NAME && docker rm $CONTAINER_NAME
+              exit 1
+            fi
+            
+            # Try health check with proper error handling (accept both 200 and 503 degraded)
+            echo "🔗 Attempting health check $i/$MAX_ATTEMPTS..."
+            HEALTH_RESPONSE=$(curl -s --max-time 30 --connect-timeout 10 http://localhost:$PORT/health 2>&1)
+            CURL_EXIT_CODE=$?
+            
+            if [ $CURL_EXIT_CODE -eq 0 ] && echo "$HEALTH_RESPONSE" | grep -q '"status":"healthy"\|"status":"degraded"'; then
+              echo "✅ Benchmark container ready after $((i * HEALTH_CHECK_INTERVAL))s"
+              
+              # Show the actual health status
+              echo "🧪 Service status:"
+              echo "$HEALTH_RESPONSE" | head -c 200
+              echo "..."
+              break
+            elif [ $CURL_EXIT_CODE -eq 7 ]; then
+              echo "🔌 Connection refused (service not ready yet) - attempt $i/$MAX_ATTEMPTS"
+            elif [ $CURL_EXIT_CODE -eq 56 ]; then
+              echo "📡 Network receive error (service starting) - attempt $i/$MAX_ATTEMPTS"
+            else
+              echo "⚠️ Health check failed with exit code $CURL_EXIT_CODE - attempt $i/$MAX_ATTEMPTS"
+              echo "Response: $HEALTH_RESPONSE"
+            fi
+            
+            # Show progress every 6 attempts (30s intervals)
+            if [ $((i % 6)) -eq 0 ]; then
+              show_progress
+            fi
+            
+            # Final attempt check
+            if [ $i -eq $MAX_ATTEMPTS ]; then
+              echo "❌ Health check failed after $MAX_ATTEMPTS attempts (${MAX_WAIT_TIME}s total)"
+              echo "📋 Final container logs:"
+              docker logs $CONTAINER_NAME | tail -30
+              docker stop $CONTAINER_NAME && docker rm $CONTAINER_NAME
+              exit 1
+            fi
+            
+            sleep $HEALTH_CHECK_INTERVAL
           done
           
           # Install benchmarking tools
@@ -1003,6 +1125,7 @@ jobs:
     steps:
       - name: Download benchmark results
         uses: actions/download-artifact@v4
+        continue-on-error: true  # Don't fail if artifact doesn't exist
         with:
           name: performance-benchmarks
           
@@ -1011,19 +1134,59 @@ jobs:
           echo "# AI Assistant CI/CD Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ AI Components Tests: ${{ needs.test-ai-components.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Plugin Integration Tests: ${{ needs.test-plugin-integration.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Container Build & Test: ${{ needs.build-and-test-container.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Security Scan: ${{ needs.security-scan.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Performance Benchmark: ${{ needs.performance-benchmark.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Integration Tests: ${{ needs.integration-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          
+          # Function to get result icon
+          get_result_icon() {
+            case "$1" in
+              "success") echo "✅" ;;
+              "failure") echo "❌" ;;
+              "cancelled") echo "⏸️" ;;
+              "skipped") echo "⏭️" ;;
+              *) echo "❓" ;;
+            esac
+          }
+          
+          echo "- $(get_result_icon '${{ needs.test-ai-components.result }}') AI Components Tests: ${{ needs.test-ai-components.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_result_icon '${{ needs.test-plugin-integration.result }}') Plugin Integration Tests: ${{ needs.test-plugin-integration.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_result_icon '${{ needs.build-and-test-container.result }}') Container Build & Test: ${{ needs.build-and-test-container.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_result_icon '${{ needs.security-scan.result }}') Security Scan: ${{ needs.security-scan.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_result_icon '${{ needs.performance-benchmark.result }}') Performance Benchmark: ${{ needs.performance-benchmark.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_result_icon '${{ needs.integration-tests.result }}') Integration Tests: ${{ needs.integration-tests.result }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
+          # Check if benchmark results exist and display them
           if [ -f benchmark_results.json ]; then
             echo "## Performance Benchmarks" >> $GITHUB_STEP_SUMMARY
             echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
             cat benchmark_results.json >> $GITHUB_STEP_SUMMARY
             echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## Performance Benchmarks" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ Performance benchmark results not available (job may have been cancelled or failed)" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Summary" >> $GITHUB_STEP_SUMMARY
+          
+          # Count successful jobs
+          success_count=0
+          total_count=6
+          
+          [ "${{ needs.test-ai-components.result }}" == "success" ] && ((success_count++))
+          [ "${{ needs.test-plugin-integration.result }}" == "success" ] && ((success_count++))
+          [ "${{ needs.build-and-test-container.result }}" == "success" ] && ((success_count++))
+          [ "${{ needs.security-scan.result }}" == "success" ] && ((success_count++))
+          [ "${{ needs.performance-benchmark.result }}" == "success" ] && ((success_count++))
+          [ "${{ needs.integration-tests.result }}" == "success" ] && ((success_count++))
+          
+          echo "**Overall Status: $success_count/$total_count jobs successful**" >> $GITHUB_STEP_SUMMARY
+          
+          if [ $success_count -eq $total_count ]; then
+            echo "🎉 All tests passed!" >> $GITHUB_STEP_SUMMARY
+          elif [ $success_count -ge 4 ]; then
+            echo "⚠️ Most tests passed - review failed jobs" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Multiple test failures - requires attention" >> $GITHUB_STEP_SUMMARY
           fi
 
   # Build and Push Production Image
