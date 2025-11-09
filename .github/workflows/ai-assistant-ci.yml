@@ -315,7 +315,7 @@ jobs:
           docker rm $CONTAINER_NAME
           
           echo "✅ Container health test completed successfully!"
-
+we can wor
   # Security Scanning
   security-scan:
     name: Security Scan AI Assistant
@@ -351,6 +351,8 @@ jobs:
           push: false
           load: true
           tags: ${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.AI_IMAGE_NAME }}:scan
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
@@ -360,7 +362,7 @@ jobs:
           output: 'trivy-results.sarif'
           
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
@@ -374,7 +376,7 @@ jobs:
           no-fail: true
           
       - name: Upload Hadolint scan results
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: hadolint-results.sarif
@@ -414,6 +416,8 @@ jobs:
           push: false
           load: true
           tags: ${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.AI_IMAGE_NAME }}:benchmark
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           
       - name: Run performance benchmarks
         run: |
@@ -512,7 +516,7 @@ jobs:
           docker rm ai-benchmark
           
       - name: Upload benchmark results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: performance-benchmarks
           path: benchmark_results.json
@@ -641,6 +645,8 @@ jobs:
           push: false
           load: true
           tags: ${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.AI_IMAGE_NAME }}:integration
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           
       - name: Create integration test
         run: |
@@ -996,7 +1002,7 @@ jobs:
     
     steps:
       - name: Download benchmark results
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: performance-benchmarks
           
