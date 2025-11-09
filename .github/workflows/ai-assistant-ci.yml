@@ -187,7 +187,7 @@ jobs:
           }
           
           echo "⏳ Waiting for container startup and model download (max ${MAX_WAIT_TIME}s)..."
-          sleep 5
+          sleep 10
           
           # Initial error check and container verification
           echo "🔍 Verifying container is running..."
@@ -197,6 +197,23 @@ jobs:
             docker rm $CONTAINER_NAME 2>/dev/null || true
             exit 1
           fi
+          
+          # Wait for service to be accessible before health checks
+          echo "🔌 Waiting for service to be accessible on port $PORT..."
+          for port_check in {1..12}; do
+            if curl -s --connect-timeout 3 --max-time 5 http://localhost:$PORT/health >/dev/null 2>&1; then
+              echo "✅ Service is accessible after $((port_check * 5)) seconds"
+              break
+            elif [ $port_check -eq 12 ]; then
+              echo "❌ Service not accessible after 60 seconds"
+              docker logs $CONTAINER_NAME | tail -20
+              docker stop $CONTAINER_NAME && docker rm $CONTAINER_NAME
+              exit 1
+            else
+              echo "⏳ Service check $port_check/12 - waiting 5 seconds..."
+              sleep 5
+            fi
+          done
           
           if ! check_critical_errors; then
             echo "❌ Critical errors detected during startup"
