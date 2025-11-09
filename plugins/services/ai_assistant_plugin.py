@@ -437,6 +437,43 @@ class AIAssistantPlugin(QubiNodePlugin):
         
         return base_status
     
+    def is_healthy(self) -> bool:
+        """Check if AI Assistant plugin is healthy"""
+        try:
+            # Check if container exists and is running
+            if not self._container_exists():
+                return False
+            
+            if not self._container_running():
+                return False
+            
+            # Check if AI service is responding (accept degraded status)
+            response = requests.get(f"{self.ai_service_url}/health", timeout=10)
+            
+            # Accept both 200 (healthy) and 503 (degraded) as healthy
+            if response.status_code == 200:
+                return True
+            elif response.status_code == 503:
+                # Check if it's degraded only due to RAG documents
+                try:
+                    data = response.json()
+                    if 'detail' in data and isinstance(data['detail'], dict):
+                        detail = data['detail']
+                        if detail.get('status') == 'degraded':
+                            ai_service = detail.get('ai_service', {})
+                            warnings = ai_service.get('warnings', [])
+                            # Accept degraded status if only RAG documents not loaded
+                            if len(warnings) == 1 and 'RAG documents not loaded' in warnings[0]:
+                                return True
+                except:
+                    pass
+            
+            return False
+            
+        except Exception as e:
+            self.logger.debug(f"Health check failed: {e}")
+            return False
+    
     def _cleanup_plugin(self) -> None:
         """Cleanup AI Assistant plugin resources"""
         try:
