@@ -4,8 +4,10 @@ This document explains how to set up Hugging Face authentication tokens for the 
 
 ## Supported Model
 
-**Default Supported Model**: `granite-4.0-micro`
+**Default Supported Model**: `granite-4.0-micro` (Granite-based model)
+- **Family**: IBM Granite model family (using compatible GGUF version)
 - This is the officially supported and tested model for Qubinode AI Assistant
+- Optimized for CPU-only systems with low memory requirements (2GB+)
 - Other models are available but may require additional troubleshooting
 - For alternative models, users are responsible for their own configuration and troubleshooting
 
