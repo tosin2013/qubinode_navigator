@@ -141,22 +141,19 @@ jobs:
         run: |
           set -e
           
-          # Configuration (using test mode - no model download needed)
+          # Configuration (with model download)
           CONTAINER_NAME="ai-test"
           PORT="8080"
-          MAX_WAIT_TIME=300  # 5 minutes for test mode startup
+          MAX_WAIT_TIME=600  # 10 minutes for model download + startup
           HEALTH_CHECK_INTERVAL=5  # Check every 5 seconds like integration tests
           MAX_ATTEMPTS=$((MAX_WAIT_TIME / HEALTH_CHECK_INTERVAL))
           
           echo "🚀 Starting AI Assistant container with optimized settings..."
           
-          # Start container with test mode (skip model download for faster testing)
+          # Start container with optimized settings for CI
           docker run -d --name $CONTAINER_NAME -p $PORT:8080 \
             -e HUGGINGFACE_TOKEN=${{ secrets.HUGGINGFACE_TOKEN }} \
-            -e AI_CONFIG_FILE=/app/config/test_config.yaml \
-            -e AI_MODEL_TYPE=test-mode \
-            -e AI_SKIP_MODEL_DOWNLOAD=true \
-            -e AI_TEST_MODE=true \
+            -e AI_MODEL_TYPE=granite-4.0-micro \
             -e AI_LOG_LEVEL=info \
             -e AI_THREADS=2 \
             -e AI_CONTEXT_LENGTH=1024 \
@@ -189,7 +186,7 @@ jobs:
             fi
           }
           
-          echo "⏳ Waiting for container startup in test mode (max ${MAX_WAIT_TIME}s)..."
+          echo "⏳ Waiting for container startup and model download (max ${MAX_WAIT_TIME}s)..."
           sleep 5
           
           # Initial error check and container verification
