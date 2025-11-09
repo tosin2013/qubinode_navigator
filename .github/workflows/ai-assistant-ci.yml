@@ -185,8 +185,17 @@ jobs:
           echo "⏳ Waiting for container startup and model download (max ${MAX_WAIT_TIME}s)..."
           sleep 10
           
-          # Initial error check
+          # Initial error check and container verification
+          echo "🔍 Verifying container is running..."
+          if ! docker ps | grep -q $CONTAINER_NAME; then
+            echo "❌ Container failed to start or exited immediately"
+            docker logs $CONTAINER_NAME
+            docker rm $CONTAINER_NAME 2>/dev/null || true
+            exit 1
+          fi
+          
           if ! check_critical_errors; then
+            echo "❌ Critical errors detected during startup"
             docker logs $CONTAINER_NAME
             docker stop $CONTAINER_NAME && docker rm $CONTAINER_NAME
             exit 1
@@ -195,14 +204,25 @@ jobs:
           # Health check loop with intelligent retry logic
           echo "🔍 Testing health endpoint (attempt interval: ${HEALTH_CHECK_INTERVAL}s)..."
           for i in $(seq 1 $MAX_ATTEMPTS); do
+            # Verify container is still running
+            if ! docker ps | grep -q $CONTAINER_NAME; then
+              echo "❌ Container stopped running during health checks"
+              docker logs $CONTAINER_NAME | tail -20
+              docker rm $CONTAINER_NAME 2>/dev/null || true
+              exit 1
+            fi
+            
             # Check for critical errors first
             if ! check_critical_errors; then
+              echo "❌ Critical errors detected on attempt $i"
+              docker logs $CONTAINER_NAME | tail -10
               docker stop $CONTAINER_NAME && docker rm $CONTAINER_NAME
               exit 1
             fi
             
             # Try health check with proper error handling (accept both 200 and 503 degraded)
-            HEALTH_RESPONSE=$(curl -s --max-time 30 --connect-timeout 10 http://localhost:$PORT/health 2>/dev/null)
+            echo "🔗 Attempting health check $i/$MAX_ATTEMPTS..."
+            HEALTH_RESPONSE=$(curl -s --max-time 30 --connect-timeout 10 http://localhost:$PORT/health 2>&1)
             CURL_EXIT_CODE=$?
             
             if [ $CURL_EXIT_CODE -eq 0 ] && echo "$HEALTH_RESPONSE" | grep -q '"status":"healthy"\|"status":"degraded"'; then
@@ -213,25 +233,30 @@ jobs:
               echo "$HEALTH_RESPONSE" | head -c 200
               echo "..."
               break
+            elif [ $CURL_EXIT_CODE -eq 7 ]; then
+              echo "🔌 Connection refused (service not ready yet) - attempt $i/$MAX_ATTEMPTS"
+            elif [ $CURL_EXIT_CODE -eq 56 ]; then
+              echo "📡 Network receive error (service starting) - attempt $i/$MAX_ATTEMPTS"
             else
-              echo "⏳ Health check failed on attempt $i/$MAX_ATTEMPTS, waiting ${HEALTH_CHECK_INTERVAL}s..."
-              
-              # Show progress every 3 attempts (45s intervals)
-              if [ $((i % 3)) -eq 0 ]; then
-                show_progress
-              fi
-              
-              # Final attempt check
-              if [ $i -eq $MAX_ATTEMPTS ]; then
-                echo "❌ Health check failed after $MAX_ATTEMPTS attempts (${MAX_WAIT_TIME}s total)"
-                echo "📋 Final container logs:"
-                docker logs $CONTAINER_NAME | tail -30
-                docker stop $CONTAINER_NAME && docker rm $CONTAINER_NAME
-                exit 1
-              fi
-              
-              sleep $HEALTH_CHECK_INTERVAL
+              echo "⚠️ Health check failed with exit code $CURL_EXIT_CODE - attempt $i/$MAX_ATTEMPTS"
+              echo "Response: $HEALTH_RESPONSE"
             fi
+            
+            # Show progress every 3 attempts (45s intervals)
+            if [ $((i % 3)) -eq 0 ]; then
+              show_progress
+            fi
+            
+            # Final attempt check
+            if [ $i -eq $MAX_ATTEMPTS ]; then
+              echo "❌ Health check failed after $MAX_ATTEMPTS attempts (${MAX_WAIT_TIME}s total)"
+              echo "📋 Final container logs:"
+              docker logs $CONTAINER_NAME | tail -30
+              docker stop $CONTAINER_NAME && docker rm $CONTAINER_NAME
+              exit 1
+            fi
+            
+            sleep $HEALTH_CHECK_INTERVAL
           done
           
           # Test core functionality
