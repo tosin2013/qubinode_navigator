@@ -23,6 +23,7 @@ from pydantic import BaseModel
 from enhanced_ai_service import create_enhanced_ai_service
 from config_manager import ConfigManager
 from health_monitor import HealthMonitor
+from rag_ingestion_api import router as rag_router
 
 # Configure logging
 logging.basicConfig(
@@ -90,6 +91,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include routers
+app.include_router(rag_router)
 
 class ChatRequest(BaseModel):
     """Request model for chat interactions."""
