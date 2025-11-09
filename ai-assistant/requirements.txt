@@ -18,8 +18,8 @@ litellm==1.44.22
 httpx==0.25.2
 requests==2.31.0
 
-# File handling for RAG ingestion
-aiofiles==23.2.0
+# File handling for RAG ingestion (Linux/RHEL optimized)
+aiofiles==23.1.0
 python-multipart==0.0.6
 
 # Configuration and environment
