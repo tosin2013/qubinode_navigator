@@ -155,7 +155,7 @@ jobs:
           # Wait for health check with retries (extended for model download)
           echo "Testing health endpoint with retries (allowing time for model download)..."
           for i in {1..60}; do
-            if curl -f http://localhost:8080/health; then
+            if curl -f --max-time 30 --connect-timeout 10 http://localhost:8080/health; then
               echo "Health check passed on attempt $i"
               break
             else
@@ -177,7 +177,7 @@ jobs:
           
           # Test basic functionality (optional - comment out if causing issues)
           echo "Testing chat endpoint..."
-          curl -f -X POST http://localhost:8080/chat \
+          curl -f --max-time 60 --connect-timeout 10 -X POST http://localhost:8080/chat \
             -H "Content-Type: application/json" \
             -d '{"message": "test"}' || echo "Chat endpoint test failed but continuing..."
             
@@ -294,7 +294,7 @@ jobs:
           # Wait for container to be ready with health check (extended for model download)
           echo "Waiting for benchmark container to start (allowing time for model download)..."
           for i in {1..120}; do
-            if curl -f http://localhost:8080/health >/dev/null 2>&1; then
+            if curl -f --max-time 30 --connect-timeout 10 http://localhost:8080/health >/dev/null 2>&1; then
               echo "Benchmark container ready after $((i*5)) seconds"
               break
             else
@@ -423,32 +423,66 @@ jobs:
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
         
+      - name: Prepare RAG documents for testing
+        run: |
+          # Prepare RAG documents for integration testing
+          echo "Preparing RAG documents for testing..."
+          cd ai-assistant
+          
+          # Run the RAG document preparation script
+          python scripts/prepare-rag-docs.py || echo "RAG preparation failed, continuing with basic setup"
+          
+          # Ensure the RAG docs directory exists with at least basic content
+          mkdir -p data/rag-docs
+          
+          # Create minimal test documents if preparation failed
+          if [ ! -f "data/rag-docs/document_chunks.json" ]; then
+            echo "Creating minimal test RAG documents..."
+            cat > data/rag-docs/document_chunks.json << 'RAGEOF'
+          [
+            {
+              "id": "test001",
+              "source_file": "test/README.md",
+              "title": "Test Documentation",
+              "content": "This is test documentation for the Qubinode Navigator AI Assistant. It provides infrastructure automation and virtualization guidance.",
+              "chunk_type": "markdown",
+              "metadata": {
+                "document_type": "readme",
+                "file_type": "markdown"
+              },
+              "word_count": 20,
+              "created_at": "2024-01-01T00:00:00"
+            }
+          ]
+          RAGEOF
+          fi
+          
       - name: Create test configuration
         run: |
           # Create a test-optimized configuration for faster startup
           cat > ai-assistant/config/test_config.yaml << 'EOF'
           ai_service:
-            model_type: "test-mode"
+            model_type: "granite-4.0-micro"
             model_path: ""
             model_url: ""
             use_gpu: false
             threads: 2
             llama_server_port: 8081
-            context_length: 512
+            context_length: 1024
             temperature: 0.7
-            max_tokens: 128
+            max_tokens: 256
             
           server:
             host: "0.0.0.0"
             port: 8080
-            log_level: "DEBUG"
-            timeout: 10
+            log_level: "info"
+            timeout: 30
             
           features:
             diagnostics: true
             system_monitoring: false
             log_analysis: false
-            rag_enabled: false
+            rag_enabled: true
             
           security:
             enable_auth: false
@@ -462,9 +496,9 @@ jobs:
             logs_dir: "/app/logs"
             
           test_mode:
-            enabled: true
-            mock_ai_responses: true
-            skip_model_loading: true
+            enabled: false
+            mock_ai_responses: false
+            skip_model_loading: false
             fast_startup: true
           EOF
           
@@ -519,10 +553,10 @@ jobs:
                           '-e', 'AI_SKIP_MODEL_DOWNLOAD=true',
                           '-e', 'AI_TEST_MODE=true',
                           '-e', f'HUGGINGFACE_TOKEN={os.getenv("HUGGINGFACE_TOKEN", "")}',
-                          '--health-cmd', 'curl -f http://localhost:8080/health || exit 1',
-                          '--health-interval', '10s',
-                          '--health-timeout', '5s',
-                          '--health-retries', '3',
+                          '--health-cmd', 'curl -f --max-time 30 http://localhost:8080/health || exit 1',
+                          '--health-interval', '30s',
+                          '--health-timeout', '30s',
+                          '--health-retries', '5',
                           image_name
                       ], check=True, capture_output=True, text=True)
                       
