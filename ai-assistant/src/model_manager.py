@@ -217,9 +217,29 @@ class ModelManager:
         if not Path(self.model_path).exists():
             raise FileNotFoundError(f"Model file not found: {self.model_path}")
         
+        # Find llama-server executable (try multiple locations for compatibility)
+        server_paths = [
+            "/usr/local/bin/llama-server",  # Primary location
+            "/app/llama.cpp/server",        # Backward compatibility symlink
+            "llama-server"                  # System PATH
+        ]
+        
+        server_executable = None
+        for path in server_paths:
+            if Path(path).exists() or path == "llama-server":
+                server_executable = path
+                break
+        
+        if not server_executable:
+            raise FileNotFoundError(
+                f"llama-server executable not found in any of these locations: {server_paths}"
+            )
+        
+        logger.info(f"Using llama-server executable: {server_executable}")
+        
         # Build llama.cpp server command
         cmd = [
-            "/app/llama.cpp/server",
+            server_executable,
             "--model", self.model_path,
             "--port", "8081",
             "--host", "0.0.0.0",

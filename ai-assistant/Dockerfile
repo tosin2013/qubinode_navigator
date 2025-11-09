@@ -31,6 +31,11 @@ RUN useradd -m -u 1001 qubinode-ai
 COPY --from=builder /build/llama.cpp/build/bin/llama-server /usr/local/bin/
 COPY --from=builder /build/llama.cpp/build/bin/llama-cli /usr/local/bin/
 
+# Create compatibility symlinks for backward compatibility
+RUN mkdir -p /app/llama.cpp && \
+    ln -s /usr/local/bin/llama-server /app/llama.cpp/server && \
+    ln -s /usr/local/bin/llama-cli /app/llama.cpp/cli
+
 # Set up Python virtual environment (best practice)
 WORKDIR /app
 RUN python3 -m venv /app/venv && \
