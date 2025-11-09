@@ -2,6 +2,13 @@
 
 This document explains how to set up Hugging Face authentication tokens for the AI Assistant to download models.
 
+## Supported Model
+
+**Default Supported Model**: `granite-4.0-micro`
+- This is the officially supported and tested model for Qubinode AI Assistant
+- Other models are available but may require additional troubleshooting
+- For alternative models, users are responsible for their own configuration and troubleshooting
+
 ## Why is this needed?
 
 The AI Assistant downloads AI models from Hugging Face Hub. Some models require authentication, and even public models benefit from authentication to avoid rate limits.
