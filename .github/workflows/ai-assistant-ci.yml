@@ -152,17 +152,23 @@ jobs:
           echo "Container logs:"
           docker logs ai-test
           
-          # Wait for health check with retries
-          echo "Testing health endpoint with retries..."
-          for i in {1..12}; do
+          # Wait for health check with retries (extended for model download)
+          echo "Testing health endpoint with retries (allowing time for model download)..."
+          for i in {1..60}; do
             if curl -f http://localhost:8080/health; then
               echo "Health check passed on attempt $i"
               break
             else
               echo "Health check failed on attempt $i, waiting 10 seconds..."
+              # Show download progress every 5 attempts
+              if [ $((i % 5)) -eq 0 ]; then
+                echo "Container logs (showing download progress):"
+                docker logs ai-test | tail -10
+              fi
               sleep 10
-              if [ $i -eq 12 ]; then
-                echo "Health check failed after 12 attempts"
+              if [ $i -eq 60 ]; then
+                echo "Health check failed after 60 attempts (10 minutes)"
+                echo "Final container logs:"
                 docker logs ai-test
                 exit 1
               fi
@@ -285,17 +291,22 @@ jobs:
             -e HUGGINGFACE_TOKEN=${{ secrets.HUGGINGFACE_TOKEN }} \
             ${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.AI_IMAGE_NAME }}:benchmark
           
-          # Wait for container to be ready with health check
-          echo "Waiting for benchmark container to start..."
-          for i in {1..24}; do
+          # Wait for container to be ready with health check (extended for model download)
+          echo "Waiting for benchmark container to start (allowing time for model download)..."
+          for i in {1..120}; do
             if curl -f http://localhost:8080/health >/dev/null 2>&1; then
               echo "Benchmark container ready after $((i*5)) seconds"
               break
             else
-              echo "Waiting for container... attempt $i/24"
+              echo "Waiting for container... attempt $i/120"
+              # Show download progress every 12 attempts (1 minute intervals)
+              if [ $((i % 12)) -eq 0 ]; then
+                echo "Container logs (showing download progress):"
+                docker logs ai-benchmark | tail -5
+              fi
               sleep 5
-              if [ $i -eq 24 ]; then
-                echo "Container failed to start, checking logs:"
+              if [ $i -eq 120 ]; then
+                echo "Container failed to start after 10 minutes, checking logs:"
                 docker logs ai-benchmark
                 exit 1
               fi
