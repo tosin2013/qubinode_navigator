@@ -315,7 +315,7 @@ jobs:
           docker rm $CONTAINER_NAME
           
           echo "✅ Container health test completed successfully!"
-we can wor
+
   # Security Scanning
   security-scan:
     name: Security Scan AI Assistant
