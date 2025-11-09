@@ -21,7 +21,7 @@ class ModelManager:
     
     def __init__(self, config: Dict[str, Any]):
         self.config = config
-        self.ai_config = config.get('ai_service', {})
+        self.ai_config = config.get('ai_service', config.get('ai', {}))
         self.model_presets = self.ai_config.get('model_presets', {})
         
         # Get model configuration from environment or config
@@ -52,7 +52,31 @@ class ModelManager:
     def _get_config_value(self, key: str, default: str) -> str:
         """Get configuration value from environment or config file"""
         env_key = f"AI_{key.upper()}"
-        return os.getenv(env_key, self.ai_config.get(key, default))
+        
+        # First check environment variable directly
+        env_value = os.getenv(env_key)
+        if env_value is not None:
+            return env_value
+        
+        # Then check config file value (should already be processed by config manager)
+        config_value = self.ai_config.get(key, default)
+        
+        # If config value still contains environment variable syntax, process it
+        if isinstance(config_value, str) and '${' in config_value:
+            import re
+            pattern = r'\$\{([^}]+)\}'
+            
+            def replace_var(match):
+                var_expr = match.group(1)
+                if ':-' in var_expr:
+                    var_name, default_value = var_expr.split(':-', 1)
+                    return os.getenv(var_name.strip(), default_value.strip())
+                else:
+                    return os.getenv(var_expr.strip(), default)
+            
+            config_value = re.sub(pattern, replace_var, config_value)
+        
+        return str(config_value)
     
     def _apply_model_preset(self):
         """Apply model preset configuration if available"""
@@ -154,8 +178,15 @@ class ModelManager:
             # Create models directory
             model_path.parent.mkdir(parents=True, exist_ok=True)
             
-            # Download with progress
-            with httpx.stream("GET", self.model_url, timeout=300) as response:
+            # Prepare headers for Hugging Face authentication
+            headers = {}
+            hf_token = os.getenv('HUGGINGFACE_TOKEN')
+            if hf_token:
+                headers['Authorization'] = f'Bearer {hf_token}'
+                logger.info("Using Hugging Face authentication token")
+            
+            # Download with progress (follow redirects)
+            with httpx.stream("GET", self.model_url, headers=headers, timeout=300, follow_redirects=True) as response:
                 response.raise_for_status()
                 
                 total_size = int(response.headers.get('content-length', 0))

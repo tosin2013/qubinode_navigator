@@ -139,8 +139,10 @@ jobs:
           
       - name: Test container health
         run: |
-          # Start container in background
-          docker run -d --name ai-test -p 8080:8080 ${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.AI_IMAGE_NAME }}:test
+          # Start container in background with Hugging Face token
+          docker run -d --name ai-test -p 8080:8080 \
+            -e HUGGINGFACE_TOKEN=${{ secrets.HUGGINGFACE_TOKEN }} \
+            ${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.AI_IMAGE_NAME }}:test
           
           # Wait for container to start and check logs
           echo "Waiting for container to start..."
@@ -278,8 +280,10 @@ jobs:
           
       - name: Run performance benchmarks
         run: |
-          # Start container
-          docker run -d --name ai-benchmark -p 8080:8080 ${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.AI_IMAGE_NAME }}:benchmark
+          # Start container with Hugging Face token
+          docker run -d --name ai-benchmark -p 8080:8080 \
+            -e HUGGINGFACE_TOKEN=${{ secrets.HUGGINGFACE_TOKEN }} \
+            ${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.AI_IMAGE_NAME }}:benchmark
           
           # Wait for container to be ready with health check
           echo "Waiting for benchmark container to start..."
@@ -503,6 +507,7 @@ jobs:
                           '-e', 'AI_MODEL_TYPE=test-mode',
                           '-e', 'AI_SKIP_MODEL_DOWNLOAD=true',
                           '-e', 'AI_TEST_MODE=true',
+                          '-e', f'HUGGINGFACE_TOKEN={os.getenv("HUGGINGFACE_TOKEN", "")}',
                           '--health-cmd', 'curl -f http://localhost:8080/health || exit 1',
                           '--health-interval', '10s',
                           '--health-timeout', '5s',
@@ -704,6 +709,8 @@ jobs:
           }
           
       - name: Run integration tests
+        env:
+          HUGGINGFACE_TOKEN: ${{ secrets.HUGGINGFACE_TOKEN }}
         run: |
           python -m pytest integration_test.py -v -s --tb=short
           
