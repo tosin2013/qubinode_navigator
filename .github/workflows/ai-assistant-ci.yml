@@ -141,25 +141,32 @@ jobs:
         run: |
           set -e
           
-          # Configuration
+          # Configuration (using test mode - no model download needed)
           CONTAINER_NAME="ai-test"
           PORT="8080"
-          MAX_WAIT_TIME=900  # 15 minutes for model download
-          HEALTH_CHECK_INTERVAL=15
+          MAX_WAIT_TIME=300  # 5 minutes for test mode startup
+          HEALTH_CHECK_INTERVAL=5  # Check every 5 seconds like integration tests
           MAX_ATTEMPTS=$((MAX_WAIT_TIME / HEALTH_CHECK_INTERVAL))
           
           echo "🚀 Starting AI Assistant container with optimized settings..."
           
-          # Start container with resource limits and health optimizations
+          # Start container with test mode (skip model download for faster testing)
           docker run -d --name $CONTAINER_NAME -p $PORT:8080 \
             -e HUGGINGFACE_TOKEN=${{ secrets.HUGGINGFACE_TOKEN }} \
-            -e AI_MODEL_TYPE=granite-4.0-micro \
+            -e AI_CONFIG_FILE=/app/config/test_config.yaml \
+            -e AI_MODEL_TYPE=test-mode \
+            -e AI_SKIP_MODEL_DOWNLOAD=true \
+            -e AI_TEST_MODE=true \
             -e AI_LOG_LEVEL=info \
             -e AI_THREADS=2 \
             -e AI_CONTEXT_LENGTH=1024 \
             -e AI_MAX_TOKENS=128 \
             --memory=4g \
             --cpus=2 \
+            --health-cmd 'curl -f --max-time 30 http://localhost:8080/health || exit 1' \
+            --health-interval '30s' \
+            --health-timeout '30s' \
+            --health-retries '5' \
             ${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.AI_IMAGE_NAME }}:test
           
           # Function to check for critical errors
@@ -182,8 +189,8 @@ jobs:
             fi
           }
           
-          echo "⏳ Waiting for container startup and model download (max ${MAX_WAIT_TIME}s)..."
-          sleep 10
+          echo "⏳ Waiting for container startup in test mode (max ${MAX_WAIT_TIME}s)..."
+          sleep 5
           
           # Initial error check and container verification
           echo "🔍 Verifying container is running..."
@@ -242,8 +249,8 @@ jobs:
               echo "Response: $HEALTH_RESPONSE"
             fi
             
-            # Show progress every 3 attempts (45s intervals)
-            if [ $((i % 3)) -eq 0 ]; then
+            # Show progress every 6 attempts (30s intervals)
+            if [ $((i % 6)) -eq 0 ]; then
               show_progress
             fi
             
