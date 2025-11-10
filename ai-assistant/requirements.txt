@@ -15,7 +15,7 @@ langchain-community==0.0.1
 litellm==1.44.22
 
 # HTTP client for external requests
-httpx==0.25.2
+httpx==0.28.1
 requests==2.31.0
 
 # File handling for RAG ingestion (Linux/RHEL optimized)
