@@ -1177,6 +1177,8 @@ jobs:
           
       - name: Create test summary
         run: |
+          set +e  # Disable strict error handling for this script
+          
           echo "# AI Assistant CI/CD Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## Test Results" >> $GITHUB_STEP_SUMMARY
@@ -1192,12 +1194,20 @@ jobs:
             esac
           }
           
-          echo "- $(get_result_icon '${{ needs.test-ai-components.result }}') AI Components Tests: ${{ needs.test-ai-components.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- $(get_result_icon '${{ needs.test-plugin-integration.result }}') Plugin Integration Tests: ${{ needs.test-plugin-integration.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- $(get_result_icon '${{ needs.build-and-test-container.result }}') Container Build & Test: ${{ needs.build-and-test-container.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- $(get_result_icon '${{ needs.security-scan.result }}') Security Scan: ${{ needs.security-scan.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- $(get_result_icon '${{ needs.performance-benchmark.result }}') Performance Benchmark: ${{ needs.performance-benchmark.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- $(get_result_icon '${{ needs.integration-tests.result }}') Integration Tests: ${{ needs.integration-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          # Store job results in variables for safer handling
+          ai_components_result="${{ needs.test-ai-components.result }}"
+          plugin_integration_result="${{ needs.test-plugin-integration.result }}"
+          container_result="${{ needs.build-and-test-container.result }}"
+          security_result="${{ needs.security-scan.result }}"
+          performance_result="${{ needs.performance-benchmark.result }}"
+          integration_result="${{ needs.integration-tests.result }}"
+          
+          echo "- $(get_result_icon "$ai_components_result") AI Components Tests: $ai_components_result" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_result_icon "$plugin_integration_result") Plugin Integration Tests: $plugin_integration_result" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_result_icon "$container_result") Container Build & Test: $container_result" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_result_icon "$security_result") Security Scan: $security_result" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_result_icon "$performance_result") Performance Benchmark: $performance_result" >> $GITHUB_STEP_SUMMARY
+          echo "- $(get_result_icon "$integration_result") Integration Tests: $integration_result" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
           # Check if benchmark results exist and display them
@@ -1214,16 +1224,17 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## Summary" >> $GITHUB_STEP_SUMMARY
           
-          # Count successful jobs
+          # Count successful jobs using safer arithmetic
           success_count=0
           total_count=6
           
-          [ "${{ needs.test-ai-components.result }}" == "success" ] && ((success_count++))
-          [ "${{ needs.test-plugin-integration.result }}" == "success" ] && ((success_count++))
-          [ "${{ needs.build-and-test-container.result }}" == "success" ] && ((success_count++))
-          [ "${{ needs.security-scan.result }}" == "success" ] && ((success_count++))
-          [ "${{ needs.performance-benchmark.result }}" == "success" ] && ((success_count++))
-          [ "${{ needs.integration-tests.result }}" == "success" ] && ((success_count++))
+          # Use safer arithmetic operations
+          [[ "$ai_components_result" == "success" ]] && success_count=$((success_count + 1))
+          [[ "$plugin_integration_result" == "success" ]] && success_count=$((success_count + 1))
+          [[ "$container_result" == "success" ]] && success_count=$((success_count + 1))
+          [[ "$security_result" == "success" ]] && success_count=$((success_count + 1))
+          [[ "$performance_result" == "success" ]] && success_count=$((success_count + 1))
+          [[ "$integration_result" == "success" ]] && success_count=$((success_count + 1))
           
           echo "**Overall Status: $success_count/$total_count jobs successful**" >> $GITHUB_STEP_SUMMARY
           
@@ -1234,6 +1245,9 @@ jobs:
           else
             echo "❌ Multiple test failures - requires attention" >> $GITHUB_STEP_SUMMARY
           fi
+          
+          # Always exit successfully for summary job
+          exit 0
 
   # Build and Push Production Image
   build-production:
