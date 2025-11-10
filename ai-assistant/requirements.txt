@@ -8,7 +8,7 @@ pydantic==2.5.0
 
 # AI/ML frameworks (lightweight versions)
 langchain==0.0.340
-langchain-community==0.0.1
+langchain-community==0.4.1
 # Note: Using direct HTTP calls to llama.cpp server instead of llama-cpp-python
 
 # Multi-model API support
