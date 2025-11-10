@@ -19,7 +19,7 @@ httpx==0.28.1
 requests==2.32.5
 
 # File handling for RAG ingestion (Linux/RHEL optimized)
-aiofiles==23.1.0
+aiofiles==25.1.0
 python-multipart==0.0.20
 
 # Configuration and environment
