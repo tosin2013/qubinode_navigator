@@ -2,7 +2,7 @@
 # Based on ADR-0027 technical requirements
 
 # Core API framework
-fastapi==0.104.1
+fastapi==0.121.1
 uvicorn[standard]==0.24.0
 pydantic==2.5.0
 
