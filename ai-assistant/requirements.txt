@@ -4,7 +4,7 @@
 # Core API framework
 fastapi==0.121.1
 uvicorn[standard]==0.38.0
-pydantic==2.5.0
+pydantic==2.12.4
 
 # AI/ML frameworks (lightweight versions)
 langchain==0.0.340
