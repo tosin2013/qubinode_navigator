@@ -132,7 +132,7 @@ jobs:
           password: ${{ secrets.QUAY_PASSWORD }}
         
       - name: Build AI Assistant container
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./ai-assistant
           file: ./ai-assistant/Dockerfile
@@ -349,7 +349,7 @@ jobs:
           password: ${{ secrets.QUAY_PASSWORD }}
         
       - name: Build container for scanning
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./ai-assistant
           file: ./ai-assistant/Dockerfile
@@ -417,7 +417,7 @@ jobs:
           password: ${{ secrets.QUAY_PASSWORD }}
         
       - name: Build container for benchmarking
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./ai-assistant
           file: ./ai-assistant/Dockerfile
@@ -806,7 +806,7 @@ jobs:
           EOF
           
       - name: Build AI Assistant container
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./ai-assistant
           file: ./ai-assistant/Dockerfile
@@ -1278,7 +1278,7 @@ jobs:
           password: ${{ secrets.QUAY_PASSWORD }}
         
       - name: Build and push production image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./ai-assistant
           file: ./ai-assistant/Dockerfile
