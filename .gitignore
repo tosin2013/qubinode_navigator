@@ -28,13 +28,18 @@ notouch.env
 .mcp-server-context.md
 
 # Developer notes and implementation plans
-docs/IMPLEMENTATION-PLAN.md
+#docs/IMPLEMENTATION-PLAN.md
 docs/research/
 docs/development/
 TODO.md
 NOTES.md
 *.notes
 *.todo
+MISSING-ENV-VARIABLES.md
+DNS-CONFIGURATION-GUIDE.md
+fix-dns-configuration.sh
+detect-dns-environment.sh
+dns-config-template.yml
 
 # AI Assistant data and models
 ai-assistant/models/
@@ -51,6 +56,9 @@ shrimp-rules.md
 # Temporary and cache files
 *.tmp
 *.cache
+*.backup*
+*.log
+/tmp/qubinode-deployment-*.log
 __pycache__/
 *.pyc
 *.pyo

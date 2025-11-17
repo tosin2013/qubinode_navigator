@@ -1,0 +1,55 @@
+# Qubinode Navigator Documentation
+
+This directory contains the Jekyll-based documentation website for Qubinode Navigator.
+
+## Local Development
+
+To run the documentation site locally:
+
+```bash
+cd docs
+bundle install
+bundle exec jekyll serve
+```
+
+The site will be available at `http://localhost:4000`
+
+## Deployment
+
+The documentation is automatically deployed to GitHub Pages via GitHub Actions when changes are pushed to the `main` branch.
+
+**Live Site**: https://tosin2013.github.io/qubinode_navigator
+
+## Structure
+
+- `_config.yml` - Jekyll configuration
+- `index.markdown` - Homepage
+- `adrs/` - Architecture Decision Records
+- `deployments/` - Deployment guides
+- `development/` - Developer documentation
+- `plugins/` - Plugin documentation
+- `security/` - Security guides
+- `vault-setup/` - Vault integration guides
+
+## Theme
+
+This site uses the [Just the Docs](https://just-the-docs.com/) theme for clean, searchable documentation.
+
+## Contributing
+
+When adding new documentation:
+
+1. Follow the existing structure and naming conventions
+2. Add appropriate front matter to new pages
+3. Update navigation in `_config.yml` if needed
+4. Test locally before committing
+5. The site will auto-deploy after merging to main
+
+## Troubleshooting
+
+If the site isn't building:
+
+1. Check the GitHub Actions workflow status
+2. Verify Jekyll syntax with `bundle exec jekyll build`
+3. Ensure all required gems are in the Gemfile
+4. Check for any broken internal links

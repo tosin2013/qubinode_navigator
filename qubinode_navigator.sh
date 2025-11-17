@@ -50,7 +50,7 @@ set -x
 
 # 🔧 CONFIGURATION CONSTANTS FOR LLMs:
 KVM_VERSION=0.8.0  # Container image version for qubinode-installer
-export ANSIBLE_SAFE_VERSION="0.0.9"  # AnsibleSafe version for vault encryption
+export ANSIBLE_SAFE_VERSION="0.0.14"  # AnsibleSafe version for vault encryption
 
 export GIT_REPO="https://github.com/tosin2013/qubinode_navigator.git"
 
@@ -483,8 +483,8 @@ function configure_ansible_vault_setup() {
 
     if [ ! -f /usr/local/bin/ansiblesafe ];
     then
-        curl -OL https://github.com/tosin2013/ansiblesafe/releases/download/v${ANSIBLE_SAFE_VERSION}/ansiblesafe-v${ANSIBLE_SAFE_VERSION}-linux-amd64.tar.gz
-        tar -zxvf ansiblesafe-v${ANSIBLE_SAFE_VERSION}-linux-amd64.tar.gz
+        curl -OL https://github.com/tosin2013/ansiblesafe/releases/download/v0.0.12/ansiblesafe-v0.0.14-linux-amd64.tar.gz
+        tar -zxvf ansiblesafe-v0.0.14-linux-amd64.tar.gz
         chmod +x ansiblesafe-linux-amd64
         sudo mv ansiblesafe-linux-amd64 /usr/local/bin/ansiblesafe
     fi 

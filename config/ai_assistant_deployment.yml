@@ -1,0 +1,97 @@
+# AI Assistant Deployment Configuration
+# Demonstrates development vs production image deployment strategy with semantic versioning
+
+# Development configuration (local builds)
+development:
+  ai_assistant:
+    deployment_mode: "development"
+    ai_service_url: "http://localhost:8080"
+    container_name: "qubinode-ai-assistant-dev"
+    ai_assistant_path: "/root/qubinode_navigator/ai-assistant"
+    auto_start: true
+    health_check_timeout: 120  # Longer timeout for development builds
+    enable_diagnostics: true
+    enable_rag: true
+    # Note: container_image will be auto-determined as localhost/qubinode-ai-assistant:latest
+
+# Production configuration (Quay.io registry)
+production:
+  ai_assistant:
+    deployment_mode: "production"
+    ai_service_url: "http://localhost:8080"
+    container_name: "qubinode-ai-assistant"
+    ai_assistant_path: "/root/qubinode_navigator/ai-assistant"
+    auto_start: true
+    health_check_timeout: 60
+    enable_diagnostics: true
+    enable_rag: true
+    # Note: container_image will be auto-determined as quay.io/takinosh/qubinode-ai-assistant:latest
+
+# Auto-detection configuration (recommended)
+auto:
+  ai_assistant:
+    deployment_mode: "auto"  # Will auto-detect based on environment
+    ai_service_url: "http://localhost:8080"
+    container_name: "qubinode-ai-assistant"
+    ai_assistant_path: "/root/qubinode_navigator/ai-assistant"
+    auto_start: true
+    health_check_timeout: 90
+    enable_diagnostics: true
+    enable_rag: true
+
+# Custom image configuration (override auto-detection)
+custom:
+  ai_assistant:
+    deployment_mode: "production"
+    container_image: "custom-registry.example.com/qubinode-ai-assistant:v1.2.3"
+    ai_service_url: "http://localhost:8080"
+    container_name: "qubinode-ai-assistant"
+    ai_assistant_path: "/root/qubinode_navigator/ai-assistant"
+    auto_start: true
+    health_check_timeout: 60
+    enable_diagnostics: true
+    enable_rag: true
+
+# Version management configurations
+version_specific:
+  ai_assistant:
+    deployment_mode: "production"
+    container_version: "1.2.0"  # Use specific version
+    version_strategy: "specific"
+    ai_service_url: "http://localhost:8080"
+    container_name: "qubinode-ai-assistant"
+    ai_assistant_path: "/root/qubinode_navigator/ai-assistant"
+    auto_start: true
+    health_check_timeout: 60
+    enable_diagnostics: true
+    enable_rag: true
+
+# Semantic versioning (latest stable)
+semver_stable:
+  ai_assistant:
+    deployment_mode: "production"
+    version_strategy: "semver"  # Use latest stable version from VERSION file
+    ai_service_url: "http://localhost:8080"
+    container_name: "qubinode-ai-assistant"
+    ai_assistant_path: "/root/qubinode_navigator/ai-assistant"
+    auto_start: true
+    health_check_timeout: 60
+    enable_diagnostics: true
+    enable_rag: true
+
+# Development with version tracking
+dev_versioned:
+  ai_assistant:
+    deployment_mode: "development"
+    version_strategy: "auto"  # Read from VERSION file
+    ai_service_url: "http://localhost:8080"
+    container_name: "qubinode-ai-assistant-dev"
+    ai_assistant_path: "/root/qubinode_navigator/ai-assistant"
+    auto_start: true
+    health_check_timeout: 120
+    enable_diagnostics: true
+    enable_rag: true
+
+# Environment variables for deployment and version override:
+# QUBINODE_DEPLOYMENT_MODE=development|production
+# QUBINODE_AI_VERSION=1.2.0  # Override version detection

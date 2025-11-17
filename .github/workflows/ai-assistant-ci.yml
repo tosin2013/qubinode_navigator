@@ -32,6 +32,9 @@ env:
   REGISTRY_NAMESPACE: takinosh
   AI_IMAGE_NAME: qubinode-ai-assistant
   PYTHON_VERSION: '3.12'
+  # Version management
+  VERSION_FILE: ai-assistant/VERSION
+  VERSION_MANAGER: ai-assistant/scripts/version-manager.sh
 
 jobs:
   # Test AI Assistant Components
@@ -1276,6 +1279,29 @@ jobs:
           registry: ${{ env.REGISTRY_HOSTNAME }}
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
+      
+      - name: Generate version and tags
+        id: version
+        run: |
+          # Make version manager executable
+          chmod +x ${{ env.VERSION_MANAGER }}
+          
+          # Get current version
+          CURRENT_VERSION=$(${{ env.VERSION_MANAGER }} current | grep "Current version:" | cut -d' ' -f3)
+          BUILD_VERSION=$(${{ env.VERSION_MANAGER }} build-metadata)
+          
+          echo "current-version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "build-version=$BUILD_VERSION" >> $GITHUB_OUTPUT
+          
+          # Generate container tags
+          TAGS=$(${{ env.VERSION_MANAGER }} tags ${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }} ${{ env.AI_IMAGE_NAME }})
+          
+          # Convert to comma-separated format for docker/build-push-action
+          TAGS_CSV=$(echo "$TAGS" | tr '\n' ',' | sed 's/,$//')
+          echo "container-tags=$TAGS_CSV" >> $GITHUB_OUTPUT
+          
+          echo "Generated tags:"
+          echo "$TAGS"
         
       - name: Build and push production image
         uses: docker/build-push-action@v5
@@ -1283,8 +1309,20 @@ jobs:
           context: ./ai-assistant
           file: ./ai-assistant/Dockerfile
           push: true
-          tags: |
-            ${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.AI_IMAGE_NAME }}:latest
+          tags: ${{ steps.version.outputs.container-tags }}
+          labels: |
+            version=${{ steps.version.outputs.current-version }}
+            build-version=${{ steps.version.outputs.build-version }}
+            build-date=${{ github.run_id }}
+            vcs-ref=${{ github.sha }}
+            org.opencontainers.image.title=Qubinode AI Assistant
+            org.opencontainers.image.description=CPU-based AI deployment assistant for Qubinode Navigator
+            org.opencontainers.image.version=${{ steps.version.outputs.current-version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ github.event.head_commit.timestamp }}
+            org.opencontainers.image.source=${{ github.repositoryUrl }}
+            org.opencontainers.image.url=${{ github.repositoryUrl }}
+            org.opencontainers.image.documentation=https://github.com/${{ github.repository }}/blob/main/docs/AI_ASSISTANT_DEPLOYMENT_STRATEGY.md
             ${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.AI_IMAGE_NAME }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

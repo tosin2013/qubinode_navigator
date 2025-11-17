@@ -1,7 +1,7 @@
 # ADR-0025: Ansible Tooling Stack Modernization and Security Update Strategy
 
 ## Status
-Proposed
+Accepted - Implemented (2025-11-11)
 
 ## Context
 Research conducted in July 2025 revealed critical security vulnerabilities and compatibility issues in the current Ansible tooling stack. CVE-2024-11079 in ansible-core versions prior to 2.18.1 enables arbitrary code execution, requiring immediate remediation. Additionally, RHEL 9.6's default Python 3.9 is incompatible with ansible-navigator v25.5.0+ which requires Python 3.10+. 

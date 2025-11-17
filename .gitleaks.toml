@@ -1,0 +1,44 @@
+# Gitleaks Configuration for Qubinode Navigator
+# Focused on critical security issues only
+
+title = "Qubinode Navigator Security Scan"
+
+# Only scan for critical secrets
+[[rules]]
+id = "real-passwords"
+description = "Actual passwords (8+ chars, not variables)"
+regex = '''(?i)(password|passwd|pwd)\s*[=:]\s*["'][^$"']{8,}["']'''
+path = '''.*\.(env|sh|yml|yaml)$'''
+
+[[rules]]
+id = "api-secrets"
+description = "API keys and tokens"
+regex = '''(API_KEY|CLIENT_SECRET|ACCESS_TOKEN|PRIVATE_KEY|TOKEN)\s*[=:]\s*["'][A-Za-z0-9+/]{16,}["']'''
+path = '''.*\.(env|sh|yml|yaml|py)$'''
+
+[[rules]]
+id = "private-keys"
+description = "Private key content"
+regex = '''-----BEGIN [A-Z ]+PRIVATE KEY-----'''
+path = '''.*'''
+
+# Global allowlists
+[allowlist]
+paths = [
+    '''.env.example''',
+    '''docs/''',
+    '''CLEAN-INSTALL-GUIDE.md''',
+    '''PRE-COMMIT-CHECKLIST.md''',
+    '''ansible_vault_setup.sh''',
+]
+
+regexes = [
+    '''CHANGEME''',
+    '''your_.*''',
+    '''example''',
+    '''placeholder''',
+    '''\$\{.*\}''',  # Variable substitutions
+    '''\$[A-Z_]+''', # Environment variables
+    '''Enter the password''', # Interactive prompts
+    '''read.*password''',     # Read password commands
+]

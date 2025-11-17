@@ -53,7 +53,7 @@
 # 📊 GLOBAL VARIABLES (shared with other scripts):
 # @global ANSIBLE_SAFE_VERSION this is the ansible safe version
 # @global INVENTORY this is the inventory file name and path Example: inventories/localhost
-export ANSIBLE_SAFE_VERSION="0.0.9"
+export ANSIBLE_SAFE_VERSION="0.0.14"
 export GIT_REPO="https://github.com/tosin2013/qubinode_navigator.git"
 if [ -z "$CICD_PIPELINE" ]; then
   export CICD_PIPELINE="false"
@@ -275,8 +275,8 @@ function configure_vault() {
             sudo dnf install ansible-core -y 
         fi
         if ! command -v ansiblesafe &> /dev/null; then
-            curl -OL https://github.com/tosin2013/ansiblesafe/releases/download/v${ANSIBLE_SAFE_VERSION}/ansiblesafe-v${ANSIBLE_SAFE_VERSION}-linux-amd64.tar.gz
-            tar -zxvf ansiblesafe-v${ANSIBLE_SAFE_VERSION}-linux-amd64.tar.gz
+            curl -OL https://github.com/tosin2013/ansiblesafe/releases/download/v0.0.12/ansiblesafe-v0.0.14-linux-amd64.tar.gz
+            tar -zxvf ansiblesafe-v0.0.14-linux-amd64.tar.gz
             chmod +x ansiblesafe-linux-amd64 
             sudo mv ansiblesafe-linux-amd64 /usr/local/bin/ansiblesafe
         fi
@@ -443,6 +443,16 @@ function configure_os(){
         # Set Python 3.11 as default for ansible-navigator v25.5.0+ compatibility
         sudo alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
         sudo alternatives --install /usr/bin/pip3 pip3 /usr/bin/pip3.11 1
+    elif [ ${1} == "RHEL10" ]; then
+        sudo dnf update -y
+        sudo dnf install git vim unzip wget bind-utils python3 python3-pip python3-devel tar util-linux-user gcc podman ansible-core make sshpass -y
+        # Python 3.12 is the default in RHEL 10, no alternatives needed
+        echo "Using Python 3.12 (default in RHEL 10)"
+    elif [ ${1} == "CENTOS10" ]; then
+        sudo dnf update -y
+        sudo dnf install git vim unzip wget bind-utils python3 python3-pip python3-devel tar util-linux-user gcc podman ansible-core make sshpass -y
+        # Python 3.12 is the default in CentOS Stream 10, no alternatives needed
+        echo "Using Python 3.12 (default in CentOS Stream 10)"
     fi
 }
 
