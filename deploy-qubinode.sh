@@ -832,6 +832,12 @@ configure_navigator() {
             log_warning "Failed to install Python requirements"
         }
         
+        # Install passlib for Ansible password_hash filter
+        log_info "Ensuring passlib is installed for password hashing..."
+        sudo pip3 install passlib || {
+            log_warning "Failed to install passlib, password operations may fail"
+        }
+        
         # Load variables
         log_info "Loading variables..."
         
@@ -1422,7 +1428,7 @@ main() {
     start_ai_assistant  # Non-blocking, continues even if AI Assistant fails
     get_qubinode_navigator "$MY_DIR" || exit 1
     fix_dns_configuration || exit 1  # Auto-fix DNS configuration in inventory files
-    configure_environment || exit 1
+    # configure_environment || exit 1  # Commented out - users should configure .env manually to avoid overwriting
     deploy_qubinode_infrastructure "$MY_DIR" || exit 1
     verify_deployment || exit 1
     
