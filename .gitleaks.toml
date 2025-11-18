@@ -1,9 +1,9 @@
 # Gitleaks Configuration for Qubinode Navigator
-# Focused on critical security issues only
+# Comprehensive security scan including AI-generated content detection
 
-title = "Qubinode Navigator Security Scan"
+title = "Qubinode Navigator DevSecOps Security Scan"
 
-# Only scan for critical secrets
+# Critical secrets detection
 [[rules]]
 id = "real-passwords"
 description = "Actual passwords (8+ chars, not variables)"
@@ -22,14 +22,77 @@ description = "Private key content"
 regex = '''-----BEGIN [A-Z ]+PRIVATE KEY-----'''
 path = '''.*'''
 
+[[rules]]
+id = "ssh-keys"
+description = "SSH private keys"
+regex = '''ssh-rsa AAAA[0-9A-Za-z+/]+[=]{0,3}'''
+path = '''.*'''
+
+[[rules]]
+id = "jwt-tokens"
+description = "JWT tokens"
+regex = '''eyJ[A-Za-z0-9_/+-]*\.eyJ[A-Za-z0-9_/+-]*\.[A-Za-z0-9._/+-]*'''
+path = '''.*'''
+
+# AI-generated developer notes detection
+[[rules]]
+id = "ai-todo-comments"
+description = "AI-generated TODO comments with implementation details"
+regex = '''(?i)#\s*(TODO|FIXME|HACK|XXX|NOTE):\s*.{20,}'''
+path = '''.*\.(py|sh|yml|yaml|js|ts|md)$'''
+
+[[rules]]
+id = "ai-debug-comments"
+description = "AI-generated debug and temporary comments"
+regex = '''(?i)#\s*(DEBUG|TEMP|REMOVE|DELETE|CLEANUP):\s*.+'''
+path = '''.*\.(py|sh|yml|yaml|js|ts)$'''
+
+[[rules]]
+id = "ai-implementation-notes"
+description = "Detailed implementation notes from AI"
+regex = '''(?i)(implementation note|ai note|claude note|assistant note):\s*.{30,}'''
+path = '''.*\.(md|py|sh|yml|yaml)$'''
+
+[[rules]]
+id = "internal-architecture-details"
+description = "Internal architecture details not for end users"
+regex = '''(?i)(internal implementation|private method|internal use only|not for production).{20,}'''
+path = '''.*\.(md|py|sh|yml|yaml)$'''
+
+# Sensitive configuration patterns
+[[rules]]
+id = "database-urls"
+description = "Database connection URLs with credentials"
+regex = '''(mysql|postgresql|mongodb)://[^:]+:[^@]+@[^/]+'''
+path = '''.*\.(env|yml|yaml|py|sh)$'''
+
+[[rules]]
+id = "cloud-credentials"
+description = "Cloud provider credentials"
+regex = '''(?i)(aws_access_key|azure_client|gcp_key|do_token)\s*[=:]\s*["'][A-Za-z0-9+/]{16,}["']'''
+path = '''.*'''
+
+[[rules]]
+id = "hardcoded-ips"
+description = "Hardcoded internal IP addresses"
+regex = '''(?i)(server|host|endpoint)\s*[=:]\s*["']?(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.)[0-9.]+["']?'''
+path = '''.*\.(env|yml|yaml|py|sh)$'''
+
 # Global allowlists
 [allowlist]
 paths = [
     '''.env.example''',
-    '''docs/''',
+    '''docs/adrs/''',
+    '''docs/deployments/''',
     '''CLEAN-INSTALL-GUIDE.md''',
     '''PRE-COMMIT-CHECKLIST.md''',
     '''ansible_vault_setup.sh''',
+    '''scripts/setup-security-tools.sh''',
+    '''scripts/create-repository-backup.sh''',
+    '''scripts/security-scan.sh''',
+    '''.dev-notes/''',
+    '''docs/internal/''',
+    '''docs/contributors/''',
 ]
 
 regexes = [
@@ -37,8 +100,25 @@ regexes = [
     '''your_.*''',
     '''example''',
     '''placeholder''',
+    '''template''',
+    '''sample''',
     '''\$\{.*\}''',  # Variable substitutions
     '''\$[A-Z_]+''', # Environment variables
     '''Enter the password''', # Interactive prompts
     '''read.*password''',     # Read password commands
+    '''# TODO: (Add|Update|Fix|Implement)''', # Standard TODO patterns
+    '''# FIXME: (Bug|Issue|Problem)''', # Standard FIXME patterns
+    '''localhost''', # Localhost references
+    '''127\.0\.0\.1''', # Localhost IP
+    '''0\.0\.0\.0''', # Bind all interfaces
 ]
+
+# File size limits (in bytes)
+[allowlist.files]
+max-target-megabytes = 10
+
+# Entropy detection settings
+[allowlist.entropy]
+min = 3.0
+max = 8.0
+group = 1
