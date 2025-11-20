@@ -1,0 +1,135 @@
+version: '3.8'
+
+# Apache Airflow Docker Compose Configuration
+# Phase 6 Goal 2: Workflow Orchestration Integration
+# Based on: ADR-0036 (Airflow Integration), ADR-0037 (Git-Based DAG Management)
+
+x-airflow-common:
+  &airflow-common
+  # Custom image with kcli installed for Qubinode VM management
+  build:
+    context: .
+    dockerfile: Dockerfile
+  # Custom image with kcli  # Using public Docker Hub images (not available in Red Hat registries)
+  # Using 2.10.4 (stable 2.x) - Airflow 3.x has breaking changes (webserver → api-server)
+  # Python 3.11 for kcli compatibility (kcli 99.0 has Python 3.12 issues)
+  image: localhost/qubinode-airflow:2.10.4-python3.11
+  environment:
+    &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CORE__FERNET_KEY: ''
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
+    AIRFLOW__WEBSERVER__SECRET_KEY: 'qubinode-navigator-airflow-secret-key-change-in-production'
+    # Nginx reverse proxy configuration
+    # BASE_URL disabled - serving at root path through nginx
+    # AIRFLOW__WEBSERVER__BASE_URL: 'http://YOUR_SERVER_IP/airflow'
+    AIRFLOW__WEBSERVER__ENABLE_PROXY_FIX: 'true'
+    # Qubinode Navigator Integration
+    QUBINODE_AI_ASSISTANT_URL: 'http://host.docker.internal:8000'
+    QUBINODE_KCLI_ENABLED: 'true'
+    QUBINODE_RAG_INTEGRATION: 'true'
+  volumes:
+    - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
+    - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
+    - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
+    - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
+    - ${AIRFLOW_PROJ_DIR:-.}/scripts:/opt/airflow/scripts
+    # Mount libvirt socket for VM management (qemu:///system)
+    - /var/run/libvirt/libvirt-sock:/var/run/libvirt/libvirt-sock
+    - /root/.kcli:/root/.kcli:ro
+  user: "0:0"  # Run as root to access libvirt socket
+  # Add libvirt group for socket access
+  group_add:
+    - "107"  # libvirt group ID (check with: getent group libvirt)
+  depends_on:
+    &airflow-common-depends-on
+    postgres:
+      condition: service_healthy
+
+services:
+  postgres:
+    # Using public Docker Hub official PostgreSQL image
+    image: docker.io/library/postgres:15
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    restart: always
+    ports:
+      - "5432:5432"
+
+  airflow-webserver:
+    <<: *airflow-common
+    command: webserver
+    ports:
+      - "8888:8080"  # Using port 8888 to avoid conflict with AI Assistant on 8080
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-init:
+    <<: *airflow-common
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        mkdir -p /sources/logs /sources/dags /sources/plugins
+        chown -R "${AIRFLOW_UID:-50000}:0" /sources/{logs,dags,plugins}
+        exec /entrypoint airflow version
+    environment:
+      <<: *airflow-common-env
+      _AIRFLOW_DB_MIGRATE: 'true'
+      _AIRFLOW_WWW_USER_CREATE: 'true'
+      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-admin}
+      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-admin}
+    user: "0:0"
+    volumes:
+      - ${AIRFLOW_PROJ_DIR:-.}:/sources
+
+  airflow-cli:
+    <<: *airflow-common
+    profiles:
+      - debug
+    environment:
+      <<: *airflow-common-env
+      CONNECTION_CHECK_MAX_COUNT: "0"
+    command:
+      - bash
+      - -c
+      - airflow
+
+volumes:
+  postgres-db-volume:
