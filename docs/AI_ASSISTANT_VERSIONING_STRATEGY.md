@@ -1,3 +1,7 @@
+---
+nav_exclude: true
+---
+
 # AI Assistant Container Versioning Strategy
 
 ## Overview

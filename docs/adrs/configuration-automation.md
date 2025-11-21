@@ -17,6 +17,7 @@ This section contains ADRs related to configuration management, automation strat
 - **[ADR-0023](adr-0023-enhanced-configuration-management-with-template-support-and-hashicorp-vault-integration.md)**: Enhanced Configuration Management with Template Support and HashiCorp Vault Integration
 - **[ADR-0025](adr-0025-ansible-tooling-modernization-security-strategy.md)**: Ansible Tooling Modernization and Security Strategy
 - **[ADR-0030](adr-0030-software-and-os-update-strategy.md)**: Software and OS Update Strategy
+- **[ADR-0037](adr-0037-git-based-dag-repository-management.md)**: Git-Based DAG Repository Management
 
 ## Key Themes
 

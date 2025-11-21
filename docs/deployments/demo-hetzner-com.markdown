@@ -6,6 +6,11 @@ nav_order: 2
 ---
 
 Deploy to [Hetzner](https://www.hetzner.com/) using the following steps.
+
+> **Documentation status**
+> - Validation: `IN PROGRESS` – Steps have been tested in past environments but may require updates for newer releases.
+> - Last reviewed: 2025-11-21
+> - Community: If you successfully deploy using this guide or encounter issues, please help refine it via [Contributing to docs](../how-to/contribute.md).
 **Tested on**
 * Rocky Linux 9
 
@@ -155,4 +160,10 @@ You may also use Remmina or any other RDP client to access the server.
 ![alt text](image.png)
 ![alt text](<Screenshot from 2024-03-20 18-06-28.png>)
 
-See [OneDev - Git Server with CI/CD, Kanban, and Packages](../plugins/onedev-kcli-pipelines.html) 
+## Next Steps: Orchestrate with Apache Airflow
+
+Once the base environment is deployed, you can use Apache Airflow to orchestrate higher-level workflows and CI/CD-style automation:
+
+- [Airflow Integration Overview](../AIRFLOW-INTEGRATION.md)
+- [Airflow Integration Guide](../airflow-integration-guide.md)
+- [DAG Deployment Workflows](../airflow-dag-deployment-workflows.md)

@@ -1,3 +1,11 @@
+---
+layout: default
+title: ADR-0033 Terminal-Based One-Shot Deployment
+parent: Architecture & Design
+grand_parent: Architectural Decision Records
+nav_order: 0033
+---
+
 # ADR-0033: Terminal-Based One-Shot Deployment Architecture
 
 ## Status

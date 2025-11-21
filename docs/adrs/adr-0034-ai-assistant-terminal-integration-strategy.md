@@ -1,3 +1,11 @@
+---
+layout: default
+title: ADR-0034 AI Terminal Integration
+parent: Architecture & Design
+grand_parent: Architectural Decision Records
+nav_order: 0034
+---
+
 # ADR-0034: AI Assistant Terminal Integration Strategy
 
 ## Status

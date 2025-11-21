@@ -1,3 +1,11 @@
+---
+layout: default
+title: ADR-0038 FastMCP Framework Migration
+parent: Architecture & Design
+grand_parent: Architectural Decision Records
+nav_order: 38
+---
+
 # ADR-0038: FastMCP Framework Migration for MCP Server Implementation
 
 **Status:** Proposed  

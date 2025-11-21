@@ -74,14 +74,38 @@ plugins:
 # Excluded items can be processed by explicitly listing the directories or
 # their entries' file path in the `include:` list.
 #
-# exclude:
-#   - .sass-cache/
-#   - .jekyll-cache/
-#   - gemfiles/
-#   - Gemfile
-#   - Gemfile.lock
-#   - node_modules/
-#   - vendor/bundle/
-#   - vendor/cache/
-#   - vendor/gems/
-#   - vendor/ruby/
+exclude:
+  - .sass-cache/
+  - .jekyll-cache/
+  - gemfiles/
+  - Gemfile
+  - Gemfile.lock
+  - node_modules/
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+  - context/
+  - research/
+  - development/
+  - delivery-notes/
+  - "**/*.json"
+  - "**/todo.md"
+  - "**/machine-specific-todo.md"
+  - AI_*.md
+  - AIRFLOW-*.md
+  - airflow-*.md
+  - CLEAN-INSTALL-GUIDE.md
+  - DEPLOYMENT_INTEGRATION_GUIDE.md
+  - MCP-SERVER-DESIGN.md
+  - UNIFIED-DEPLOYMENT-GUIDE.md
+  - about.markdown
+  - index.md
+  - deployments/
+  - plugins/
+  - github/
+  - gitlab/
+  - security/
+  - user-guides/
+  - vault-setup/
+  - internal/

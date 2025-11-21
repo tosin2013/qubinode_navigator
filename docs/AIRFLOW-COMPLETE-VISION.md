@@ -1,3 +1,7 @@
+---
+nav_exclude: true
+---
+
 # Apache Airflow Integration: Complete Vision & Roadmap
 
 ## 🎯 Executive Summary
@@ -335,17 +339,17 @@ AI analyzes workflow before execution:
 ## 📚 Documentation Index
 
 ### Core ADRs
-- [ADR-0036](docs/adrs/adr-0036-apache-airflow-workflow-orchestration-integration.md) - Airflow Integration
-- [ADR-0037](docs/adrs/adr-0037-git-based-dag-repository-management.md) - Git Repository Management
+- [ADR-0036](./adrs/adr-0036-apache-airflow-workflow-orchestration-integration.md) - Airflow Integration
+- [ADR-0037](./adrs/adr-0037-git-based-dag-repository-management.md) - Git Repository Management
 
 ### Implementation Guides
-- [Integration Guide](docs/airflow-integration-guide.md) - Setup instructions
-- [DAG Deployment Workflows](docs/airflow-dag-deployment-workflows.md) - Deployment methods
-- [Community Ecosystem](docs/airflow-community-ecosystem.md) - Sharing and collaboration
+- [Integration Guide](./airflow-integration-guide.md) - Setup instructions
+- [DAG Deployment Workflows](./airflow-dag-deployment-workflows.md) - Deployment methods
+- [Community Ecosystem](./airflow-community-ecosystem.md) - Sharing and collaboration
 
 ### Architecture
-- [Integration Architecture](docs/INTEGRATION-ARCHITECTURE.md) - Complete system architecture
-- [Bidirectional Learning](docs/airflow-rag-bidirectional-learning.md) - Continuous learning system
+- Integration Architecture - see Airflow Integration Guide and Bidirectional Learning docs
+- [Bidirectional Learning](./airflow-rag-bidirectional-learning.md) - Continuous learning system
 
 ## 🎯 Next Steps
 

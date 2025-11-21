@@ -1,3 +1,11 @@
+---
+layout: default
+title: ADR-0036 Airflow Workflow Orchestration
+parent: Architecture & Design
+grand_parent: Architectural Decision Records
+nav_order: 36
+---
+
 # ADR-0036: Apache Airflow Workflow Orchestration Integration
 
 **Status:** Proposed  

@@ -1,3 +1,11 @@
+---
+layout: default
+title: ADR-0037 Git-Based DAG Repository
+parent: Configuration & Automation
+grand_parent: Architectural Decision Records
+nav_order: 37
+---
+
 # ADR-0037: Git-Based DAG Repository Management
 
 **Status:** Proposed  

@@ -1,4 +1,13 @@
+---
+nav_exclude: true
+---
+
 # DAG Deployment Workflows & Missing Pieces
+
+> **Documentation status**
+> - Validation: `IN PROGRESS` – Example DAG workflows and missing-piece analysis are evolving.
+> - Last reviewed: 2025-11-21
+> - Community: If you adapt these patterns or close some of the identified gaps, please contribute updates via [Contributing to docs](./how-to/contribute.md).
 
 ## Overview
 
@@ -625,7 +634,7 @@ open http://localhost:8080
 ## 📚 Related Documentation
 
 - [ADR-0036](./adrs/adr-0036-apache-airflow-workflow-orchestration-integration.md)
-- [Integration Architecture](./INTEGRATION-ARCHITECTURE.md)
+- [Airflow Vision & Architecture](./AIRFLOW-COMPLETE-VISION.md)
 - [Community Ecosystem](./airflow-community-ecosystem.md)
 - [Bidirectional Learning](./airflow-rag-bidirectional-learning.md)
 

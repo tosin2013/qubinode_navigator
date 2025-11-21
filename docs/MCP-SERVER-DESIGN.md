@@ -1,3 +1,7 @@
+---
+nav_exclude: true
+---
+
 # MCP Server Integration for Qubinode Navigator
 
 ## Overview

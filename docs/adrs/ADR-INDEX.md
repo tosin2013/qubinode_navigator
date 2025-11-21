@@ -1,3 +1,10 @@
+---
+layout: default
+title: ADR Index
+parent: Architectural Decision Records
+nav_order: 1
+---
+
 # Qubinode Navigator - Architecture Decision Records Index
 
 ## Overview

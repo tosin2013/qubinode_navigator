@@ -1,3 +1,7 @@
+---
+nav_exclude: true
+---
+
 # Qubinode Navigator - Clean Installation Guide
 
 ## 🎯 For New Users Starting from a Clean Operating System

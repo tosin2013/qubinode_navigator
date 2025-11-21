@@ -1,3 +1,11 @@
+---
+layout: default
+title: ADR-0026 RHEL 10/CentOS 10 Platform Support
+parent: Infrastructure & Deployment
+grand_parent: Architectural Decision Records
+nav_order: 0026
+---
+
 # ADR-0026: RHEL 10/CentOS 10 Platform Support Strategy
 
 ## Status

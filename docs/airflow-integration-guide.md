@@ -1,3 +1,7 @@
+---
+nav_exclude: true
+---
+
 # Apache Airflow Integration Guide
 
 This guide provides step-by-step instructions for integrating Apache Airflow with the Qubinode Navigator AI Assistant.

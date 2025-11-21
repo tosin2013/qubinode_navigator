@@ -1,3 +1,7 @@
+---
+nav_exclude: true
+---
+
 # AI-Powered Qubinode Navigator Ecosystem Demo
 
 ## 🎯 Your Vision Realized

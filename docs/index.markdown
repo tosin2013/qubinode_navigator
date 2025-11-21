@@ -79,11 +79,11 @@ python3 qubinode_cli.py info --plugin centos_stream10
 
 ## Deployment Options
 
-| Platform | Description | Guide |
-|:---------|:------------|:------|
-| **Hetzner Cloud** | Deploy on Hetzner's cloud infrastructure | [Hetzner Guide](/deployments/demo-hetzner-com.html) |
-| **Red Hat Demo** | Deploy on Red Hat Product Demo System | [Demo Guide](/deployments/demo-redhat-com.html) |
-| **Baremetal** | Deploy on physical hardware | [Baremetal Guide](/deployments/setup-sh.html) |
+| Deployment Method | Description |
+|:---------|:------------|
+| **Automated with Airflow** | Use Apache Airflow for orchestrated, reproducible deployments - see [Airflow Getting Started](/tutorials/airflow-getting-started.html) |
+| **Production Deployment** | Follow best practices for production environments - see [Deploy to Production](/how-to/deploy-to-production.html) |
+| **MCP Integration** | Deploy with Model Context Protocol servers - see [MCP Production Setup](/tutorials/mcp-production-and-client.html) |
 
 ---
 
@@ -121,31 +121,15 @@ Qubinode Navigator follows a **modern, plugin-based architecture** with comprehe
 
 ## Documentation Sections
 
+This site follows the [Diataxis](https://diataxis.fr/) framework for clear, well-organized documentation:
+
 | Section | Description |
 |:--------|:------------|
-| [**Deployment Guides**](/deployments/) | Step-by-step deployment instructions for different platforms |
-| [**Developer Documentation**](/development/) | Contributing guides, development setup, and coding standards |
-| [**Plugins**](/plugins/) | Available plugins and integration guides |
-| [**Security**](/security/) | Security architecture and vault integration guides |
-| [**Research**](/research/) | Technical research and analysis documentation |
-
----
-
-## Getting Started
-
-Ready to deploy OpenShift with Qubinode Navigator? Choose your deployment path:
-
-1. **📖 Read the Documentation**: Start with our [Deployment Documentation](/deployments/) to understand the available options
-2. **🚀 Quick Deploy**: Use the automated setup script for rapid deployment
-3. **🔧 Custom Setup**: Follow platform-specific guides for tailored deployments
-4. **🔒 Security Setup**: Configure [HashiCorp Vault integration](/vault-setup/) for enhanced security
-
-### Next Steps
-
-- [Choose your deployment platform](/deployments/)
-- [Set up your development environment](/development/)
-- [Configure security features](/security/)
-- [Explore available plugins](/plugins/)
+| [**Tutorials**](/tutorials/) | Learning-oriented guides that take you through a process step by step |
+| [**How-To Guides**](/how-to/) | Task-oriented recipes for accomplishing specific goals |
+| [**Reference**](/reference/) | Information-oriented technical descriptions and API documentation |
+| [**Explanation**](/explanation/) | Understanding-oriented discussions that clarify concepts |
+| [**ADRs**](/adrs/) | Architecture Decision Records documenting key design choices |
 
 ---
 
@@ -160,7 +144,7 @@ We welcome contributions from the community! Here's how you can get involved:
 - **💡 Feature Requests**: Suggest new features and enhancements
 - **🔧 Code Contributions**: Submit pull requests with improvements
 
-Read our [Contributing Guide](/development/developers_guide.html) to get started.
+Read our [Contributing Guide](/how-to/contribute.html) to get started.
 
 ### 📞 Support
 

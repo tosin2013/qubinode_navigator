@@ -1,3 +1,11 @@
+---
+layout: default
+title: ADR-0032 AI Community Distribution
+parent: Architecture & Design
+grand_parent: Architectural Decision Records
+nav_order: 0032
+---
+
 # ADR-0032: AI Assistant Community Distribution Strategy
 
 ## Status

@@ -1,5 +1,13 @@
 ---
 layout: default
+title: ADR-0029 ---
+parent: Documentation & User Experience
+grand_parent: Architectural Decision Records
+nav_order: 0029
+---
+
+---
+layout: default
 title: ADR-0029 Documentation Strategy
 parent: Documentation & User Experience
 grand_parent: Architectural Decision Records

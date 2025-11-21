@@ -1,3 +1,11 @@
+---
+layout: default
+title: ADR-0025 Ansible ToolingTooling Modernization
+parent: Configuration & Automation
+grand_parent: Architectural Decision Records
+nav_order: 0025
+---
+
 # ADR-0025: Ansible Tooling Stack Modernization and Security Update Strategy
 
 ## Status

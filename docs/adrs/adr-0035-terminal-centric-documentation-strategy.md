@@ -1,3 +1,11 @@
+---
+layout: default
+title: ADR-0035 Terminal-Centric Documentation
+parent: Documentation & User Experience
+grand_parent: Architectural Decision Records
+nav_order: 0035
+---
+
 # ADR-0035: Terminal-Centric Documentation Strategy
 
 ## Status

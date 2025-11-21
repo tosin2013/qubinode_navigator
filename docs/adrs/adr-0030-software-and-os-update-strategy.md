@@ -1,3 +1,11 @@
+---
+layout: default
+title: ADR-0030 Software
+parent: Configuration & Automation
+grand_parent: Architectural Decision Records
+nav_order: 0030
+---
+
 # ADR-0030: Software and OS Update Strategy
 
 ## Status
