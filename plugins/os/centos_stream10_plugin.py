@@ -57,7 +57,7 @@ class CentOSStream10Plugin(QubiNodePlugin):
         # Set configuration constants for next-generation deployment
         self.kvm_version = self.config.get('kvm_version', '0.9.0')  # Next-gen version
         self.ansible_safe_version = self.config.get('ansible_safe_version', '0.1.0')
-        self.git_repo = self.config.get('git_repo', 'https://github.com/tosin2013/qubinode_navigator.git')
+        self.git_repo = self.config.get('git_repo', 'https://github.com/Qubinode/qubinode_navigator.git')
         
         # Set packages optimized for CentOS Stream 10 / RHEL 10
         self.packages = self.config.get('packages', [

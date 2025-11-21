@@ -53,7 +53,7 @@
 KVM_VERSION=0.8.0  # Container image version compatible with RHEL 8
 export ANSIBLE_SAFE_VERSION="0.0.14"  # AnsibleSafe version for RHEL 8 compatibility
 
-export GIT_REPO="https://github.com/tosin2013/qubinode_navigator.git"
+export GIT_REPO="https://github.com/Qubinode/qubinode_navigator.git"
 
 # Root privilege validation (required for RHEL 8 system configuration)
 if [[ $EUID -ne 0 ]]; then
@@ -438,7 +438,7 @@ function confiure_lvm_storage(){
     echo "************************"
     if [ ! -f /tmp/configure-lvm.sh ];
     then 
-        curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/dependancies/equinix-rocky/configure-lvm.sh
+        curl -OL https://raw.githubusercontent.com/Qubinode/qubinode_navigator/main/dependancies/equinix-rocky/configure-lvm.sh
         mv configure-lvm.sh /tmp/configure-lvm.sh
         sudo chmod +x /tmp/configure-lvm.sh
     fi 

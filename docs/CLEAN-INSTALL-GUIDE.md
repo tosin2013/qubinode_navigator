@@ -43,7 +43,7 @@ cat /etc/redhat-release
 ### **Step 1: Download and Run**
 ```bash
 # Clone the repository
-git clone https://github.com/tosin2013/qubinode_navigator.git
+git clone https://github.com/Qubinode/qubinode_navigator.git
 cd qubinode_navigator
 
 # Run the one-shot deployment
@@ -130,7 +130,7 @@ sudo dnf update -y
 sudo dnf install -y git
 
 # Clone repository
-git clone https://github.com/tosin2013/qubinode_navigator.git
+git clone https://github.com/Qubinode/qubinode_navigator.git
 cd qubinode_navigator
 ```
 

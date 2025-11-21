@@ -288,7 +288,7 @@ For issues or questions:
 1. Check this guide first
 2. Review logs: `podman logs airflow-mcp-server`
 3. Test with curl: `curl http://localhost:8889/sse`
-4. Check GitHub issues: [tosin2013/qubinode_navigator](https://github.com/tosin2013/qubinode_navigator)
+4. Check GitHub issues: [Qubinode/qubinode_navigator](https://github.com/Qubinode/qubinode_navigator)
 
 ---
 

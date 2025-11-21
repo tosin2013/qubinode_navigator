@@ -76,7 +76,7 @@ export QUBINODE_CLUSTER_NAME="${QUBINODE_CLUSTER_NAME:-qubinode}"
 export QUBINODE_DEPLOYMENT_MODE="${QUBINODE_DEPLOYMENT_MODE:-production}"
 
 # Integration with existing Qubinode Navigator architecture
-export GIT_REPO="https://github.com/tosin2013/qubinode_navigator.git"
+export GIT_REPO="https://github.com/Qubinode/qubinode_navigator.git"
 export CICD_PIPELINE="${CICD_PIPELINE:-false}"
 export INVENTORY="${INVENTORY:-localhost}"
 export USE_HASHICORP_VAULT="${USE_HASHICORP_VAULT:-false}"

@@ -12,7 +12,7 @@ Follow these instructions to run the setup.sh script:
 2. Clone the qubinode_navigator repository:
 
 ```bash
-git clone https://github.com/tosin2013/qubinode_navigator.git
+git clone https://github.com/Qubinode/qubinode_navigator.git
 ```
 
 3. Change directory to the qubinode_navigator folder:

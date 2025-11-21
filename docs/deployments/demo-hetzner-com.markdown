@@ -76,7 +76,7 @@ export FORWARDER='1.1.1.1'
 export ACTIVE_BRIDGE='false'
 export INTERFACE=bond0
 export USE_ROUTE53=true
-export GIT_REPO=https://github.com/tosin2013/qubinode_navigator.git
+export GIT_REPO=https://github.com/Qubinode/qubinode_navigator.git
 export INVENTORY=hetzner
 export SSH_PASSWORD=${SSH_PASSWORD}
 EOF
@@ -106,7 +106,7 @@ export FORWARDER='1.1.1.1'
 export ACTIVE_BRIDGE='false'
 export INTERFACE=bond0
 export USE_ROUTE53=true
-export GIT_REPO=https://github.com/tosin2013/qubinode_navigator.git
+export GIT_REPO=https://github.com/Qubinode/qubinode_navigator.git
 export INVENTORY=hetzner
 export SSH_PASSWORD=${SSH_PASSWORD}
 export HCP_CLIENT_ID="your-client-id"
@@ -125,7 +125,7 @@ sudo dnf install -y tmux curl git vim
 git clone https://github.com/gpakosz/.tmux.git
 ln -s -f .tmux/.tmux.conf
 cp .tmux/.tmux.conf.local .
-curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/rocky-linux-hetzner.sh
+curl -OL https://raw.githubusercontent.com/Qubinode/qubinode_navigator/main/rocky-linux-hetzner.sh
 chmod +x rocky-linux-hetzner.sh
 tmux new-session -s rocky-linux-hetzner
 source notouch.env && sudo -E  ./rocky-linux-hetzner.sh
