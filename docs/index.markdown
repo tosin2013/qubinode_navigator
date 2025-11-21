@@ -13,7 +13,7 @@ Modern AI-enhanced, container-first infrastructure automation platform with modu
 {: .fs-6 .fw-300 }
 
 [Get started now](#getting-started){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
-[View on GitHub](https://github.com/tosin2013/qubinode_navigator){: .btn .fs-5 .mb-4 .mb-md-0 }
+[View on GitHub](https://github.com/Qubinode/qubinode_navigator){: .btn .fs-5 .mb-4 .mb-md-0 }
 
 ---
 
@@ -48,7 +48,7 @@ Qubinode Navigator is a next-generation infrastructure automation platform built
 
 ```bash
 # Clone the repository
-git clone https://github.com/tosin2013/qubinode_navigator.git
+git clone https://github.com/Qubinode/qubinode_navigator.git
 cd qubinode_navigator
 
 # Run the modernized setup script with plugin framework
@@ -148,7 +148,7 @@ Read our [Contributing Guide](/how-to/contribute.html) to get started.
 
 ### 📞 Support
 
-- **GitHub Issues**: [Report bugs and request features](https://github.com/tosin2013/qubinode_navigator/issues)
+- **GitHub Issues**: [Report bugs and request features](https://github.com/Qubinode/qubinode_navigator/issues)
 - **Documentation**: Comprehensive guides and troubleshooting
 - **Community**: Join discussions and share experiences
 
@@ -156,7 +156,7 @@ Read our [Contributing Guide](/how-to/contribute.html) to get started.
 
 ## License
 
-This project is licensed under the [GNU General Public License v3.0](https://github.com/tosin2013/qubinode_navigator/blob/main/LICENSE).
+This project is licensed under the [GNU General Public License v3.0](https://github.com/Qubinode/qubinode_navigator/blob/main/LICENSE).
 
 ---
 

@@ -14,7 +14,7 @@ The script consists of several major functions:
 * `setup_kcli_base`: Sets up KCLI (Kubernetes Cluster Lifecycle Interface) and configures images for the Qubinode cluster.
 * `show_help`: Displays help information for the script.
 
-[Full Script](https://github.com/tosin2013/qubinode_navigator/blob/main/rhel8-linux-hypervisor.sh)
+[Full Script](https://github.com/Qubinode/qubinode_navigator/blob/main/rhel8-linux-hypervisor.sh)
 
 **Key Code Snippets**
 
@@ -31,7 +31,7 @@ This code snippet checks the current working directory and changes it if necessa
 1. The `confiure_lvm_storage` function uses `curl` to download a configuration script from GitHub and then executes it using `sudo`. For example:
 ```bash
 if [ ! -f /tmp/configure-lvm.sh ]; then
-    curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/dependancies/equinix-rocky/configure-lvm.sh
+    curl -OL https://raw.githubusercontent.com/Qubinode/qubinode_navigator/main/dependancies/equinix-rocky/configure-lvm.sh
     mv configure-lvm.sh /tmp/configure-lvm.sh
     sudo chmod +x /tmp/configure-lvm.sh
 fi
@@ -77,6 +77,6 @@ When modifying or extending the script, follow these best practices:
 
 For further information on the Qubinode Navigator script, refer to the following resources:
 
-* [Qubinode project documentation](https://github.com/tosin2013/qubinode_navigator/blob/main/docs/README.md)
+* [Qubinode project documentation](https://github.com/Qubinode/qubinode_navigator/blob/main/docs/README.md)
 * [FreeIPA documentation](https://freeipa.org/documentation/)
 * [KCLI documentation](https://kcli.readthedocs.io/en/latest/)

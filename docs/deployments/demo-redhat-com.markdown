@@ -51,7 +51,7 @@ export FORWARDER='1.1.1.1'
 export ACTIVE_BRIDGE='false'
 export INTERFACE=bond0
 export USE_ROUTE53=true
-export GIT_REPO=https://github.com/tosin2013/qubinode_navigator.git
+export GIT_REPO=https://github.com/Qubinode/qubinode_navigator.git
 export INVENTORY=rhel9-equinix
 export SSH_PASSWORD=${SSH_PASSWORD}
 EOF
@@ -81,7 +81,7 @@ export USE_ROUTE53=true
 export ZONE_NAME=${DOMAIN}
 export USE_HASHICORP_VAULT='true'
 export USE_HASHICORP_CLOUD='true'
-export GIT_REPO=https://github.com/tosin2013/qubinode_navigator.git
+export GIT_REPO=https://github.com/Qubinode/qubinode_navigator.git
 export INVENTORY=rhel9-equinix
 export SSH_PASSWORD=${SSH_PASSWORD}
 export HCP_CLIENT_ID="your-client-id"
@@ -97,7 +97,7 @@ $ vi notouch.env
 **Run the following commands as lab-user**  
 ```bash
 sudo dnf install -y tmux curl git vim 
-curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/rhel9-linux-hypervisor.sh 
+curl -OL https://raw.githubusercontent.com/Qubinode/qubinode_navigator/main/rhel9-linux-hypervisor.sh 
 chmod +x rhel9-linux-hypervisor.sh
 tmux new-session -s rhel9-linux-hypervisor 
 source notouch.env && sudo -E  ./rhel9-linux-hypervisor.sh

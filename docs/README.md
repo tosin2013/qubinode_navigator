@@ -18,7 +18,7 @@ The site will be available at `http://localhost:4000`
 
 The documentation is automatically deployed to GitHub Pages via GitHub Actions when changes are pushed to the `main` branch.
 
-**Live Site**: https://tosin2013.github.io/qubinode_navigator
+**Live Site**: https://qubinode.github.io/qubinode_navigator
 
 ## Structure
 

@@ -28,7 +28,7 @@ Deploy to [Red Hat Product Demo System](https://connect.redhat.com/en/training/p
 ssh root@your-demo-server.opentlc.com
 
 # Clone Qubinode Navigator
-git clone https://github.com/tosin2013/qubinode_navigator.git
+git clone https://github.com/Qubinode/qubinode_navigator.git
 cd qubinode_navigator
 ```
 
@@ -267,7 +267,7 @@ ssh lab-user@your-server.opentlc.com
 ### **Legacy Process (Old Way)**
 ```bash
 # OLD: Manual multi-step process
-curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/rhel9-linux-hypervisor.sh
+curl -OL https://raw.githubusercontent.com/Qubinode/qubinode_navigator/main/rhel9-linux-hypervisor.sh
 # Manually create /tmp/config.yml
 # Manually create notouch.env
 # Run rhel9-linux-hypervisor.sh
@@ -278,7 +278,7 @@ curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/rhe
 ### **Modern Process (New Way)**
 ```bash
 # NEW: AI-enhanced one-shot deployment
-git clone https://github.com/tosin2013/qubinode_navigator.git
+git clone https://github.com/Qubinode/qubinode_navigator.git
 cd qubinode_navigator
 # Create /tmp/config.yml (AI can guide you)
 cp .env.example .env

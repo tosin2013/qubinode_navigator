@@ -9,7 +9,7 @@ COMMIT_HASH=$(git rev-parse HEAD)
 echo "📝 Latest commit: $COMMIT_HASH"
 
 # Repository info
-REPO_URL="https://github.com/tosin2013/qubinode_navigator"
+REPO_URL="https://github.com/Qubinode/qubinode_navigator"
 ACTIONS_URL="$REPO_URL/actions"
 
 echo ""
@@ -23,7 +23,7 @@ echo ""
 # Check if gh CLI is available for more detailed status
 if command -v gh &> /dev/null; then
     echo "📊 GitHub CLI Status:"
-    gh run list --limit 5 --repo tosin2013/qubinode_navigator
+    gh run list --limit 5 --repo Qubinode/qubinode_navigator
 else
     echo "💡 Install GitHub CLI (gh) for detailed workflow status"
     echo "   Visit the Actions URL above to monitor deployment progress"

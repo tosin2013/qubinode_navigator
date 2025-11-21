@@ -52,7 +52,7 @@ These guides describe how to configure `notouch.env`, `/tmp/config.yml`, and oth
 On the prepared host, the primary production entry point is:
 
 ```bash
-git clone https://github.com/tosin2013/qubinode_navigator.git
+git clone https://github.com/Qubinode/qubinode_navigator.git
 cd qubinode_navigator
 
 ./deploy-qubinode-with-airflow.sh

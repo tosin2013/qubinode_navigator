@@ -34,7 +34,7 @@ set -e
 
 # 📊 GLOBAL VARIABLES
 export ANSIBLE_SAFE_VERSION="0.0.14"
-export GIT_REPO="https://github.com/tosin2013/qubinode_navigator.git"
+export GIT_REPO="https://github.com/Qubinode/qubinode_navigator.git"
 export PLUGIN_FRAMEWORK_VERSION="1.0.0"
 
 if [ -z "$CICD_PIPELINE" ]; then

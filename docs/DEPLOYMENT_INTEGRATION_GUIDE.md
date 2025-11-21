@@ -121,7 +121,7 @@ inventories/
 **1. Hetzner Cloud Users:**
 ```bash
 # OLD WAY (demo-hetzner-com.markdown)
-curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/rocky-linux-hetzner.sh
+curl -OL https://raw.githubusercontent.com/Qubinode/qubinode_navigator/main/rocky-linux-hetzner.sh
 chmod +x rocky-linux-hetzner.sh
 source notouch.env && sudo -E ./rocky-linux-hetzner.sh
 
@@ -134,7 +134,7 @@ cp .env.example .env
 **2. Red Hat Demo System Users:**
 ```bash
 # OLD WAY (demo-redhat-com.markdown)  
-curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/rhel9-linux-hypervisor.sh
+curl -OL https://raw.githubusercontent.com/Qubinode/qubinode_navigator/main/rhel9-linux-hypervisor.sh
 chmod +x rhel9-linux-hypervisor.sh
 source notouch.env && sudo -E ./rhel9-linux-hypervisor.sh
 
