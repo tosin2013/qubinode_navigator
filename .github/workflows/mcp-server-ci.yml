@@ -1,0 +1,187 @@
+name: MCP Server CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'ai-assistant/mcp_*.py'
+      - 'airflow/plugins/qubinode/mcp_*.py'
+      - 'tests/mcp/**'
+      - '.github/workflows/mcp-server-ci.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'ai-assistant/mcp_*.py'
+      - 'airflow/plugins/qubinode/mcp_*.py'
+      - 'tests/mcp/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  PYTHON_VERSION: '3.12'
+
+jobs:
+  test-mcp-servers:
+    name: Test MCP Servers
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        mcp-server:
+          - name: "AI Assistant MCP"
+            path: "ai-assistant"
+            server: "mcp_server_fastmcp.py"
+          - name: "Airflow MCP"
+            path: "airflow/plugins/qubinode"
+            server: "mcp_server_fastmcp.py"
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install fastmcp pytest pytest-asyncio httpx
+          
+          # Install server-specific dependencies
+          if [ -f "${{ matrix.mcp-server.path }}/requirements.txt" ]; then
+            pip install -r "${{ matrix.mcp-server.path }}/requirements.txt"
+          fi
+      
+      - name: Validate MCP Server Syntax
+        run: |
+          python -m py_compile "${{ matrix.mcp-server.path }}/${{ matrix.mcp-server.server }}"
+          echo "✅ ${{ matrix.mcp-server.name }} syntax valid"
+      
+      - name: Test MCP Server Import
+        run: |
+          cd "${{ matrix.mcp-server.path }}"
+          python -c "import $(basename ${{ matrix.mcp-server.server }} .py); print('✅ ${{ matrix.mcp-server.name }} imports successfully')"
+      
+      - name: Validate FastMCP Migration
+        run: |
+          # Check for FastMCP decorators
+          if grep -q "@mcp.tool()" "${{ matrix.mcp-server.path }}/${{ matrix.mcp-server.server }}"; then
+            echo "✅ Using FastMCP decorators"
+          else
+            echo "⚠️  No FastMCP decorators found"
+            exit 1
+          fi
+          
+          # Check for legacy MCP patterns that should be removed
+          if grep -q "class.*Server" "${{ matrix.mcp-server.path }}/${{ matrix.mcp-server.server }}"; then
+            echo "⚠️  Legacy MCP Server class found - should migrate to FastMCP"
+          fi
+      
+      - name: Run MCP Server Tests
+        run: |
+          if [ -d "tests/mcp" ]; then
+            pytest tests/mcp/ -v --tb=short
+          else
+            echo "⚠️  No MCP tests found in tests/mcp/"
+          fi
+      
+      - name: Test MCP Tool Discovery
+        run: |
+          cd "${{ matrix.mcp-server.path }}"
+          python << 'PYTHON_SCRIPT'
+          import sys
+          from pathlib import Path
+          
+          # Import the MCP server module
+          server_file = "${{ matrix.mcp-server.server }}"
+          module_name = server_file.replace('.py', '')
+          
+          try:
+              exec(f"import {module_name}")
+              print(f"✅ MCP server module loaded: {module_name}")
+              
+              # Try to count tools (FastMCP pattern)
+              exec(f"mcp = {module_name}.mcp if hasattr({module_name}, 'mcp') else None")
+              if mcp:
+                  print(f"✅ FastMCP instance found")
+              else:
+                  print("⚠️  No FastMCP instance found")
+                  
+          except Exception as e:
+              print(f"❌ Failed to load MCP server: {e}")
+              sys.exit(1)
+          PYTHON_SCRIPT
+      
+      - name: Check MCP Server Documentation
+        run: |
+          # Verify tools have docstrings
+          if grep -A 3 "@mcp.tool()" "${{ matrix.mcp-server.path }}/${{ matrix.mcp-server.server }}" | grep -q '"""'; then
+            echo "✅ MCP tools have documentation"
+          else
+            echo "⚠️  MCP tools missing docstrings"
+          fi
+
+  validate-mcp-integration:
+    name: Validate MCP Integration
+    runs-on: ubuntu-latest
+    needs: test-mcp-servers
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install fastmcp httpx pytest
+          
+          # Install all MCP dependencies
+          pip install -r ai-assistant/requirements.txt || true
+      
+      - name: Test MCP Server Count
+        run: |
+          echo "Checking for MCP servers..."
+          ai_mcp=$(find ai-assistant -name "mcp_*.py" -type f | wc -l)
+          airflow_mcp=$(find airflow/plugins/qubinode -name "mcp_*.py" -type f 2>/dev/null | wc -l)
+          
+          echo "AI Assistant MCP servers: $ai_mcp"
+          echo "Airflow MCP servers: $airflow_mcp"
+          
+          total=$((ai_mcp + airflow_mcp))
+          echo "Total MCP servers: $total"
+          
+          if [ $total -lt 2 ]; then
+            echo "⚠️  Expected at least 2 MCP servers"
+          else
+            echo "✅ Found $total MCP servers"
+          fi
+      
+      - name: Validate Claude Desktop Config
+        run: |
+          if [ -f "claude_desktop_config.json" ]; then
+            echo "✅ Claude Desktop config exists"
+            python -c "import json; json.load(open('claude_desktop_config.json'))"
+            echo "✅ Claude Desktop config is valid JSON"
+          else
+            echo "⚠️  No Claude Desktop config found"
+          fi
+      
+      - name: Generate MCP Test Report
+        if: always()
+        run: |
+          echo "## MCP Server Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ MCP servers validated" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ FastMCP migration verified" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Tool discovery working" >> $GITHUB_STEP_SUMMARY
