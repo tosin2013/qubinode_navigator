@@ -71,7 +71,7 @@ jobs:
           python -m pytest tests/test_diagnostic_tools.py -v --cov=src --cov-report=xml --cov-report=term
           
       - name: Upload diagnostic tools coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
           file: ./ai-assistant/coverage.xml
           flags: diagnostic-tools
@@ -101,7 +101,7 @@ jobs:
           python -m pytest tests/test_ai_assistant_plugin.py -v --cov=plugins/services --cov-report=xml --cov-report=term
           
       - name: Upload plugin integration coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
           file: ./coverage.xml
           flags: plugin-integration
