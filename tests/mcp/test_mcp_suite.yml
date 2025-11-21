@@ -1,0 +1,106 @@
+---
+- name: Comprehensive MCP Server Test Suite
+  hosts: localhost
+  gather_facts: false
+  vars:
+    ai_mcp_port: 8081
+    airflow_mcp_port: 8889
+    ai_api_key: "{{ lookup('env', 'MCP_API_KEY') | default('74008c5dde3fca81946c7a5c019ee1e64aef85dbe7a08c2ea9a709bdcfae1e0f') }}"
+    airflow_api_key: "{{ lookup('env', 'AIRFLOW_MCP_API_KEY') | default('65efb281f1ea9dc8498ec563f7bf42af4f8bf8a6b7bb542141902ce462cdb98a') }}"
+  
+  tasks:
+    - name: Run AI Assistant Test Suite
+      tosin2013.mcp_audit.mcp_test_suite:
+        transport: sse
+        server_url: "http://localhost:{{ ai_mcp_port }}/sse"
+        server_headers:
+          X-API-Key: "{{ ai_api_key }}"
+        tests:
+          - type: tool
+            name: "Test Document Query"
+            tool_name: query_documents
+            tool_arguments:
+              query: "kcli commands"
+              max_results: 5
+          
+          - type: tool
+            name: "Test AI Chat"
+            tool_name: chat_with_context
+            tool_arguments:
+              message: "Hello"
+          
+          - type: tool
+            name: "Test Status Check"
+            tool_name: get_project_status
+            tool_arguments: {}
+        
+        fail_on_error: false
+      register: ai_suite_results
+      tags: [suite, ai]
+
+    - name: Display AI Suite Results
+      ansible.builtin.debug:
+        msg: |
+          AI Assistant Test Suite Results:
+          Total: {{ ai_suite_results.test_summary.total_tests }}
+          Passed: {{ ai_suite_results.test_summary.passed }}
+          Failed: {{ ai_suite_results.test_summary.failed }}
+          Success Rate: {{ ai_suite_results.test_summary.success_rate }}%
+      tags: [suite, ai]
+
+    - name: Run Airflow Test Suite
+      tosin2013.mcp_audit.mcp_test_suite:
+        transport: sse
+        server_url: "http://localhost:{{ airflow_mcp_port }}/sse"
+        server_headers:
+          X-API-Key: "{{ airflow_api_key }}"
+        tests:
+          - type: tool
+            name: "List DAGs"
+            tool_name: list_dags
+            tool_arguments: {}
+          
+          - type: tool
+            name: "List VMs"
+            tool_name: list_vms
+            tool_arguments: {}
+        
+        fail_on_error: false
+      register: airflow_suite_results
+      tags: [suite, airflow]
+
+    - name: Display Airflow Suite Results
+      ansible.builtin.debug:
+        msg: |
+          Airflow Test Suite Results:
+          Total: {{ airflow_suite_results.test_summary.total_tests }}
+          Passed: {{ airflow_suite_results.test_summary.passed }}
+          Failed: {{ airflow_suite_results.test_summary.failed }}
+          Success Rate: {{ airflow_suite_results.test_summary.success_rate }}%
+      tags: [suite, airflow]
+
+    - name: Generate Combined Test Report
+      ansible.builtin.copy:
+        content: |
+          # Comprehensive MCP Test Report
+          
+          **Date:** {{ ansible_date_time.iso8601 }}
+          
+          ## AI Assistant MCP (Port {{ ai_mcp_port }})
+          - Total Tests: {{ ai_suite_results.test_summary.total_tests }}
+          - Passed: {{ ai_suite_results.test_summary.passed }}
+          - Failed: {{ ai_suite_results.test_summary.failed }}
+          - Success Rate: {{ ai_suite_results.test_summary.success_rate }}%
+          
+          ## Airflow MCP (Port {{ airflow_mcp_port }})
+          - Total Tests: {{ airflow_suite_results.test_summary.total_tests }}
+          - Passed: {{ airflow_suite_results.test_summary.passed }}
+          - Failed: {{ airflow_suite_results.test_summary.failed }}
+          - Success Rate: {{ airflow_suite_results.test_summary.success_rate }}%
+          
+          ## Overall
+          - Total Tests: {{ ai_suite_results.test_summary.total_tests + airflow_suite_results.test_summary.total_tests }}
+          - Total Passed: {{ ai_suite_results.test_summary.passed + airflow_suite_results.test_summary.passed }}
+          - Total Failed: {{ ai_suite_results.test_summary.failed + airflow_suite_results.test_summary.failed }}
+        dest: "/root/qubinode_navigator/tests/mcp/comprehensive_test_report.md"
+      tags: [report]

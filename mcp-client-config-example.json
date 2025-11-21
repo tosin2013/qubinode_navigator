@@ -1,0 +1,28 @@
+{
+  "mcpServers": {
+    "qubinode-ai-assistant": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "http://localhost:8081/sse"
+      ],
+      "env": {
+        "MCP_API_KEY": "74008c5dde3fca81946c7a5c019ee1e64aef85dbe7a08c2ea9a709bdcfae1e0f"
+      },
+      "description": "Qubinode AI Assistant - RAG and chat capabilities (FastMCP)"
+    },
+    "qubinode-airflow": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "http://localhost:8889/sse"
+      ],
+      "env": {
+        "MCP_API_KEY": "65efb281f1ea9dc8498ec563f7bf42af4f8bf8a6b7bb542141902ce462cdb98a"
+      },
+      "description": "Qubinode Airflow - DAG and VM management (FastMCP)"
+    }
+  }
+}

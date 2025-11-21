@@ -7,7 +7,9 @@ Qubinode Navigator is an AI-enhanced, container-first infrastructure automation 
 ## 🚀 Key Features
 
 - **🔌 Modular Plugin Architecture**: Extensible framework with OS, cloud provider, and deployment plugins
-- **🤖 AI-Powered Assistance**: CPU-based AI deployment assistant with interactive guidance (planned)
+- **🤖 AI-Powered MCP Servers**: Model Context Protocol integration for LLM-driven infrastructure management
+  - **Airflow MCP Server**: DAG management and VM operations (9 tools)
+  - **AI Assistant MCP Server**: RAG-powered documentation search and chat (3 tools)
 - **📦 Container-First Execution**: All deployments use Ansible Navigator with standardized execution environments
 - **🌐 Multi-Cloud Support**: Equinix, Hetzner, AWS, and bare-metal deployments
 - **🔒 Enterprise Security**: Ansible Vault integration with HashiCorp Vault support
@@ -68,6 +70,8 @@ Qubinode Navigator follows a **container-first, plugin-based architecture**:
 ## 📚 Documentation
 
 - **[Complete Documentation](https://tosin2013.github.io/qubinode_navigator/)** - Full documentation website
+- **[MCP Quick Start](MCP-QUICK-START.md)** - Get started with MCP servers in 5 minutes
+- **[MCP Implementation Guide](FASTMCP-COMPLETE.md)** - Complete FastMCP migration details
 - **[Architecture Decision Records](docs/adrs/)** - Design decisions and rationale
 - **[Implementation Plan](docs/IMPLEMENTATION-PLAN.md)** - Current development status
 - **[Developer Guide](https://tosin2013.github.io/qubinode_navigator/development/developers_guide.html)** - Contributing guidelines

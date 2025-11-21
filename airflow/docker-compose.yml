@@ -31,6 +31,14 @@ x-airflow-common:
     QUBINODE_AI_ASSISTANT_URL: 'http://host.docker.internal:8000'
     QUBINODE_KCLI_ENABLED: 'true'
     QUBINODE_RAG_INTEGRATION: 'true'
+    # MCP Server Configuration (opt-in feature)
+    AIRFLOW_MCP_ENABLED: ${AIRFLOW_MCP_ENABLED:-false}
+    AIRFLOW_MCP_PORT: ${AIRFLOW_MCP_PORT:-8889}
+    AIRFLOW_MCP_API_KEY: ${AIRFLOW_MCP_API_KEY:-}
+    AIRFLOW_MCP_TOOLS_DAG_MGMT: ${AIRFLOW_MCP_TOOLS_DAG_MGMT:-true}
+    AIRFLOW_MCP_TOOLS_VM_OPS: ${AIRFLOW_MCP_TOOLS_VM_OPS:-true}
+    AIRFLOW_MCP_TOOLS_LOG_ACCESS: ${AIRFLOW_MCP_TOOLS_LOG_ACCESS:-true}
+    AIRFLOW_MCP_TOOLS_READ_ONLY: ${AIRFLOW_MCP_TOOLS_READ_ONLY:-false}
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
@@ -99,6 +107,26 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+
+  airflow-mcp-server:
+    <<: *airflow-common
+    entrypoint: /bin/bash
+    command: -c "python3 /opt/airflow/plugins/qubinode/mcp_server_fastmcp.py"
+    ports:
+      - "8889:8889"  # Airflow MCP Server (FastMCP/SSE)
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8889/sse"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+    profiles:
+      - mcp  # Optional profile - enable with: docker-compose --profile mcp up
 
   airflow-init:
     <<: *airflow-common

@@ -14,6 +14,7 @@ This document provides a comprehensive index of all Architecture Decision Record
 - **[ADR-0027](adr-0027-cpu-based-ai-deployment-assistant-architecture.md)**: CPU-Based AI Deployment Assistant Architecture
 - **[ADR-0032](adr-0032-ai-assistant-community-distribution-strategy.md)**: AI Assistant Community Distribution Strategy
 - **[ADR-0034](adr-0034-ai-assistant-terminal-integration-strategy.md)**: AI Assistant Terminal Integration Strategy
+- **[ADR-0038](adr-0038-fastmcp-framework-migration.md)**: FastMCP Framework Migration for MCP Servers ⭐ *New*
 
 ### 🖥️ Platform Support
 - **[ADR-0005](adr-0005-kvm-libvirt-virtualization-platform.md)**: KVM/Libvirt Virtualization Platform Choice
@@ -90,6 +91,7 @@ ADR-0004 (Security Architecture)
 
 ### 🚧 In Progress
 - Documentation strategy implementation (ADR-0029, ADR-0035)
+- FastMCP framework migration (ADR-0038) - PoC Complete ✅
 
 ### 📋 Planned
 - Software update automation (ADR-0030)

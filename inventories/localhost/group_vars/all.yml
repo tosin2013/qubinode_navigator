@@ -1,148 +1,80 @@
----
-######################################
-#         USER VARIABLES             #
-# The are automatically updated or   #
-# you can update them manually       #
-######################################
-# Config Directory
-project_dir: /opt/qubifalsede-installer
-
-# The name of the admin user for your system
 admin_user: lab-user
-
-# Users whose shell will be configured (required by kvmhost_setup collection)
-users:
-  - lab-user
-
-# Bridge interface name (required for network configuration)
-bridge_name: "qubibr0"
-
-# DNS Configuration (using collection's expected variable names)
-dns_forwarder: "1.1.1.1"
-primary_dns_server: "1.1.1.1"
-kvm_host_dns_server: "1.1.1.1"
-kvm_host_domain: "example.com"
-search_domains:
-  - "example.com"
-qubinode_dns_servers:
-  - "1.1.1.1"
-  - "8.8.8.8"
-
-# The domain name for your system  
-domain: "lab.local"
-
-# RHEL Version
-rhel_version: ""
-
-#####
-# RHPDS Settings
-# Set run_on_rhpds to 'yes' to run your system on RHPDS.
-# Set run_kni_lab_on_rhpds to 'yes' to run a KNI lab on RHPDS.
-# Set one_redhat to 'yes' if you have a One Red Hat account.
-#####
-run_on_rhpds: false
-run_kni_lab_on_rhpds: false
-one_redhat: false
-
-
-#####
-# Application Dependencies
-# Set ansible_automation_platform to 'true' to install the Ansible Automation Platform.
-# Set enable_ceph_deployment to 'true' to enable Ceph deployment.
-#####
 ansible_automation_platform: false
-enable_ceph_deployment: false
-
-# PTR - The PTR record that should be used for your system
-qubifalsede_ptr: changeme.in-addr.arpa
-
-# Public DNS server
-# The IP address of the DNS server that your system will use
-dns_forwarder: "8.8.8.8"
-
-# swygue-redhat-subscription Role
-# Set rhsm_reg_method to 'username_pass' to use a Red Hat account.
-# Set rhsm_reg_method to 'rhsm' to use the Red Hat Subscription Manager.
-rhsm_reg_method: ""
-
-######################################
-#         SYSTEM VARIABLES           #
-# You shouldn't need to change these #
-######################################
-
-# Ansible 2.6 is rhel-7-server-ansible-2.6-rpms
-# Ansible 2.9 on rhel 7  rhel-7-server-ansible-2.9-rpms
-rhel7_ansible_repo: rhel-7-server-ansible-2.9-rpms
-rhel8_ansible_repo: ansible-2.9-for-rhel-8-x86_64-rpms
-ansible_version: 2.9.10
 ansible_release: 2.9
-rhel8_version: 8.6
-rhel7_version: 7.9
-
-# All VMs created name will begin with this prefix.
-instance_prefix: qbn
-preappend_host_name: "{{ instance_prefix }}-{{ product }}-"
-
-## When this var is set to true and the host gets it's ip address from
-## dhcp. It was take that IP address and configure the host to use static
-## ip address assignment. It's recommended that you create a DHCP reservation
-## for this host to ensure the DHCP lease does falset expire and get consume by
-## afalsether host on the network.
+ansible_version: 2.9.10
+bridge_name: qubibr0
 convert_dhcp_to_static: true
-
-# ROLE: swygue-redhat-subscription
-rhsm_org: "{{ rhsm_org }}"
-rhsm_activationkey: "{{ rhsm_activationkey }}"
-rhsm_org_id: "{{ rhsm_org }}"
-rhsm_setup_insights_client: false
-rhsm_user: "{{ rhsm_username }}"
-rhsm_pass: "{{ rhsm_password }}"
-org_id: "{{ rhsm_org }}"
-
-# ROLE: swygue.edge_host_setup role
-# the user that will admin the system
-ssh_username: "{{ admin_user }}" # this var has been deprecated and should be removed
-
- # LVM
+dns_forwarder: 8.8.8.8
+domain: example.com
+enable_ceph_deployment: false
+instance_prefix: qbn
+kvm_host_dns_server: 1.1.1.1
+kvm_host_domain: example.com
 logical_volumes:
-  - name: qubi_images
-    size: "+100%FREE"
-    mount_dir: "{{ kvm_host_libvirt_dir | default('/var/lib/libvirt/images') }}"
-    fstype: xfs
-
-# This is for KVM host initial setup of /etc/resolv.conf
+- fstype: xfs
+  mount_dir: '{{ kvm_host_libvirt_dir | default(''/var/lib/libvirt/images'') }}'
+  name: qubi_images
+  size: +100%FREE
+one_redhat: false
+org_id: '{{ rhsm_org }}'
+preappend_host_name: '{{ instance_prefix }}-{{ product }}-'
+primary_dns_server: 1.1.1.1
+project_dir: /opt/qubifalsede-installer
+qubifalsede_ptr: changeme.in-addr.arpa
+qubinode_dns_servers:
+- 1.1.1.1
+- 8.8.8.8
 required_rpm_packages:
-  - virt-install
-  - libvirt-daemon-config-network
-  - libvirt-daemon-kvm
-  - libguestfs-tools
-  - libvirt-client
-  - qemu-kvm
-  - nfs-utils
-  - libvirt-daemon
-  - libvirt-client
-  - virt-top
-  - tuned
-  - openssh-server
-  - wget
-  - git
-  - net-tools
-  - bind-utils
-  - yum-utils
-  - iptables-services
-  - bash-completion
-  - kexec-tools
-  - sos
-  - psacct
-  - vim
-  - device-mapper-event-libs
-  - device-mapper-libs
-  - httpd-tools
-  - tmux
-  - python3-dns
-  - python3-lxml
-  - cockpit-machines
-  - bc
-  - nmap
-  - ncurses-devel
-  - curl
+- virt-install
+- libvirt-daemon-config-network
+- libvirt-daemon-kvm
+- libguestfs-tools
+- libvirt-client
+- qemu-kvm
+- nfs-utils
+- libvirt-daemon
+- libvirt-client
+- virt-top
+- tuned
+- openssh-server
+- wget
+- git
+- net-tools
+- bind-utils
+- yum-utils
+- iptables-services
+- bash-completion
+- kexec-tools
+- sos
+- psacct
+- vim
+- device-mapper-event-libs
+- device-mapper-libs
+- httpd-tools
+- tmux
+- python3-dns
+- python3-lxml
+- cockpit-machines
+- bc
+- nmap
+- ncurses-devel
+- curl
+rhel7_ansible_repo: rhel-7-server-ansible-2.9-rpms
+rhel7_version: 7.9
+rhel8_ansible_repo: ansible-2.9-for-rhel-8-x86_64-rpms
+rhel8_version: 8.6
+rhel_version: ''
+rhsm_activationkey: '{{ rhsm_activationkey }}'
+rhsm_org: '{{ rhsm_org }}'
+rhsm_org_id: '{{ rhsm_org }}'
+rhsm_pass: '{{ rhsm_password }}'
+rhsm_reg_method: ''
+rhsm_setup_insights_client: false
+rhsm_user: '{{ rhsm_username }}'
+run_kni_lab_on_rhpds: false
+run_on_rhpds: false
+search_domains:
+- example.com
+ssh_username: '{{ admin_user }}'
+users:
+- lab-user

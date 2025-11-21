@@ -24,7 +24,13 @@ USER airflow
 RUN pip install --no-cache-dir \
     kcli \
     libvirt-python \
-    paramiko
+    paramiko \
+    mcp>=0.9.0 \
+    fastmcp>=0.2.0 \
+    starlette>=0.27.0 \
+    uvicorn>=0.30.0 \
+    httpx>=0.24.0 \
+    sse-starlette>=1.6.0
 
 # Switch back to root for entrypoint
 USER root
