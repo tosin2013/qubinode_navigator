@@ -41,5 +41,5 @@ pytest
 pytest-asyncio
 
 # MCP (Model Context Protocol)
-# fastmcp includes the MCP protocol implementation
-fastmcp>=0.2.0
+mcp>=1.0.0
+fastmcp>=2.0.0
