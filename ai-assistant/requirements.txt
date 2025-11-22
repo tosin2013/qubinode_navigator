@@ -44,4 +44,5 @@ pytest-asyncio==0.21.1
 
 # MCP (Model Context Protocol) server for LLM integrations
 # fastmcp includes the MCP protocol implementation
-fastmcp>=0.2.0
+mcp>=1.0.0
+fastmcp>=2.0.0
