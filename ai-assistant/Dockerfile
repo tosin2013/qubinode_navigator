@@ -16,12 +16,12 @@ RUN git clone https://github.com/ggerganov/llama.cpp.git && \
     cmake -B build -DGGML_NATIVE=ON -DGGML_AVX2=ON -DLLAMA_CURL=OFF -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF && \
     cmake --build build --config Release -j$(nproc)
 
-# Stage 2: Runtime environment
-FROM registry.redhat.io/ubi9/ubi:latest
+# Stage 2: Runtime environment with Python 3.11
+FROM registry.redhat.io/ubi9/python-311:latest
 
 # Install runtime dependencies including libraries needed for llama.cpp
 RUN dnf update -y && \
-    dnf install -y --allowerasing python3 python3-pip curl wget libgomp libstdc++ && \
+    dnf install -y --allowerasing curl wget libgomp libstdc++ && \
     dnf clean all
 
 # Create non-root user for security
@@ -38,7 +38,7 @@ RUN mkdir -p /app/llama.cpp && \
 
 # Set up Python virtual environment (best practice)
 WORKDIR /app
-RUN python3 -m venv /app/venv && \
+RUN python3.11 -m venv /app/venv && \
     /app/venv/bin/pip install --upgrade pip
 
 # Install Python dependencies in virtual environment
