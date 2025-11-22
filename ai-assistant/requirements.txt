@@ -7,8 +7,9 @@ uvicorn[standard]==0.38.0
 pydantic==2.12.4
 
 # AI/ML frameworks (modern versions - compatible)
+# Using 0.3.x series for all langchain packages for compatibility
 langchain>=0.3.17,<0.4.0
-langchain-community>=0.4.1,<0.5.0
+langchain-community>=0.3.0,<0.4.0
 langchain-core>=0.3.33,<0.4.0
 # Note: Using direct HTTP calls to llama.cpp server instead of llama-cpp-python
 

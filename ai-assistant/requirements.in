@@ -1,0 +1,45 @@
+# AI Assistant Core Dependencies (unlocked)
+# This file contains high-level dependencies
+# Run: pip-compile requirements.in to generate requirements.txt
+
+# Core API framework
+fastapi
+uvicorn[standard]
+pydantic>=2.0
+
+# AI/ML frameworks - let pip-compile resolve compatible versions
+langchain>=0.3.0,<0.4.0
+langchain-community>=0.4.0,<0.5.0
+
+# Multi-model API support
+litellm
+
+# HTTP clients
+httpx
+requests
+
+# File handling for RAG
+aiofiles
+python-multipart
+
+# Configuration
+pyyaml
+python-dotenv
+
+# Logging and monitoring
+structlog
+prometheus-client
+
+# System integration
+psutil
+
+# Vector database and embeddings
+qdrant-client[fastembed]
+
+# Development and testing
+pytest
+pytest-asyncio
+
+# MCP (Model Context Protocol)
+mcp>=0.9.0
+fastmcp>=0.2.0
