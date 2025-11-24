@@ -132,8 +132,8 @@ jobs:
           file: ./Dockerfile.jekyll
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/qubinode-docs:${{ needs.validate.outputs.version }}
-            ghcr.io/${{ github.repository_owner }}/qubinode-docs:latest
+            ghcr.io/qubinode/qubinode-docs:${{ needs.validate.outputs.version }}
+            ghcr.io/qubinode/qubinode-docs:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -281,4 +281,4 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- **Tag**: ${{ needs.validate.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Release URL**: https://github.com/${{ github.repository }}/releases/tag/${{ needs.validate.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Container Images**: ghcr.io/${{ github.repository_owner }}/qubinode-docs:${{ needs.validate.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Container Images**: ghcr.io/qubinode/qubinode-docs:${{ needs.validate.outputs.version }}" >> $GITHUB_STEP_SUMMARY
