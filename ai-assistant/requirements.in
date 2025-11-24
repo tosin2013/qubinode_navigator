@@ -35,7 +35,8 @@ prometheus-client
 psutil
 
 # Vector database and embeddings
-qdrant-client[fastembed]
+# Note: fastembed extra removed - not compatible with Python 3.12
+qdrant-client
 
 # Development and testing
 pytest

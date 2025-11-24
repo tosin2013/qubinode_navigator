@@ -36,7 +36,9 @@ prometheus-client==0.23.1
 psutil>=5.9.6
 
 # Vector database and embeddings for RAG (cutting-edge 2024)
-qdrant-client[fastembed]==1.16.0
+# Note: fastembed extra removed - not compatible with Python 3.12
+# Using external embeddings via LangChain instead
+qdrant-client>=1.16.0
 
 # Development and testing
 pytest>=9.0.0,<10.0.0
