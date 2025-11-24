@@ -65,6 +65,19 @@ __pycache__/
 *.pyo
 .pytest_cache/
 .coverage
+coverage.xml
+tmp_config_template.yml
+
+# Test files should be in tests/ directory only
+/test_*.py
+/integration_test*.py
+/test_*.md
+/test-*.py
+/test-*.json
+
+# Build artifacts and binaries
+*.tar.gz
+ansiblesafe-*.tar.gz
 
 # IDE and editor files
 .vscode/
