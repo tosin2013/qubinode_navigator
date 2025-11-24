@@ -32,6 +32,9 @@ env:
   REGISTRY_NAMESPACE: takinosh
   AI_IMAGE_NAME: qubinode-ai-assistant
   PYTHON_VERSION: '3.12'
+  # Version management
+  VERSION_FILE: ai-assistant/VERSION
+  VERSION_MANAGER: ai-assistant/scripts/version-manager.sh
 
 jobs:
   # Test AI Assistant Components
@@ -44,12 +47,12 @@ jobs:
         uses: actions/checkout@v4
         
       - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           
       - name: Cache Python dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('ai-assistant/requirements.txt') }}
@@ -60,7 +63,7 @@ jobs:
         run: |
           cd ai-assistant
           pip install -r requirements.txt
-          pip install pytest pytest-cov pytest-asyncio
+          pip install pytest-cov
           
       - name: Run diagnostic tools tests
         run: |
@@ -68,7 +71,7 @@ jobs:
           python -m pytest tests/test_diagnostic_tools.py -v --cov=src --cov-report=xml --cov-report=term
           
       - name: Upload diagnostic tools coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
           file: ./ai-assistant/coverage.xml
           flags: diagnostic-tools
@@ -84,13 +87,13 @@ jobs:
         uses: actions/checkout@v4
         
       - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           
       - name: Install plugin framework dependencies
         run: |
-          pip install pytest pytest-cov pytest-mock pyyaml
+          pip install pytest-cov pytest-mock
           pip install -r requirements.txt
           
       - name: Run AI Assistant plugin tests
@@ -98,7 +101,7 @@ jobs:
           python -m pytest tests/test_ai_assistant_plugin.py -v --cov=plugins/services --cov-report=xml --cov-report=term
           
       - name: Upload plugin integration coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
           file: ./coverage.xml
           flags: plugin-integration
@@ -132,7 +135,7 @@ jobs:
           password: ${{ secrets.QUAY_PASSWORD }}
         
       - name: Build AI Assistant container
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./ai-assistant
           file: ./ai-assistant/Dockerfile
@@ -349,7 +352,7 @@ jobs:
           password: ${{ secrets.QUAY_PASSWORD }}
         
       - name: Build container for scanning
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./ai-assistant
           file: ./ai-assistant/Dockerfile
@@ -367,7 +370,7 @@ jobs:
           output: 'trivy-results.sarif'
           
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
@@ -383,7 +386,7 @@ jobs:
           no-fail: true
           
       - name: Upload Hadolint scan results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always() && hashFiles('hadolint-results.sarif') != ''
         with:
           sarif_file: hadolint-results.sarif
@@ -417,7 +420,7 @@ jobs:
           password: ${{ secrets.QUAY_PASSWORD }}
         
       - name: Build container for benchmarking
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./ai-assistant
           file: ./ai-assistant/Dockerfile
@@ -700,13 +703,13 @@ jobs:
         uses: actions/checkout@v4
         
       - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           
       - name: Install dependencies
         run: |
-          pip install pytest pytest-asyncio pyyaml requests
+          pip install pyyaml requests
           cd ai-assistant && pip install -r requirements.txt
           
       - name: Set up Docker Buildx
@@ -806,7 +809,7 @@ jobs:
           EOF
           
       - name: Build AI Assistant container
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./ai-assistant
           file: ./ai-assistant/Dockerfile
@@ -1170,7 +1173,7 @@ jobs:
     
     steps:
       - name: Download benchmark results
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         continue-on-error: true  # Don't fail if artifact doesn't exist
         with:
           name: performance-benchmarks
@@ -1276,15 +1279,50 @@ jobs:
           registry: ${{ env.REGISTRY_HOSTNAME }}
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
+      
+      - name: Generate version and tags
+        id: version
+        run: |
+          # Make version manager executable
+          chmod +x ${{ env.VERSION_MANAGER }}
+          
+          # Get current version
+          CURRENT_VERSION=$(${{ env.VERSION_MANAGER }} current | grep "Current version:" | cut -d' ' -f3)
+          BUILD_VERSION=$(${{ env.VERSION_MANAGER }} build-metadata)
+          
+          echo "current-version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "build-version=$BUILD_VERSION" >> $GITHUB_OUTPUT
+          
+          # Generate container tags
+          TAGS=$(${{ env.VERSION_MANAGER }} tags ${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }} ${{ env.AI_IMAGE_NAME }})
+          
+          # Convert to comma-separated format for docker/build-push-action
+          TAGS_CSV=$(echo "$TAGS" | tr '\n' ',' | sed 's/,$//')
+          echo "container-tags=$TAGS_CSV" >> $GITHUB_OUTPUT
+          
+          echo "Generated tags:"
+          echo "$TAGS"
         
       - name: Build and push production image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./ai-assistant
           file: ./ai-assistant/Dockerfile
           push: true
-          tags: |
-            ${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.AI_IMAGE_NAME }}:latest
+          tags: ${{ steps.version.outputs.container-tags }}
+          labels: |
+            version=${{ steps.version.outputs.current-version }}
+            build-version=${{ steps.version.outputs.build-version }}
+            build-date=${{ github.run_id }}
+            vcs-ref=${{ github.sha }}
+            org.opencontainers.image.title=Qubinode AI Assistant
+            org.opencontainers.image.description=CPU-based AI deployment assistant for Qubinode Navigator
+            org.opencontainers.image.version=${{ steps.version.outputs.current-version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ github.event.head_commit.timestamp }}
+            org.opencontainers.image.source=${{ github.repositoryUrl }}
+            org.opencontainers.image.url=${{ github.repositoryUrl }}
+            org.opencontainers.image.documentation=https://github.com/${{ github.repository }}/blob/main/docs/AI_ASSISTANT_DEPLOYMENT_STRATEGY.md
             ${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.AI_IMAGE_NAME }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

@@ -1,0 +1,76 @@
+# Airflow runtime files
+*.log
+*.pid
+*.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Airflow logs directory
+logs/*
+!logs/.gitkeep
+!logs/scheduler/latest
+
+# Airflow database
+airflow.db
+airflow.db-shm
+airflow.db-wal
+webserver_config.py
+
+# Developer notes and temp files
+*~
+*.swp
+*.swo
+.DS_Store
+.vscode/
+.idea/
+*.bak
+*.tmp
+*.temp
+dev-notes.md
+developer-notes.md
+NOTES.md
+TODO.md
+
+# Test artifacts
+test-results/
+coverage/
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+
+# Environment files with secrets
+.env.local
+.env.*.local
+secrets/
+*.pem
+*.key
+*.crt
+!nginx*.crt  # Allow example SSL configs in docs
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Container/Podman volumes (handled by docker-compose)
+postgres-db-volume/
+
+# IDE specific
+.vscode/settings.json
+.idea/workspace.xml
+
+# OS specific
+Thumbs.db
+.Trash-*
+
+# Backup files
+*.backup
+*.old
+backup/
+
+# Personal notes
+my-notes.md
+personal-notes.md
+scratch.md

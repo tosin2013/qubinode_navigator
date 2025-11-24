@@ -1,0 +1,54 @@
+{
+  "mcpServers": {
+    "adr-analysis": {
+      "disabled": false,
+      "timeout": 60,
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "/root/mcp-adr-analysis-server/dist/src/index.js"
+      ],
+      "env": {
+        "PROJECT_PATH": "/root/qubinode_navigator",
+        "ADR_DIRECTORY": "docs/adrs",
+        "LOG_LEVEL": "ERROR",
+        "EXECUTION_MODE": "full",
+        "AI_MODEL": "openai/codex-mini",
+        "OPENROUTER_API_KEY": "your-openrouter-api-key-here"
+      }
+    },
+    "documcp": {
+      "disabled": true,
+      "timeout": 60,
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "/root/documcp/dist/index.js"
+      ]
+  },"deepwiki": {
+      "url": "https://mcp.deepwiki.com/sse"
+    },
+"context7": {
+      "serverUrl": "https://mcp.context7.com/mcp",
+      "headers": {
+        "CONTEXT7_API_KEY": "your-context7-api-key-here"
+      },
+    "github": {
+      "url": "https://api.githubcopilot.com/mcp/",
+      "requestInit": {
+        "headers": {
+          "Authorization": "Bearer your-github-token-here"
+        }
+      }
+    },
+    "qubinode-airflow": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "http://localhost:8889/sse"
+      ]
+    }
+  }
+ }
+}

@@ -256,7 +256,7 @@ def select_disk(disks=None):
             inventory = yaml.safe_load(f)
         
 
-        if use_root_disk is True:
+        if use_root_disk is True or disks is None:
             print('No disk selected.')
             inventory['create_libvirt_storage'] = False
             inventory['create_lvm'] = False

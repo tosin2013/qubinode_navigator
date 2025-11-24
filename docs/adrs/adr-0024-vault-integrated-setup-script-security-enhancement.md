@@ -1,3 +1,11 @@
+---
+layout: default
+title: ADR-0024 Vault-Integrated Setup Script
+parent: Security & Operations
+grand_parent: Architectural Decision Records
+nav_order: 0024
+---
+
 # ADR-0024: Vault-Integrated Setup Script to Eliminate /tmp/config.yml Security Risk
 
 ## Status

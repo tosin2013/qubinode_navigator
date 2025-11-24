@@ -1,3 +1,11 @@
+---
+layout: default
+title: ADR-0004 Security Architecture
+parent: Security & Operations
+grand_parent: Architectural Decision Records
+nav_order: 4
+---
+
 # ADR-0004: Security Architecture with Ansible Vault and AnsibleSafe
 
 ## Status

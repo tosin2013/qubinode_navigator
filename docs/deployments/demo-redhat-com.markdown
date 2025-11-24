@@ -7,6 +7,11 @@ nav_order: 2
 
 Deploy to [Red Hat Product Demo System](https://connect.redhat.com/en/training/product-demo-system) using the following steps.
 
+> **Documentation status**
+> - Validation: `IN PROGRESS` – Steps have been used in prior demo environments but may lag behind current platform changes.
+> - Last reviewed: 2025-11-21
+> - Community: If you run this successfully or need fixes, please contribute improvements via [Contributing to docs](../how-to/contribute.md).
+
 **SSH into Equinix Metal baremetal**
 
 **create /tmp/config.yml as lab-user**   
@@ -46,7 +51,7 @@ export FORWARDER='1.1.1.1'
 export ACTIVE_BRIDGE='false'
 export INTERFACE=bond0
 export USE_ROUTE53=true
-export GIT_REPO=https://github.com/tosin2013/qubinode_navigator.git
+export GIT_REPO=https://github.com/Qubinode/qubinode_navigator.git
 export INVENTORY=rhel9-equinix
 export SSH_PASSWORD=${SSH_PASSWORD}
 EOF
@@ -76,7 +81,7 @@ export USE_ROUTE53=true
 export ZONE_NAME=${DOMAIN}
 export USE_HASHICORP_VAULT='true'
 export USE_HASHICORP_CLOUD='true'
-export GIT_REPO=https://github.com/tosin2013/qubinode_navigator.git
+export GIT_REPO=https://github.com/Qubinode/qubinode_navigator.git
 export INVENTORY=rhel9-equinix
 export SSH_PASSWORD=${SSH_PASSWORD}
 export HCP_CLIENT_ID="your-client-id"
@@ -92,7 +97,7 @@ $ vi notouch.env
 **Run the following commands as lab-user**  
 ```bash
 sudo dnf install -y tmux curl git vim 
-curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/rhel9-linux-hypervisor.sh 
+curl -OL https://raw.githubusercontent.com/Qubinode/qubinode_navigator/main/rhel9-linux-hypervisor.sh 
 chmod +x rhel9-linux-hypervisor.sh
 tmux new-session -s rhel9-linux-hypervisor 
 source notouch.env && sudo -E  ./rhel9-linux-hypervisor.sh
@@ -132,24 +137,18 @@ Login via RDP using the remote user and password you set in the config.yml file.
 `You can also use Remmina to login to the VM`
 
 ## Post Steps 
-* Configure Onedev for CI/CD - [OneDev - Git Server with CI/CD, Kanban, and Packages](../plugins/onedev-kcli-pipelines.html)
 
-### OneDev - Deploying Generic VMs
-- **Deploying Generic VMs**: Guide for deploying generic VMs using OneDev.
-  - [OneDev - Deploying Generic VMs](../plugins/onedev-generic-vm.html)
+After the Red Hat Product Demo System deployment is complete, you can use **Apache Airflow** and the AI Assistant to orchestrate and monitor end-to-end workflows instead of relying on OneDev-based pipelines.
 
-### OneDev - Agent Based Installer Pipelines
-- **External Deployment**: Guide for deploying OpenShift using OneDev's agent-based installer pipelines for external environments.
-  - [OneDev - Agent based Installer Pipelines - External Deployment](../plugins/onedev-agent-based-external-deployment.html)
-- **Internal Deployment**: Instructions for deploying OpenShift using OneDev's agent-based installer pipelines for internal environments.
-  - [OneDev - Agent based Installer Pipelines - Internal Deployment](../plugins/onedev-agent-based-internal-deployment.html)
+### Orchestrate with Apache Airflow
 
-### OneDev - kcli-openshift4-baremetal Pipelines
-- **Externally**: Steps to deploy OpenShift 4 on baremetal using kcli pipelines for external environments.
-  - [OneDev - kcli-openshift4-baremetal Pipelines Externally](../plugins/onedev-kcli-openshift4-baremetal-external.html)
-- **Internally**: Steps to deploy OpenShift 4 on baremetal using kcli pipelines for internal environments.
-  - [OneDev - Agent based Installer Pipelines - Internal Deployment](../plugins/onedev-kcli-openshift4-baremetal-internal.html)
+- [Airflow Integration Overview](../AIRFLOW-INTEGRATION.md)
+- [Airflow Integration Guide](../airflow-integration-guide.md)
+- [DAG Deployment Workflows](../airflow-dag-deployment-workflows.md)
+- [Airflow Community Ecosystem](../airflow-community-ecosystem.md)
 
-### Deploy Step CA Server using Kcli Pipelines
-Detailed guide on deploying a Step CA server using Kcli pipelines.
-  - [Deploy Step CA Server using Kcli Pipelines](../plugins/onedev-kcli-pipelines-step-ca-server.html)
+These guides show how to:
+
+- Deploy and manage DAGs for Qubinode Navigator
+- Integrate with the AI Assistant for chat-driven workflow execution
+- Build RAG-enabled workflows and continuous learning loops

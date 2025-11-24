@@ -1,0 +1,47 @@
+---
+- name: Test FastMCP Servers - Simple
+  hosts: localhost
+  gather_facts: false
+  
+  tasks:
+    - name: Test Airflow MCP Server Discovery
+      tosin2013.mcp_audit.mcp_server_info:
+        server_url: "http://localhost:8889"
+        transport: "sse"
+      register: airflow_result
+      tags: [airflow]
+    
+    - name: Show Airflow MCP Results
+      debug:
+        msg:
+          - "✅ Server Status: {{ airflow_result.status }}"
+          - "📊 Tools Available: {{ airflow_result.server_info.available_tools }}"
+          - "🔧 Tools: {{ airflow_result.server_info | default({}) }}"
+      when: airflow_result.success | default(false)
+      tags: [airflow]
+    
+    - name: Test AI Assistant MCP Server Discovery (if running)
+      tosin2013.mcp_audit.mcp_server_info:
+        server_url: "http://localhost:8081"
+        transport: "sse"
+      register: ai_result
+      ignore_errors: true
+      tags: [ai]
+    
+    - name: Show AI Assistant MCP Results
+      debug:
+        msg:
+          - "✅ Server Status: {{ ai_result.status | default('Not running') }}"
+          - "📊 Tools Available: {{ ai_result.server_info.available_tools | default(0) }}"
+      when: ai_result.success | default(false)
+      tags: [ai]
+    
+    - name: Summary
+      debug:
+        msg:
+          - "============================================"
+          - "FastMCP Test Results:"
+          - "  Airflow MCP: {{ 'PASS ✅' if airflow_result.success else 'FAIL ❌' }}"
+          - "  Tools Found: {{ airflow_result.server_info.available_tools | default(0) }}"
+          - "  AI MCP: {{ 'PASS ✅' if (ai_result.success | default(false)) else 'Not Running ⚠️' }}"
+          - "============================================"

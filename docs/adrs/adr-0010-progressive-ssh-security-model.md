@@ -1,3 +1,11 @@
+---
+layout: default
+title: ADR-0010 Progressive SSH Security
+parent: Security & Operations
+grand_parent: Architectural Decision Records
+nav_order: 0010
+---
+
 # ADR-0010: Progressive SSH Security Model
 
 ## Status

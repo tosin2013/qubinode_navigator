@@ -5,6 +5,7 @@ Handles configuration loading and management
 """
 
 import os
+import re
 import yaml
 import logging
 from pathlib import Path
@@ -32,6 +33,8 @@ class ConfigManager:
                 with open(self.config_path, 'r') as f:
                     file_config = yaml.safe_load(f)
                     if file_config:
+                        # Substitute environment variables in the loaded config
+                        file_config = self._substitute_env_vars(file_config)
                         self.config.update(file_config)
                         logger.info(f"Loaded config from {self.config_path}")
             else:
@@ -92,6 +95,28 @@ class ConfigManager:
                 "setup_hooks": True
             }
         }
+    
+    def _substitute_env_vars(self, config):
+        """Recursively substitute environment variables in configuration."""
+        if isinstance(config, dict):
+            return {key: self._substitute_env_vars(value) for key, value in config.items()}
+        elif isinstance(config, list):
+            return [self._substitute_env_vars(item) for item in config]
+        elif isinstance(config, str):
+            # Handle ${VAR:-default} syntax
+            pattern = r'\$\{([^}]+)\}'
+            
+            def replace_var(match):
+                var_expr = match.group(1)
+                if ':-' in var_expr:
+                    var_name, default_value = var_expr.split(':-', 1)
+                    return os.getenv(var_name.strip(), default_value.strip())
+                else:
+                    return os.getenv(var_expr.strip(), '')
+            
+            return re.sub(pattern, replace_var, config)
+        else:
+            return config
     
     def _load_env_overrides(self):
         """Load configuration overrides from environment variables."""

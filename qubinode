@@ -1,0 +1,14 @@
+#!/bin/bash
+# Qubinode Navigator - Simple AI Assistant Interface
+# Usage: qubinode "How do I deploy OpenShift?"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Check if this is an AI question (contains question words or ends with ?)
+if [[ "$*" =~ (how|what|why|when|where|can|should|do|does|is|are|\?) ]]; then
+    # This looks like a question for the AI Assistant
+    python3 "$SCRIPT_DIR/qubinode_cli.py" ask "$@"
+else
+    # This might be a plugin command or other operation
+    python3 "$SCRIPT_DIR/qubinode_cli.py" "$@"
+fi

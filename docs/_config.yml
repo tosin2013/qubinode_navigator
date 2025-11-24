@@ -25,9 +25,9 @@ description: >- # this means to ignore newlines until "baseurl:"
   with support for multiple cloud providers and comprehensive security features.
 
 baseurl: "" # the subpath of your site, e.g. /blog
-url: "https://tosin2013.github.io/qubinode_navigator" # the base hostname & protocol for your site, e.g. http://example.com
+url: "https://qubinode.github.io/qubinode_navigator" # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username: tosin2013
-github_username: tosin2013
+github_username: Qubinode
 
 # Just the Docs theme configuration
 logo: "/assets/images/logo.png"
@@ -45,11 +45,11 @@ search:
 nav_sort: case_insensitive
 nav_external_links:
   - title: GitHub Repository
-    url: https://github.com/tosin2013/qubinode_navigator
+    url: https://github.com/Qubinode/qubinode_navigator
     hide_icon: false
 
 # Footer content
-footer_content: "Copyright &copy; 2025 Tosin Akinosho. Distributed under the <a href=\"https://github.com/tosin2013/qubinode_navigator/blob/main/LICENSE\">GNU General Public License v3.0</a>."
+footer_content: "Copyright &copy; 2025 Tosin Akinosho. Distributed under the <a href=\"https://github.com/Qubinode/qubinode_navigator/blob/main/LICENSE\">GNU General Public License v3.0</a>."
 
 # Color scheme
 color_scheme: light
@@ -74,14 +74,38 @@ plugins:
 # Excluded items can be processed by explicitly listing the directories or
 # their entries' file path in the `include:` list.
 #
-# exclude:
-#   - .sass-cache/
-#   - .jekyll-cache/
-#   - gemfiles/
-#   - Gemfile
-#   - Gemfile.lock
-#   - node_modules/
-#   - vendor/bundle/
-#   - vendor/cache/
-#   - vendor/gems/
-#   - vendor/ruby/
+exclude:
+  - .sass-cache/
+  - .jekyll-cache/
+  - gemfiles/
+  - Gemfile
+  - Gemfile.lock
+  - node_modules/
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+  - context/
+  - research/
+  - development/
+  - delivery-notes/
+  - "**/*.json"
+  - "**/todo.md"
+  - "**/machine-specific-todo.md"
+  - AI_*.md
+  - AIRFLOW-*.md
+  - airflow-*.md
+  - CLEAN-INSTALL-GUIDE.md
+  - DEPLOYMENT_INTEGRATION_GUIDE.md
+  - MCP-SERVER-DESIGN.md
+  - UNIFIED-DEPLOYMENT-GUIDE.md
+  - about.markdown
+  - index.md
+  - deployments/
+  - plugins/
+  - github/
+  - gitlab/
+  - security/
+  - user-guides/
+  - vault-setup/
+  - internal/

@@ -33,12 +33,37 @@ class AIAssistantPlugin(QubiNodePlugin):
         # Initialize configuration attributes immediately
         self.ai_service_url = self.config.get('ai_service_url', 'http://localhost:8080')
         self.container_name = self.config.get('container_name', 'qubinode-ai-assistant')
-        self.container_image = self.config.get('container_image', 'localhost/qubinode-ai-assistant:latest')
         self.ai_assistant_path = self.config.get('ai_assistant_path', '/root/qubinode_navigator/ai-assistant')
         self.auto_start = self.config.get('auto_start', True)
         self.health_check_timeout = self.config.get('health_check_timeout', 60)
         self.enable_diagnostics = self.config.get('enable_diagnostics', True)
         self.enable_rag = self.config.get('enable_rag', True)
+        
+        # Version configuration
+        self.container_version = self.config.get('container_version', 'latest')
+        self.version_strategy = self.config.get('version_strategy', 'auto')  # auto, latest, specific, semver
+        
+        # Image configuration for different deployment modes (must be set before determining container image)
+        self.image_config = {
+            'development': {
+                'registry': 'localhost',
+                'image': 'qubinode-ai-assistant',
+                'tag': self._get_development_tag(),
+                'build_required': True,
+                'description': 'Local development image with debugging tools'
+            },
+            'production': {
+                'registry': 'quay.io/takinosh',
+                'image': 'qubinode-ai-assistant',
+                'tag': self._get_production_tag(),
+                'build_required': False,
+                'description': 'Production-ready image from Quay.io registry'
+            }
+        }
+        
+        # Deployment strategy configuration
+        self.deployment_mode = self.config.get('deployment_mode', 'auto')  # auto, development, production
+        self.container_image = self._determine_container_image()
         
         # AI Assistant capabilities
         self.capabilities = [
@@ -50,9 +75,106 @@ class AIAssistantPlugin(QubiNodePlugin):
             'ansible_automation_help'
         ]
     
+    def _determine_container_image(self) -> str:
+        """Determine which container image to use based on deployment mode"""
+        # Check if image is explicitly configured
+        if 'container_image' in self.config:
+            return self.config['container_image']
+        
+        # Auto-detect deployment mode if not specified
+        if self.deployment_mode == 'auto':
+            self.deployment_mode = self._detect_deployment_mode()
+        
+        # Get image configuration for the deployment mode
+        if self.deployment_mode in self.image_config:
+            config = self.image_config[self.deployment_mode]
+            return f"{config['registry']}/{config['image']}:{config['tag']}"
+        else:
+            # Fallback to development mode
+            self.logger.warning(f"Unknown deployment mode '{self.deployment_mode}', falling back to development")
+            self.deployment_mode = 'development'
+            config = self.image_config['development']
+            return f"{config['registry']}/{config['image']}:{config['tag']}"
+    
+    def _get_development_tag(self) -> str:
+        """Get appropriate tag for development mode"""
+        if self.container_version != 'latest':
+            return self.container_version
+        
+        # Try to read version from VERSION file
+        version_file = os.path.join(self.ai_assistant_path, 'VERSION')
+        if os.path.exists(version_file):
+            try:
+                with open(version_file, 'r') as f:
+                    return f.read().strip()
+            except Exception:
+                pass
+        
+        return 'latest'
+    
+    def _get_production_tag(self) -> str:
+        """Get appropriate tag for production mode"""
+        if self.container_version != 'latest':
+            return self.container_version
+        
+        # Version strategy handling
+        if self.version_strategy == 'latest':
+            return 'latest'
+        elif self.version_strategy == 'specific':
+            # Use configured version or fall back to latest
+            return self.container_version if self.container_version != 'latest' else 'latest'
+        elif self.version_strategy == 'semver':
+            # Use semantic versioning - prefer stable releases
+            return self._get_latest_stable_version()
+        else:  # auto
+            # Auto strategy: prefer latest stable, fall back to latest
+            stable_version = self._get_latest_stable_version()
+            return stable_version if stable_version else 'latest'
+    
+    def _get_latest_stable_version(self) -> str:
+        """Get the latest stable version from VERSION file or environment"""
+        # Check environment variable for version override
+        env_version = os.environ.get('QUBINODE_AI_VERSION')
+        if env_version:
+            return env_version
+        
+        # Try to read version from VERSION file
+        version_file = os.path.join(self.ai_assistant_path, 'VERSION')
+        if os.path.exists(version_file):
+            try:
+                with open(version_file, 'r') as f:
+                    version = f.read().strip()
+                    # Only return if it's a stable version (no prerelease)
+                    if '-' not in version:
+                        return version
+            except Exception:
+                pass
+        
+        # Default to latest if no stable version found
+        return 'latest'
+    
+    def _detect_deployment_mode(self) -> str:
+        """Auto-detect deployment mode based on environment"""
+        # Check environment variables
+        env_mode = os.environ.get('QUBINODE_DEPLOYMENT_MODE')
+        if env_mode in ['development', 'production']:
+            return env_mode
+        
+        # Check if we're in a container (production-like)
+        if os.path.exists('/.dockerenv') or os.path.exists('/run/.containerenv'):
+            return 'production'
+        
+        # Check if local development files exist
+        if os.path.exists(self.ai_assistant_path) and os.path.exists(os.path.join(self.ai_assistant_path, 'Dockerfile')):
+            return 'development'
+        
+        # Default to production for safety
+        return 'production'
+    
     def _initialize_plugin(self) -> None:
         """Initialize AI Assistant plugin resources"""
-        self.logger.info("Initializing AI Assistant plugin")
+        self.logger.info(f"Initializing AI Assistant plugin in {self.deployment_mode} mode")
+        self.logger.info(f"Using container image: {self.container_image}")
         
     def check_state(self) -> SystemState:
         """Check current AI Assistant state"""
@@ -109,17 +231,28 @@ class AIAssistantPlugin(QubiNodePlugin):
                     status=PluginStatus.FAILED
                 )
             
-            # Build container if it doesn't exist
+            # Build or pull container if it doesn't exist
             if not current_state.get('container_exists'):
-                self.logger.info("Building AI Assistant container...")
-                if self._build_container():
-                    changes_made.append("Built AI Assistant container")
+                if self.deployment_mode == 'development' and self.image_config[self.deployment_mode]['build_required']:
+                    self.logger.info("Building AI Assistant container for development...")
+                    if self._build_container():
+                        changes_made.append("Built AI Assistant container")
+                    else:
+                        return PluginResult(
+                            changed=False,
+                            message="Failed to build AI Assistant container",
+                            status=PluginStatus.FAILED
+                        )
                 else:
-                    return PluginResult(
-                        changed=False,
-                        message="Failed to build AI Assistant container",
-                        status=PluginStatus.FAILED
-                    )
+                    self.logger.info(f"Pulling AI Assistant container from {self.container_image}...")
+                    if self._pull_container():
+                        changes_made.append("Pulled AI Assistant container")
+                    else:
+                        return PluginResult(
+                            changed=False,
+                            message="Failed to pull AI Assistant container",
+                            status=PluginStatus.FAILED
+                        )
             
             # Start container if not running
             if not current_state.get('container_running'):
@@ -309,9 +442,19 @@ class AIAssistantPlugin(QubiNodePlugin):
             return False
     
     def _build_container(self) -> bool:
-        """Build AI Assistant container"""
+        """Build AI Assistant container (development mode only)"""
         try:
             self.logger.info("Building AI Assistant container...")
+            
+            # Ensure we're in development mode
+            if self.deployment_mode != 'development':
+                self.logger.error("Container building is only supported in development mode")
+                return False
+            
+            # Check if AI assistant directory exists
+            if not os.path.exists(self.ai_assistant_path):
+                self.logger.error(f"AI Assistant directory not found: {self.ai_assistant_path}")
+                return False
             
             # Change to AI assistant directory
             original_cwd = os.getcwd()
@@ -337,6 +480,42 @@ class AIAssistantPlugin(QubiNodePlugin):
                 
         except Exception as e:
             self.logger.error(f"Failed to build container: {e}")
+            return False
+    
+    def _pull_container(self) -> bool:
+        """Pull AI Assistant container from registry (production mode)"""
+        try:
+            self.logger.info(f"Pulling container image: {self.container_image}")
+            
+            # Try both docker and podman
+            for runtime in ['podman', 'docker']:
+                try:
+                    result = subprocess.run(
+                        [runtime, 'pull', self.container_image],
+                        capture_output=True,
+                        text=True,
+                        timeout=300  # 5 minutes timeout
+                    )
+                    
+                    if result.returncode == 0:
+                        self.logger.info(f"Container pulled successfully using {runtime}")
+                        return True
+                    else:
+                        self.logger.debug(f"Failed to pull with {runtime}: {result.stderr}")
+                        continue
+                        
+                except FileNotFoundError:
+                    # Runtime not available, try next one
+                    continue
+                except Exception as e:
+                    self.logger.debug(f"Failed to pull container with {runtime}: {e}")
+                    continue
+            
+            self.logger.error("Failed to pull container with any available runtime")
+            return False
+            
+        except Exception as e:
+            self.logger.error(f"Failed to pull container: {e}")
             return False
     
     def _start_container(self) -> bool:
@@ -475,6 +654,10 @@ class AIAssistantPlugin(QubiNodePlugin):
         base_status.update({
             'ai_service_url': self.ai_service_url,
             'container_name': self.container_name,
+            'container_image': self.container_image,
+            'container_version': self.container_version,
+            'version_strategy': self.version_strategy,
+            'deployment_mode': self.deployment_mode,
             'capabilities': self.capabilities,
             'ai_assistant_status': self._get_ai_assistant_status()
         })
