@@ -17,7 +17,7 @@ RUN git clone https://github.com/ggerganov/llama.cpp.git && \
     cmake --build build --config Release -j$(nproc)
 
 # Stage 2: Runtime environment
-FROM registry.redhat.io/ubi9/python-311:latest
+FROM registry.redhat.io/ubi9/python-312:latest
 
 # Switch to root for package installation
 USER root
@@ -27,7 +27,7 @@ RUN dnf update -y && \
     dnf install -y --allowerasing curl wget libgomp libstdc++ && \
     dnf clean all
 
-# Python 3.11 image already has 'default' user with UID 1001
+# Python 3.12 image already has 'default' user with UID 1001
 
 # Copy llama.cpp binaries from builder stage
 COPY --from=builder /build/llama.cpp/build/bin/llama-server /usr/local/bin/
@@ -40,7 +40,7 @@ RUN mkdir -p /app/llama.cpp && \
 
 # Set up Python virtual environment (best practice)
 WORKDIR /app
-RUN python3.11 -m venv /app/venv && \
+RUN python3.12 -m venv /app/venv && \
     /app/venv/bin/pip install --upgrade pip
 
 # Install Python dependencies in virtual environment
