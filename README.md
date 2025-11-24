@@ -1,6 +1,7 @@
 # Qubinode Navigator
 
 **Modern Enterprise Infrastructure Automation Platform**
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Qubinode/qubinode_navigator)
 
 Qubinode Navigator is an AI-enhanced, container-first infrastructure automation platform that provides hypervisor deployment and management capabilities across multiple cloud providers and operating systems. Built with a modular plugin architecture, it supports the latest enterprise Linux distributions including RHEL 10 and CentOS Stream 10.
 
