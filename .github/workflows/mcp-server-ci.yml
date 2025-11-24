@@ -85,10 +85,12 @@ jobs:
       
       - name: Run MCP Server Tests
         run: |
-          if [ -d "tests/mcp" ]; then
+          if [ -d "tests/mcp" ] && find tests/mcp -name "test_*.py" -o -name "*_test.py" | grep -q .; then
             pytest tests/mcp/ -v --tb=short
           else
-            echo "⚠️  No MCP tests found in tests/mcp/"
+            echo "⚠️  No Python test files found in tests/mcp/"
+            echo "ℹ️  tests/mcp/ contains Ansible playbook tests (.yml files)"
+            echo "✅ Skipping pytest - use 'make test-mcp' for Ansible MCP tests"
           fi
       
       - name: Test MCP Tool Discovery
