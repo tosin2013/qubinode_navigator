@@ -63,7 +63,7 @@ jobs:
         run: |
           cd ai-assistant
           pip install -r requirements.txt
-          pip install pytest pytest-cov pytest-asyncio
+          pip install pytest-cov
           
       - name: Run diagnostic tools tests
         run: |
@@ -93,7 +93,7 @@ jobs:
           
       - name: Install plugin framework dependencies
         run: |
-          pip install pytest pytest-cov pytest-mock pyyaml
+          pip install pytest-cov pytest-mock
           pip install -r requirements.txt
           
       - name: Run AI Assistant plugin tests
@@ -709,7 +709,7 @@ jobs:
           
       - name: Install dependencies
         run: |
-          pip install pytest pytest-asyncio pyyaml requests
+          pip install pyyaml requests
           cd ai-assistant && pip install -r requirements.txt
           
       - name: Set up Docker Buildx
