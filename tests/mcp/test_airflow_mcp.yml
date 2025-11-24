@@ -1,0 +1,104 @@
+---
+- name: Test Airflow MCP Server
+  hosts: localhost
+  gather_facts: false
+  vars:
+    airflow_mcp_port: 8889
+    airflow_api_key: "{{ lookup('env', 'AIRFLOW_MCP_API_KEY') | default('65efb281f1ea9dc8498ec563f7bf42af4f8bf8a6b7bb542141902ce462cdb98a') }}"
+  
+  tasks:
+    - name: Discover Airflow MCP Server Capabilities
+      tosin2013.mcp_audit.mcp_server_info:
+        transport: sse
+        server_url: "http://localhost:{{ airflow_mcp_port }}/sse"
+        server_headers:
+          X-API-Key: "{{ airflow_api_key }}"
+        timeout: 30
+      register: airflow_server_info
+      tags: [discovery]
+
+    - name: Display Airflow MCP Capabilities
+      ansible.builtin.debug:
+        msg: |
+          ========================================
+          Airflow FastMCP Server Information
+          ========================================
+          Server: {{ airflow_server_info.server_info.server_name }}
+          Tools Available: {{ airflow_server_info.server_info.available_tools }}
+          Resources: {{ airflow_server_info.server_info.available_resources }}
+          Prompts: {{ airflow_server_info.server_info.available_prompts }}
+          Status: {{ airflow_server_info.status }}
+          ========================================
+      tags: [discovery]
+
+    - name: Test list_dags Tool
+      tosin2013.mcp_audit.mcp_test_tool:
+        transport: sse
+        server_url: "http://localhost:{{ airflow_mcp_port }}/sse"
+        server_headers:
+          X-API-Key: "{{ airflow_api_key }}"
+        tool_name: list_dags
+        tool_arguments: {}
+        timeout: 30
+      register: list_dags_test
+      tags: [tools, dags]
+
+    - name: Test list_vms Tool
+      tosin2013.mcp_audit.mcp_test_tool:
+        transport: sse
+        server_url: "http://localhost:{{ airflow_mcp_port }}/sse"
+        server_headers:
+          X-API-Key: "{{ airflow_api_key }}"
+        tool_name: list_vms
+        tool_arguments: {}
+        timeout: 30
+      register: list_vms_test
+      tags: [tools, vms]
+
+    - name: Test get_dag_info Tool (if DAGs exist)
+      tosin2013.mcp_audit.mcp_test_tool:
+        transport: sse
+        server_url: "http://localhost:{{ airflow_mcp_port }}/sse"
+        server_headers:
+          X-API-Key: "{{ airflow_api_key }}"
+        tool_name: get_dag_info
+        tool_arguments:
+          dag_id: "example_dag"
+        timeout: 30
+      register: dag_info_test
+      ignore_errors: true
+      tags: [tools, dags]
+
+    - name: Verify Core Tools Work
+      ansible.builtin.assert:
+        that:
+          - list_dags_test.success
+          - list_vms_test.success
+        fail_msg: "Core Airflow MCP tools failed"
+      tags: [validation]
+
+    - name: Generate Airflow Test Report
+      ansible.builtin.copy:
+        content: |
+          # Airflow MCP Server Test Report
+          
+          **Date:** {{ ansible_date_time.iso8601 }}
+          **Server:** {{ airflow_server_info.server_info.server_name }}
+          **Total Tools:** {{ airflow_server_info.server_info.available_tools }}
+          
+          ## Tools Tested
+          
+          1. **list_dags**: {{ 'PASS' if list_dags_test.test_passed else 'FAIL' }}
+             - Execution Time: {{ list_dags_test.execution_time }}s
+          
+          2. **list_vms**: {{ 'PASS' if list_vms_test.test_passed else 'FAIL' }}
+             - Execution Time: {{ list_vms_test.execution_time }}s
+          
+          3. **get_dag_info**: {{ 'PASS' if dag_info_test.test_passed | default(false) else 'SKIP/FAIL' }}
+             - Note: May fail if no example DAG exists
+          
+          ## Summary
+          
+          - Core Tests Passed: {{ [list_dags_test.test_passed, list_vms_test.test_passed] | select('equalto', true) | list | length }}/2
+        dest: "/root/qubinode_navigator/tests/mcp/airflow_test_report.md"
+      tags: [report]

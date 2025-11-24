@@ -1,3 +1,11 @@
+---
+layout: default
+title: ADR-0006 Modular Dependency Management
+parent: Architecture & Design
+grand_parent: Architectural Decision Records
+nav_order: 6
+---
+
 # ADR-0006: Modular Dependency Management Strategy
 
 ## Status

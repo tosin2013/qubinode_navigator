@@ -1,3 +1,11 @@
+---
+layout: default
+title: ADR-0009 Cloud Provider-Specific Configuration
+parent: Infrastructure & Deployment
+grand_parent: Architectural Decision Records
+nav_order: 0009
+---
+
 # ADR-0009: Cloud Provider-Specific Configuration Management
 
 ## Status

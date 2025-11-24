@@ -1,3 +1,11 @@
+---
+layout: default
+title: ADR-0003 Dynamic Configuration Management
+parent: Configuration & Automation
+grand_parent: Architectural Decision Records
+nav_order: 3
+---
+
 # ADR-0003: Dynamic Configuration Management with Python
 
 ## Status

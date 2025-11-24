@@ -1,0 +1,225 @@
+ansible:
+  known_issues:
+  - issue: Python 3.12 compatibility warnings
+    severity: low
+    version: 8.0.0
+    workaround: Warnings are non-critical, functionality preserved
+  - issue: New collection namespace requirements
+    severity: medium
+    version: 9.0.0
+    workaround: Update collection references to use FQCN
+  last_updated: '2025-11-08T00:00:00'
+  supported_versions:
+    '10':
+    - 8.0.0
+    - 8.1.0
+    - 8.2.0
+    - 9.0.0
+    '8':
+    - 6.0.0
+    - 6.1.0
+    - 7.0.0
+    '9':
+    - 7.0.0
+    - 7.1.0
+    - 8.0.0
+    - 8.1.0
+  test_results:
+    8.2.0: passed
+    9.0.0: needs_testing
+ansible.posix:
+  known_issues: []
+  last_updated: '2025-11-08T00:00:00'
+  supported_versions:
+    '10':
+    - 1.5.0
+    - 1.6.0
+    - 1.7.0
+    '8':
+    - 1.3.0
+    - 1.4.0
+    - 1.5.0
+    '9':
+    - 1.4.0
+    - 1.5.0
+    - 1.6.0
+  test_results:
+    1.6.0: passed
+    1.7.0: passed
+community.general:
+  known_issues:
+  - issue: Deprecated modules removed
+    severity: medium
+    version: 8.0.0
+    workaround: Update playbooks to use replacement modules
+  last_updated: '2025-11-08T00:00:00'
+  supported_versions:
+    '10':
+    - 8.0.0
+    - 8.1.0
+    - 8.2.0
+    '8':
+    - 6.0.0
+    - 6.1.0
+    - 7.0.0
+    '9':
+    - 7.0.0
+    - 7.1.0
+    - 8.0.0
+  test_results:
+    8.1.0: passed
+    8.2.0: passed
+containers.podman:
+  known_issues:
+  - issue: New authentication parameters
+    severity: low
+    version: 1.11.0
+    workaround: Update container registry authentication in playbooks
+  last_updated: '2025-11-08T00:00:00'
+  supported_versions:
+    '10':
+    - 1.10.0
+    - 1.11.0
+    - 1.12.0
+    '8':
+    - 1.8.0
+    - 1.9.0
+    - 1.10.0
+    '9':
+    - 1.9.0
+    - 1.10.0
+    - 1.11.0
+  test_results:
+    1.11.0: passed
+    1.12.0: needs_testing
+docker:
+  known_issues:
+  - issue: Rootless mode changes require configuration update
+    severity: medium
+    version: 25.0.0
+    workaround: Run dockerd-rootless-setuptool.sh install after upgrade
+  - issue: New security defaults may break existing containers
+    severity: high
+    version: 26.0.0
+    workaround: Review and update security configurations
+  last_updated: '2025-11-08T00:00:00'
+  supported_versions:
+    '10':
+    - 24.0.0
+    - 25.0.0
+    - 26.0.0
+    '8':
+    - 20.10.0
+    - 23.0.0
+    '9':
+    - 20.10.0
+    - 23.0.0
+    - 24.0.0
+  test_results:
+    24.0.0: passed
+    25.0.0: passed
+    26.0.0: needs_testing
+git:
+  known_issues:
+  - issue: Performance regression with large repositories
+    severity: medium
+    version: 2.44.0
+    workaround: Use git config core.preloadindex true
+  last_updated: '2025-11-08T05:22:34.567167'
+  supported_versions:
+    '10':
+    - 2.43.0
+    - 2.44.0
+    - 2.45.0
+    - 2.46.0
+    '8':
+    - 2.31.0
+    - 2.32.0
+    - 2.33.0
+    - 2.34.0
+    '9':
+    - 2.39.0
+    - 2.40.0
+    - 2.41.0
+    - 2.42.0
+  test_results:
+    2.45.0: passed
+    2.46.0: passed
+kernel:
+  known_issues:
+  - issue: New hardware support may require driver updates
+    severity: high
+    version: 6.13.0
+    workaround: Ensure all hardware drivers are updated before kernel upgrade
+  last_updated: '2025-11-08T00:00:00'
+  supported_versions:
+    '10':
+    - 6.12.0
+    - 6.12.1
+    - 6.13.0
+    '8':
+    - 4.18.0
+    - 5.4.0
+    '9':
+    - 5.14.0
+    - 6.1.0
+    - 6.2.0
+  test_results:
+    6.12.1: passed
+    6.13.0: needs_testing
+podman:
+  known_issues:
+  - issue: SELinux compatibility issue with custom containers
+    severity: medium
+    version: 4.8.0
+    workaround: Use --security-opt label=disable for affected containers
+  - issue: Breaking changes in network configuration
+    severity: high
+    version: 5.0.0
+    workaround: Update network configurations before upgrade
+  last_updated: '2025-11-08T00:00:00'
+  supported_versions:
+    '10':
+    - 4.9.0
+    - 4.9.1
+    - 4.9.2
+    - 5.0.0
+    - 5.0.1
+    '8':
+    - 4.4.0
+    - 4.4.1
+    - 4.5.0
+    - 4.6.0
+    '9':
+    - 4.6.0
+    - 4.6.1
+    - 4.7.0
+    - 4.8.0
+    - 4.9.0
+  test_results:
+    4.9.2: passed
+    5.0.0: needs_testing
+    5.0.1: passed
+systemd:
+  known_issues:
+  - issue: Service file format changes
+    severity: medium
+    version: '256'
+    workaround: Review custom service files for compatibility
+  last_updated: '2025-11-08T00:00:00'
+  supported_versions:
+    '10':
+    - '255'
+    - '256'
+    - '257'
+    '8':
+    - '239'
+    - '240'
+    - '241'
+    '9':
+    - '250'
+    - '251'
+    - '252'
+  test_results:
+    '255': passed
+    '256': passed

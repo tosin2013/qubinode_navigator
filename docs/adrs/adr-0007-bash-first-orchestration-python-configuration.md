@@ -1,3 +1,11 @@
+---
+layout: default
+title: ADR-0007 Bash-First Orchestration
+parent: Configuration & Automation
+grand_parent: Architectural Decision Records
+nav_order: 7
+---
+
 # ADR-0007: Bash-First Orchestration with Python Configuration
 
 ## Status

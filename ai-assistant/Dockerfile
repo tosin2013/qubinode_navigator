@@ -17,15 +17,17 @@ RUN git clone https://github.com/ggerganov/llama.cpp.git && \
     cmake --build build --config Release -j$(nproc)
 
 # Stage 2: Runtime environment
-FROM registry.redhat.io/ubi9/ubi:latest
+FROM registry.redhat.io/ubi9/python-312:latest
+
+# Switch to root for package installation
+USER root
 
 # Install runtime dependencies including libraries needed for llama.cpp
 RUN dnf update -y && \
-    dnf install -y --allowerasing python3 python3-pip curl wget libgomp libstdc++ && \
+    dnf install -y --allowerasing curl wget libgomp libstdc++ && \
     dnf clean all
 
-# Create non-root user for security
-RUN useradd -m -u 1001 qubinode-ai
+# Python 3.12 image already has 'default' user with UID 1001
 
 # Copy llama.cpp binaries from builder stage
 COPY --from=builder /build/llama.cpp/build/bin/llama-server /usr/local/bin/
@@ -38,7 +40,7 @@ RUN mkdir -p /app/llama.cpp && \
 
 # Set up Python virtual environment (best practice)
 WORKDIR /app
-RUN python3 -m venv /app/venv && \
+RUN python3.12 -m venv /app/venv && \
     /app/venv/bin/pip install --upgrade pip
 
 # Install Python dependencies in virtual environment
@@ -52,10 +54,10 @@ COPY scripts/ ./scripts/
 
 # Create directories for models and data
 RUN mkdir -p /app/models /app/data /app/logs && \
-    chown -R qubinode-ai:qubinode-ai /app
+    chown -R 1001:0 /app
 
-# Switch to non-root user
-USER qubinode-ai
+# Switch to non-root user (default user with UID 1001)
+USER 1001
 
 # Expose API port
 EXPOSE 8080

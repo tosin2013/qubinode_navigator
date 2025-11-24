@@ -1,0 +1,385 @@
+# Qubinode Navigator Update Validation Test Definitions
+# 
+# This file defines test templates and environment configurations
+# for automated update validation infrastructure.
+
+test_templates:
+  # System Health Tests
+  system_health_pre:
+    name: "Pre-Update System Health Check"
+    type: "functional"
+    stage: "pre_update_tests"
+    command: "systemctl status && df -h && free -m && uptime"
+    expected_result: "exit_code_0"
+    timeout: 60
+    critical: true
+    description: "Verify system is healthy before applying updates"
+
+  system_health_post:
+    name: "Post-Update System Health Check"
+    type: "functional"
+    stage: "post_update_tests"
+    command: "systemctl status && df -h && free -m && uptime"
+    expected_result: "exit_code_0"
+    timeout: 60
+    critical: true
+    description: "Verify system remains healthy after updates"
+
+  # Package Integrity Tests
+  package_integrity_pre:
+    name: "Pre-Update Package Integrity"
+    type: "functional"
+    stage: "pre_update_tests"
+    command: "rpm -qa --queryformat '%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n' | wc -l"
+    expected_result: "package_count"
+    timeout: 120
+    critical: false
+    description: "Check package database integrity before updates"
+
+  package_integrity_post:
+    name: "Post-Update Package Integrity"
+    type: "functional"
+    stage: "post_update_tests"
+    command: "rpm -qa --queryformat '%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n' | wc -l"
+    expected_result: "package_count"
+    timeout: 120
+    critical: false
+    description: "Verify package database integrity after updates"
+
+  # Service Status Tests
+  critical_services_pre:
+    name: "Pre-Update Critical Services"
+    type: "functional"
+    stage: "pre_update_tests"
+    command: "systemctl is-active sshd NetworkManager systemd-resolved || true"
+    expected_result: "services_status"
+    timeout: 30
+    critical: true
+    description: "Check critical services status before updates"
+
+  critical_services_post:
+    name: "Post-Update Critical Services"
+    type: "functional"
+    stage: "post_update_tests"
+    command: "systemctl is-active sshd NetworkManager systemd-resolved || true"
+    expected_result: "services_status"
+    timeout: 30
+    critical: true
+    description: "Verify critical services are running after updates"
+
+  # Network Connectivity Tests
+  network_connectivity:
+    name: "Network Connectivity Test"
+    type: "functional"
+    stage: "post_update_tests"
+    command: "ping -c 3 8.8.8.8 && curl -s --connect-timeout 5 http://httpbin.org/ip"
+    expected_result: "network_accessible"
+    timeout: 30
+    critical: true
+    description: "Verify network connectivity after updates"
+
+  # Podman-Specific Tests
+  podman_version_check:
+    name: "Podman Version Verification"
+    type: "functional"
+    stage: "post_update_tests"
+    command: "podman --version && podman info --format json | jq -r '.version.Version'"
+    expected_result: "version_info"
+    timeout: 30
+    critical: true
+    description: "Verify Podman version and basic functionality"
+    component_filter: ["podman"]
+
+  podman_container_test:
+    name: "Podman Container Functionality"
+    type: "functional"
+    stage: "post_update_tests"
+    command: "podman run --rm quay.io/libpod/hello:latest"
+    expected_result: "hello_output"
+    timeout: 120
+    critical: true
+    description: "Test Podman container execution"
+    component_filter: ["podman"]
+
+  podman_image_operations:
+    name: "Podman Image Operations"
+    type: "functional"
+    stage: "post_update_tests"
+    command: "podman images && podman system info | grep -E '(runRoot|graphRoot)'"
+    expected_result: "image_info"
+    timeout: 60
+    critical: false
+    description: "Verify Podman image management"
+    component_filter: ["podman"]
+
+  # Ansible-Specific Tests
+  ansible_version_check:
+    name: "Ansible Version Verification"
+    type: "functional"
+    stage: "post_update_tests"
+    command: "ansible --version && ansible-playbook --version"
+    expected_result: "version_info"
+    timeout: 30
+    critical: true
+    description: "Verify Ansible version and components"
+    component_filter: ["ansible"]
+
+  ansible_localhost_test:
+    name: "Ansible Localhost Connectivity"
+    type: "functional"
+    stage: "post_update_tests"
+    command: "ansible localhost -m setup -c local | head -20"
+    expected_result: "ansible_facts"
+    timeout: 60
+    critical: true
+    description: "Test Ansible localhost execution"
+    component_filter: ["ansible"]
+
+  ansible_collections_test:
+    name: "Ansible Collections Verification"
+    type: "functional"
+    stage: "post_update_tests"
+    command: "ansible-galaxy collection list | head -10"
+    expected_result: "collections_listed"
+    timeout: 30
+    critical: false
+    description: "Verify Ansible collections are accessible"
+    component_filter: ["ansible"]
+
+  # Git-Specific Tests
+  git_version_check:
+    name: "Git Version Verification"
+    type: "functional"
+    stage: "post_update_tests"
+    command: "git --version && git config --list --global | head -5"
+    expected_result: "version_info"
+    timeout: 30
+    critical: true
+    description: "Verify Git version and configuration"
+    component_filter: ["git"]
+
+  git_functionality_test:
+    name: "Git Basic Functionality"
+    type: "functional"
+    stage: "post_update_tests"
+    command: "cd /tmp && git init test_repo && cd test_repo && echo 'test' > README.md && git add README.md"
+    expected_result: "git_operations"
+    timeout: 60
+    critical: true
+    description: "Test Git basic operations"
+    component_filter: ["git"]
+
+  # Docker-Specific Tests
+  docker_version_check:
+    name: "Docker Version Verification"
+    type: "functional"
+    stage: "post_update_tests"
+    command: "docker --version && docker info --format '{{.ServerVersion}}'"
+    expected_result: "version_info"
+    timeout: 30
+    critical: true
+    description: "Verify Docker version and daemon"
+    component_filter: ["docker"]
+
+  docker_container_test:
+    name: "Docker Container Functionality"
+    type: "functional"
+    stage: "post_update_tests"
+    command: "docker run --rm hello-world"
+    expected_result: "hello_output"
+    timeout: 120
+    critical: true
+    description: "Test Docker container execution"
+    component_filter: ["docker"]
+
+  # Kernel-Specific Tests
+  kernel_version_check:
+    name: "Kernel Version Verification"
+    type: "functional"
+    stage: "post_update_tests"
+    command: "uname -r && cat /proc/version"
+    expected_result: "kernel_info"
+    timeout: 30
+    critical: true
+    description: "Verify kernel version information"
+    component_filter: ["kernel"]
+
+  kernel_modules_test:
+    name: "Kernel Modules Verification"
+    type: "functional"
+    stage: "post_update_tests"
+    command: "lsmod | head -10 && modinfo -F version $(uname -r) 2>/dev/null || echo 'No module version'"
+    expected_result: "modules_info"
+    timeout: 60
+    critical: false
+    description: "Check kernel modules status"
+    component_filter: ["kernel"]
+
+  # SystemD-Specific Tests
+  systemd_version_check:
+    name: "SystemD Version Verification"
+    type: "functional"
+    stage: "post_update_tests"
+    command: "systemctl --version && systemd-analyze --version"
+    expected_result: "version_info"
+    timeout: 30
+    critical: true
+    description: "Verify SystemD version"
+    component_filter: ["systemd"]
+
+  systemd_functionality_test:
+    name: "SystemD Functionality Test"
+    type: "functional"
+    stage: "post_update_tests"
+    command: "systemctl list-units --failed && systemctl status systemd-resolved"
+    expected_result: "systemd_status"
+    timeout: 60
+    critical: true
+    description: "Test SystemD unit management"
+    component_filter: ["systemd"]
+
+  # Performance Tests
+  system_performance:
+    name: "System Performance Check"
+    type: "performance"
+    stage: "post_update_tests"
+    command: "top -bn1 | head -20 && iostat -x 1 1 || echo 'iostat not available'"
+    expected_result: "performance_metrics"
+    timeout: 30
+    critical: false
+    description: "Check system performance metrics"
+
+  memory_usage:
+    name: "Memory Usage Check"
+    type: "performance"
+    stage: "post_update_tests"
+    command: "free -h && cat /proc/meminfo | grep -E '(MemTotal|MemFree|MemAvailable)'"
+    expected_result: "memory_info"
+    timeout: 30
+    critical: false
+    description: "Verify memory usage patterns"
+
+  # Security Tests
+  selinux_status:
+    name: "SELinux Status Check"
+    type: "security"
+    stage: "post_update_tests"
+    command: "getenforce && sestatus || echo 'SELinux not available'"
+    expected_result: "selinux_info"
+    timeout: 30
+    critical: false
+    description: "Check SELinux security status"
+
+  firewall_status:
+    name: "Firewall Status Check"
+    type: "security"
+    stage: "post_update_tests"
+    command: "systemctl is-active firewalld && firewall-cmd --state || echo 'Firewall not active'"
+    expected_result: "firewall_info"
+    timeout: 30
+    critical: false
+    description: "Verify firewall configuration"
+
+  # Rollback Tests
+  rollback_preparation:
+    name: "Rollback Preparation Test"
+    type: "functional"
+    stage: "rollback_validation"
+    command: "echo 'Rollback test - verify system can be restored to previous state'"
+    expected_result: "exit_code_0"
+    timeout: 30
+    critical: true
+    description: "Verify rollback capability"
+
+environment_configs:
+  # Default CentOS Stream 10 environment
+  centos_stream10:
+    base_image: "quay.io/centos/centos:stream10"
+    packages:
+      - "systemd"
+      - "openssh-server"
+      - "NetworkManager"
+      - "curl"
+      - "wget"
+      - "jq"
+      - "sysstat"
+    services:
+      - "sshd"
+      - "NetworkManager"
+      - "systemd-resolved"
+    environment_vars:
+      LANG: "en_US.UTF-8"
+      PATH: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    init_commands:
+      - "dnf update -y"
+      - "systemctl enable sshd NetworkManager"
+
+  # RHEL 9 environment
+  rhel9:
+    base_image: "registry.access.redhat.com/ubi9/ubi:latest"
+    packages:
+      - "systemd"
+      - "openssh-server"
+      - "NetworkManager"
+      - "curl"
+      - "wget"
+    services:
+      - "sshd"
+      - "NetworkManager"
+    environment_vars:
+      LANG: "en_US.UTF-8"
+      PATH: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    init_commands:
+      - "dnf update -y"
+      - "systemctl enable sshd NetworkManager"
+
+  # Fedora environment
+  fedora:
+    base_image: "fedora:latest"
+    packages:
+      - "systemd"
+      - "openssh-server"
+      - "NetworkManager"
+      - "curl"
+      - "wget"
+      - "jq"
+    services:
+      - "sshd"
+      - "NetworkManager"
+    environment_vars:
+      LANG: "en_US.UTF-8"
+      PATH: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    init_commands:
+      - "dnf update -y"
+      - "systemctl enable sshd NetworkManager"
+
+# Test execution settings
+execution_settings:
+  # Maximum parallel tests per stage
+  max_parallel_tests: 3
+  
+  # Default timeouts (seconds)
+  default_timeout: 300
+  quick_timeout: 30
+  long_timeout: 600
+  
+  # Retry settings
+  max_retries: 2
+  retry_delay: 5
+  
+  # Container settings
+  container_runtime: "podman"
+  container_timeout: 120
+  cleanup_timeout: 30
+  
+  # Test result evaluation
+  critical_failure_stops_suite: true
+  warning_threshold: 2
+  
+  # Logging settings
+  log_test_output: true
+  max_output_length: 1000
+  
+  # AI integration
+  ai_analysis_enabled: true
+  ai_timeout: 10
