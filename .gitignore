@@ -47,6 +47,9 @@ ai-assistant/models/
 ai-assistant/data/rag-docs/
 ai-assistant/data/vector-db/
 
+# DocuMCP snapshots and generated files
+.documcp/
+
 # Development tools
 aider-env/
 .aider*
