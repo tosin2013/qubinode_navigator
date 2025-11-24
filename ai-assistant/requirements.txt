@@ -41,8 +41,9 @@ psutil>=5.9.6
 qdrant-client>=1.16.0
 
 # Development and testing
-pytest>=9.0.0,<10.0.0
+pytest>=9.0.1,<10.0.0
 pytest-asyncio>=1.0.0,<2.0.0
+
 
 # MCP (Model Context Protocol) server for LLM integrations
 # fastmcp includes the MCP protocol implementation
