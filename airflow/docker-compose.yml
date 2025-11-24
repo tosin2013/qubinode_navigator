@@ -12,8 +12,8 @@ x-airflow-common:
     dockerfile: Dockerfile
   # Custom image with kcli  # Using public Docker Hub images (not available in Red Hat registries)
   # Using 2.10.4 (stable 2.x) - Airflow 3.x has breaking changes (webserver → api-server)
-  # Python 3.11 for kcli compatibility (kcli 99.0 has Python 3.12 issues)
-  image: localhost/qubinode-airflow:2.10.4-python3.11
+  # Python 3.12 for forward compatibility (aligned with ADR-0001 and ADR-0025)
+  image: localhost/qubinode-airflow:2.10.4-python3.12
   environment:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
