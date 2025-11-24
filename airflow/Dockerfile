@@ -1,7 +1,7 @@
 # Custom Airflow image with kcli for Qubinode Navigator
 # Based on official Apache Airflow 2.10.4
-# Using Python 3.11 for kcli compatibility (kcli 99.0 has issues with Python 3.12)
-FROM docker.io/apache/airflow:2.10.4-python3.11
+# Using Python 3.12 for forward compatibility (aligned with ADR-0001 and ADR-0025)
+FROM docker.io/apache/airflow:2.10.4-python3.12
 
 # Switch to root to install system packages
 USER root

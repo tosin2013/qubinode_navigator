@@ -1,3 +1,11 @@
+---
+layout: default
+title: ADR-0008 OS-Specific Deployment Script
+parent: Infrastructure & Deployment
+grand_parent: Architectural Decision Records
+nav_order: 0008
+---
+
 # ADR-0008: OS-Specific Deployment Script Strategy
 
 ## Status

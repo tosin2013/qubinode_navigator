@@ -1,3 +1,7 @@
+---
+nav_exclude: true
+---
+
 # Qubinode Navigator Unified Deployment with Nginx
 
 ## 🎯 Overview

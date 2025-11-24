@@ -12,7 +12,7 @@ Before running the script, ensure that:
 * You have Java 11 or higher installed.
 * You have Git version 2.11.1 or higher installed.
   
-[Full Script](https://github.com/tosin2013/qubinode_navigator/blob/main/dependancies/onedev/configure-onedev-agent.sh)
+[Full Script](https://github.com/Qubinode/qubinode_navigator/blob/main/dependancies/onedev/configure-onedev-agent.sh)
 
 ## Configuring the Agent
 

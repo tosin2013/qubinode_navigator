@@ -32,7 +32,7 @@ chmod +x configure-sudo-user.sh
 ./configure-sudo-user.sh lab-user
 
 # Clone Qubinode Navigator
-git clone https://github.com/tosin2013/qubinode_navigator.git
+git clone https://github.com/Qubinode/qubinode_navigator.git
 cd qubinode_navigator
 ```
 
@@ -197,7 +197,7 @@ https://your-server-ip:9090
 ### **Legacy Process (Old Way)**
 ```bash
 # OLD: Manual multi-step process
-curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/rocky-linux-hetzner.sh
+curl -OL https://raw.githubusercontent.com/Qubinode/qubinode_navigator/main/rocky-linux-hetzner.sh
 # Create notouch.env manually
 # Create /tmp/config.yml manually  
 # Run rocky-linux-hetzner.sh
@@ -207,7 +207,7 @@ curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/roc
 ### **Modern Process (New Way)**
 ```bash
 # NEW: AI-enhanced one-shot deployment
-git clone https://github.com/tosin2013/qubinode_navigator.git
+git clone https://github.com/Qubinode/qubinode_navigator.git
 cd qubinode_navigator
 cp .env.example .env
 # Edit .env with Hetzner settings
@@ -281,7 +281,7 @@ kcli create vm -P rhel9 myvm
 - **AI Assistant**: `http://your-server:8080` - Interactive help and guidance
 - **Hetzner Cloud Docs**: [https://docs.hetzner.com/](https://docs.hetzner.com/)
 - **kcli Documentation**: [https://kcli.readthedocs.io/](https://kcli.readthedocs.io/)
-- **Qubinode Navigator**: [GitHub Repository](https://github.com/tosin2013/qubinode_navigator)
+- **Qubinode Navigator**: [GitHub Repository](https://github.com/Qubinode/qubinode_navigator)
 
 ---
 

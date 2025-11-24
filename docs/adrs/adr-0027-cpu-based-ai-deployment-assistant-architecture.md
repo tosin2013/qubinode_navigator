@@ -1,3 +1,11 @@
+---
+layout: default
+title: ADR-0027 CPU-Based AI Deployment Assistant
+parent: Architecture & Design
+grand_parent: Architectural Decision Records
+nav_order: 0027
+---
+
 # ADR-0027: CPU-Based AI Deployment Assistant Architecture
 
 ## Status

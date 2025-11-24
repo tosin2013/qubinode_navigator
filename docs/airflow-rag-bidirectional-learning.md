@@ -1,3 +1,7 @@
+---
+nav_exclude: true
+---
+
 # Airflow ↔ RAG Bidirectional Learning System
 
 ## Core Concept

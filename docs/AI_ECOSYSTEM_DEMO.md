@@ -1,3 +1,7 @@
+---
+nav_exclude: true
+---
+
 # AI-Powered Qubinode Navigator Ecosystem Demo
 
 ## 🎯 Your Vision Realized
@@ -271,7 +275,7 @@ curl -X POST http://localhost:8080/rag/ingest \
 ### For Developers
 ```bash
 # Extend the AI capabilities
-git clone https://github.com/tosin2013/qubinode_navigator.git
+git clone https://github.com/Qubinode/qubinode_navigator.git
 cd qubinode_navigator/ai-assistant
 
 # Add new intelligence modules

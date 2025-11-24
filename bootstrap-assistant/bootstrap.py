@@ -281,7 +281,7 @@ class LocalAI:
             id="download_qubinode",
             title="Download Qubinode Navigator",
             description="Clone the Qubinode Navigator repository",
-            command="git clone https://github.com/tosin2013/qubinode_navigator.git",
+            command="git clone https://github.com/Qubinode/qubinode_navigator.git",
             requires_input=True,
             prompt="Enter installation directory (default: /opt/qubinode)",
             validation="ls qubinode_navigator/README.md",
@@ -420,7 +420,7 @@ class BootstrapAssistant:
                 if step.id == "download_qubinode" and user_input.strip():
                     # Modify command with user's directory choice
                     install_dir = user_input.strip()
-                    step.command = f"git clone https://github.com/tosin2013/qubinode_navigator.git {install_dir}/qubinode_navigator"
+                    step.command = f"git clone https://github.com/Qubinode/qubinode_navigator.git {install_dir}/qubinode_navigator"
             
             if not self._confirm(f"Execute: {step.command}"):
                 print("Step skipped.")

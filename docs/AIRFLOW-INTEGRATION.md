@@ -1,6 +1,15 @@
+---
+nav_exclude: true
+---
+
 # Apache Airflow Integration for Qubinode Navigator
 
 This document provides a quick overview of the Apache Airflow integration with the Qubinode Navigator AI Assistant.
+
+> **Documentation status**
+> - Validation: `IN PROGRESS` – Airflow integration is under active development and may evolve.
+> - Last reviewed: 2025-11-21
+> - Community: If you deploy this successfully or find gaps, please help improve this guide via [Contributing to docs](./how-to/contribute.md).
 
 ## 📋 Overview
 
@@ -39,9 +48,9 @@ Open browser to: **http://localhost:8080**
 
 ## 📁 Documentation
 
-- **[ADR-0036](docs/adrs/adr-0036-apache-airflow-workflow-orchestration-integration.md)** - Architectural decision record
-- **[Integration Guide](docs/airflow-integration-guide.md)** - Detailed installation and configuration
-- **[Plugin Development](docs/airflow-integration-guide.md#creating-custom-plugins)** - Custom plugin creation guide
+- **[ADR-0036](./adrs/adr-0036-apache-airflow-workflow-orchestration-integration.md)** - Architectural decision record
+- **[Integration Guide](./airflow-integration-guide.md)** - Detailed installation and configuration
+- **[Plugin Development](./airflow-integration-guide.md#creating-custom-plugins)** - Custom plugin creation guide
 
 ## 🔧 Directory Structure
 
@@ -239,8 +248,8 @@ We welcome contributions! Areas for contribution:
 ## 📞 Support
 
 - **GitHub Issues**: https://github.com/Qubinode/qubinode_navigator/issues
-- **Documentation**: [docs/airflow-integration-guide.md](docs/airflow-integration-guide.md)
-- **ADR**: [docs/adrs/adr-0036-apache-airflow-workflow-orchestration-integration.md](docs/adrs/adr-0036-apache-airflow-workflow-orchestration-integration.md)
+- **Documentation**: [Airflow Integration Guide](./airflow-integration-guide.md)
+- **ADR**: [ADR-0036](./adrs/adr-0036-apache-airflow-workflow-orchestration-integration.md)
 
 ## 📄 License
 

@@ -2,6 +2,7 @@
 layout: page
 title: About Qubinode Navigator
 permalink: /about/
+nav_exclude: true
 ---
 
 Welcome to the Qubinode Navigator repository! Qubinode Navigator is a powerful tool designed to streamline the deployment of OpenShift on KVM (Kernel-based Virtual Machine) using a variety of methods. This repository is your go-to resource for comprehensive guides and documentation aimed at helping you deploy OpenShift on RHEL 8 KVM efficiently and effectively.

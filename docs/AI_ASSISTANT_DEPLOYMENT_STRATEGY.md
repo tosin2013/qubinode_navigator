@@ -1,3 +1,7 @@
+---
+nav_exclude: true
+---
+
 # AI Assistant Container Deployment Strategy
 
 ## Overview
@@ -281,7 +285,7 @@ ai_assistant:
 
 ## Related Documentation
 
-- [AI Assistant Configuration](ai-assistant/config/ai_config.yaml)
-- [Container Build Process](ai-assistant/scripts/build.sh)
-- [Plugin Framework](docs/adrs/adr-0028-plugin-framework.md)
-- [Container Architecture](docs/adrs/adr-0027-cpu-based-ai-deployment-assistant-architecture.md)
+- [AI Assistant Configuration](https://github.com/Qubinode/qubinode_navigator/blob/main/ai-assistant/config/ai_config.yaml)
+- [Container Build Process](https://github.com/Qubinode/qubinode_navigator/blob/main/ai-assistant/scripts/build.sh)
+- [Plugin Framework](./adrs/adr-0028-modular-plugin-framework-for-extensibility.md)
+- [Container Architecture](./adrs/adr-0027-cpu-based-ai-deployment-assistant-architecture.md)

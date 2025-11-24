@@ -6,7 +6,7 @@ set -e
 
 BOOTSTRAP_VERSION="v1.0.0"
 INSTALL_DIR="/opt/qubinode-bootstrap"
-GITHUB_REPO="tosin2013/qubinode_navigator"
+GITHUB_REPO="Qubinode/qubinode_navigator"
 BOOTSTRAP_URL="https://raw.githubusercontent.com/${GITHUB_REPO}/main/bootstrap-assistant"
 
 # Colors for output

@@ -47,7 +47,7 @@ jobs:
         uses: actions/checkout@v4
         
       - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           
@@ -63,7 +63,7 @@ jobs:
         run: |
           cd ai-assistant
           pip install -r requirements.txt
-          pip install pytest pytest-cov pytest-asyncio
+          pip install pytest-cov
           
       - name: Run diagnostic tools tests
         run: |
@@ -71,7 +71,7 @@ jobs:
           python -m pytest tests/test_diagnostic_tools.py -v --cov=src --cov-report=xml --cov-report=term
           
       - name: Upload diagnostic tools coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
           file: ./ai-assistant/coverage.xml
           flags: diagnostic-tools
@@ -87,13 +87,13 @@ jobs:
         uses: actions/checkout@v4
         
       - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           
       - name: Install plugin framework dependencies
         run: |
-          pip install pytest pytest-cov pytest-mock pyyaml
+          pip install pytest-cov pytest-mock
           pip install -r requirements.txt
           
       - name: Run AI Assistant plugin tests
@@ -101,7 +101,7 @@ jobs:
           python -m pytest tests/test_ai_assistant_plugin.py -v --cov=plugins/services --cov-report=xml --cov-report=term
           
       - name: Upload plugin integration coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
           file: ./coverage.xml
           flags: plugin-integration
@@ -370,7 +370,7 @@ jobs:
           output: 'trivy-results.sarif'
           
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
@@ -386,7 +386,7 @@ jobs:
           no-fail: true
           
       - name: Upload Hadolint scan results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always() && hashFiles('hadolint-results.sarif') != ''
         with:
           sarif_file: hadolint-results.sarif
@@ -703,13 +703,13 @@ jobs:
         uses: actions/checkout@v4
         
       - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           
       - name: Install dependencies
         run: |
-          pip install pytest pytest-asyncio pyyaml requests
+          pip install pyyaml requests
           cd ai-assistant && pip install -r requirements.txt
           
       - name: Set up Docker Buildx
@@ -1173,7 +1173,7 @@ jobs:
     
     steps:
       - name: Download benchmark results
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         continue-on-error: true  # Don't fail if artifact doesn't exist
         with:
           name: performance-benchmarks

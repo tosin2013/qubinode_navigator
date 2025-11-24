@@ -1,3 +1,11 @@
+---
+layout: default
+title: ADR-0031 Setup Script Modernization
+parent: Infrastructure & Deployment
+grand_parent: Architectural Decision Records
+nav_order: 0031
+---
+
 # ADR-0031: Setup Script Modernization Strategy
 
 ## Status

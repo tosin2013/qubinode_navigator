@@ -28,9 +28,10 @@ notouch.env
 .mcp-server-context.md
 
 # Developer notes and implementation plans
-#docs/IMPLEMENTATION-PLAN.md
+docs/development/IMPLEMENTATION-PLAN.md
 docs/research/
 docs/development/
+docs/delivery-notes/
 TODO.md
 NOTES.md
 *.notes

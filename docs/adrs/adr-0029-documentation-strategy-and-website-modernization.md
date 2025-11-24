@@ -1,5 +1,13 @@
 ---
 layout: default
+title: ADR-0029 ---
+parent: Documentation & User Experience
+grand_parent: Architectural Decision Records
+nav_order: 0029
+---
+
+---
+layout: default
 title: ADR-0029 Documentation Strategy
 parent: Documentation & User Experience
 grand_parent: Architectural Decision Records
@@ -15,7 +23,7 @@ In Progress (Infrastructure Complete, Content Migration Pending)
 The current Qubinode Navigator documentation infrastructure has critical issues that impact user adoption and project maintainability:
 
 ### Current Problems
-- **Broken Website**: https://github.com/tosin2013/qubinode_navigator website is non-functional
+- **Broken Website**: https://github.com/Qubinode/qubinode_navigator website is non-functional
 - **Fragmented Documentation**: Information scattered across multiple markdown files without clear navigation
 - **Static Content**: Documentation doesn't reflect dynamic deployment scenarios or real-time guidance
 - **Maintenance Overhead**: Manual updates required across multiple deployment guides
