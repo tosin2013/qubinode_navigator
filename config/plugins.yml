@@ -1,0 +1,226 @@
+# Qubinode Navigator Plugin Configuration
+# This file configures the plugin framework as defined in ADR-0028
+
+global:
+  log_level: INFO
+  plugin_directories:
+    - plugins
+  execution_timeout: 3600
+  
+plugins:
+  enabled:
+    - RHEL9Plugin
+    - HetznerDeploymentPlugin
+    - VaultIntegrationPlugin
+    - AIAssistantPlugin
+    - LogAnalysisPlugin
+    
+  # RHEL 9 Plugin Configuration
+  RHEL9Plugin:
+    packages:
+      - bzip2-devel
+      - libffi-devel
+      - wget
+      - vim
+      - podman
+      - ncurses-devel
+      - sqlite-devel
+      - firewalld
+      - make
+      - gcc
+      - git
+      - unzip
+      - sshpass
+      - lvm2
+      - python3
+      - python3-pip
+      - java-11-openjdk-devel
+      - ansible-core
+      - perl-Digest-SHA
+    create_lab_user: true
+    
+  # RHEL 10/CentOS Stream 10 Plugin Configuration
+  RHEL10Plugin:
+    packages:
+      - bzip2-devel
+      - libffi-devel
+      - wget
+      - vim
+      - podman
+      - ncurses-devel
+      - sqlite-devel
+      - firewalld
+      - make
+      - gcc
+      - git
+      - unzip
+      - sshpass
+      - lvm2
+      - python3
+      - python3-pip
+      - java-21-openjdk-devel  # Updated for RHEL 10
+      - ansible-core
+      - perl-Digest-SHA
+    create_lab_user: true
+    python_version: "3.12"
+    architecture: "x86_64-v3"
+    
+  # CentOS Stream 10 Plugin Configuration (Compatibility Mode)
+  CentOSStream10Plugin:
+    packages:
+      - bzip2-devel
+      - libffi-devel
+      - wget
+      - vim
+      - podman
+      - ncurses-devel
+      - sqlite-devel
+      - firewalld
+      - make
+      - gcc
+      - git
+      - unzip
+      - sshpass
+      - lvm2
+      - python3
+      - python3-pip
+      - java-21-openjdk-devel
+      - ansible-core
+      - perl-Digest-SHA
+    create_lab_user: true
+    compatibility_mode: true
+    
+  # Rocky Linux Plugin Configuration
+  RockyLinuxPlugin:
+    packages:
+      - bzip2-devel
+      - libffi-devel
+      - wget
+      - vim
+      - podman
+      - ncurses-devel
+      - sqlite-devel
+      - firewalld
+      - make
+      - gcc
+      - git
+      - unzip
+      - sshpass
+      - lvm2
+      - python3
+      - python3-pip
+      - java-11-openjdk-devel
+      - ansible-core
+      - perl-Digest-SHA
+    create_lab_user: true
+    enable_ssh_password_auth: true
+    
+  # RHEL 8 Plugin Configuration
+  RHEL8Plugin:
+    packages:
+      - bzip2-devel
+      - libffi-devel
+      - wget
+      - vim
+      - podman
+      - ncurses-devel
+      - sqlite-devel
+      - firewalld
+      - make
+      - gcc
+      - git
+      - unzip
+      - sshpass
+      - lvm2
+      - python3
+      - python3-pip
+      - java-11-openjdk-devel
+      - ansible-core
+      - perl-Digest-SHA
+      - subscription-manager
+    create_lab_user: true
+    manage_subscription: false  # Set to true if you have RHEL credentials
+    
+  # Hetzner Cloud Plugin Configuration
+  HetznerPlugin:
+    hetzner_tools:
+      - hcloud
+    cloud_packages:
+      - curl
+      - wget
+      - jq
+      - cloud-init
+      - cloud-utils
+      
+  # Vault Integration Plugin Configuration
+  VaultIntegrationPlugin:
+    vault_packages:
+      - python3-pip
+      - python3-requests
+      - python3-hvac
+    vault_url: "http://localhost:8200"
+    vault_token_file: "~/.vault_token"
+    env_file: ".env"
+    
+  # Equinix Metal Plugin Configuration
+  EquinixPlugin:
+    equinix_tools:
+      - metal-cli
+    metal_packages:
+      - curl
+      - wget
+      - jq
+      - dmidecode
+      - lshw
+      - pciutils
+      
+  # Red Hat Product Demo System Plugin Configuration
+  RedHatDemoPlugin:
+    demo_packages:
+      - subscription-manager
+      - ansible-core
+      - git
+      - vim
+      - curl
+      - wget
+      - jq
+      - python3-pip
+    required_env_vars:
+      - SSH_USER
+      - CICD_PIPELINE
+      - ENV_USERNAME
+      - KVM_VERSION
+      - CICD_ENVIORNMENT
+      - DOMAIN
+      
+  # Hetzner Deployment Plugin Configuration
+  HetznerDeploymentPlugin:
+    configure_script_url: "https://gist.githubusercontent.com/tosin2013/385054f345ff7129df6167631156fa2a/raw/b67866c8d0ec220c393ea83d2c7056f33c472e65/configure-sudo-user.sh"
+    required_packages:
+      - curl
+      - wget
+      - git
+      - vim
+      - openssh-clients
+  
+  # AI Assistant Plugin Configuration
+  AIAssistantPlugin:
+    ai_service_url: "http://localhost:8080"
+    container_name: "qubinode-ai-assistant"
+    container_image: "localhost/qubinode-ai-assistant:latest"
+    ai_assistant_path: "/root/qubinode_navigator/ai-assistant"
+    auto_start: true
+    health_check_timeout: 60
+    enable_diagnostics: true
+    enable_rag: true
+    stop_on_cleanup: false
+    model: "granite-4.0-micro"
+    inference_engine: "llama.cpp"
+    max_memory: "4GB"
+
+  # Log Analysis Plugin Configuration
+  LogAnalysisPlugin:
+    ai_assistant_url: "http://localhost:8080"
+    log_directory: "/tmp"
+    auto_analyze: true
+    report_directory: "/tmp/log_analysis_reports"

@@ -1,0 +1,80 @@
+admin_user: lab-user
+ansible_automation_platform: false
+ansible_release: 2.9
+ansible_version: 2.9.10
+bridge_name: qubibr0
+convert_dhcp_to_static: true
+dns_forwarder: 8.8.8.8
+domain: example.com
+enable_ceph_deployment: false
+instance_prefix: qbn
+kvm_host_dns_server: 1.1.1.1
+kvm_host_domain: example.com
+logical_volumes:
+- fstype: xfs
+  mount_dir: '{{ kvm_host_libvirt_dir | default(''/var/lib/libvirt/images'') }}'
+  name: qubi_images
+  size: +100%FREE
+one_redhat: false
+org_id: '{{ rhsm_org }}'
+preappend_host_name: '{{ instance_prefix }}-{{ product }}-'
+primary_dns_server: 1.1.1.1
+project_dir: /opt/qubifalsede-installer
+qubifalsede_ptr: changeme.in-addr.arpa
+qubinode_dns_servers:
+- 1.1.1.1
+- 8.8.8.8
+required_rpm_packages:
+- virt-install
+- libvirt-daemon-config-network
+- libvirt-daemon-kvm
+- libguestfs-tools
+- libvirt-client
+- qemu-kvm
+- nfs-utils
+- libvirt-daemon
+- libvirt-client
+- virt-top
+- tuned
+- openssh-server
+- wget
+- git
+- net-tools
+- bind-utils
+- yum-utils
+- iptables-services
+- bash-completion
+- kexec-tools
+- sos
+- psacct
+- vim
+- device-mapper-event-libs
+- device-mapper-libs
+- httpd-tools
+- tmux
+- python3-dns
+- python3-lxml
+- cockpit-machines
+- bc
+- nmap
+- ncurses-devel
+- curl
+rhel7_ansible_repo: rhel-7-server-ansible-2.9-rpms
+rhel7_version: 7.9
+rhel8_ansible_repo: ansible-2.9-for-rhel-8-x86_64-rpms
+rhel8_version: 8.6
+rhel_version: ''
+rhsm_activationkey: '{{ rhsm_activationkey }}'
+rhsm_org: '{{ rhsm_org }}'
+rhsm_org_id: '{{ rhsm_org }}'
+rhsm_pass: '{{ rhsm_password }}'
+rhsm_reg_method: ''
+rhsm_setup_insights_client: false
+rhsm_user: '{{ rhsm_username }}'
+run_kni_lab_on_rhpds: false
+run_on_rhpds: false
+search_domains:
+- example.com
+ssh_username: '{{ admin_user }}'
+users:
+- lab-user

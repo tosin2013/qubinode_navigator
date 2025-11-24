@@ -40,7 +40,7 @@ Before starting any deployment, ensure you have:
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/tosin2013/qubinode_navigator.git
+   git clone https://github.com/Qubinode/qubinode_navigator.git
    cd qubinode_navigator
    ```
 

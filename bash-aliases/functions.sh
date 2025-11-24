@@ -86,14 +86,20 @@ function get_rhel_version() {
     export BASE_OS="RHEL9"
   elif cat /etc/redhat-release  | grep "Red Hat Enterprise Linux release 8.[0-9]" > /dev/null 2>&1; then
       export BASE_OS="RHEL8"
+  elif cat /etc/redhat-release  | grep "Rocky Linux release 9.[0-9]" > /dev/null 2>&1; then
+    export BASE_OS="ROCKY9"
   elif cat /etc/redhat-release  | grep "Rocky Linux release 8.[0-9]" > /dev/null 2>&1; then
     export BASE_OS="ROCKY8"
   elif cat /etc/redhat-release  | grep 7.[0-9] > /dev/null 2>&1; then
     export BASE_OS="RHEL7"
+  elif cat /etc/redhat-release  | grep "CentOS Stream release 10" > /dev/null 2>&1; then
+    export BASE_OS="CENTOS10"
   elif cat /etc/redhat-release  | grep "CentOS Stream release 9" > /dev/null 2>&1; then
     export BASE_OS="CENTOS9"
   elif cat /etc/redhat-release  | grep "CentOS Stream release 8" > /dev/null 2>&1; then
     export BASE_OS="CENTOS8"
+  elif cat /etc/redhat-release  | grep "Fedora Linux release 4[0-9]" > /dev/null 2>&1; then
+    export BASE_OS="FEDORA"
   elif cat /etc/redhat-release  | grep "Fedora" > /dev/null 2>&1; then
     export BASE_OS="FEDORA"
   else
@@ -104,6 +110,56 @@ function get_rhel_version() {
 
 }
 
+# Libvirt Pool Manager - The "Storage Architect"
+function ensure_libvirt_pool() {
+# 🎯 FOR LLMs: This function ensures the default libvirt storage pool exists
+# and is active, which is required for kcli image downloads to work properly.
+# 🔄 WORKFLOW:
+# 1. Checks if default pool exists
+# 2. Creates default pool if missing
+# 3. Starts and enables autostart for the pool
+# 📊 INPUTS/OUTPUTS:
+# - INPUT: libvirt installation and sudo privileges
+# - OUTPUT: Active default storage pool for VM images
+# ⚠️  SIDE EFFECTS: Creates libvirt storage pool, requires sudo privileges
+
+    echo "Ensuring libvirt default pool exists..."
+    
+    # Check if default pool exists
+    if ! sudo virsh pool-list --all | grep -q "default"; then
+        echo "Creating default libvirt storage pool..."
+        # Create the images directory if it doesn't exist
+        sudo mkdir -p /var/lib/libvirt/images
+        
+        # Define the default pool
+        sudo virsh pool-define-as default dir --target /var/lib/libvirt/images
+        
+        # Build the pool (create directory structure)
+        sudo virsh pool-build default
+        
+        # Start the pool
+        sudo virsh pool-start default
+        
+        # Enable autostart
+        sudo virsh pool-autostart default
+        
+        echo "Default libvirt storage pool created and started"
+    else
+        # Pool exists, ensure it's active
+        if ! sudo virsh pool-list | grep -q "default.*active"; then
+            echo "Starting existing default pool..."
+            sudo virsh pool-start default
+        fi
+        
+        # Ensure autostart is enabled
+        if ! sudo virsh pool-info default | grep -q "Autostart:.*yes"; then
+            sudo virsh pool-autostart default
+        fi
+        
+        echo "Default libvirt storage pool is active"
+    fi
+}
+
 # VM Image Manager - The "Image Librarian"
 function kcli_configure_images() {
 # 🎯 FOR LLMs: This function downloads and configures standard VM images for
@@ -111,8 +167,9 @@ function kcli_configure_images() {
 # for virtual machine deployment.
 # 🔄 WORKFLOW:
 # 1. Validates dependencies (yq and OS detection)
-# 2. Downloads standard Linux distribution images
-# 3. Lists available images for verification
+# 2. Ensures libvirt storage pool exists
+# 3. Downloads standard Linux distribution images (updated for 2024/2025)
+# 4. Lists available images for verification
 # 📊 INPUTS/OUTPUTS:
 # - INPUT: Internet connectivity and kcli installation
 # - OUTPUT: Downloaded VM images available for deployment
@@ -120,13 +177,21 @@ function kcli_configure_images() {
 
     echo "Configuring images"
     dependency_check
-    echo "Downloading Fedora"
+    
+    # Ensure libvirt storage pool exists before downloading images
+    ensure_libvirt_pool
+    
+    echo "Downloading latest distribution images..."
     # 🔧 CONFIGURATION CONSTANTS FOR LLMs:
-    # Standard image set for multi-distribution support
-    sudo kcli download image fedora39      # Latest Fedora for cutting-edge features
-    sudo kcli download image centos9stream # CentOS Stream 9 for RHEL compatibility
+    # Updated image set for 2024/2025 multi-distribution support
+    sudo kcli download image fedora40      # Fedora 40 for cutting-edge features
+    sudo kcli download image fedora41      # Fedora 41 latest stable
+    sudo kcli download image centos10stream # CentOS Stream 10 for latest RHEL compatibility
+    sudo kcli download image centos9stream # CentOS Stream 9 for RHEL 9 compatibility
     sudo kcli download image centos8stream # CentOS Stream 8 for legacy support
-    sudo kcli download image ubuntu2204    # Ubuntu LTS for Debian-based workloads
+    sudo kcli download image ubuntu2404    # Ubuntu 24.04 LTS for latest Debian-based workloads
+    sudo kcli download image ubuntu2204    # Ubuntu 22.04 LTS for stable Debian-based workloads
+    sudo kcli download image rockylinux9   # Rocky Linux 9 for RHEL alternative
     kcli list available-images
 }
 
@@ -154,7 +219,9 @@ function qubinode_setup_kcli() {
         sudo usermod -aG qemu,libvirt $USER
 
         # OS-specific repository configuration
-        if [[ $BASE_OS == "CENTOS9" ]]; then
+        if [[ $BASE_OS == "CENTOS9" ]] || [[ $BASE_OS == "CENTOS10" ]]; then
+            sudo dnf copr enable karmab/kcli epel-9-x86_64
+        elif [[ $BASE_OS == "ROCKY9" ]]; then
             sudo dnf copr enable karmab/kcli epel-9-x86_64
         fi
 
@@ -162,10 +229,17 @@ function qubinode_setup_kcli() {
         curl https://raw.githubusercontent.com/karmab/kcli/master/install.sh | bash
         echo "eval '$(register-python-argcomplete kcli)'" >> ~/.bashrc
 
+        # Ensure libvirt storage pool is created before kcli host setup
+        ensure_libvirt_pool
+
         # Create local KVM host configuration
-        if [[ $BASE_OS == "CENTOS9" ]]; then
+        if [[ $BASE_OS == "CENTOS9" ]] || [[ $BASE_OS == "CENTOS10" ]]; then
             sudo kcli create host kvm -H 127.0.0.1 local
         elif [[ $BASE_OS == "RHEL9" ]]; then
+            sudo kcli create host kvm -H 127.0.0.1 local
+        elif [[ $BASE_OS == "ROCKY9" ]]; then
+            sudo kcli create host kvm -H 127.0.0.1 local
+        elif [[ $BASE_OS == "FEDORA" ]]; then
             sudo kcli create host kvm -H 127.0.0.1 local
         fi
     else

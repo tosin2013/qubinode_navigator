@@ -68,7 +68,7 @@ jobs:
             sudo usermod -aG users ${{ secrets.USERNAME }}
             sudo chown -R root:users /opt
             sudo chmod -R g+w /opt
-            git clone https://github.com/tosin2013/qubinode_navigator.git
+            git clone https://github.com/Qubinode/qubinode_navigator.git
           fi
           echo "export CICD_PIPELINE=true" > /opt/qubinode_navigator/.env
           echo "export SSH_PASSWORD=${{ secrets.SSH_PASSWORD }}" >> /opt/qubinode_navigator/.env
@@ -82,7 +82,7 @@ jobs:
    
     - name: Send a repository dispatch event to restart the workflow if it failed
       if: ${{ failure() }}
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       with:
         github-token: ${{ secrets.PAT }}
         script: |

@@ -1,3 +1,11 @@
+---
+layout: default
+title: ADR-0001 Container-First Execution Model
+parent: Infrastructure & Deployment
+grand_parent: Architectural Decision Records
+nav_order: 1
+---
+
 # ADR-0001: Container-First Execution Model with Ansible Navigator
 
 ## Status

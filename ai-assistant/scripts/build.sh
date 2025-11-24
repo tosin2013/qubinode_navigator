@@ -6,8 +6,20 @@ set -euo pipefail
 
 # Configuration
 CONTAINER_NAME="qubinode-ai-assistant"
-CONTAINER_TAG="latest"
 REGISTRY="localhost"
+
+# Version management
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VERSION_MANAGER="$SCRIPT_DIR/version-manager.sh"
+
+# Get current version
+if [[ -f "$VERSION_MANAGER" ]]; then
+    CONTAINER_VERSION=$("$VERSION_MANAGER" current | grep "Current version:" | cut -d' ' -f3)
+    BUILD_VERSION=$("$VERSION_MANAGER" build-metadata)
+else
+    CONTAINER_VERSION="latest"
+    BUILD_VERSION="latest"
+fi
 
 # Colors for output
 RED='\033[0;31m'
@@ -55,15 +67,37 @@ check_prerequisites() {
 # Build the container
 build_container() {
     log_info "Building Qubinode AI Assistant container..."
+    log_info "Version: $CONTAINER_VERSION"
+    log_info "Build metadata: $BUILD_VERSION"
+    
+    # Generate all container tags
+    local tags=()
+    if [[ -f "$VERSION_MANAGER" ]]; then
+        # Use version manager to generate tags
+        while IFS= read -r tag; do
+            tags+=("--tag" "$tag")
+        done < <("$VERSION_MANAGER" tags "$REGISTRY" "$CONTAINER_NAME")
+    else
+        # Fallback to simple tagging
+        tags+=("--tag" "${REGISTRY}/${CONTAINER_NAME}:${CONTAINER_VERSION}")
+        tags+=("--tag" "${REGISTRY}/${CONTAINER_NAME}:$(date +%Y%m%d)")
+    fi
     
     # Build with podman
     if podman build \
-        --tag "${REGISTRY}/${CONTAINER_NAME}:${CONTAINER_TAG}" \
-        --tag "${REGISTRY}/${CONTAINER_NAME}:$(date +%Y%m%d)" \
+        "${tags[@]}" \
+        --label "version=$CONTAINER_VERSION" \
+        --label "build-version=$BUILD_VERSION" \
+        --label "build-date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+        --label "vcs-ref=$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')" \
         --file Dockerfile \
         --format docker \
         .; then
         log_success "Container built successfully"
+        log_info "Tags created:"
+        for ((i=1; i<${#tags[@]}; i+=2)); do
+            echo "  ${tags[i]}"
+        done
     else
         log_error "Container build failed"
         exit 1
@@ -77,7 +111,7 @@ test_container() {
     # Run a quick test to ensure the container starts
     if podman run --rm \
         --name "${CONTAINER_NAME}-test" \
-        "${REGISTRY}/${CONTAINER_NAME}:${CONTAINER_TAG}" \
+        "${REGISTRY}/${CONTAINER_NAME}:${CONTAINER_VERSION}" \
         python3 -c "import sys; print('Python test passed'); sys.exit(0)"; then
         log_success "Container test passed"
     else
@@ -89,13 +123,19 @@ test_container() {
 show_info() {
     log_info "Container information:"
     echo "  Name: ${CONTAINER_NAME}"
-    echo "  Tag: ${CONTAINER_TAG}"
-    echo "  Full name: ${REGISTRY}/${CONTAINER_NAME}:${CONTAINER_TAG}"
+    echo "  Version: ${CONTAINER_VERSION}"
+    echo "  Build Version: ${BUILD_VERSION}"
+    echo "  Registry: ${REGISTRY}"
     
-    # Show image size
-    if podman images "${REGISTRY}/${CONTAINER_NAME}:${CONTAINER_TAG}" --format "table {{.Repository}}:{{.Tag}} {{.Size}}" | tail -n +2; then
+    # Show image size for main version tag
+    local main_tag="${REGISTRY}/${CONTAINER_NAME}:${CONTAINER_VERSION}"
+    if podman images "$main_tag" --format "table {{.Repository}}:{{.Tag}} {{.Size}}" | tail -n +2; then
         log_success "Container ready for use"
     fi
+    
+    # Show all tags for this image
+    log_info "Available tags:"
+    podman images "${REGISTRY}/${CONTAINER_NAME}" --format "  {{.Repository}}:{{.Tag}} ({{.Size}})"
 }
 
 # Main execution
@@ -111,9 +151,11 @@ main() {
     
     echo ""
     log_info "Next steps:"
-    echo "  1. Run the container: podman run -d -p 8080:8080 ${REGISTRY}/${CONTAINER_NAME}:${CONTAINER_TAG}"
+    echo "  1. Run the container: podman run -d -p 8080:8080 ${REGISTRY}/${CONTAINER_NAME}:${CONTAINER_VERSION}"
     echo "  2. Test the API: curl http://localhost:8080/health"
-    echo "  3. Use the CLI: ./scripts/qubinode-ai --health"
+    echo "  3. Check version: ./scripts/version-manager.sh current"
+    echo "  4. Release new version: ./scripts/version-manager.sh release minor 'Description of changes'"
+    echo "  5. Push to registry: podman push ${REGISTRY}/${CONTAINER_NAME}:${CONTAINER_VERSION}"
 }
 
 # Handle script arguments

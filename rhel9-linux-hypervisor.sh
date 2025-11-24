@@ -51,7 +51,7 @@ set -euo pipefail
 #
 # Global variables
 readonly KVM_VERSION="${KVM_VERSION:-0.8.0}"
-readonly GIT_REPO="https://github.com/tosin2013/qubinode_navigator.git"
+readonly GIT_REPO="https://github.com/Qubinode/qubinode_navigator.git"
 
 # ENVIRONMENT VARIABLES:
 # This script uses environment variables with secure defaults. Variables can be set
@@ -544,7 +544,7 @@ function confiure_lvm_storage(){
     echo "************************"
     if [ ! -f /tmp/configure-lvm.sh ];
     then
-        curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/dependancies/equinix-rocky/configure-lvm.sh
+        curl -OL https://raw.githubusercontent.com/Qubinode/qubinode_navigator/main/dependancies/equinix-rocky/configure-lvm.sh
         mv configure-lvm.sh /tmp/configure-lvm.sh
         sudo chmod +x /tmp/configure-lvm.sh
     fi

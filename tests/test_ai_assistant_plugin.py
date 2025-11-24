@@ -6,7 +6,7 @@ Tests the integration of AI Assistant with the plugin framework.
 
 import pytest
 import unittest.mock as mock
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, mock_open
 import json
 import os
 import sys
@@ -28,12 +28,33 @@ class TestAIAssistantPlugin:
         self.config = {
             'ai_service_url': 'http://localhost:8080',
             'container_name': 'test-ai-assistant',
-            'container_image': 'localhost/qubinode-ai-assistant:latest',
             'ai_assistant_path': '/tmp/test-ai-assistant',
             'auto_start': True,
             'health_check_timeout': 10,
             'enable_diagnostics': True,
             'enable_rag': True
+        }
+        
+        # Test configurations for different deployment modes
+        self.dev_config = {
+            **self.config,
+            'deployment_mode': 'development'
+        }
+        
+        self.prod_config = {
+            **self.config,
+            'deployment_mode': 'production'
+        }
+        
+        self.auto_config = {
+            **self.config,
+            'deployment_mode': 'auto'
+        }
+        
+        self.custom_config = {
+            **self.config,
+            'deployment_mode': 'production',
+            'container_image': 'custom-registry.example.com/qubinode-ai-assistant:v1.2.3'
         }
         
         self.plugin = AIAssistantPlugin(self.config)
@@ -51,6 +72,8 @@ class TestAIAssistantPlugin:
         assert self.plugin.container_name == "test-ai-assistant"
         assert self.plugin.enable_diagnostics is True
         assert self.plugin.enable_rag is True
+        assert hasattr(self.plugin, 'deployment_mode')
+        assert hasattr(self.plugin, 'image_config')
     
     def test_plugin_capabilities(self):
         """Test plugin capabilities"""
@@ -269,6 +292,86 @@ class TestAIAssistantPlugin:
         assert result.status == PluginStatus.FAILED
         assert "AI Assistant directory not found" in result.message
     
+    @patch('os.path.exists')
+    @patch.object(AIAssistantPlugin, '_build_container')
+    @patch.object(AIAssistantPlugin, '_start_container')
+    @patch.object(AIAssistantPlugin, '_wait_for_health')
+    def test_apply_changes_development_build_flow(self, mock_wait_health, mock_start, mock_build, mock_exists):
+        """Test apply changes flow for development mode with building"""
+        mock_exists.return_value = True
+        mock_build.return_value = True
+        mock_start.return_value = True
+        mock_wait_health.return_value = True
+        
+        config = {
+            'deployment_mode': 'development',
+            'ai_assistant_path': '/tmp/test-ai-assistant'
+        }
+        plugin = AIAssistantPlugin(config)
+        
+        current_state = SystemState({
+            'container_exists': False,
+            'container_running': False,
+            'ai_service_healthy': False,
+            'ai_assistant_directory_exists': True
+        })
+        
+        desired_state = SystemState({
+            'container_exists': True,
+            'container_running': True,
+            'ai_service_healthy': True,
+            'ai_assistant_directory_exists': True
+        })
+        
+        result = plugin.apply_changes(current_state, desired_state, self.context)
+        
+        assert isinstance(result, PluginResult)
+        assert result.status == PluginStatus.COMPLETED
+        assert result.changed is True
+        assert "Built AI Assistant container" in str(result.data.get('changes', []))
+        mock_build.assert_called_once()
+        mock_start.assert_called_once()
+    
+    @patch('os.path.exists')
+    @patch.object(AIAssistantPlugin, '_pull_container')
+    @patch.object(AIAssistantPlugin, '_start_container')
+    @patch.object(AIAssistantPlugin, '_wait_for_health')
+    def test_apply_changes_production_pull_flow(self, mock_wait_health, mock_start, mock_pull, mock_exists):
+        """Test apply changes flow for production mode with pulling"""
+        mock_exists.return_value = True
+        mock_pull.return_value = True
+        mock_start.return_value = True
+        mock_wait_health.return_value = True
+        
+        config = {
+            'deployment_mode': 'production',
+            'ai_assistant_path': '/tmp/test-ai-assistant'
+        }
+        plugin = AIAssistantPlugin(config)
+        
+        current_state = SystemState({
+            'container_exists': False,
+            'container_running': False,
+            'ai_service_healthy': False,
+            'ai_assistant_directory_exists': True
+        })
+        
+        desired_state = SystemState({
+            'container_exists': True,
+            'container_running': True,
+            'ai_service_healthy': True,
+            'ai_assistant_directory_exists': True
+        })
+        
+        result = plugin.apply_changes(current_state, desired_state, self.context)
+        
+        assert isinstance(result, PluginResult)
+        assert result.status == PluginStatus.COMPLETED
+        assert result.changed is True
+        assert "Pulled AI Assistant container" in str(result.data.get('changes', []))
+        mock_pull.assert_called_once()
+        mock_start.assert_called_once()
+    
     @patch('requests.post')
     def test_ask_ai_success(self, mock_post):
         """Test asking AI a question - success case"""
@@ -383,6 +486,389 @@ class TestAIAssistantPlugin:
             assert 'ai_service_url' in health
             assert 'capabilities' in health
             assert 'ai_assistant_status' in health
+            assert 'container_image' in health
+            assert 'deployment_mode' in health
+
+
+class TestAIAssistantDeploymentStrategy:
+    """Test cases for AI Assistant deployment strategy"""
+    
+    def test_development_mode_initialization(self):
+        """Test plugin initialization in development mode"""
+        config = {
+            'deployment_mode': 'development',
+            'ai_assistant_path': '/tmp/test-ai-assistant'
+        }
+        plugin = AIAssistantPlugin(config)
+        
+        assert plugin.deployment_mode == 'development'
+        assert plugin.container_image == 'localhost/qubinode-ai-assistant:latest'
+        assert plugin.image_config['development']['build_required'] is True
+    
+    def test_production_mode_initialization(self):
+        """Test plugin initialization in production mode"""
+        config = {
+            'deployment_mode': 'production',
+            'ai_assistant_path': '/tmp/test-ai-assistant'
+        }
+        plugin = AIAssistantPlugin(config)
+        
+        assert plugin.deployment_mode == 'production'
+        assert plugin.container_image == 'quay.io/takinosh/qubinode-ai-assistant:latest'
+        assert plugin.image_config['production']['build_required'] is False
+    
+    def test_custom_image_override(self):
+        """Test custom container image override"""
+        custom_image = 'custom-registry.example.com/qubinode-ai-assistant:v1.2.3'
+        config = {
+            'deployment_mode': 'production',
+            'container_image': custom_image,
+            'ai_assistant_path': '/tmp/test-ai-assistant'
+        }
+        plugin = AIAssistantPlugin(config)
+        
+        assert plugin.container_image == custom_image
+    
+    @patch.dict(os.environ, {'QUBINODE_DEPLOYMENT_MODE': 'development'})
+    def test_auto_mode_environment_variable(self):
+        """Test auto mode detection via environment variable"""
+        config = {
+            'deployment_mode': 'auto',
+            'ai_assistant_path': '/tmp/test-ai-assistant'
+        }
+        plugin = AIAssistantPlugin(config)
+        
+        assert plugin.deployment_mode == 'development'
+    
+    @patch('os.path.exists')
+    def test_auto_mode_container_detection(self, mock_exists):
+        """Test auto mode detection for container environment"""
+        def side_effect(path):
+            if path == '/.dockerenv':
+                return True
+            return False
+        
+        mock_exists.side_effect = side_effect
+        
+        config = {
+            'deployment_mode': 'auto',
+            'ai_assistant_path': '/tmp/test-ai-assistant'
+        }
+        plugin = AIAssistantPlugin(config)
+        
+        assert plugin.deployment_mode == 'production'
+    
+    @patch('os.path.exists')
+    def test_auto_mode_development_detection(self, mock_exists):
+        """Test auto mode detection for development environment"""
+        def side_effect(path):
+            if '/tmp/test-ai-assistant' in path:
+                return True
+            if path.endswith('Dockerfile'):
+                return True
+            return False
+        
+        mock_exists.side_effect = side_effect
+        
+        config = {
+            'deployment_mode': 'auto',
+            'ai_assistant_path': '/tmp/test-ai-assistant'
+        }
+        plugin = AIAssistantPlugin(config)
+        
+        assert plugin.deployment_mode == 'development'
+    
+    def test_unknown_deployment_mode_fallback(self):
+        """Test fallback to development for unknown deployment mode"""
+        config = {
+            'deployment_mode': 'unknown_mode',
+            'ai_assistant_path': '/tmp/test-ai-assistant'
+        }
+        plugin = AIAssistantPlugin(config)
+        
+        assert plugin.deployment_mode == 'development'
+        assert plugin.container_image == 'localhost/qubinode-ai-assistant:latest'
+    
+    @patch('subprocess.run')
+    @patch('os.path.exists')
+    @patch('os.chdir')
+    @patch('os.getcwd')
+    def test_build_container_development_mode(self, mock_getcwd, mock_chdir, mock_exists, mock_subprocess):
+        """Test container building in development mode"""
+        mock_getcwd.return_value = '/current/dir'
+        mock_exists.return_value = True
+        
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_subprocess.return_value = mock_result
+        
+        config = {
+            'deployment_mode': 'development',
+            'ai_assistant_path': '/tmp/test-ai-assistant'
+        }
+        plugin = AIAssistantPlugin(config)
+        
+        result = plugin._build_container()
+        
+        assert result is True
+        mock_subprocess.assert_called_once_with(
+            ['./scripts/build.sh'],
+            capture_output=True,
+            text=True,
+            timeout=300
+        )
+    
+    def test_build_container_production_mode_error(self):
+        """Test that building is not allowed in production mode"""
+        config = {
+            'deployment_mode': 'production',
+            'ai_assistant_path': '/tmp/test-ai-assistant'
+        }
+        plugin = AIAssistantPlugin(config)
+        
+        result = plugin._build_container()
+        
+        assert result is False
+    
+    @patch('subprocess.run')
+    def test_pull_container_success(self, mock_subprocess):
+        """Test successful container pull"""
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_subprocess.return_value = mock_result
+        
+        config = {
+            'deployment_mode': 'production',
+            'ai_assistant_path': '/tmp/test-ai-assistant'
+        }
+        plugin = AIAssistantPlugin(config)
+        
+        result = plugin._pull_container()
+        
+        assert result is True
+        mock_subprocess.assert_called_with(
+            ['podman', 'pull', 'quay.io/takinosh/qubinode-ai-assistant:latest'],
+            capture_output=True,
+            text=True,
+            timeout=300
+        )
+    
+    @patch('subprocess.run')
+    def test_pull_container_fallback_to_docker(self, mock_subprocess):
+        """Test container pull fallback from podman to docker"""
+        def side_effect(*args, **kwargs):
+            if args[0][0] == 'podman':
+                raise FileNotFoundError("podman not found")
+            elif args[0][0] == 'docker':
+                result = MagicMock()
+                result.returncode = 0
+                return result
+        
+        mock_subprocess.side_effect = side_effect
+        
+        config = {
+            'deployment_mode': 'production',
+            'ai_assistant_path': '/tmp/test-ai-assistant'
+        }
+        plugin = AIAssistantPlugin(config)
+        
+        result = plugin._pull_container()
+        
+        assert result is True
+    
+    @patch('subprocess.run')
+    def test_pull_container_failure(self, mock_subprocess):
+        """Test container pull failure"""
+        mock_result = MagicMock()
+        mock_result.returncode = 1
+        mock_result.stderr = "Pull failed"
+        mock_subprocess.return_value = mock_result
+        
+        config = {
+            'deployment_mode': 'production',
+            'ai_assistant_path': '/tmp/test-ai-assistant'
+        }
+        plugin = AIAssistantPlugin(config)
+        
+        result = plugin._pull_container()
+        
+        assert result is False
+
+
+class TestAIAssistantVersionManagement:
+    """Test cases for AI Assistant version management"""
+    
+    def test_version_configuration_initialization(self):
+        """Test version configuration initialization"""
+        config = {
+            'container_version': '1.2.0',
+            'version_strategy': 'specific',
+            'ai_assistant_path': '/tmp/test-ai-assistant'
+        }
+        plugin = AIAssistantPlugin(config)
+        
+        assert plugin.container_version == '1.2.0'
+        assert plugin.version_strategy == 'specific'
+    
+    def test_default_version_configuration(self):
+        """Test default version configuration"""
+        config = {
+            'ai_assistant_path': '/tmp/test-ai-assistant'
+        }
+        plugin = AIAssistantPlugin(config)
+        
+        assert plugin.container_version == 'latest'
+        assert plugin.version_strategy == 'auto'
+    
+    @patch('os.path.exists')
+    @patch('builtins.open', mock_open(read_data='1.5.0'))
+    def test_get_development_tag_from_version_file(self, mock_exists):
+        """Test getting development tag from VERSION file"""
+        mock_exists.return_value = True
+        
+        config = {
+            'deployment_mode': 'development',
+            'ai_assistant_path': '/tmp/test-ai-assistant'
+        }
+        plugin = AIAssistantPlugin(config)
+        
+        # The tag should be read from VERSION file
+        assert '1.5.0' in plugin.container_image
+    
+    def test_get_development_tag_with_specific_version(self):
+        """Test getting development tag with specific version"""
+        config = {
+            'deployment_mode': 'development',
+            'container_version': '2.0.0',
+            'ai_assistant_path': '/tmp/test-ai-assistant'
+        }
+        plugin = AIAssistantPlugin(config)
+        
+        assert '2.0.0' in plugin.container_image
+    
+    def test_get_production_tag_latest_strategy(self):
+        """Test getting production tag with latest strategy"""
+        config = {
+            'deployment_mode': 'production',
+            'version_strategy': 'latest',
+            'ai_assistant_path': '/tmp/test-ai-assistant'
+        }
+        plugin = AIAssistantPlugin(config)
+        
+        assert 'latest' in plugin.container_image
+    
+    def test_get_production_tag_specific_strategy(self):
+        """Test getting production tag with specific strategy"""
+        config = {
+            'deployment_mode': 'production',
+            'version_strategy': 'specific',
+            'container_version': '1.3.0',
+            'ai_assistant_path': '/tmp/test-ai-assistant'
+        }
+        plugin = AIAssistantPlugin(config)
+        
+        assert '1.3.0' in plugin.container_image
+    
+    @patch('os.path.exists')
+    @patch('builtins.open', mock_open(read_data='2.1.0'))
+    def test_get_production_tag_semver_strategy(self, mock_exists):
+        """Test getting production tag with semver strategy"""
+        mock_exists.return_value = True
+        
+        config = {
+            'deployment_mode': 'production',
+            'version_strategy': 'semver',
+            'ai_assistant_path': '/tmp/test-ai-assistant'
+        }
+        plugin = AIAssistantPlugin(config)
+        
+        assert '2.1.0' in plugin.container_image
+    
+    @patch('os.path.exists')
+    @patch('builtins.open', mock_open(read_data='2.1.0-alpha.1'))
+    def test_get_latest_stable_version_excludes_prerelease(self, mock_exists):
+        """Test that latest stable version excludes prerelease versions"""
+        mock_exists.return_value = True
+        
+        config = {
+            'deployment_mode': 'production',
+            'version_strategy': 'semver',
+            'ai_assistant_path': '/tmp/test-ai-assistant'
+        }
+        plugin = AIAssistantPlugin(config)
+        
+        # Should fall back to latest since 2.1.0-alpha.1 is prerelease
+        assert 'latest' in plugin.container_image
+    
+    @patch.dict(os.environ, {'QUBINODE_AI_VERSION': '3.0.0'})
+    def test_environment_version_override(self):
+        """Test version override via environment variable"""
+        config = {
+            'deployment_mode': 'production',
+            'version_strategy': 'semver',
+            'ai_assistant_path': '/tmp/test-ai-assistant'
+        }
+        plugin = AIAssistantPlugin(config)
+        
+        assert '3.0.0' in plugin.container_image
+    
+    def test_version_in_health_status(self):
+        """Test that version information is included in health status"""
+        config = {
+            'container_version': '1.4.0',
+            'version_strategy': 'specific',
+            'ai_assistant_path': '/tmp/test-ai-assistant'
+        }
+        plugin = AIAssistantPlugin(config)
+        
+        with patch.object(plugin, '_get_ai_assistant_status') as mock_status:
+            mock_status.return_value = {'container_running': True}
+            
+            health = plugin.get_health_status()
+            
+            assert 'container_version' in health
+            assert 'version_strategy' in health
+            assert health['container_version'] == '1.4.0'
+            assert health['version_strategy'] == 'specific'
+    
+    @patch('os.path.exists')
+    def test_version_file_read_error_handling(self, mock_exists):
+        """Test graceful handling of VERSION file read errors"""
+        mock_exists.return_value = True
+        
+        with patch('builtins.open', side_effect=IOError("Permission denied")):
+            config = {
+                'deployment_mode': 'development',
+                'ai_assistant_path': '/tmp/test-ai-assistant'
+            }
+            plugin = AIAssistantPlugin(config)
+            
+            # Should fall back to latest on read error
+            assert 'latest' in plugin.container_image
+    
+    def test_auto_version_strategy_with_stable_version(self):
+        """Test auto version strategy with stable version available"""
+        with patch.object(AIAssistantPlugin, '_get_latest_stable_version', return_value='1.8.0'):
+            config = {
+                'deployment_mode': 'production',
+                'version_strategy': 'auto',
+                'ai_assistant_path': '/tmp/test-ai-assistant'
+            }
+            plugin = AIAssistantPlugin(config)
+            
+            assert '1.8.0' in plugin.container_image
+    
+    def test_auto_version_strategy_fallback_to_latest(self):
+        """Test auto version strategy fallback to latest"""
+        with patch.object(AIAssistantPlugin, '_get_latest_stable_version', return_value='latest'):
+            config = {
+                'deployment_mode': 'production',
+                'version_strategy': 'auto',
+                'ai_assistant_path': '/tmp/test-ai-assistant'
+            }
+            plugin = AIAssistantPlugin(config)
+            
+            assert 'latest' in plugin.container_image
 
 
 class TestAIAssistantPluginIntegration:

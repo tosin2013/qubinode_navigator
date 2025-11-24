@@ -1,0 +1,54 @@
+configure_bridge: true
+configure_shell: true
+create_libvirt_storage: false
+create_lvm: false
+enable_cockpit: true
+enable_libvirt_admin_user: true
+host_device: '{{ kvm_host_libvirt_extra_disk | default(''nvme0n1'') }}'
+kvm_bridge_type: Bridge
+kvm_host_bootproto: static
+kvm_host_dns_server: '{{ primary_dns_server | default(''1.1.1.1'') }}'
+kvm_host_domain: '{{ domain }}'
+kvm_host_gw: 95.216.99.193
+kvm_host_interface: enp0s31f6
+kvm_host_ip: 95.216.99.247
+kvm_host_libvirt_dir: /var/lib/libvirt/images
+kvm_host_libvirt_extra_disk: skip
+kvm_host_macaddr: 90:1b:0e:8a:55:68
+kvm_host_mask_prefix: 26
+kvm_host_mtu: 1500
+kvm_host_netmask: 255.255.255.192
+kvm_vm_pool_dir: '{{ kvm_host_libvirt_dir }}'
+libvirt_host_networks:
+- bridge_device: '{{ kvm_host_bridge_name | default(qubinode_bridge_name) }}'
+  bridge_slave_dev: '{{ kvm_host_interface }}'
+  create: true
+  gateway: '{{ kvm_host_gw }}'
+  ifcfg_bootproto: '{{ kvm_host_bootproto }}'
+  ifcfg_type: '{{ kvm_bridge_type }}'
+  ipaddress: '{{ kvm_host_ip }}'
+  mac: '{{ kvm_host_macaddr }}'
+  mask: '{{ kvm_host_netmask }}'
+  mask_prefix: '{{ kvm_host_mask_prefix }}'
+  mode: bridge
+  mtu: 1500
+  name: '{{ vm_libvirt_net }}'
+  subnet: not currently in use
+libvirt_network_name: qubinat
+libvirt_pool_name: default
+libvirt_pool_name_check: true
+network_interface_name: '{{ kvm_host_interface }}'
+primary_dns_server: '{{ dns_forwarder | default(''1.1.1.1'') }}'
+qubinode_bridge_name: qubibr0
+qubinode_installer_host_completed: false
+remove_nfs: false
+rhel_release: ''
+run_qubinode_setup: true
+run_storage_check: ''
+search_domains:
+- '{{ domain }}'
+setup_nfs: true
+skip_libvirt_pool: false
+vg_name: vg_qubi
+vm_libvirt_net: qubinet
+vm_libvirt_net_check: true

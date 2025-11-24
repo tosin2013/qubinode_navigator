@@ -1,0 +1,24 @@
+---
+ansible-navigator:
+  ansible:
+    inventory:
+      entries:
+        - /root/qubinode_navigator/inventories/localhost
+    config:
+      path: /root/qubinode_navigator/ansible.cfg
+  execution-environment:
+    container-engine: podman
+    enabled: true
+    environment-variables:
+      pass:
+        - USER
+        - HOME
+    image: ghcr.io/ansible/community-ansible-dev-tools:latest
+    pull:
+      policy: missing
+  logging:
+    append: true
+    file: /root/qubinode_navigator/ansible-navigator.log
+    level: info
+  playbook-artifact:
+    enable: false

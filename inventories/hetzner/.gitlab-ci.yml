@@ -47,7 +47,7 @@ build:
     FORWARDER: '1.1.1.1'
     ACTIVE_BRIDGE: 'false'
     INTERFACE: bond0
-    GIT_REPO: https://github.com/tosin2013/qubinode_navigator.git
+    GIT_REPO: https://github.com/Qubinode/qubinode_navigator.git
     INVENTORY: equinix
   allow_failure: false
   script:

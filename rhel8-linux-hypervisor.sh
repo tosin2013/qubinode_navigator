@@ -51,9 +51,9 @@
 
 # 🔧 CONFIGURATION CONSTANTS FOR LLMs:
 KVM_VERSION=0.8.0  # Container image version compatible with RHEL 8
-export ANSIBLE_SAFE_VERSION="0.0.9"  # AnsibleSafe version for RHEL 8 compatibility
+export ANSIBLE_SAFE_VERSION="0.0.14"  # AnsibleSafe version for RHEL 8 compatibility
 
-export GIT_REPO="https://github.com/tosin2013/qubinode_navigator.git"
+export GIT_REPO="https://github.com/Qubinode/qubinode_navigator.git"
 
 # Root privilege validation (required for RHEL 8 system configuration)
 if [[ $EUID -ne 0 ]]; then
@@ -351,8 +351,8 @@ S# @description This function installs necessary packages
 
     if [ ! -f /usr/local/bin/ansiblesafe ];
     then
-        curl -OL https://github.com/tosin2013/ansiblesafe/releases/download/v${ANSIBLE_SAFE_VERSION}/ansiblesafe-v${ANSIBLE_SAFE_VERSION}-linux-amd64.tar.gz
-        tar -zxvf ansiblesafe-v${ANSIBLE_SAFE_VERSION}-linux-amd64.tar.gz
+        curl -OL https://github.com/tosin2013/ansiblesafe/releases/download/v0.0.12/ansiblesafe-v0.0.14-linux-amd64.tar.gz
+        tar -zxvf ansiblesafe-v0.0.14-linux-amd64.tar.gz
         chmod +x ansiblesafe-linux-amd64
         sudo mv ansiblesafe-linux-amd64 /usr/local/bin/ansiblesafe
     fi 
@@ -438,7 +438,7 @@ function confiure_lvm_storage(){
     echo "************************"
     if [ ! -f /tmp/configure-lvm.sh ];
     then 
-        curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/dependancies/equinix-rocky/configure-lvm.sh
+        curl -OL https://raw.githubusercontent.com/Qubinode/qubinode_navigator/main/dependancies/equinix-rocky/configure-lvm.sh
         mv configure-lvm.sh /tmp/configure-lvm.sh
         sudo chmod +x /tmp/configure-lvm.sh
     fi 
