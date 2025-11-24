@@ -1,0 +1,21 @@
+# Hetzner Deployment Configuration Template
+# Please update with your actual values
+
+rhsm_username: your_redhat_username
+rhsm_password: your_redhat_password
+rhsm_org: your_org_id
+rhsm_activationkey: your_activation_key
+admin_user_password: your_lab_user_password
+offline_token: your_offline_token
+openshift_pull_secret: your_pull_secret
+automation_hub_offline_token: your_automation_hub_token
+freeipa_server_admin_password: your_freeipa_password
+xrdp_remote_user: your_remote_user
+xrdp_remote_user_password: your_remote_password
+aws_access_key: your_aws_access_key  # optional
+aws_secret_key: your_aws_secret_key  # optional
+
+# Hetzner specific
+domain: qubinodelab.io
+kvm_version: "0.8.0"
+cicd_environment: gitlab

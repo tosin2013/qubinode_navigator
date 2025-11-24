@@ -1,14 +1,21 @@
 ---
 layout: default
-title:  "OneDev - Deploying Generic VMs"
+title:  "Legacy: OneDev - Deploying Generic VMs"
 parent: Plugins
 nav_order: 3
 ---
 
 ## Kcli Pipelines using OneDev 
 
+> **Status:** Legacy integration
+>
+> This guide describes historical OneDev-based VM deployment pipelines. For new environments, use Apache Airflow DAGs and the AI Assistant to orchestrate deployments.
+>
+> - Airflow overview: [AIRFLOW-INTEGRATION.md](../AIRFLOW-INTEGRATION.md)
+> - DAG workflows: [airflow-dag-deployment-workflows.md](../airflow-dag-deployment-workflows.md)
+
 ## Requirements
-* [OneDev - Kcli Pipelines](../plugins/onedev-kcli-pipelines.html)  - is configured and running.  
+* [OneDev - Kcli Pipelines](../plugins/onedev-kcli-pipelines.md)  - is configured and running.  
   
 **ssh into baremetl server and run the following**
 ```

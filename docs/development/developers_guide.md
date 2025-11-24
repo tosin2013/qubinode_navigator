@@ -46,7 +46,7 @@ To get started, follow these steps to set up your development environment.
 Firstly, you need to clone the Qubinode Navigator repository to your local machine.
 
 ```bash
-git clone https://github.com/tosin2013/qubinode_navigator.git
+git clone https://github.com/Qubinode/qubinode_navigator.git
 cd $HOME/qubinode_navigator/
 ```
 
@@ -212,7 +212,7 @@ make remove-images
 ## Contact
 
 If you have any questions or need further assistance, feel free to reach out to us:
-- **GitHub Issues:** [Create an issue](https://github.com/tosin2013/qubinode_navigator/issues)
+- **GitHub Issues:** [Create an issue](https://github.com/Qubinode/qubinode_navigator/issues)
 - **Discord:** [Discord](https://discord.gg/RdqJrMJudf)
 
 Thank you for your interest in contributing to Qubinode Navigator! Together, we can build and improve a powerful tool for automating infrastructure deployment. Happy coding!

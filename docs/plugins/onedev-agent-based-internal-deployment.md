@@ -1,6 +1,6 @@
 ---
 layout: default
-title:  "OneDev - Agent based Installer Pipelines - Internal Deployment"
+title:  "Legacy: OneDev Agent-based Pipelines (Internal)"
 parent: Plugins
 nav_order: 3
 ---
@@ -9,9 +9,16 @@ OpenShift Agent Based Installer Helper
 
 * This repo holds some utilities to easily leverage the OpenShift Agent-Based Installer. Supports bare metal, vSphere, and platform=none deployments in SNO/3 Node/HA configurations.
 
+> **Status:** Legacy integration
+>
+> These instructions describe OneDev-based agent pipelines. For new work, prefer **Apache Airflow** DAGs and the AI Assistant.
+>
+> - Airflow overview: [AIRFLOW-INTEGRATION.md](../AIRFLOW-INTEGRATION.md)
+> - DAG workflows: [airflow-dag-deployment-workflows.md](../airflow-dag-deployment-workflows.md)
+
 
 # Prerequisites
-* [OneDev - Kcli Pipelines](../plugins/onedev-kcli-pipelines.html)  - is configured and running.  
+* [OneDev - Kcli Pipelines](../plugins/onedev-kcli-pipelines.md)  - is configured and running.  
 
 **Optional: ssh into  baremetl server and run the following**
 ```

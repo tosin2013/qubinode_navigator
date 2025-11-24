@@ -43,7 +43,7 @@ class RHEL9Plugin(QubiNodePlugin):
         # Set configuration constants for modern enterprise deployment
         self.kvm_version = self.config.get('kvm_version', '0.8.0')
         self.ansible_safe_version = self.config.get('ansible_safe_version', '0.0.9')
-        self.git_repo = self.config.get('git_repo', 'https://github.com/tosin2013/qubinode_navigator.git')
+        self.git_repo = self.config.get('git_repo', 'https://github.com/Qubinode/qubinode_navigator.git')
         
         # Set default packages for RHEL 9 modern deployment
         self.packages = self.config.get('packages', [
