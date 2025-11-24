@@ -41,7 +41,7 @@ class RHEL9Plugin(QubiNodePlugin):
             raise RuntimeError("RHEL 9 plugin can only run on RHEL 9 systems")
             
         # Set configuration constants for modern enterprise deployment
-        self.kvm_version = self.config.get('kvm_version', '0.8.0')
+        self.kvm_version = self.config.get('kvm_version', 'latest')
         self.ansible_safe_version = self.config.get('ansible_safe_version', '0.0.9')
         self.git_repo = self.config.get('git_repo', 'https://github.com/Qubinode/qubinode_navigator.git')
         

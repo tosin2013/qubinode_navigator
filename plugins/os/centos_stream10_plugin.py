@@ -55,7 +55,7 @@ class CentOSStream10Plugin(QubiNodePlugin):
         self._validate_python312_compatibility()
             
         # Set configuration constants for next-generation deployment
-        self.kvm_version = self.config.get('kvm_version', '0.9.0')  # Next-gen version
+        self.kvm_version = self.config.get('kvm_version', 'latest')  # Always use latest version
         self.ansible_safe_version = self.config.get('ansible_safe_version', '0.1.0')
         self.git_repo = self.config.get('git_repo', 'https://github.com/Qubinode/qubinode_navigator.git')
         

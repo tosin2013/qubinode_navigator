@@ -236,7 +236,7 @@ detect_deployment_target() {
     # Set deployment-specific defaults
     export CICD_PIPELINE="${CICD_PIPELINE:-true}"
     export ENV_USERNAME="${ENV_USERNAME:-$SSH_USER}"
-    export KVM_VERSION="${KVM_VERSION:-0.10.4}"
+    export KVM_VERSION="${KVM_VERSION:-latest}"
     export CICD_ENVIORNMENT="${CICD_ENVIORNMENT:-gitlab}"
     export ACTIVE_BRIDGE="${ACTIVE_BRIDGE:-false}"
     export USE_ROUTE53="${USE_ROUTE53:-false}"

@@ -50,7 +50,7 @@
 set -euo pipefail
 #
 # Global variables
-readonly KVM_VERSION="${KVM_VERSION:-0.8.0}"
+readonly KVM_VERSION="${KVM_VERSION:-latest}"
 readonly GIT_REPO="https://github.com/Qubinode/qubinode_navigator.git"
 
 # ENVIRONMENT VARIABLES:

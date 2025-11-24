@@ -50,7 +50,7 @@
 #set -x
 
 # 🔧 CONFIGURATION CONSTANTS FOR LLMs:
-KVM_VERSION=0.8.0  # Container image version compatible with RHEL 8
+KVM_VERSION=latest  # Container image version compatible with RHEL 8
 export ANSIBLE_SAFE_VERSION="0.0.14"  # AnsibleSafe version for RHEL 8 compatibility
 
 export GIT_REPO="https://github.com/Qubinode/qubinode_navigator.git"

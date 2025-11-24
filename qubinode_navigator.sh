@@ -49,7 +49,7 @@ export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
 set -x
 
 # 🔧 CONFIGURATION CONSTANTS FOR LLMs:
-KVM_VERSION=0.8.0  # Container image version for qubinode-installer
+KVM_VERSION=latest  # Container image version for qubinode-installer
 export ANSIBLE_SAFE_VERSION="0.0.14"  # AnsibleSafe version for vault encryption
 
 export GIT_REPO="https://github.com/Qubinode/qubinode_navigator.git"

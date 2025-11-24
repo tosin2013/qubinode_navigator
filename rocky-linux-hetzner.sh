@@ -50,7 +50,7 @@
 #set -x
 
 # 🔧 CONFIGURATION CONSTANTS FOR LLMs:
-KVM_VERSION=0.8.0  # Container image version optimized for cloud deployment
+KVM_VERSION=latest  # Container image version optimized for cloud deployment
 export ANSIBLE_SAFE_VERSION="0.0.14"  # AnsibleSafe version for cloud credential management
 
 export GIT_REPO="https://github.com/Qubinode/qubinode_navigator.git"

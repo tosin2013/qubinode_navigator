@@ -250,7 +250,7 @@ aws_secret_key: secretkey  # Optional: for AWS credentials and Route53
 
 # Additional demo system configuration
 domain: qubinodelab.io  # Change to your domain if using custom domain
-kvm_version: "0.8.0"
+kvm_version: "latest"
 cicd_environment: gitlab  # or onedev - change for default CICD environment
 """
         
@@ -288,7 +288,7 @@ cicd_environment: gitlab  # or onedev - change for default CICD environment
 export SSH_USER=lab-user
 export CICD_PIPELINE='true'
 export ENV_USERNAME=lab-user
-export KVM_VERSION="0.8.0"
+export KVM_VERSION="latest"
 export CICD_ENVIORNMENT="gitlab"  # or onedev - change for default CICD environment
 export DOMAIN=qubinodelab.io  # Change to your domain if using custom domain
 

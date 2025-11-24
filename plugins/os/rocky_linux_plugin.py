@@ -41,7 +41,7 @@ class RockyLinuxPlugin(QubiNodePlugin):
             raise RuntimeError("Rocky Linux plugin can only run on Rocky Linux systems")
             
         # Set configuration constants for cloud deployment
-        self.kvm_version = self.config.get('kvm_version', '0.8.0')
+        self.kvm_version = self.config.get('kvm_version', 'latest')
         self.ansible_safe_version = self.config.get('ansible_safe_version', '0.0.9')
         self.git_repo = self.config.get('git_repo', 'https://github.com/Qubinode/qubinode_navigator.git')
         
