@@ -16,7 +16,7 @@ These variables can be set using environment variables or by modifying the `defa
 * `gitlab_server_image_name`: The name of the Docker image used for the GitLab server.
 * `specific_user`: The username used to access the GitLab server.
 
-[Full Script](https://github.com/tosin2013/qubinode_navigator/blob/main/dependancies/gitlab/deployment-script.sh)
+[Full Script](https://github.com/Qubinode/qubinode_navigator/blob/main/dependancies/gitlab/deployment-script.sh)
 
 Functions
 ---------

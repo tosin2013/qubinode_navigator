@@ -1,0 +1,143 @@
+---
+# Production Simulation Test for Qubinode Navigator Monitoring
+# Simulates real deployment tasks that would occur on actual infrastructure
+
+- name: "Qubinode Navigator Production Deployment Simulation"
+  hosts: localhost
+  gather_facts: true
+  vars:
+    simulate_failures: true
+    deployment_type: "rhel10_hypervisor"
+    
+  tasks:
+    - name: "Initialize Qubinode Navigator deployment"
+      debug:
+        msg: "Starting RHEL 10 hypervisor deployment with Qubinode Navigator"
+
+    - name: "Check system requirements"
+      debug:
+        msg: "Validating hardware virtualization support"
+      
+    - name: "Simulate virtualization check failure"
+      fail:
+        msg: "Hardware virtualization not enabled in BIOS (VT-x/AMD-V required)"
+      when: simulate_failures
+      ignore_errors: true
+
+    - name: "Install RHEL 10 base packages"
+      debug:
+        msg: "Installing: qemu-kvm libvirt virt-install bridge-utils"
+      
+    - name: "Simulate package installation delay"
+      pause:
+        seconds: 8
+        prompt: "Downloading packages (simulated delay)..."
+
+    - name: "Configure KVM/libvirt hypervisor"
+      debug:
+        msg: "Setting up libvirt daemon and default network"
+
+    - name: "Install kcli (Kubernetes CLI for VMs)"
+      debug:
+        msg: "Installing kcli for VM lifecycle management"
+      
+    - name: "Simulate kcli installation failure"
+      fail:
+        msg: "kcli installation failed: pip install error - missing python3-dev"
+      when: simulate_failures
+      ignore_errors: true
+
+    - name: "Configure cockpit web console"
+      debug:
+        msg: "Setting up cockpit for web-based management"
+
+    - name: "Start and enable cockpit service"
+      debug:
+        msg: "systemctl enable --now cockpit.socket"
+
+    - name: "Configure firewall for cockpit"
+      debug:
+        msg: "Opening port 9090 for cockpit web interface"
+
+    - name: "Simulate firewall configuration failure"
+      fail:
+        msg: "Firewall configuration failed: firewalld service not running"
+      when: simulate_failures
+      ignore_errors: true
+
+    - name: "Create default storage pool"
+      debug:
+        msg: "Creating libvirt storage pool: /var/lib/libvirt/images"
+
+    - name: "Configure default network bridge"
+      debug:
+        msg: "Setting up virbr0 bridge for VM networking"
+
+    - name: "Install additional Qubinode tools"
+      debug:
+        msg: "Installing: ansible-navigator, podman, git"
+
+    - name: "Simulate slow network operation"
+      pause:
+        seconds: 12
+        prompt: "Downloading container images (simulated slow network)..."
+
+    - name: "Configure RHEL 10 specific settings"
+      debug:
+        msg: "Applying RHEL 10 x86_64-v3 microarchitecture optimizations"
+
+    - name: "Validate Python 3.12 compatibility"
+      debug:
+        msg: "Checking Python 3.12 module compatibility"
+
+    - name: "Setup Qubinode Navigator plugin framework"
+      debug:
+        msg: "Installing plugin framework and OS-specific plugins"
+
+    - name: "Initialize AI Assistant integration"
+      uri:
+        url: "http://localhost:8080/health"
+        method: GET
+        timeout: 5
+      register: ai_health
+      ignore_errors: true
+
+    - name: "Configure AI-powered diagnostics"
+      debug:
+        msg: "AI Assistant Status: {{ 'Available' if ai_health.status == 200 else 'Unavailable' }}"
+      when: ai_health is defined
+
+    - name: "Run diagnostic tools validation"
+      uri:
+        url: "http://localhost:8080/diagnostics/tools"
+        method: GET
+        timeout: 5
+      register: diagnostics
+      ignore_errors: true
+
+    - name: "Display diagnostic capabilities"
+      debug:
+        msg: "Available diagnostic tools: {{ diagnostics.json.total_tools | default('N/A') }}"
+      when: diagnostics is defined and diagnostics.status == 200
+
+    - name: "Simulate critical system failure"
+      fail:
+        msg: "Critical error: Insufficient disk space for VM storage pool (< 50GB available)"
+      when: simulate_failures
+      ignore_errors: true
+
+    - name: "Final deployment validation"
+      debug:
+        msg: "Qubinode Navigator RHEL 10 hypervisor deployment completed"
+
+    - name: "Display deployment summary"
+      debug:
+        msg: |
+          Deployment Summary:
+          - KVM/libvirt: Configured
+          - kcli: {{ 'Failed' if simulate_failures else 'Installed' }}
+          - cockpit: {{ 'Failed' if simulate_failures else 'Configured' }}
+          - AI Assistant: {{ 'Available' if ai_health.status == 200 else 'Unavailable' }}
+          - Diagnostic Tools: {{ diagnostics.json.total_tools | default('N/A') }}
+          - Storage Pool: {{ 'Failed' if simulate_failures else 'Created' }}
+          - Network Bridge: Configured

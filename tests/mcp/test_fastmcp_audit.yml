@@ -1,0 +1,98 @@
+---
+- name: Test FastMCP Servers with MCP Audit Collection
+  hosts: localhost
+  gather_facts: false
+  
+  vars:
+    airflow_url: "http://localhost:8889"
+    ai_url: "http://localhost:8081"
+  
+  tasks:
+    - name: "Phase 1: Test Airflow MCP Server Info (No Connection Pooling)"
+      tosin2013.mcp_audit.mcp_server_info:
+        server_url: "{{ airflow_url }}"
+        transport: "sse"
+        connection_reuse: false  # Disable connection pooling to avoid TaskGroup errors
+        timeout: 30
+      register: airflow_info
+      tags: [airflow, info]
+    
+    - name: Display Airflow Server Info
+      debug:
+        msg:
+          - "=========================================="
+          - "Airflow FastMCP Server Information:"
+          - "  Status: {{ airflow_info.status }}"
+          - "  Success: {{ airflow_info.success }}"
+          - "  Available Tools: {{ airflow_info.server_info.available_tools }}"
+          - "  Available Resources: {{ airflow_info.server_info.available_resources }}"
+          - "  Available Prompts: {{ airflow_info.server_info.available_prompts }}"
+          - "=========================================="
+      when: airflow_info.success
+      tags: [airflow, info]
+    
+    - name: "Phase 2: Test AI Assistant MCP Server Info (No Connection Pooling)"
+      tosin2013.mcp_audit.mcp_server_info:
+        server_url: "{{ ai_url }}"
+        transport: "sse"
+        connection_reuse: false  # Disable connection pooling
+        timeout: 30
+      register: ai_info
+      ignore_errors: true
+      tags: [ai, info]
+    
+    - name: Display AI Assistant Server Info
+      debug:
+        msg:
+          - "=========================================="
+          - "AI Assistant FastMCP Server Information:"
+          - "  Status: {{ ai_info.status | default('Not Running') }}"
+          - "  Success: {{ ai_info.success | default(false) }}"
+          - "  Available Tools: {{ ai_info.server_info.available_tools | default(0) }}"
+          - "=========================================="
+      when: ai_info.success | default(false)
+      tags: [ai, info]
+    
+    - name: "Phase 3: List Tools from Airflow MCP (requires connection)"
+      block:
+        - name: Test list_dags tool
+          tosin2013.mcp_audit.mcp_test_tool:
+            server_url: "{{ airflow_url }}"
+            transport: "sse"
+            connection_reuse: false
+            tool_name: "list_dags"
+            tool_arguments: {}
+            timeout: 30
+          register: list_dags_result
+          ignore_errors: true
+        
+        - name: Display list_dags result
+          debug:
+            msg:
+              - "Tool: list_dags"
+              - "Success: {{ list_dags_result.success | default(false) }}"
+              - "Result: {{ list_dags_result.result | default('Failed') }}"
+          when: list_dags_result.success | default(false)
+      tags: [airflow, tools]
+    
+    - name: "Final Summary"
+      debug:
+        msg:
+          - "╔════════════════════════════════════════════════════╗"
+          - "║  FastMCP Test Results (MCP Audit Collection)      ║"
+          - "╚════════════════════════════════════════════════════╝"
+          - ""
+          - "Airflow MCP Server ({{ airflow_url }}):"
+          - "  ✅ Status: {{ 'PASS' if airflow_info.success else 'FAIL' }}"
+          - "  📊 Tools: {{ airflow_info.server_info.available_tools | default(0) }}"
+          - "  📦 Resources: {{ airflow_info.server_info.available_resources | default(0) }}"
+          - ""
+          - "AI Assistant MCP ({{ ai_url }}):"
+          - "  {{ '✅' if (ai_info.success | default(false)) else '⚠️' }} Status: {{ 'PASS' if (ai_info.success | default(false)) else 'Not Running' }}"
+          - "  📊 Tools: {{ ai_info.server_info.available_tools | default(0) }}"
+          - ""
+          - "Tool Test Results:"
+          - "  list_dags: {{ '✅ PASS' if (list_dags_result.success | default(false)) else '⚠️ Skipped' }}"
+          - ""
+          - "╚════════════════════════════════════════════════════╝"
+      tags: [summary]

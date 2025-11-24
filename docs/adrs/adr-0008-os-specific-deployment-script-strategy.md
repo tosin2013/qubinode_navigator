@@ -1,7 +1,17 @@
+---
+layout: default
+title: ADR-0008 OS-Specific Deployment Script
+parent: Infrastructure & Deployment
+grand_parent: Architectural Decision Records
+nav_order: 0008
+---
+
 # ADR-0008: OS-Specific Deployment Script Strategy
 
 ## Status
-Accepted
+**DEPRECATED** - Superseded by ADR-0033: Terminal-Based One-Shot Deployment Architecture
+
+This ADR is no longer applicable as the project has moved to a unified deployment approach through `deploy-qubinode.sh` which consolidates all OS-specific logic into a single, intelligent orchestrator.
 
 ## Context
 Qubinode Navigator needed to support deployment across different Linux distributions with varying package managers, system configurations, and cloud provider integrations. Each operating system has unique package repositories, service management approaches, kernel modules, and configuration file locations. RHEL 9 requires enterprise-grade features and subscription management, while Rocky Linux offers community-driven alternatives with different optimization needs. The project required a strategy to handle these OS-specific differences while maintaining consistent functionality and avoiding code duplication in core automation logic.

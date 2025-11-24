@@ -1,6 +1,6 @@
 ---
 layout: default
-title:  "OneDev - kcli-openshift4-baremetal Pipelines Externally"
+title:  "Legacy: OneDev kcli-openshift4-baremetal (External)"
 parent: Plugins
 nav_order: 3
 ---
@@ -12,9 +12,16 @@ This repository provides a plan which deploys a vm where:
 * launch the install against a set of baremetal nodes. Virtual ctlplanes and workers can also be deployed
 * OpenShift is deployed using the ipi method
 
+> **Status:** Legacy integration
+>
+> These pipelines were designed around OneDev. For new baremetal OpenShift deployments, consider modelling these as **Airflow DAGs** and managing them via the Airflow sidecar.
+>
+> - Airflow overview: [AIRFLOW-INTEGRATION.md](../AIRFLOW-INTEGRATION.md)
+> - DAG workflows: [airflow-dag-deployment-workflows.md](../airflow-dag-deployment-workflows.md)
+
 
 # Prerequisites
-* [OneDev - Kcli Pipelines](../plugins/onedev-kcli-pipelines.html)  - is configured and running.  
+* [OneDev - Kcli Pipelines](../plugins/onedev-kcli-pipelines.md)  - is configured and running.  
 
 **Optional: ssh into  baremetl server and run the following**
 ```

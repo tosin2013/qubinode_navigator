@@ -1,6 +1,6 @@
 ---
 layout: default
-title:  "OneDev - OpenShift Assisted Installer Service, Universal Deployer - WIP"
+title:  "Legacy: OneDev OpenShift Assisted Installer (Universal)"
 parent: Plugins
 nav_order: 3
 ---
@@ -11,9 +11,16 @@ This repository provides a plan which deploys a vm where:
 * stop the nodes to deploy through redfish
 * launch the install against a set of baremetal nodes. Virtual ctlplanes and workers can also be deployed
 
+> **Status:** Legacy integration
+>
+> This universal installer workflow is still documented for OneDev users. New deployments should converge on **Airflow DAGs** and the AI Assistant for orchestration.
+>
+> - Airflow overview: [AIRFLOW-INTEGRATION.md](../AIRFLOW-INTEGRATION.md)
+> - DAG workflows: [airflow-dag-deployment-workflows.md](../airflow-dag-deployment-workflows.md)
+
 
 # Prerequisites
-* [OneDev - Kcli Pipelines](../plugins/onedev-kcli-pipelines.html)  - is configured and running.  
+* [OneDev - Kcli Pipelines](../plugins/onedev-kcli-pipelines.md)  - is configured and running.  
 
 **ssh into  baremetl server and run the following**
 ```

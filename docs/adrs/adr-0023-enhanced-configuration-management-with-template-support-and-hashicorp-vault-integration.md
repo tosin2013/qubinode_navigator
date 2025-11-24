@@ -1,3 +1,11 @@
+---
+layout: default
+title: ADR-0023 Enhanced Configuration
+parent: Configuration & Automation
+grand_parent: Architectural Decision Records
+nav_order: 0023
+---
+
 # ADR-0023: Enhanced Configuration Management with Template Support and HashiCorp Vault Integration
 
 ## Status
