@@ -1,3 +1,11 @@
+---
+layout: default
+title: ADR-0011 
+parent: Documentation & User Experience
+grand_parent: Architectural Decision Records
+nav_order: 0011
+---
+
 
 # ADR-0011: Comprehensive Platform Validation Through Research Analysis
 

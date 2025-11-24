@@ -1,3 +1,11 @@
+---
+layout: default
+title: ADR-0002 Multi-Cloud Inventory Strategy
+parent: Infrastructure & Deployment
+grand_parent: Architectural Decision Records
+nav_order: 2
+---
+
 # ADR-0002: Multi-Cloud Inventory Strategy with Environment-Specific Configurations
 
 ## Status

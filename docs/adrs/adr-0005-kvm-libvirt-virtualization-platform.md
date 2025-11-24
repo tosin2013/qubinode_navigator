@@ -1,3 +1,11 @@
+---
+layout: default
+title: ADR-0005 KVM/Libvirt Virtualization
+parent: Infrastructure & Deployment
+grand_parent: Architectural Decision Records
+nav_order: 5
+---
+
 # ADR-0005: KVM/Libvirt Virtualization Platform Choice
 
 ## Status

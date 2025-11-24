@@ -2,13 +2,15 @@
 # Based on ADR-0027 technical requirements
 
 # Core API framework
-fastapi==0.121.1
+fastapi==0.121.3
 uvicorn[standard]==0.38.0
 pydantic==2.12.4
 
-# AI/ML frameworks (lightweight versions)
-langchain==0.0.340
-langchain-community==0.4.1
+# AI/ML frameworks (modern versions - compatible)
+# Using 0.3.x series for all langchain packages for compatibility
+langchain>=0.3.17,<0.4.0
+langchain-community>=0.3.0,<0.4.0
+langchain-core>=0.3.33,<0.4.0
 # Note: Using direct HTTP calls to llama.cpp server instead of llama-cpp-python
 
 # Multi-model API support
@@ -19,7 +21,7 @@ httpx==0.28.1
 requests==2.32.5
 
 # File handling for RAG ingestion (Linux/RHEL optimized)
-aiofiles==23.1.0
+aiofiles>=23.1.0
 python-multipart==0.0.20
 
 # Configuration and environment
@@ -27,15 +29,20 @@ pyyaml==6.0.3
 python-dotenv==1.2.1
 
 # Logging and monitoring
-structlog==23.2.0
+structlog>=23.2.0
 prometheus-client==0.23.1
 
 # System integration
-psutil==5.9.6
+psutil>=5.9.6
 
 # Vector database and embeddings for RAG (cutting-edge 2024)
-qdrant-client[fastembed]==1.15.1
+qdrant-client[fastembed]==1.16.0
 
 # Development and testing
-pytest==7.4.3
-pytest-asyncio==0.21.1
+pytest>=9.0.0,<10.0.0
+pytest-asyncio>=1.0.0,<2.0.0
+
+# MCP (Model Context Protocol) server for LLM integrations
+# fastmcp includes the MCP protocol implementation
+mcp>=1.0.0
+fastmcp>=2.0.0

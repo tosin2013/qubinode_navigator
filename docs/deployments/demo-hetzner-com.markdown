@@ -6,6 +6,11 @@ nav_order: 2
 ---
 
 Deploy to [Hetzner](https://www.hetzner.com/) using the following steps.
+
+> **Documentation status**
+> - Validation: `IN PROGRESS` – Steps have been tested in past environments but may require updates for newer releases.
+> - Last reviewed: 2025-11-21
+> - Community: If you successfully deploy using this guide or encounter issues, please help refine it via [Contributing to docs](../how-to/contribute.md).
 **Tested on**
 * Rocky Linux 9
 
@@ -71,7 +76,7 @@ export FORWARDER='1.1.1.1'
 export ACTIVE_BRIDGE='false'
 export INTERFACE=bond0
 export USE_ROUTE53=true
-export GIT_REPO=https://github.com/tosin2013/qubinode_navigator.git
+export GIT_REPO=https://github.com/Qubinode/qubinode_navigator.git
 export INVENTORY=hetzner
 export SSH_PASSWORD=${SSH_PASSWORD}
 EOF
@@ -101,7 +106,7 @@ export FORWARDER='1.1.1.1'
 export ACTIVE_BRIDGE='false'
 export INTERFACE=bond0
 export USE_ROUTE53=true
-export GIT_REPO=https://github.com/tosin2013/qubinode_navigator.git
+export GIT_REPO=https://github.com/Qubinode/qubinode_navigator.git
 export INVENTORY=hetzner
 export SSH_PASSWORD=${SSH_PASSWORD}
 export HCP_CLIENT_ID="your-client-id"
@@ -120,7 +125,7 @@ sudo dnf install -y tmux curl git vim
 git clone https://github.com/gpakosz/.tmux.git
 ln -s -f .tmux/.tmux.conf
 cp .tmux/.tmux.conf.local .
-curl -OL https://raw.githubusercontent.com/tosin2013/qubinode_navigator/main/rocky-linux-hetzner.sh
+curl -OL https://raw.githubusercontent.com/Qubinode/qubinode_navigator/main/rocky-linux-hetzner.sh
 chmod +x rocky-linux-hetzner.sh
 tmux new-session -s rocky-linux-hetzner
 source notouch.env && sudo -E  ./rocky-linux-hetzner.sh
@@ -155,4 +160,10 @@ You may also use Remmina or any other RDP client to access the server.
 ![alt text](image.png)
 ![alt text](<Screenshot from 2024-03-20 18-06-28.png>)
 
-See [OneDev - Git Server with CI/CD, Kanban, and Packages](../plugins/onedev-kcli-pipelines.html) 
+## Next Steps: Orchestrate with Apache Airflow
+
+Once the base environment is deployed, you can use Apache Airflow to orchestrate higher-level workflows and CI/CD-style automation:
+
+- [Airflow Integration Overview](../AIRFLOW-INTEGRATION.md)
+- [Airflow Integration Guide](../airflow-integration-guide.md)
+- [DAG Deployment Workflows](../airflow-dag-deployment-workflows.md)

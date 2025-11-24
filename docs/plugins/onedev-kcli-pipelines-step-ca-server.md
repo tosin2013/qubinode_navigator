@@ -1,14 +1,21 @@
 ---
 layout: default
-title:  "Deploy Step CA Server using Kcli Pipelines"
+title:  "Legacy: Deploy Step CA Server using OneDev Kcli Pipelines"
 parent: Plugins
 nav_order: 3
 ---
 
 ## Deploy Step CA Server using Kcli Pipelines
 
+> **Status:** Legacy integration
+>
+> This guide describes Step CA deployment via OneDev Kcli pipelines. For new environments, consider modelling these steps as an **Airflow DAG** managed by the Airflow sidecar.
+>
+> - Airflow overview: [AIRFLOW-INTEGRATION.md](../AIRFLOW-INTEGRATION.md)
+> - DAG workflows: [airflow-dag-deployment-workflows.md](../airflow-dag-deployment-workflows.md)
+
 ## Requirements
-* [OneDev - Kcli Pipelines](../plugins/onedev-kcli-pipelines.html)  - is configured and running.  
+* [OneDev - Kcli Pipelines](../plugins/onedev-kcli-pipelines.md)  - is configured and running.  
   
 **ssh into baremetl server and run the following**
 ```

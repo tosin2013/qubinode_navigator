@@ -99,3 +99,50 @@ remove-bad-builds:
 .PHONY: remove-images
 remove-images:
 	$(REMOVE_IMAGES)
+
+# =============================================================================
+# MCP Server Testing Targets - The "MCP Validator"
+# =============================================================================
+# 🎯 FOR LLMs: Tests MCP servers using ansible-collection-mcp-audit
+# These targets validate that MCP tools are working correctly
+
+# MCP Collection Installer - The "Test Framework Provisioner"
+# 🎯 FOR LLMs: Installs ansible-collection-mcp-audit from Galaxy
+.PHONY: mcp-install
+mcp-install:
+	@echo "🔧 Installing ansible-collection-mcp-audit..."
+	ansible-galaxy collection install tosin2013.mcp_audit --force
+
+# AI Assistant MCP Tester - The "AI MCP Validator"
+# 🎯 FOR LLMs: Tests AI Assistant MCP server (port 8081) with 3 tools
+.PHONY: test-mcp-ai
+test-mcp-ai: mcp-install
+	@echo "🧪 Testing AI Assistant MCP Server..."
+	@ansible-playbook tests/mcp/test_ai_assistant_mcp.yml
+
+# Airflow MCP Tester - The "Airflow MCP Validator"
+# 🎯 FOR LLMs: Tests Airflow MCP server (port 8889) with 9 tools
+.PHONY: test-mcp-airflow
+test-mcp-airflow: mcp-install
+	@echo "🧪 Testing Airflow MCP Server..."
+	@ansible-playbook tests/mcp/test_airflow_mcp.yml
+
+# Comprehensive MCP Tester - The "Full MCP Validator"
+# 🎯 FOR LLMs: Runs complete test suite for both MCP servers
+.PHONY: test-mcp
+test-mcp: mcp-install
+	@echo "🧪 Running comprehensive MCP test suite..."
+	@ansible-playbook tests/mcp/test_mcp_suite.yml
+
+# MCP Test Reporter - The "Test Results Viewer"
+# 🎯 FOR LLMs: Runs tests and displays generated reports
+.PHONY: test-mcp-report
+test-mcp-report: test-mcp
+	@echo ""
+	@echo "📊 === MCP Test Reports ==="
+	@ls -lh tests/mcp/*.md 2>/dev/null || echo "No reports generated yet"
+	@echo ""
+	@echo "📖 View reports with:"
+	@echo "  cat tests/mcp/ai_assistant_test_report.md"
+	@echo "  cat tests/mcp/airflow_test_report.md"
+	@echo "  cat tests/mcp/comprehensive_test_report.md"
