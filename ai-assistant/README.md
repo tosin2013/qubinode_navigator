@@ -87,6 +87,60 @@ POST /diagnostics
 GET /config
 ```
 
+## MCP Tools for LLM Integration
+
+The AI Assistant exposes **4 powerful tools** via Model Context Protocol (MCP) for LLMs to interact with Qubinode:
+
+### 1. **ask_qubinode** (NEW - Learning Tool)
+Perfect for LLMs to learn how to use Qubinode by asking questions in natural language.
+
+```python
+# Example usage in MCP
+await mcp_client.call_tool("ask_qubinode", {
+    "question": "How do I create a custom plugin?",
+    "topic": "plugins",
+    "skill_level": "intermediate"
+})
+```
+
+**Features:**
+- Combines documentation search with AI-powered guidance
+- Supports topics: `plugins`, `deployment`, `mcp`, `airflow`, `configuration`
+- Skill levels: `beginner`, `intermediate`, `advanced`
+- Includes practical examples and next steps
+- Falls back to documentation if AI service is unavailable
+
+### 2. **query_documents**
+Search the RAG document store for specific information.
+
+```python
+await mcp_client.call_tool("query_documents", {
+    "query": "How to configure kcli",
+    "max_results": 5
+})
+```
+
+### 3. **chat_with_context**
+Send messages with context for intelligent infrastructure-focused responses.
+
+```python
+await mcp_client.call_tool("chat_with_context", {
+    "message": "What's the best practice for VM naming?",
+    "context": {
+        "task": "deploying VM",
+        "environment": "production",
+        "user_role": "admin"
+    }
+})
+```
+
+### 4. **get_project_status**
+Get current project health and metrics.
+
+```python
+await mcp_client.call_tool("get_project_status", {})
+```
+
 ## Configuration
 
 The AI assistant can be configured via:

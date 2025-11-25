@@ -215,6 +215,123 @@ async def get_project_status() -> str:
             return error_msg
 
 
+@mcp.tool()
+async def ask_qubinode(
+    question: str,
+    topic: Optional[str] = None,
+    skill_level: Optional[str] = None
+) -> str:
+    """
+    Ask Qubinode Navigator for help understanding features, usage patterns,
+    and best practices. Perfect for LLMs to learn how to work with Qubinode.
+    
+    This tool combines documentation search with AI-powered guidance to provide
+    comprehensive, context-aware answers about:
+    - Plugin system and architecture
+    - Deployment workflows
+    - Configuration management
+    - Troubleshooting and debugging
+    - AI/MCP integration patterns
+    - Airflow and kcli integration
+    
+    Args:
+        question: Your question about Qubinode (e.g., "How do I create a plugin?")
+        topic: Optional topic for better focus (e.g., "plugins", "deployment", "mcp", "airflow", "configuration")
+        skill_level: Optional skill level (e.g., "beginner", "intermediate", "advanced") to tailor response depth
+    
+    Returns:
+        Comprehensive guide with documentation snippets and AI recommendations
+    """
+    logger.info(f"Tool called: ask_qubinode(question='{question[:60]}...')")
+    
+    if not question or not question.strip():
+        return "Error: Question cannot be empty. Please ask something about Qubinode!"
+    
+    # Enhance question with topic and skill level for better search
+    search_query = question
+    if topic:
+        search_query = f"{question} {topic}"
+    
+    # Build context for AI assistant
+    context = {
+        "mcp_integration": True,
+        "interface": "fastmcp",
+        "mode": "learning",
+        "user_intent": "understanding_qubinode"
+    }
+    
+    if topic:
+        context["topic"] = topic
+    if skill_level:
+        context["skill_level"] = skill_level
+    
+    async with httpx.AsyncClient(timeout=90.0) as client:
+        try:
+            # First, search documentation for relevant info
+            logger.info(f"Searching documentation for: {search_query}")
+            search_response = await client.post(
+                f"{AI_SERVICE_URL}/api/query",
+                json={"query": search_query, "max_results": 5},
+                timeout=30.0
+            )
+            
+            docs_context = ""
+            if search_response.status_code == 200:
+                search_data = search_response.json()
+                results = search_data.get("results", [])
+                
+                if results:
+                    docs_context = "\n\n## Relevant Documentation:\n\n"
+                    for i, result in enumerate(results, 1):
+                        content = result.get('content', '').strip()
+                        source = result.get('source', 'Unknown')
+                        docs_context += f"**[{i}] From {source}:**\n{content}\n\n"
+            
+            # Now get AI-powered answer with documentation context
+            logger.info("Getting AI-powered guidance")
+            ai_prompt = f"""You are a Qubinode Navigator expert helping an LLM understand the platform.
+
+Question: {question}
+
+Provide a clear, comprehensive answer that:
+1. Directly answers the question
+2. Includes practical examples when relevant
+3. Links to key concepts and best practices
+4. Suggests next steps for learning more
+
+If skill level is '{skill_level or 'any'}', adjust depth accordingly.{docs_context}
+
+Provide your answer in clear, actionable markdown format."""
+            
+            chat_response = await client.post(
+                f"{AI_SERVICE_URL}/chat",
+                json={"message": ai_prompt, "context": context},
+                timeout=90.0
+            )
+            
+            if chat_response.status_code == 200:
+                data = chat_response.json()
+                ai_answer = data.get("response", "No response received")
+                logger.info("Successfully generated Qubinode guidance")
+                return ai_answer
+            else:
+                logger.warning(f"Chat endpoint returned status {chat_response.status_code}")
+                # Fallback: return documentation if AI service fails
+                if docs_context:
+                    return f"# Documentation Results for: {question}\n{docs_context}\n\n**Note:** AI-powered guidance unavailable, showing documentation instead."
+                else:
+                    return f"Could not find documentation or AI guidance for: {question}"
+                    
+        except httpx.HTTPError as e:
+            error_msg = f"Error getting Qubinode guidance: {str(e)}\n\nThe AI Assistant service may not be running at {AI_SERVICE_URL}\n\nTry running: podman run -d --name qubinode-ai -p 8080:8080 localhost/qubinode-ai-assistant:latest"
+            logger.error(error_msg)
+            return error_msg
+        except Exception as e:
+            error_msg = f"Unexpected error: {str(e)}"
+            logger.error(error_msg, exc_info=True)
+            return error_msg
+
+
 def main():
     """Main entry point"""
     if not MCP_ENABLED:
@@ -228,7 +345,7 @@ def main():
     logger.info("Starting FastMCP AI Assistant Server")
     logger.info(f"Host: {MCP_SERVER_HOST}")
     logger.info(f"Port: {MCP_SERVER_PORT}")
-    logger.info("Tools: query_documents, chat_with_context, get_project_status")
+    logger.info("Tools: query_documents, chat_with_context, get_project_status, ask_qubinode")
     logger.info("=" * 60)
     
     # FastMCP handles everything: SSE, HTTP, stdio, auth, errors!

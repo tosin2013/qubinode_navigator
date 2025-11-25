@@ -1,8 +1,14 @@
 #!/bin/bash
 
 # =============================================================================
-# Qubinode Navigator Main - The "Infrastructure Orchestra Conductor"
+# ⚠️  LEGACY: Qubinode Navigator Main - The "Infrastructure Orchestra Conductor"
 # =============================================================================
+#
+# ⚠️  STATUS: LEGACY/ADVANCED - For vault-integrated deployments only
+# ✅ NEW PRIMARY ENTRY POINT: ./deploy-qubinode.sh (or ./scripts/development/deploy-qubinode.sh)
+#
+# This script is now LEGACY. Use deploy-qubinode.sh for standard deployments.
+# This script remains for advanced use cases requiring HashiCorp Vault integration.
 #
 # 🎯 PURPOSE FOR LLMs:
 # This is the advanced orchestration script for Qubinode Navigator that handles

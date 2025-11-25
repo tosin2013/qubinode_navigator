@@ -104,6 +104,28 @@ class QuibinodeAIMCPServer(Server):
                     "properties": {},
                     "required": []
                 }
+            ),
+            Tool(
+                name="ask_qubinode",
+                description="Ask Qubinode Navigator for help understanding features, usage patterns, and best practices. Perfect for LLMs to learn how to work with Qubinode.",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "question": {
+                            "type": "string",
+                            "description": "Your question about Qubinode (e.g., 'How do I create a plugin?')"
+                        },
+                        "topic": {
+                            "type": "string",
+                            "description": "Optional topic for better focus (e.g., 'plugins', 'deployment', 'mcp', 'airflow', 'configuration')"
+                        },
+                        "skill_level": {
+                            "type": "string",
+                            "description": "Optional skill level (e.g., 'beginner', 'intermediate', 'advanced') to tailor response depth"
+                        }
+                    },
+                    "required": ["question"]
+                }
             )
         ]
         
@@ -129,6 +151,13 @@ class QuibinodeAIMCPServer(Server):
             
             elif name == "get_project_status":
                 return await self._get_project_status()
+            
+            elif name == "ask_qubinode":
+                return await self._ask_qubinode(
+                    arguments["question"],
+                    arguments.get("topic"),
+                    arguments.get("skill_level")
+                )
             
             else:
                 logger.warning(f"Unknown tool requested: {name}")
@@ -283,6 +312,106 @@ class QuibinodeAIMCPServer(Server):
                 )]
             except Exception as e:
                 logger.error(f"Unexpected error getting status: {str(e)}", exc_info=True)
+                return [TextContent(
+                    type="text",
+                    text=f"Unexpected error: {str(e)}"
+                )]
+    
+    async def _ask_qubinode(self, question: str, topic: Optional[str] = None, skill_level: Optional[str] = None) -> list[TextContent]:
+        """Ask Qubinode for help understanding features"""
+        logger.info(f"Ask Qubinode request: '{question[:50]}...'")
+        
+        if not question or not question.strip():
+            return [TextContent(
+                type="text",
+                text="Error: Question cannot be empty. Please ask something about Qubinode!"
+            )]
+        
+        # Enhance question with topic and skill level for better search
+        search_query = question
+        if topic:
+            search_query = f"{question} {topic}"
+        
+        # Build context for AI assistant
+        context = {
+            "mcp_integration": True,
+            "interface": "mcp",
+            "mode": "learning",
+            "user_intent": "understanding_qubinode"
+        }
+        
+        if topic:
+            context["topic"] = topic
+        if skill_level:
+            context["skill_level"] = skill_level
+        
+        async with httpx.AsyncClient() as client:
+            try:
+                # First, search documentation for relevant info
+                logger.info(f"Searching documentation for: {search_query}")
+                search_response = await client.post(
+                    f"{self.base_url}/api/query",
+                    json={"query": search_query, "max_results": 5},
+                    timeout=30.0
+                )
+                
+                docs_context = ""
+                if search_response.status_code == 200:
+                    search_data = search_response.json()
+                    results = search_data.get("results", [])
+                    
+                    if results:
+                        docs_context = "\n\n## Relevant Documentation:\n\n"
+                        for i, result in enumerate(results, 1):
+                            content = result.get('content', '').strip()
+                            source = result.get('source', 'Unknown')
+                            docs_context += f"**[{i}] From {source}:**\n{content}\n\n"
+                
+                # Now get AI-powered answer with documentation context
+                logger.info("Getting AI-powered guidance")
+                ai_prompt = f"""You are a Qubinode Navigator expert helping an LLM understand the platform.
+
+Question: {question}
+
+Provide a clear, comprehensive answer that:
+1. Directly answers the question
+2. Includes practical examples when relevant
+3. Links to key concepts and best practices
+4. Suggests next steps for learning more
+
+If skill level is '{skill_level or 'any'}', adjust depth accordingly.{docs_context}
+
+Provide your answer in clear, actionable markdown format."""
+                
+                chat_response = await client.post(
+                    f"{self.base_url}/chat",
+                    json={"message": ai_prompt, "context": context},
+                    timeout=90.0
+                )
+                
+                if chat_response.status_code == 200:
+                    data = chat_response.json()
+                    ai_answer = data.get("response", "No response received")
+                    logger.info("Successfully generated Qubinode guidance")
+                    return [TextContent(type="text", text=ai_answer)]
+                else:
+                    logger.warning(f"Chat endpoint returned status {chat_response.status_code}")
+                    # Fallback: return documentation if AI service fails
+                    if docs_context:
+                        fallback_text = f"# Documentation Results for: {question}\n{docs_context}\n\n**Note:** AI-powered guidance unavailable, showing documentation instead."
+                        return [TextContent(type="text", text=fallback_text)]
+                    else:
+                        return [TextContent(
+                            type="text",
+                            text=f"Could not find documentation or AI guidance for: {question}"
+                        )]
+                        
+            except httpx.HTTPError as e:
+                logger.error(f"HTTP error in ask_qubinode: {str(e)}")
+                error_msg = f"Error getting Qubinode guidance: {str(e)}\n\nThe AI Assistant service may not be running at {self.base_url}\n\nTry running: podman run -d --name qubinode-ai -p 8080:8080 localhost/qubinode-ai-assistant:latest"
+                return [TextContent(type="text", text=error_msg)]
+            except Exception as e:
+                logger.error(f"Unexpected error in ask_qubinode: {str(e)}", exc_info=True)
                 return [TextContent(
                     type="text",
                     text=f"Unexpected error: {str(e)}"
