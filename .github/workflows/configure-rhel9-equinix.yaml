@@ -49,7 +49,7 @@ jobs:
           echo "USE_HASHICORP_CLOUD=${{ github.event.inputs.use_hashicorp_cloud }}" >> $GITHUB_ENV
         fi
     - name: Configure RHEL 9 Equinix Server
-      uses: appleboy/ssh-action@v1.2.2
+      uses: appleboy/ssh-action@v1.2.3
       with:
         host: ${{ env.HOSTNAME }}
         username: ${{ secrets.USERNAME }}
