@@ -687,7 +687,7 @@ jobs:
           docker rm ai-benchmark
           
       - name: Upload benchmark results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: performance-benchmarks
           path: benchmark_results.json
