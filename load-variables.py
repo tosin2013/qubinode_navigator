@@ -9,22 +9,27 @@
 # configuration collection, system auto-detection, and YAML inventory updates.
 # It serves as the foundation for the enhanced configuration system.
 #
+# ✨ ENHANCED: Now checks environment variables FIRST before prompting
+#
 # 🧠 ARCHITECTURE OVERVIEW FOR AI ASSISTANTS:
 # This script implements traditional configuration management:
-# 1. [PHASE 1]: Interactive Input - Collects user credentials and domain information
-# 2. [PHASE 2]: Network Detection - Auto-detects network interfaces and IP configuration
-# 3. [PHASE 3]: Storage Detection - Identifies available disks and storage configuration
-# 4. [PHASE 4]: Inventory Updates - Updates YAML inventory files with collected data
+# 1. [PHASE 1]: Environment Check - First checks ENV vars (QUBINODE_ADMIN_USER, QUBINODE_DOMAIN, FORWARDER)
+# 2. [PHASE 2]: Interactive Input - Prompts only if env vars not set
+# 3. [PHASE 3]: Network Detection - Auto-detects network interfaces and IP configuration
+# 4. [PHASE 4]: Storage Detection - Identifies available disks and storage configuration
+# 5. [PHASE 5]: Inventory Updates - Updates YAML inventory files with collected data
 #
 # 🔧 HOW IT CONNECTS TO QUBINODE NAVIGATOR:
 # - [Legacy Configuration]: Original configuration method before template system
+# - [Environment-First]: Prioritizes .env file values over interactive prompts
 # - [Backward Compatibility]: Still used as fallback when enhanced system unavailable
 # - [Interactive Mode]: Provides user-friendly prompts for manual configuration
 # - [System Detection]: Core auto-detection logic used by enhanced system
 # - [YAML Management]: Direct YAML file manipulation for inventory updates
 #
 # 📊 KEY DESIGN PRINCIPLES FOR LLMs TO UNDERSTAND:
-# - [Interactive First]: Designed for manual, interactive configuration sessions
+# - [Environment Variables First]: Checks QUBINODE_* and other env vars before prompting
+# - [Interactive Fallback]: Only prompts if environment variables not set
 # - [System Auto-Detection]: Automatically discovers network and storage configuration
 # - [Direct YAML Updates]: Modifies inventory YAML files in-place
 # - [Validation Logic]: Includes input validation for domains and network configuration
@@ -63,37 +68,56 @@ if not inventory_env:
 def update_inventory(username=None, domain_name=None, dnf_forwarder=None):
     """
     🎯 FOR LLMs: This function collects user credentials and system information
-    through interactive prompts and updates the inventory YAML files with the
-    collected configuration data.
+    through environment variables first, then interactive prompts as fallback.
+    It updates the inventory YAML files with the collected configuration data.
 
     🔄 WORKFLOW:
-    1. Collects username (interactive prompt or current user)
-    2. Validates and collects domain name with regex validation
-    3. Collects DNS forwarder information
+    1. Checks QUBINODE_ADMIN_USER env var, then prompts if not set
+    2. Validates and checks QUBINODE_DOMAIN env var, then prompts if not set
+    3. Checks FORWARDER env var, then prompts if not set
     4. Updates inventory YAML files with collected data
 
     📊 INPUTS/OUTPUTS:
-    - INPUT: username, domain_name, dnf_forwarder (optional parameters)
+    - INPUT: username, domain_name, dnf_forwarder (optional parameters override env vars)
     - OUTPUT: Updated inventory YAML files in inventories/{env}/group_vars/
 
-    ⚠️  SIDE EFFECTS: Modifies YAML files, requires user interaction if parameters not provided
+    ⚠️  SIDE EFFECTS: Modifies YAML files, only prompts if parameters and env vars not provided
     """
+    # Priority 1: Function parameters (from CLI args)
+    # Priority 2: Environment variables
+    # Priority 3: Interactive prompts
+    
     if username is None:
-        if os.geteuid() == 0:
-            username = input("Enter username: ")
-        else:
-            username = getpass.getuser()
+        # Check environment variables first
+        username = os.environ.get('QUBINODE_ADMIN_USER') or os.environ.get('ENV_USERNAME')
+        
+        if username is None:
+            # Fall back to interactive prompt
+            if os.geteuid() == 0:
+                username = input("Enter username: ")
+            else:
+                username = getpass.getuser()
 
     if domain_name is None:
-        while True:
-            domain_name = input("Enter the domain name for your system: ")
-            regex = r"^(?:(?!-)[A-Za-z0-9-]{1,63}(?<!-)\.)+[A-Za-z]{2,}$"
-            if re.match(regex, domain_name):
-                break
-            print("Invalid domain name format. Please try again.")
+        # Check environment variables first
+        domain_name = os.environ.get('QUBINODE_DOMAIN')
+        
+        if domain_name is None:
+            # Fall back to interactive prompt with validation
+            while True:
+                domain_name = input("Enter the domain name for your system: ")
+                regex = r"^(?:(?!-)[A-Za-z0-9-]{1,63}(?<!-)\.)+[A-Za-z]{2,}$"
+                if re.match(regex, domain_name):
+                    break
+                print("Invalid domain name format. Please try again.")
 
     if dnf_forwarder is None:
-        dnf_forwarder = input("Enter the DNS forwarder for your system: ")
+        # Check environment variables first
+        dnf_forwarder = os.environ.get('FORWARDER')
+        
+        if dnf_forwarder is None:
+            # Fall back to interactive prompt
+            dnf_forwarder = input("Enter the DNS forwarder for your system: ")
 
     inventory_path = 'inventories/'+str(inventory_env)+'/group_vars/all.yml'
     with open(inventory_path, 'r') as f:
@@ -108,14 +132,25 @@ def update_inventory(username=None, domain_name=None, dnf_forwarder=None):
 
 
 def get_interface_ips(configure_bridge=None, interface=None):
+    """
+    Detect and configure network interfaces with environment variable support.
+    
+    Enhanced: Now checks INTERFACE and ACTIVE_BRIDGE environment variables first
+    """
     if configure_bridge is None:
-        if os.geteuid() == 0:
-            print("Error: Cannot set configure_bridge to True when running as root.")
-            configure_bridge = False
-            print("configure_bridge is set to", configure_bridge)
+        # Check environment variables first
+        bridge_env = os.environ.get('ACTIVE_BRIDGE')
+        if bridge_env is not None:
+            configure_bridge = bridge_env.lower() in ('true', '1', 'yes')
         else:
-            configure_bridge = True  # set configure_bridge to True or False based on your requirements
-            print("configure_bridge is set to", configure_bridge)
+            # Fall back to original logic
+            if os.geteuid() == 0:
+                print("Error: Cannot set configure_bridge to True when running as root.")
+                configure_bridge = False
+                print("configure_bridge is set to", configure_bridge)
+            else:
+                configure_bridge = True
+                print("configure_bridge is set to", configure_bridge)
 
     # Get a list of network interfaces
     interfaces = netifaces.interfaces()
@@ -124,19 +159,21 @@ def get_interface_ips(configure_bridge=None, interface=None):
     interfaces = [i for i in interfaces if i != 'lo' and netifaces.AF_INET in netifaces.ifaddresses(i)]
 
     if interface is None:
-        # If there's only one interface, use that
-        if len(interfaces) == 1:
-            interface = interfaces[0]
-        # If there's more than one, prompt the user to choose one
-        elif len(interfaces) > 1:
-            print("Multiple network interfaces found:")
-            for i, interface in enumerate(interfaces):
-                print(f"{i+1}. {interface}")
-            choice = int(input("Choose an interface to use: "))
-            interface = interfaces[choice-1]
-        # If there are no interfaces, raise an exception
-        else:
-            raise Exception("No network interfaces found")
+        # Check environment variables first
+        interface = os.environ.get('INTERFACE')
+        
+        if interface is None:
+            # Fall back to auto-detection
+            if len(interfaces) == 1:
+                interface = interfaces[0]
+            elif len(interfaces) > 1:
+                print("Multiple network interfaces found:")
+                for i, iface in enumerate(interfaces):
+                    print(f"{i+1}. {iface}")
+                choice = int(input("Choose an interface to use: "))
+                interface = interfaces[choice-1]
+            else:
+                raise Exception("No network interfaces found")
 
     # Get the IPv4 address, netmask, and MAC address for the chosen interface
     addrs = netifaces.ifaddresses(interface)
@@ -148,131 +185,134 @@ def get_interface_ips(configure_bridge=None, interface=None):
     netaddr = '.'.join(str(int(x) & int(y)) for x, y in zip(ip.split('.'), netmask.split('.')))
     prefix_len = sum(bin(int(x)).count('1') for x in netmask.split('.'))
 
+    # Prepare the configuration for the inventory
+    config = {
+        'kvm_host_gw': get_default_gateway(),
+        'kvm_host_interface': interface,
+        'kvm_host_ip': ip,
+        'kvm_host_macaddr': macaddr,
+        'kvm_host_mask_prefix': prefix_len,
+        'kvm_host_netmask': netmask
+    }
+
+    print(config)
+
+    # Update YAML file
     inventory_path = 'inventories/'+str(inventory_env)+'/group_vars/control/kvm_host.yml'
     with open(inventory_path, 'r') as f:
         inventory = yaml.safe_load(f)
 
-    inventory['configure_bridge'] = configure_bridge
-    inventory['kvm_host_gw'] = netifaces.gateways()['default'][netifaces.AF_INET][0]
-    inventory['kvm_host_interface'] = interface
-    inventory['kvm_host_ip'] = ip
-    inventory['kvm_host_macaddr'] = macaddr
-    inventory['kvm_host_mask_prefix'] = prefix_len
-    inventory['kvm_host_netmask'] = netmask
+    for key, value in config.items():
+        inventory[key] = value
 
-    with open(inventory_path, 'w') as f:
-        yaml.dump(inventory, f, default_flow_style=False)
+    with open(inventory_path, "w") as f:
+        yaml.dump(inventory, f)
 
-    print({
-        "kvm_host_gw": netifaces.gateways()['default'][netifaces.AF_INET][0],
-        "kvm_host_interface": interface,
-        "kvm_host_ip": ip,
-        "kvm_host_macaddr": macaddr,
-        "kvm_host_mask_prefix": prefix_len,
-        "kvm_host_netmask": netmask,
-    })
 
-def get_disk():
-    disks = []
-    for root, dirs, files in os.walk('/dev/'):
-        for file in files:
-            if file.startswith('nvme') or file.startswith('sd') or file.startswith('vd'):
-                disks.append(os.path.join(root, file))
-    if not disks:
-        print('No suitable disks found.')
-        return None
-    elif len(disks) == 3:
-        return disks[0]
-    else:
-        print('Found multiple suitable disks:')
-        for i, disk in enumerate(disks):
-            print(f'{i + 1}: {disk}')
-        print('0: Exit')
-        choice = input('Select a disk to use (1, 2, ...): ')
-        while not choice.isdigit() or int(choice) < 0 or int(choice) > len(disks):
-            choice = input('Invalid choice. Select a disk to use (1, 2, ...): ')
-        if int(choice) == 0:
-            return None
-        return disks[int(choice) - 1]
-
-def select_disk(disks=None):
-    # Check if vg_qubi is present
+def get_default_gateway():
+    """Get the default gateway IP address"""
     try:
-        vgdisplay_output = subprocess.check_output(['sudo', 'vgdisplay']).decode()
-    except subprocess.CalledProcessError:
-        print("Error: Could not get volume group information.")
-        exit(1)
+        gws = netifaces.gateways()
+        return gws['default'][netifaces.AF_INET][0]
+    except Exception:
+        return "0.0.0.0"
+
+
+def select_disk(disk=None):
+    """
+    Select a disk for KVM storage with environment variable support.
     
-    if 'vg_qubi' in vgdisplay_output:
-        print("Volume group 'vg_qubi' already exists.")
-        # Update YAML file with selected disk
-        inventory_path = 'inventories/'+str(inventory_env)+'/group_vars/control/kvm_host.yml'
-        with open(inventory_path, 'r') as f:
-            inventory = yaml.safe_load(f)
-        inventory['create_libvirt_storage'] = False
-        inventory['create_lvm'] = False
-        with open(inventory_path, 'w') as f:
-            yaml.dump(inventory, f, default_flow_style=False)
-        print(f"Selected disk: {vgdisplay_output}")
-        print(f"Updated {inventory_path}")
-        exit(0)
-    elif disks == 'skip':
+    Enhanced: Now checks KVM_HOST_LIBVIRT_EXTRA_DISK environment variable first,
+    and allows "skip" to disable disk selection
+    """
+    if disk is None:
+        # Check environment variables first
+        disk = os.environ.get('KVM_HOST_LIBVIRT_EXTRA_DISK')
+        
+        if disk is None:
+            # Fall back to interactive selection
+            disks = []
+            mounted = False
+
+            # Get a list of all disks
+            for partition in psutil.disk_partitions():
+                disk_name = partition.device.split('/')[-1]
+                # Skip loop devices, ram disks, and the root partition
+                if not disk_name.startswith('loop') and not disk_name.startswith('ram') and disk_name != 'sda':
+                    disks.append(partition.device)
+
+            disks = list(set(disks))
+
+            # If there's only one disk, use that
+            if len(disks) == 1:
+                disk = disks[0]
+            # If there's more than one, prompt the user to choose one
+            elif len(disks) > 1:
+                print("Found multiple suitable disks:")
+                for i, disk_option in enumerate(disks, 1):
+                    print(f"{i}: {disk_option}")
+                print("0: Exit")
+                choice = input("Select a disk to use (1, 2, ...): ")
+                
+                if choice == "0":
+                    print("Exiting disk selection.")
+                    return
+                elif choice == "skip":
+                    print("Skipping disk selection.")
+                    return
+                else:
+                    try:
+                        disk = disks[int(choice) - 1]
+                    except (ValueError, IndexError):
+                        print("Invalid selection.")
+                        return
+            else:
+                print('No suitable disks found.')
+                return
+    
+    # Handle "skip" option
+    if disk and disk.lower() == "skip":
         print("Skipping disk selection.")
-        # Update YAML file with selected disk
-        inventory_path = 'inventories/'+str(inventory_env)+'/group_vars/control/kvm_host.yml'
-        with open(inventory_path, 'r') as f:
-            inventory = yaml.safe_load(f)
-        inventory['create_libvirt_storage'] = False
-        inventory['create_lvm'] = False
-        with open(inventory_path, 'w') as f:
-            yaml.dump(inventory, f, default_flow_style=False)
-        print(f"Updated {inventory_path}")
-        exit(0)
+        use_root_disk = True
     else:
-        # Get available disks
-        if disks is None:
-            disks = get_disk()
-        print(disks)
+        use_root_disk = False
+        
         # Check if disk is already mounted
         mounted = False
-        if disks:
-            for disk in disks:
-                if os.path.ismount(f'/mnt/{disk}'):
-                    print(f"Disk {disk} is already mounted.")
-                    disks = [disk]
-                    mounted = True
-                    break
+        if disk:
+            for partition in psutil.disk_partitions():
+                if partition.device == disk:
+                    if os.path.ismount(partition.mountpoint):
+                        print(f"Disk {disk} is already mounted.")
+                        mounted = True
+                        break
 
         # Skip disk selection if only one disk is available and already mounted
-        if mounted and len(disks) == 1:
-            print(f"Using disk: {disks[0]}")
+        if mounted and disk:
+            print(f"Using disk: {disk}")
             use_root_disk = True
-        else:
-            use_root_disk = False
 
-        # Update YAML file with selected disk
-        inventory_path = 'inventories/'+str(inventory_env)+'/group_vars/control/kvm_host.yml'
-        with open(inventory_path, 'r') as f:
-            inventory = yaml.safe_load(f)
-        
+    # Update YAML file with selected disk
+    inventory_path = 'inventories/'+str(inventory_env)+'/group_vars/control/kvm_host.yml'
+    with open(inventory_path, 'r') as f:
+        inventory = yaml.safe_load(f)
 
-        if use_root_disk is True or disks is None:
-            print('No disk selected.')
-            inventory['create_libvirt_storage'] = False
-            inventory['create_lvm'] = False
-            with open(inventory_path, 'w') as f:
-                yaml.dump(inventory, f, default_flow_style=False)
-            exit(1)
-        else:
-            disks = disks.replace('/dev/', '')
-            inventory['create_libvirt_storage'] = True
-            inventory['create_lvm'] = True
-            inventory['kvm_host_libvirt_extra_disk'] = disks
-            with open(inventory_path, "w") as f:
-                yaml.dump(inventory, f)
-                
-            print(f"Selected disk: {disks}")
-            print(f"Updated {inventory_path}")
+    if use_root_disk is True or disk is None:
+        print('No disk selected.')
+        inventory['create_libvirt_storage'] = False
+        inventory['create_lvm'] = False
+        with open(inventory_path, 'w') as f:
+            yaml.dump(inventory, f, default_flow_style=False)
+    else:
+        disk_name = disk.replace('/dev/', '')
+        inventory['create_libvirt_storage'] = True
+        inventory['create_lvm'] = True
+        inventory['kvm_host_libvirt_extra_disk'] = disk_name
+        with open(inventory_path, "w") as f:
+            yaml.dump(inventory, f)
+            
+        print(f"Selected disk: {disk_name}")
+        print(f"Updated {inventory_path}")
 
 
 if __name__ == '__main__':
