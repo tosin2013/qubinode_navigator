@@ -28,7 +28,7 @@ x-airflow-common:
     # AIRFLOW__WEBSERVER__BASE_URL: 'http://YOUR_SERVER_IP/airflow'
     AIRFLOW__WEBSERVER__ENABLE_PROXY_FIX: 'true'
     # Qubinode Navigator Integration
-    QUBINODE_AI_ASSISTANT_URL: 'http://host.docker.internal:8000'
+    QUBINODE_AI_ASSISTANT_URL: 'http://localhost:8080'
     QUBINODE_KCLI_ENABLED: 'true'
     QUBINODE_RAG_INTEGRATION: 'true'
     # MCP Server Configuration (opt-in feature)

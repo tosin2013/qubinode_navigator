@@ -66,7 +66,15 @@ deploy_airflow() {
     
     # Start Airflow services
     log_info "Starting Airflow services..."
-    podman-compose up -d || {
+    
+    # Check if MCP server should be enabled
+    local mcp_profile=""
+    if [[ "${AIRFLOW_MCP_ENABLED:-false}" == "true" ]]; then
+        log_info "MCP server enabled, starting with --profile mcp"
+        mcp_profile="--profile mcp"
+    fi
+    
+    podman-compose ${mcp_profile} up -d || {
         log_error "Failed to start Airflow services"
         return 1
     }

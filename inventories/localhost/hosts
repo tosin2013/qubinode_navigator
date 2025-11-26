@@ -1,2 +1,2 @@
 [control]
-control ansible_host=95.216.99.247 ansible_user=lab-user
+control ansible_host=138.201.217.45 ansible_user=lab-user

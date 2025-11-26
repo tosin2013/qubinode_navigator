@@ -91,6 +91,14 @@ export QUBINODE_ENABLE_AI_ASSISTANT="${QUBINODE_ENABLE_AI_ASSISTANT:-true}"
 export AI_ASSISTANT_PORT="${AI_ASSISTANT_PORT:-8080}"
 export AI_ASSISTANT_VERSION="${AI_ASSISTANT_VERSION:-latest}"
 
+# Airflow Orchestration Configuration (Optional Feature)
+export QUBINODE_ENABLE_AIRFLOW="${QUBINODE_ENABLE_AIRFLOW:-false}"
+export AIRFLOW_PORT="${AIRFLOW_PORT:-8888}"
+export AIRFLOW_VERSION="${AIRFLOW_VERSION:-2.10.4-python3.12}"
+export AIRFLOW_NETWORK="${AIRFLOW_NETWORK:-airflow_default}"
+export QUBINODE_ENABLE_NGINX_PROXY="${QUBINODE_ENABLE_NGINX_PROXY:-false}"
+export NGINX_PORT="${NGINX_PORT:-80}"
+
 # Internal variables
 DEPLOYMENT_LOG="/tmp/qubinode-deployment-$(date +%Y%m%d-%H%M%S).log"
 AI_ASSISTANT_CONTAINER=""
@@ -433,6 +441,191 @@ EOF
 }
 
 # =============================================================================
+# AIRFLOW ORCHESTRATION INTEGRATION
+# =============================================================================
+
+deploy_airflow_services() {
+    if [[ "$QUBINODE_ENABLE_AIRFLOW" != "true" ]]; then
+        log_info "Airflow deployment disabled, skipping..."
+        return 0
+    fi
+    
+    log_step "Deploying Apache Airflow for workflow orchestration..."
+    
+    # Check if podman is available
+    if ! command -v podman &> /dev/null; then
+        log_warning "Podman not found, Airflow will not be available"
+        return 1
+    fi
+    
+    # Check if podman-compose is available
+    if ! command -v podman-compose &> /dev/null; then
+        log_info "Installing podman-compose for Airflow..."
+        if ! pip3 install podman-compose; then
+            log_warning "Failed to install podman-compose, skipping Airflow deployment"
+            return 1
+        fi
+        log_success "podman-compose installed successfully"
+    fi
+    
+    # Change to airflow directory
+    cd "$SCRIPT_DIR/airflow" || {
+        log_warning "Airflow directory not found, skipping Airflow deployment"
+        return 1
+    }
+    
+    # Enable Airflow in configuration
+    log_info "Enabling Airflow services..."
+    export ENABLE_AIRFLOW="true"
+    
+    # Call the dedicated Airflow deployment script
+    log_info "Starting Airflow services via deploy-airflow.sh..."
+    if bash ./deploy-airflow.sh deploy; then
+        log_success "Airflow deployment initiated successfully"
+        
+        # Wait for Airflow to be ready
+        log_info "Waiting for Airflow webserver to be ready on port ${AIRFLOW_PORT}..."
+        for i in {1..60}; do
+            if curl -s http://localhost:${AIRFLOW_PORT}/health &> /dev/null; then
+                log_success "Airflow webserver is ready at http://localhost:${AIRFLOW_PORT}"
+                
+                # Attempt to connect AI Assistant to Airflow network if it's running
+                if [[ "$QUBINODE_ENABLE_AI_ASSISTANT" == "true" ]]; then
+                    if podman ps --format "{{.Names}}" | grep -q "^qubinode-ai-assistant$"; then
+                        log_info "Connecting AI Assistant to Airflow network..."
+                        if podman network connect ${AIRFLOW_NETWORK} qubinode-ai-assistant 2>/dev/null; then
+                            log_success "AI Assistant connected to Airflow network"
+                        else
+                            log_warning "AI Assistant already connected or connection failed (non-critical)"
+                        fi
+                    else
+                        log_warning "AI Assistant not running - restart it after Airflow for full integration"
+                    fi
+                fi
+                
+                return 0
+            fi
+            sleep 2
+        done
+        
+        log_warning "Airflow webserver health check did not complete in time, but services may still be running"
+        return 0
+    else
+        log_error "Airflow deployment failed"
+        ask_ai_for_help "airflow_deploy" "Airflow deployment via deploy-airflow.sh failed"
+        return 1
+    fi
+}
+
+setup_nginx_reverse_proxy() {
+    if [[ "$QUBINODE_ENABLE_AIRFLOW" != "true" ]]; then
+        log_info "Airflow not enabled, skipping nginx reverse proxy setup..."
+        return 0
+    fi
+    
+    log_step "Setting up nginx reverse proxy for unified access..."
+    
+    # Install nginx if not present
+    if ! command -v nginx &> /dev/null; then
+        log_info "Installing nginx..."
+        if ! dnf install -y nginx; then
+            log_warning "Failed to install nginx, skipping reverse proxy setup"
+            return 1
+        fi
+        log_success "nginx installed successfully"
+    fi
+    
+    # Create nginx configuration for Airflow and AI Assistant
+    log_info "Creating nginx reverse proxy configuration..."
+    cat > /etc/nginx/conf.d/qubinode.conf << 'NGINX_CONF'
+# Qubinode Navigator - Nginx Reverse Proxy
+# Provides unified access to Airflow and AI Assistant
+
+# Upstream definitions
+upstream airflow_backend {
+    server localhost:8888;
+}
+
+upstream ai_assistant_backend {
+    server localhost:8080;
+}
+
+# HTTP server
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
+
+    # Airflow UI at root
+    location / {
+        proxy_pass http://airflow_backend/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # WebSocket support for Airflow live updates
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        
+        # Timeouts
+        proxy_connect_timeout 300s;
+        proxy_send_timeout 300s;
+        proxy_read_timeout 300s;
+    }
+
+    # AI Assistant API at /ai/
+    location /ai/ {
+        proxy_pass http://ai_assistant_backend/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        proxy_connect_timeout 300s;
+        proxy_send_timeout 300s;
+        proxy_read_timeout 300s;
+    }
+
+    # Health check endpoint
+    location /health {
+        proxy_pass http://airflow_backend/health;
+        access_log off;
+    }
+}
+NGINX_CONF
+    
+    # Test nginx configuration
+    log_info "Testing nginx configuration..."
+    if ! nginx -t; then
+        log_error "nginx configuration test failed"
+        return 1
+    fi
+    log_success "nginx configuration is valid"
+    
+    # Enable and start nginx
+    log_info "Starting nginx service..."
+    if ! systemctl enable nginx; then
+        log_warning "Failed to enable nginx for auto-start"
+    fi
+    
+    if ! systemctl restart nginx; then
+        log_error "Failed to start nginx"
+        return 1
+    fi
+    
+    if systemctl is-active --quiet nginx; then
+        log_success "nginx reverse proxy is running"
+    else
+        log_error "nginx failed to start"
+        return 1
+    fi
+    
+    return 0
+}
+
+# =============================================================================
 # DEPLOYMENT FUNCTIONS
 # =============================================================================
 
@@ -621,6 +814,29 @@ configure_firewalld() {
         sudo systemctl enable firewalld || {
             log_warning "Failed to enable firewalld"
         }
+    fi
+    
+    # If Airflow is enabled, configure firewall for nginx proxy
+    if [[ "$QUBINODE_ENABLE_AIRFLOW" == "true" ]]; then
+        log_info "Configuring firewall for Airflow deployment..."
+        
+        # Close direct access to Airflow and AI Assistant ports (nginx will proxy them)
+        log_info "Closing direct access to internal service ports..."
+        firewall-cmd --permanent --remove-port=8888/tcp 2>/dev/null || log_info "Port 8888 already closed or not open"
+        firewall-cmd --permanent --remove-port=8080/tcp 2>/dev/null || log_info "Port 8080 already closed or not open"
+        
+        # Open HTTP/HTTPS for nginx reverse proxy
+        log_info "Opening HTTP/HTTPS ports for nginx..."
+        firewall-cmd --permanent --add-service=http || log_warning "HTTP service already added"
+        firewall-cmd --permanent --add-service=https || log_warning "HTTPS service already added"
+        
+        # Reload firewall rules
+        log_info "Reloading firewall rules..."
+        if firewall-cmd --reload; then
+            log_success "Firewall rules updated for Airflow deployment"
+        else
+            log_warning "Failed to reload firewall, continuing anyway..."
+        fi
     fi
     
     log_success "Firewall configuration completed"
@@ -1365,13 +1581,56 @@ show_completion_summary() {
         echo ""
     fi
     
+    if [[ "$QUBINODE_ENABLE_AIRFLOW" == "true" ]]; then
+        echo -e "${CYAN}Apache Airflow Orchestration:${NC}"
+        echo -e "  • Airflow Web UI: http://localhost:${AIRFLOW_PORT}"
+        echo -e "  • Username: admin"
+        echo -e "  • Password: admin"
+        echo -e "  • Documentation: airflow/README.md"
+        echo ""
+        
+        if systemctl is-active --quiet nginx; then
+            echo -e "${CYAN}Nginx Reverse Proxy (Web UIs):${NC}"
+            echo -e "  • Status: Running on port 80"
+            echo -e "  • Airflow UI (proxied): http://localhost/ → localhost:${AIRFLOW_PORT}"
+            if [[ "$QUBINODE_ENABLE_AI_ASSISTANT" == "true" ]]; then
+                echo -e "  • AI Assistant API (proxied): http://localhost/ai/ → localhost:${AI_ASSISTANT_PORT}"
+            fi
+            echo ""
+        fi
+        
+        echo -e "${CYAN}MCP Servers (Direct Access for LLMs):${NC}"
+        echo -e "  • Airflow MCP: http://localhost:8889/sse"
+        echo -e "    └─ Tools: DAG management (3), VM operations (5), Status (1)"
+        if [[ "$QUBINODE_ENABLE_AI_ASSISTANT" == "true" ]] && [[ -n "$AI_ASSISTANT_CONTAINER" ]]; then
+            echo -e "  • AI Assistant MCP: http://localhost:8081"
+            echo -e "    └─ Tools: Chat, query documents, RAG integration"
+        fi
+        echo ""
+        
+        echo -e "${CYAN}📖 Architecture & Documentation:${NC}"
+        echo -e "  • Main: airflow/README.md"
+        echo -e "  • MCP Servers: docs/MCP-SERVER-ARCHITECTURE.md"
+        echo -e "  • Tools: airflow/TOOLS-AVAILABLE.md"
+        echo ""
+    fi
+    
     echo -e "${BLUE}Next Steps:${NC}"
     echo -e "  1. Review deployment log: ${DEPLOYMENT_LOG}"
     echo -e "  2. Check running VMs: virsh list --all"
     echo -e "  3. Access Qubinode Navigator: /opt/qubinode-navigator"
     
+    if [[ "$QUBINODE_ENABLE_AIRFLOW" == "true" ]]; then
+        echo -e "  4. Access Airflow UI (port 80 via nginx or port ${AIRFLOW_PORT} direct)"
+        echo -e "  5. Connect MCP servers to Claude Desktop for AI-powered automation"
+        echo -e "     └─ Airflow MCP: http://localhost:8889/sse"
+        if [[ "$QUBINODE_ENABLE_AI_ASSISTANT" == "true" ]]; then
+            echo -e "     └─ AI Assistant MCP: http://localhost:8081"
+        fi
+    fi
+    
     if [[ "$QUBINODE_ENABLE_AI_ASSISTANT" == "true" ]]; then
-        echo -e "  4. Ask AI Assistant for guidance on next steps"
+        echo -e "  • Ask AI Assistant for guidance: http://localhost:${AI_ASSISTANT_PORT}/chat"
     fi
     
     echo ""
@@ -1426,10 +1685,12 @@ main() {
     validate_configuration || exit 1
     detect_deployment_target || exit 1  # New: Detect deployment target based on research
     start_ai_assistant  # Non-blocking, continues even if AI Assistant fails
+    deploy_airflow_services  # Non-blocking, continues even if Airflow fails
     get_qubinode_navigator "$MY_DIR" || exit 1
     fix_dns_configuration || exit 1  # Auto-fix DNS configuration in inventory files
     # configure_environment || exit 1  # Commented out - users should configure .env manually to avoid overwriting
     deploy_qubinode_infrastructure "$MY_DIR" || exit 1
+    setup_nginx_reverse_proxy  # Non-blocking, only active if Airflow is enabled
     verify_deployment || exit 1
     
     # Show completion summary
@@ -1449,22 +1710,36 @@ case "${1:-}" in
         echo "  QUBINODE_CLUSTER_NAME        - Cluster name (required)"
         echo "  QUBINODE_DEPLOYMENT_MODE     - Deployment mode (default: production)"
         echo "  QUBINODE_ENABLE_AI_ASSISTANT - Enable AI Assistant (default: true)"
+        echo "  QUBINODE_ENABLE_AIRFLOW      - Enable Airflow orchestration (default: false)"
+        echo "  QUBINODE_ENABLE_NGINX_PROXY  - Enable nginx reverse proxy (auto-enabled with Airflow)"
+        echo "  AI_ASSISTANT_PORT            - AI Assistant port (default: 8080)"
+        echo "  AIRFLOW_PORT                 - Airflow webserver port (default: 8888)"
         echo ""
         echo "Options:"
         echo "  --help, -h     Show this help message"
         echo "  --version, -v  Show version information"
         echo ""
         echo "Examples:"
-        echo "  # Set environment variables and run"
+        echo "  # Basic deployment with AI Assistant only"
         echo "  export QUBINODE_DOMAIN=example.com"
         echo "  export QUBINODE_ADMIN_USER=admin"
         echo "  export QUBINODE_CLUSTER_NAME=mycluster"
         echo "  ./deploy-qubinode.sh"
         echo ""
-        echo "  # Or create a .env file with your configuration"
-        echo "  echo 'QUBINODE_DOMAIN=example.com' > .env"
-        echo "  echo 'QUBINODE_ADMIN_USER=admin' >> .env"
-        echo "  echo 'QUBINODE_CLUSTER_NAME=mycluster' >> .env"
+        echo "  # Deployment with Airflow orchestration"
+        echo "  export QUBINODE_DOMAIN=example.com"
+        echo "  export QUBINODE_ADMIN_USER=admin"
+        echo "  export QUBINODE_CLUSTER_NAME=mycluster"
+        echo "  export QUBINODE_ENABLE_AIRFLOW=true"
+        echo "  ./deploy-qubinode.sh"
+        echo ""
+        echo "  # Using .env file"
+        echo "  cat > .env << EOF"
+        echo "  QUBINODE_DOMAIN=example.com"
+        echo "  QUBINODE_ADMIN_USER=admin"
+        echo "  QUBINODE_CLUSTER_NAME=mycluster"
+        echo "  QUBINODE_ENABLE_AIRFLOW=true"
+        echo "  EOF"
         echo "  ./deploy-qubinode.sh"
         exit 0
         ;;
