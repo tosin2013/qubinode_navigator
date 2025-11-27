@@ -20,11 +20,13 @@ RUN apt-get update && apt-get install -y \
 # Switch to airflow user
 USER airflow
 
-# Install kcli via pip (use latest version to avoid getiterator bug in 99.0)
+# Install kcli and ansible via pip (use latest version to avoid getiterator bug in 99.0)
 RUN pip install --no-cache-dir \
     kcli \
     libvirt-python \
     paramiko \
+    ansible \
+    ansible-core \
     mcp>=0.9.0 \
     fastmcp>=0.2.0 \
     starlette>=0.27.0 \

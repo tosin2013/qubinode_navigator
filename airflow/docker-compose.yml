@@ -3,6 +3,7 @@ version: '3.8'
 # Apache Airflow Docker Compose Configuration
 # Phase 6 Goal 2: Workflow Orchestration Integration
 # Based on: ADR-0036 (Airflow Integration), ADR-0037 (Git-Based DAG Management)
+# Updated: ADR-0043 (Host Network Access for VM Connectivity)
 
 x-airflow-common:
   &airflow-common
@@ -17,7 +18,8 @@ x-airflow-common:
   environment:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
-    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    # ADR-0043: Use localhost since all services use host network
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@localhost/airflow
     AIRFLOW__CORE__FERNET_KEY: ''
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
@@ -48,6 +50,18 @@ x-airflow-common:
     # Mount libvirt socket for VM management (qemu:///system)
     - /var/run/libvirt/libvirt-sock:/var/run/libvirt/libvirt-sock
     - /root/.kcli:/root/.kcli:ro
+    # Mount qubinode_navigator for vault.yml and inventory access
+    - /root/qubinode_navigator:/opt/qubinode_navigator:ro
+    # Mount freeipa-workshop-deployer for Ansible playbooks
+    - /root/freeipa-workshop-deployer:/opt/freeipa-workshop-deployer
+    # Mount kcli-pipelines for scripts
+    - /root/kcli-pipelines:/opt/kcli-pipelines:ro
+    # Mount SSH keys for Ansible
+    - /root/.ssh:/root/.ssh:ro
+    # Mount /etc/hosts for DNS updates
+    - /etc/hosts:/etc/hosts
+    # Mount home directory for .generated inventory
+    - /root:/root
   user: "0:0"  # Run as root to access libvirt socket
   # Add libvirt group for socket access
   group_add:
@@ -61,6 +75,8 @@ services:
   postgres:
     # Using public Docker Hub official PostgreSQL image
     image: docker.io/library/postgres:15
+    # ADR-0043: Use host network so other services can connect via localhost
+    network_mode: host
     environment:
       POSTGRES_USER: airflow
       POSTGRES_PASSWORD: airflow
@@ -68,21 +84,26 @@ services:
     volumes:
       - postgres-db-volume:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "airflow"]
+      test: ["CMD", "pg_isready", "-U", "airflow", "-h", "localhost"]
       interval: 10s
       retries: 5
       start_period: 5s
     restart: always
-    ports:
-      - "5432:5432"
+    # Note: With host network, postgres listens on localhost:5432 directly
 
   airflow-webserver:
     <<: *airflow-common
     command: webserver
-    ports:
-      - "8888:8080"  # Using port 8888 to avoid conflict with AI Assistant on 8080
+    # ADR-0043: Use host network for VM connectivity (libvirt networks)
+    network_mode: host
+    # Note: With host network, ports are exposed directly on host
+    # Access webserver at http://localhost:8080
+    environment:
+      <<: *airflow-common-env
+      # Override webserver port to avoid conflicts
+      AIRFLOW__WEBSERVER__WEB_SERVER_PORT: '8888'
     healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      test: ["CMD", "curl", "--fail", "http://localhost:8888/health"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -96,6 +117,9 @@ services:
   airflow-scheduler:
     <<: *airflow-common
     command: scheduler
+    # ADR-0043: Use host network for VM connectivity (libvirt networks)
+    # This enables DAGs to reach VMs on 192.168.122.x and other libvirt networks
+    network_mode: host
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
       interval: 30s
@@ -112,8 +136,9 @@ services:
     <<: *airflow-common
     entrypoint: /bin/bash
     command: -c "python3 /opt/airflow/plugins/qubinode/mcp_server_fastmcp.py"
-    ports:
-      - "8889:8889"  # Airflow MCP Server (FastMCP/SSE)
+    # ADR-0043: Use host network for VM connectivity
+    network_mode: host
+    # Note: MCP server listens on port 8889 directly on host
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8889/sse"]
       interval: 30s

@@ -45,6 +45,18 @@ This document provides a comprehensive index of all Architecture Decision Record
 - **[ADR-0011](adr-0011-comprehensive-platform-validation.md)**: Comprehensive Platform Validation
 - **[ADR-0030](adr-0030-software-and-os-update-strategy.md)**: Software and OS Update Strategy
 
+### 🔄 Workflow Orchestration (Airflow)
+- **[ADR-0036](adr-0036-apache-airflow-workflow-orchestration-integration.md)**: Apache Airflow Workflow Orchestration Integration
+- **[ADR-0037](adr-0037-git-based-dag-repository-management.md)**: Git-Based DAG Repository Management
+- **[ADR-0039](adr-0039-freeipa-vyos-airflow-dag-integration.md)**: FreeIPA and VyOS Airflow DAG Integration ⭐ *New*
+- **[ADR-0040](adr-0040-dag-distribution-from-kcli-pipelines.md)**: DAG Distribution from kcli-pipelines ⭐ *New*
+- **[ADR-0041](adr-0041-vyos-version-upgrade-strategy.md)**: VyOS Version Pinning and Upgrade Strategy ⭐ *New*
+- **[ADR-0042](adr-0042-freeipa-base-os-upgrade-rhel9.md)**: FreeIPA Base OS Upgrade to RHEL 9 ⭐ *New*
+- **[ADR-0043](adr-0043-airflow-container-host-network-access.md)**: Airflow Container Host Network Access ⭐ *New* 🔥 *Critical*
+- **[ADR-0044](adr-0044-user-configurable-airflow-volume-mounts.md)**: User-Configurable Airflow Volume Mounts ⭐ *New*
+- **[ADR-0045](adr-0045-airflow-dag-development-standards.md)**: Airflow DAG Development Standards ⭐ *New* 📋 *Guidelines*
+- **[ADR-0046](adr-0046-dag-validation-pipeline-and-host-execution.md)**: DAG Validation Pipeline and Host-Based Execution ⭐ *New*
+
 ### 📚 Documentation
 - **[ADR-0029](adr-0029-documentation-strategy-and-website-modernization.md)**: Documentation Strategy and Website Modernization
 - **[ADR-0035](adr-0035-terminal-centric-documentation-strategy.md)**: Terminal-Centric Documentation Strategy
@@ -99,6 +111,10 @@ ADR-0004 (Security Architecture)
 ### 🚧 In Progress
 - Documentation strategy implementation (ADR-0029, ADR-0035)
 - FastMCP framework migration (ADR-0038) - PoC Complete ✅
+- FreeIPA and VyOS DAG integration (ADR-0039, ADR-0040) ⭐ *New*
+- VyOS version upgrade (ADR-0041) ⭐ *New*
+- FreeIPA RHEL 9 migration (ADR-0042) ⭐ *New*
+- **Airflow host network access (ADR-0043)** 🔥 *Critical blocker for VM connectivity*
 
 ### 📋 Planned
 - Software update automation (ADR-0030)
@@ -123,6 +139,16 @@ ADR-0004 (Security Architecture)
 ## Missing ADR Numbers
 Available for future decisions: ADR-0012 through ADR-0022
 
+### Airflow DAG Integration
+```
+ADR-0039 (FreeIPA/VyOS DAG Integration)
+├── depends on → ADR-0036 (Airflow Integration)
+├── depends on → ADR-0037 (Git-Based DAG Repository)
+├── implements → ADR-0040 (DAG Distribution)
+├── requires → ADR-0041 (VyOS Version Strategy)
+└── requires → ADR-0042 (FreeIPA RHEL 9 Upgrade)
+```
+
 ---
-*Last Updated: 2025-11-11*  
+*Last Updated: 2025-11-27*  
 *This index is automatically maintained. Please update when adding new ADRs.*

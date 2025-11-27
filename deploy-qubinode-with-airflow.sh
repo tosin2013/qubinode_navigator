@@ -47,6 +47,103 @@ else
     echo -e "${BLUE}Skipping base deployment (not found)${NC}"
 fi
 
+# Verify vault.yml exists for FreeIPA/infrastructure deployments
+INVENTORY="${INVENTORY:-localhost}"
+VAULT_FILE="$SCRIPT_DIR/inventories/${INVENTORY}/group_vars/control/vault.yml"
+if [[ ! -f "$VAULT_FILE" ]]; then
+    echo -e "${YELLOW}Warning: vault.yml not found at $VAULT_FILE${NC}"
+    echo -e "${CYAN}Creating vault.yml with default credentials...${NC}"
+    
+    # Ensure directory exists
+    mkdir -p "$SCRIPT_DIR/inventories/${INVENTORY}/group_vars/control"
+    
+    # Get password from notouch.env or use default
+    if [[ -f "$SCRIPT_DIR/notouch.env" ]]; then
+        source "$SCRIPT_DIR/notouch.env"
+    fi
+    VAULT_PASSWORD="${SSH_PASSWORD:-COmp123\$%}"
+    
+    # Create vault file
+    cat > "$VAULT_FILE" << VAULTEOF
+---
+# Ansible Vault - Sensitive Credentials
+# Encrypted with ansible-vault
+
+# FreeIPA Configuration
+freeipa_server_admin_password: "${VAULT_PASSWORD}"
+
+# Red Hat Subscription Manager (leave empty for CentOS/community)
+rhsm_org: ""
+rhsm_activationkey: ""
+rhsm_username: ""
+rhsm_password: ""
+
+# OpenShift Pull Secret (optional)
+openshift_pull_secret: ""
+VAULTEOF
+    
+    # Encrypt if vault password file exists
+    if [[ -f "$HOME/.vault_password" ]]; then
+        ansible-vault encrypt "$VAULT_FILE" --vault-password-file "$HOME/.vault_password" --encrypt-vault-id default 2>/dev/null || \
+        ansible-vault encrypt "$VAULT_FILE" --vault-password-file "$HOME/.vault_password" 2>/dev/null || \
+        echo -e "${YELLOW}Warning: Could not encrypt vault.yml${NC}"
+        echo -e "${GREEN}vault.yml created and encrypted${NC}"
+    else
+        echo -e "${YELLOW}Warning: vault.yml created but not encrypted - .vault_password not found${NC}"
+    fi
+else
+    echo -e "${GREEN}vault.yml exists at $VAULT_FILE${NC}"
+fi
+
+# Configure SSH for Airflow container to access host (ADR-0046)
+echo -e "${BLUE}[1.5/4] Configuring SSH access for Airflow container...${NC}"
+
+# Ensure SSH key exists
+if [[ ! -f "$HOME/.ssh/id_rsa" ]]; then
+    echo -e "${CYAN}  Generating SSH key...${NC}"
+    ssh-keygen -t rsa -b 4096 -f "$HOME/.ssh/id_rsa" -N '' -q
+fi
+
+# Add the key to authorized_keys for localhost access
+# This allows the Airflow container to SSH to the host for Ansible execution
+if ! grep -q "$(cat $HOME/.ssh/id_rsa.pub)" "$HOME/.ssh/authorized_keys" 2>/dev/null; then
+    echo -e "${CYAN}  Adding SSH key to authorized_keys for container access...${NC}"
+    cat "$HOME/.ssh/id_rsa.pub" >> "$HOME/.ssh/authorized_keys"
+    chmod 600 "$HOME/.ssh/authorized_keys"
+    echo -e "${GREEN}  SSH key configured for Airflow container${NC}"
+else
+    echo -e "${GREEN}  SSH key already in authorized_keys${NC}"
+fi
+
+# Ensure SSH service is running
+if ! systemctl is-active --quiet sshd; then
+    echo -e "${CYAN}  Starting SSH service...${NC}"
+    systemctl start sshd
+    systemctl enable sshd
+fi
+
+# Test SSH access
+if ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=5 root@localhost "echo 'SSH test successful'" &>/dev/null; then
+    echo -e "${GREEN}  SSH localhost access verified${NC}"
+else
+    echo -e "${YELLOW}  Warning: SSH localhost access may require manual configuration${NC}"
+    echo -e "${YELLOW}  Ensure PasswordAuthentication or PubkeyAuthentication is enabled in /etc/ssh/sshd_config${NC}"
+fi
+
+# Create symlinks for vault password in external repos (for Ansible playbooks)
+echo -e "${CYAN}  Setting up vault password symlinks for external repos...${NC}"
+if [[ -f "$HOME/.vault_password" ]]; then
+    # freeipa-workshop-deployer
+    if [[ -d "/root/freeipa-workshop-deployer" ]]; then
+        ln -sf "$HOME/.vault_password" /root/freeipa-workshop-deployer/.vault_password 2>/dev/null || true
+    fi
+    # kcli-pipelines
+    if [[ -d "/root/kcli-pipelines" ]]; then
+        ln -sf "$HOME/.vault_password" /root/kcli-pipelines/.vault_password 2>/dev/null || true
+    fi
+    echo -e "${GREEN}  Vault password symlinks created${NC}"
+fi
+
 # Step 2: Deploy Airflow
 echo -e "${BLUE}[2/4] Deploying Airflow workflow orchestration...${NC}"
 if [[ -f "$SCRIPT_DIR/airflow/deploy-airflow.sh" ]]; then

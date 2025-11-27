@@ -1197,6 +1197,46 @@ generate_inventory() {
         echo "[control]" > "inventories/${INVENTORY}/hosts"
         echo "control ansible_host=${control_host} ansible_user=${control_user}" >> "inventories/${INVENTORY}/hosts"
         
+        # Create vault.yml if it doesn't exist
+        local vault_file="inventories/${INVENTORY}/group_vars/control/vault.yml"
+        if [[ ! -f "$vault_file" ]]; then
+            log_info "Creating vault.yml with default credentials..."
+            
+            # Get password from environment or use default
+            local vault_password="${SSH_PASSWORD:-COmp123\$%}"
+            
+            # Create unencrypted vault file first
+            cat > "$vault_file" << VAULTEOF
+---
+# Ansible Vault - Sensitive Credentials
+# Encrypted with ansible-vault
+
+# FreeIPA Configuration
+freeipa_server_admin_password: "${vault_password}"
+
+# Red Hat Subscription Manager (leave empty for CentOS/community)
+rhsm_org: ""
+rhsm_activationkey: ""
+rhsm_username: ""
+rhsm_password: ""
+
+# OpenShift Pull Secret (optional)
+openshift_pull_secret: ""
+VAULTEOF
+            
+            # Encrypt the vault file
+            if [[ -f "$HOME/.vault_password" ]]; then
+                ansible-vault encrypt "$vault_file" --vault-password-file "$HOME/.vault_password" --encrypt-vault-id default 2>/dev/null || \
+                ansible-vault encrypt "$vault_file" --vault-password-file "$HOME/.vault_password" 2>/dev/null || \
+                log_warning "Could not encrypt vault.yml - please encrypt manually"
+                log_success "vault.yml created and encrypted"
+            else
+                log_warning "vault.yml created but not encrypted - .vault_password not found"
+            fi
+        else
+            log_info "vault.yml already exists"
+        fi
+        
         log_success "Inventory generated for ${INVENTORY}"
     else
         log_error "Qubinode Navigator directory not found"
