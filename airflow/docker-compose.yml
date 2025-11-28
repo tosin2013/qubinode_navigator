@@ -25,6 +25,12 @@ x-airflow-common:
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
     AIRFLOW__WEBSERVER__SECRET_KEY: 'qubinode-navigator-airflow-secret-key-change-in-production'
+    # Security: Disable public deployment warning (we handle security at nginx/firewall level)
+    AIRFLOW__WEBSERVER__WARN_DEPLOYMENT_EXPOSURE: 'false'
+    # Security: Expose config only to admin users
+    AIRFLOW__WEBSERVER__EXPOSE_CONFIG: 'false'
+    # Security: Expose hostname only to admin users
+    AIRFLOW__WEBSERVER__EXPOSE_HOSTNAME: 'false'
     # Nginx reverse proxy configuration
     # BASE_URL disabled - serving at root path through nginx
     # AIRFLOW__WEBSERVER__BASE_URL: 'http://YOUR_SERVER_IP/airflow'
