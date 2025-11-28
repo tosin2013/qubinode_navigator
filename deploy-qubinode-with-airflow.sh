@@ -240,12 +240,24 @@ nginx -t || {
 
 # Configure firewall
 echo -e "${CYAN}  Configuring firewall...${NC}"
-# Close direct access ports
+# Close direct access ports from public zone
 firewall-cmd --permanent --remove-port=8888/tcp 2>/dev/null || true
 firewall-cmd --permanent --remove-port=8080/tcp 2>/dev/null || true
 # Open standard web ports
 firewall-cmd --permanent --add-service=http
 firewall-cmd --permanent --add-service=https
+
+# Allow VMs on libvirt networks to access Airflow and MCP server
+# This enables jumpserver and other VMs to reach the host services
+echo -e "${CYAN}  Configuring libvirt zone for VM access...${NC}"
+if firewall-cmd --get-zones | grep -q libvirt; then
+    firewall-cmd --zone=libvirt --add-port=8888/tcp --permanent 2>/dev/null || true  # Airflow webserver
+    firewall-cmd --zone=libvirt --add-port=8889/tcp --permanent 2>/dev/null || true  # MCP server
+    firewall-cmd --zone=libvirt --add-port=8080/tcp --permanent 2>/dev/null || true  # AI Assistant
+    firewall-cmd --zone=libvirt --add-port=5432/tcp --permanent 2>/dev/null || true  # PostgreSQL (for debugging)
+    echo -e "${GREEN}  ✓ Libvirt zone configured for VM access${NC}"
+fi
+
 firewall-cmd --reload
 
 # Enable and start nginx
@@ -280,9 +292,15 @@ echo -e "   Username: admin"
 echo -e "   Password: admin"
 echo -e ""
 echo -e "${YELLOW}🔒 Security:${NC}"
-echo -e "   ✓ Direct ports 8888/8080 closed"
+echo -e "   ✓ Direct ports 8888/8080 closed (public)"
 echo -e "   ✓ Access only through nginx (port 80/443)"
+echo -e "   ✓ VMs can access services via libvirt zone"
 echo -e "   ✓ Ready for SSL/TLS configuration"
+echo -e ""
+echo -e "${CYAN}🖥️  VM Access (from jumpserver/VMs):${NC}"
+echo -e "   • Airflow:      http://192.168.122.1:8888"
+echo -e "   • MCP Server:   http://192.168.122.1:8889"
+echo -e "   • AI Assistant: http://192.168.122.1:8080"
 echo ""
 echo -e "${CYAN}📚 Next Steps:${NC}"
 echo -e "   1. Access Airflow UI and enable example DAGs"
