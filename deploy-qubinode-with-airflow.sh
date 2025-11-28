@@ -137,9 +137,13 @@ if [[ -f "$HOME/.vault_password" ]]; then
     if [[ -d "/root/freeipa-workshop-deployer" ]]; then
         ln -sf "$HOME/.vault_password" /root/freeipa-workshop-deployer/.vault_password 2>/dev/null || true
     fi
-    # kcli-pipelines
+    # kcli-pipelines (root and component directories)
     if [[ -d "/root/kcli-pipelines" ]]; then
         ln -sf "$HOME/.vault_password" /root/kcli-pipelines/.vault_password 2>/dev/null || true
+        # VyOS router ansible playbooks
+        if [[ -d "/root/kcli-pipelines/vyos-router" ]]; then
+            ln -sf "$HOME/.vault_password" /root/kcli-pipelines/vyos-router/.vault_password 2>/dev/null || true
+        fi
     fi
     echo -e "${GREEN}  Vault password symlinks created${NC}"
 fi

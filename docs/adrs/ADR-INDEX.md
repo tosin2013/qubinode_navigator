@@ -56,6 +56,8 @@ This document provides a comprehensive index of all Architecture Decision Record
 - **[ADR-0044](adr-0044-user-configurable-airflow-volume-mounts.md)**: User-Configurable Airflow Volume Mounts ⭐ *New*
 - **[ADR-0045](adr-0045-airflow-dag-development-standards.md)**: Airflow DAG Development Standards ⭐ *New* 📋 *Guidelines*
 - **[ADR-0046](adr-0046-dag-validation-pipeline-and-host-execution.md)**: DAG Validation Pipeline and Host-Based Execution ⭐ *New*
+- **[ADR-0047](adr-0047-kcli-pipelines-dag-integration-pattern.md)**: kcli-pipelines as DAG Source Repository ⭐ *New* 🔥 *Architecture*
+- **[ADR-0048](adr-0048-step-ca-integration-for-disconnected-deployments.md)**: Step-CA Integration for Disconnected Deployments ⭐ *New* 🔐 *Security*
 
 ### 📚 Documentation
 - **[ADR-0029](adr-0029-documentation-strategy-and-website-modernization.md)**: Documentation Strategy and Website Modernization
