@@ -92,6 +92,7 @@ dag = DAG(
 
 #### DO: Use Double Quotes for Bash Commands
 
+{% raw %}
 ```python
 # CORRECT - Use triple double quotes
 task = BashOperator(
@@ -105,6 +106,7 @@ task = BashOperator(
     dag=dag,
 )
 ```
+{% endraw %}
 
 #### DON'T: Use Triple Single Quotes with String Concatenation
 
@@ -197,6 +199,7 @@ some_command || {
 
 #### DO: Use Proper Jinja Syntax
 
+{% raw %}
 ```python
 bash_command="""
 DOMAIN="{{ params.domain }}"
@@ -207,13 +210,16 @@ if [ "$ACTION" == "create" ]; then
 fi
 """
 ```
+{% endraw %}
 
 #### DON'T: Mix Jinja with Complex Bash Substitutions
 
+{% raw %}
 ```python
 # WRONG - Confusing mix of Jinja and bash
 echo "Result: {{ params.value | default('${DEFAULT_VALUE}') }}"
 ```
+{% endraw %}
 
 ### 7. Volume Mount Requirements
 

@@ -176,6 +176,7 @@ The GitHub Actions workflow automatically:
 
 ### Workflow Steps
 
+{% raw %}
 ```yaml
 - name: Generate version and tags
   run: |
@@ -191,6 +192,7 @@ The GitHub Actions workflow automatically:
       version=${{ steps.version.outputs.current-version }}
       build-version=${{ steps.version.outputs.build-version }}
 ```
+{% endraw %}
 
 ### Container Labels
 

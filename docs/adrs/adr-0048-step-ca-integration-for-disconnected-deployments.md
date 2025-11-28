@@ -185,6 +185,7 @@ step_ca_deployment DAG:
 ### Ansible Playbook Integration
 
 Create `/root/kcli-pipelines/step-ca-server/ansible/deploy_step_ca.yaml`:
+{% raw %}
 ```yaml
 ---
 - name: Deploy Step-CA Server
@@ -235,6 +236,7 @@ Create `/root/kcli-pipelines/step-ca-server/ansible/deploy_step_ca.yaml`:
         enabled: yes
         daemon_reload: yes
 ```
+{% endraw %}
 
 ## Consequences
 

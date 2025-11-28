@@ -146,6 +146,7 @@ echo "LOGIN_USER: $LOGIN_USER"
 
 ### 2. New Template for RHEL 9 / CentOS 9
 
+{% raw %}
 ```yaml
 # template-rhel9.yaml / template-centos9.yaml
   image: {{ image }}
@@ -187,6 +188,7 @@ echo "LOGIN_USER: $LOGIN_USER"
     # RHEL 9 has Python 3.9+ by default
     - python3 --version
 ```
+{% endraw %}
 
 ### 3. Update bootstrap.sh
 

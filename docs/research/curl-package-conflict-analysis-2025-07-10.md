@@ -271,6 +271,7 @@ jobs:
 ```
 
 **Scenario 2: Cross-Version Compatibility**
+{% raw %}
 ```yaml
 - name: Test package availability across RHEL versions
   include_tasks: test_package_availability.yml
@@ -278,8 +279,10 @@ jobs:
     test_packages: "{{ required_rpm_packages }}"
     rhel_version: "{{ ansible_distribution_major_version }}"
 ```
+{% endraw %}
 
 **Scenario 3: Repository Requirements**
+{% raw %}
 ```yaml
 - name: Test EPEL dependency packages
   block:
@@ -293,6 +296,7 @@ jobs:
         name: "{{ epel_packages }}"
         state: present
 ```
+{% endraw %}
 
 ## Proposed Solutions
 

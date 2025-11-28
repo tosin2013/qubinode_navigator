@@ -51,6 +51,7 @@ The kcli-pipelines repository already contains well-tested deployment scripts fo
 
 DAGs should follow this pattern:
 
+{% raw %}
 ```python
 # Task calls kcli-pipelines deploy.sh via SSH to host
 deploy_task = BashOperator(
@@ -72,6 +73,7 @@ deploy_task = BashOperator(
     dag=dag,
 )
 ```
+{% endraw %}
 
 ### Repository Structure
 
@@ -211,6 +213,7 @@ DAGs are stored in `kcli-pipelines/dags/` and distributed to Airflow via:
 
 ### Update VyOS DAG to Call deploy.sh
 
+{% raw %}
 ```python
 create_vyos_vm = BashOperator(
     task_id='create_vyos_vm',
@@ -230,11 +233,13 @@ create_vyos_vm = BashOperator(
     dag=dag,
 )
 ```
+{% endraw %}
 
 ### Add DAG Contribution Template
 
 Create `kcli-pipelines/dags/TEMPLATE.py`:
 
+{% raw %}
 ```python
 """
 Airflow DAG: [Component Name]
@@ -285,6 +290,7 @@ deploy = BashOperator(
     dag=dag,
 )
 ```
+{% endraw %}
 
 ---
 
