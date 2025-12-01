@@ -1,14 +1,27 @@
 #!/usr/bin/env python3
 """
 FastMCP Implementation for Qubinode Airflow MCP Server
-Simple, reliable MCP server for Airflow DAG and VM management
+ADR-0049: Multi-Agent LLM Memory Architecture
+
+MCP server for Airflow DAG management, VM operations, and RAG-powered
+intelligent workflow assistance.
+
+Tools:
+- DAG Management: list_dags, get_dag_info, trigger_dag
+- VM Operations: list_vms, get_vm_info, create_vm, delete_vm
+- RAG Queries: query_rag, ingest_to_rag, search_similar_errors
+- Troubleshooting: get_troubleshooting_history, log_troubleshooting_attempt
+- Agent Orchestration: delegate_to_developer, override_developer
+- Provider Checks: check_provider_exists
+- Lineage: get_dag_lineage, get_failure_blast_radius
 """
 
 import os
 import sys
 import logging
 import subprocess
-from typing import Optional, Dict, Any
+import uuid
+from typing import Optional, Dict, Any, List
 from datetime import datetime
 from fastmcp import FastMCP
 
@@ -44,6 +57,38 @@ try:
 except ImportError:
     AIRFLOW_AVAILABLE = False
     logger.warning("Airflow not available - DAG tools will return errors")
+
+# Import RAG components (ADR-0049)
+RAG_AVAILABLE = False
+rag_store = None
+try:
+    from qubinode.rag_store import RAGStore, get_rag_store
+    from qubinode.embedding_service import get_embedding_service
+    RAG_AVAILABLE = True
+    logger.info("RAG components available")
+except ImportError as e:
+    logger.warning(f"RAG components not available: {e}")
+
+# Session tracking for troubleshooting
+_current_session_id: Optional[str] = None
+
+def get_session_id() -> str:
+    """Get or create current session ID for troubleshooting tracking."""
+    global _current_session_id
+    if _current_session_id is None:
+        _current_session_id = str(uuid.uuid4())
+        logger.info(f"New session started: {_current_session_id}")
+    return _current_session_id
+
+def get_rag() -> Optional['RAGStore']:
+    """Get RAG store singleton, initializing if needed."""
+    global rag_store
+    if RAG_AVAILABLE and rag_store is None:
+        try:
+            rag_store = get_rag_store()
+        except Exception as e:
+            logger.error(f"Failed to initialize RAG store: {e}")
+    return rag_store
 
 
 # =============================================================================
@@ -912,6 +957,593 @@ def _rag_estimate_chunks(doc_dir: str) -> str:
         return output
 
 
+# =============================================================================
+# ADR-0049: RAG Query Tools
+# =============================================================================
+
+@mcp.tool()
+async def query_rag(
+    query: str,
+    doc_types: Optional[List[str]] = None,
+    limit: int = 5,
+    threshold: float = 0.7
+) -> str:
+    """
+    Search the RAG knowledge base for relevant documents using semantic similarity.
+
+    Use this tool to find documentation, ADRs, past troubleshooting solutions,
+    and DAG examples related to your query.
+
+    Args:
+        query: Natural language search query (e.g., "How to configure FreeIPA DNS?")
+        doc_types: Filter by document types. Options:
+            - 'adr': Architecture Decision Records
+            - 'provider_doc': Airflow provider documentation
+            - 'dag': Example DAG code
+            - 'troubleshooting': Past troubleshooting solutions
+            - 'guide': How-to guides
+            - None: Search all types
+        limit: Maximum number of results (default: 5)
+        threshold: Minimum similarity score 0-1 (default: 0.7)
+
+    Returns:
+        Formatted list of matching documents with similarity scores and content excerpts.
+
+    Examples:
+        - query_rag("FreeIPA DNS configuration")
+        - query_rag("OpenShift deployment errors", doc_types=["troubleshooting"])
+        - query_rag("SSH operator usage", doc_types=["provider_doc", "dag"])
+    """
+    logger.info(f"Tool called: query_rag(query='{query[:50]}...', doc_types={doc_types}, limit={limit})")
+
+    store = get_rag()
+    if store is None:
+        return "Error: RAG store not available. Ensure PgVector is configured and running."
+
+    try:
+        results = store.search_documents(
+            query=query,
+            doc_types=doc_types,
+            limit=limit,
+            threshold=threshold
+        )
+
+        if not results:
+            output = f"# No Results Found\n\n"
+            output += f"**Query:** {query}\n"
+            output += f"**Filters:** {doc_types or 'All types'}\n"
+            output += f"**Threshold:** {threshold}\n\n"
+            output += "Try:\n"
+            output += "- Lowering the threshold (e.g., 0.5)\n"
+            output += "- Broadening your query\n"
+            output += "- Removing doc_type filters\n"
+            return output
+
+        output = f"# RAG Search Results\n\n"
+        output += f"**Query:** {query}\n"
+        output += f"**Found:** {len(results)} documents\n\n"
+
+        for i, doc in enumerate(results, 1):
+            similarity_pct = int(doc['similarity'] * 100)
+            output += f"## {i}. [{doc['doc_type']}] Similarity: {similarity_pct}%\n"
+            if doc.get('source_path'):
+                output += f"**Source:** `{doc['source_path']}`\n"
+
+            # Truncate content for display
+            content = doc['content']
+            if len(content) > 500:
+                content = content[:500] + "..."
+            output += f"\n{content}\n\n"
+            output += "---\n\n"
+
+        logger.info(f"RAG query returned {len(results)} results")
+        return output
+
+    except Exception as e:
+        error_msg = f"RAG query failed: {str(e)}"
+        logger.error(error_msg, exc_info=True)
+        return f"Error: {error_msg}"
+
+
+@mcp.tool()
+async def ingest_to_rag(
+    content: str,
+    doc_type: str,
+    source: Optional[str] = None,
+    metadata: Optional[Dict[str, Any]] = None
+) -> str:
+    """
+    Ingest new documentation into the RAG knowledge base.
+
+    Use this when you need to add new documentation, guides, or context
+    that the system doesn't have. The content will be chunked, embedded,
+    and stored for future semantic search.
+
+    Args:
+        content: Document content (markdown, text, code)
+        doc_type: Type of document. One of:
+            - 'adr': Architecture Decision Record
+            - 'provider_doc': Airflow provider documentation
+            - 'dag': DAG example or template
+            - 'troubleshooting': Troubleshooting guide or solution
+            - 'guide': How-to guide
+            - 'policy': Organization policy
+            - 'example': Code example
+        source: Source path or URL (optional)
+        metadata: Additional metadata dictionary (optional)
+
+    Returns:
+        Confirmation with document IDs created.
+
+    Examples:
+        - ingest_to_rag("# FreeIPA Guide\\n...", "guide", source="/docs/freeipa.md")
+        - ingest_to_rag(dag_code, "dag", metadata={"component": "freeipa"})
+    """
+    logger.info(f"Tool called: ingest_to_rag(doc_type='{doc_type}', source='{source}')")
+
+    if READ_ONLY:
+        return "Error: Cannot ingest documents in read-only mode"
+
+    store = get_rag()
+    if store is None:
+        return "Error: RAG store not available. Ensure PgVector is configured and running."
+
+    valid_types = ['adr', 'provider_doc', 'dag', 'troubleshooting', 'guide', 'policy', 'example', 'api_doc', 'readme']
+    if doc_type not in valid_types:
+        return f"Error: Invalid doc_type '{doc_type}'. Must be one of: {valid_types}"
+
+    try:
+        doc_ids = store.ingest_document(
+            content=content,
+            doc_type=doc_type,
+            source_path=source,
+            metadata=metadata or {}
+        )
+
+        if not doc_ids:
+            return "Document already exists in RAG store (duplicate detected)"
+
+        output = f"# Document Ingested Successfully\n\n"
+        output += f"**Type:** {doc_type}\n"
+        output += f"**Source:** {source or 'N/A'}\n"
+        output += f"**Chunks Created:** {len(doc_ids)}\n"
+        output += f"**Document IDs:** {', '.join(doc_ids[:3])}{'...' if len(doc_ids) > 3 else ''}\n\n"
+        output += "The document is now searchable via `query_rag()`."
+
+        logger.info(f"Ingested document: {len(doc_ids)} chunks")
+        return output
+
+    except Exception as e:
+        error_msg = f"Ingestion failed: {str(e)}"
+        logger.error(error_msg, exc_info=True)
+        return f"Error: {error_msg}"
+
+
+# =============================================================================
+# ADR-0049: Troubleshooting Memory Tools
+# =============================================================================
+
+@mcp.tool()
+async def get_troubleshooting_history(
+    error_pattern: Optional[str] = None,
+    component: Optional[str] = None,
+    only_successful: bool = False,
+    limit: int = 10
+) -> str:
+    """
+    Retrieve past troubleshooting attempts to learn from previous solutions.
+
+    Use this BEFORE attempting to fix an error to see if similar issues
+    have been solved before. This enables the system to learn and avoid
+    repeating failed approaches.
+
+    Args:
+        error_pattern: Search for similar errors (semantic search)
+        component: Filter by component (freeipa, vyos, openshift, etc.)
+        only_successful: Only return successful solutions
+        limit: Maximum results to return
+
+    Returns:
+        List of past troubleshooting attempts with outcomes.
+
+    Examples:
+        - get_troubleshooting_history(error_pattern="DNS resolution failed")
+        - get_troubleshooting_history(component="freeipa", only_successful=True)
+    """
+    logger.info(f"Tool called: get_troubleshooting_history(error_pattern='{error_pattern}', component='{component}')")
+
+    store = get_rag()
+    if store is None:
+        return "Error: RAG store not available."
+
+    try:
+        output = f"# Troubleshooting History\n\n"
+
+        if error_pattern:
+            # Semantic search for similar errors
+            results = store.search_similar_errors(
+                error_description=error_pattern,
+                only_successful=only_successful,
+                limit=limit
+            )
+
+            output += f"**Search:** {error_pattern}\n"
+            output += f"**Filter:** {'Successful only' if only_successful else 'All results'}\n"
+            output += f"**Found:** {len(results)} similar cases\n\n"
+
+            if not results:
+                output += "No similar troubleshooting attempts found.\n"
+                output += "This appears to be a new type of error.\n"
+                return output
+
+            for i, r in enumerate(results, 1):
+                similarity_pct = int(r['similarity'] * 100)
+                result_emoji = "✅" if r['result'] == 'success' else "❌" if r['result'] == 'failed' else "⚠️"
+
+                output += f"## {i}. {result_emoji} Similarity: {similarity_pct}%\n"
+                output += f"**Error:** {r.get('error_message', 'N/A')}\n"
+                output += f"**Solution Tried:** {r.get('attempted_solution', 'N/A')}\n"
+                output += f"**Result:** {r['result']}\n"
+                if r.get('component'):
+                    output += f"**Component:** {r['component']}\n"
+                output += "\n---\n\n"
+        else:
+            # Get session history
+            session_id = get_session_id()
+            history = store.get_session_history(session_id)
+
+            output += f"**Current Session:** {session_id[:8]}...\n"
+            output += f"**Attempts:** {len(history)}\n\n"
+
+            if not history:
+                output += "No troubleshooting attempts in this session yet.\n"
+                return output
+
+            for h in history:
+                result_emoji = "✅" if h['result'] == 'success' else "❌" if h['result'] == 'failed' else "⚠️"
+                output += f"### Attempt {h['sequence_num']} {result_emoji}\n"
+                output += f"**Task:** {h['task_description']}\n"
+                if h.get('error_message'):
+                    output += f"**Error:** {h['error_message']}\n"
+                output += f"**Solution:** {h['attempted_solution']}\n"
+                output += f"**Result:** {h['result']}\n"
+                if h.get('override_by'):
+                    output += f"**Override By:** {h['override_by']}\n"
+                output += "\n"
+
+        return output
+
+    except Exception as e:
+        error_msg = f"Failed to get history: {str(e)}"
+        logger.error(error_msg, exc_info=True)
+        return f"Error: {error_msg}"
+
+
+@mcp.tool()
+async def log_troubleshooting_attempt(
+    task: str,
+    solution: str,
+    result: str,
+    error_message: Optional[str] = None,
+    component: Optional[str] = None,
+    details: Optional[str] = None
+) -> str:
+    """
+    Log a troubleshooting attempt for future learning.
+
+    Call this AFTER attempting a fix to record what was tried and whether
+    it worked. This builds the knowledge base for future similar issues.
+
+    Args:
+        task: What you were trying to accomplish
+        solution: What solution/fix was attempted
+        result: Outcome - one of 'success', 'failed', or 'partial'
+        error_message: The original error (if any)
+        component: Which component (freeipa, vyos, openshift, etc.)
+        details: Additional details about the outcome
+
+    Returns:
+        Confirmation of logged attempt.
+
+    Examples:
+        - log_troubleshooting_attempt(
+            task="Deploy FreeIPA",
+            error_message="DNS resolution failed",
+            solution="Opened port 53 in firewalld",
+            result="success",
+            component="freeipa"
+          )
+    """
+    logger.info(f"Tool called: log_troubleshooting_attempt(task='{task[:30]}...', result='{result}')")
+
+    if READ_ONLY:
+        return "Error: Cannot log attempts in read-only mode"
+
+    if result not in ['success', 'failed', 'partial']:
+        return f"Error: result must be 'success', 'failed', or 'partial'. Got: {result}"
+
+    store = get_rag()
+    if store is None:
+        return "Error: RAG store not available."
+
+    try:
+        attempt_id = store.log_troubleshooting(
+            session_id=get_session_id(),
+            task_description=task,
+            attempted_solution=solution,
+            result=result,
+            error_message=error_message,
+            component=component,
+            result_details=details,
+            agent="calling_llm"  # Logged by calling LLM
+        )
+
+        result_emoji = "✅" if result == 'success' else "❌" if result == 'failed' else "⚠️"
+
+        output = f"# Troubleshooting Attempt Logged {result_emoji}\n\n"
+        output += f"**ID:** {attempt_id[:8]}...\n"
+        output += f"**Session:** {get_session_id()[:8]}...\n"
+        output += f"**Task:** {task}\n"
+        output += f"**Result:** {result}\n\n"
+
+        if result == 'success':
+            output += "This solution will be suggested for similar future errors."
+        elif result == 'failed':
+            output += "This approach will be noted to avoid in similar situations."
+
+        return output
+
+    except Exception as e:
+        error_msg = f"Failed to log attempt: {str(e)}"
+        logger.error(error_msg, exc_info=True)
+        return f"Error: {error_msg}"
+
+
+# =============================================================================
+# ADR-0049: Agent Orchestration Tools
+# =============================================================================
+
+@mcp.tool()
+async def check_provider_exists(system_name: str) -> str:
+    """
+    Check if an Airflow provider exists for a given system (Provider-First Rule).
+
+    ALWAYS call this before designing DAGs that interact with external systems.
+    If a provider exists, you MUST use its operators instead of BashOperator.
+
+    Args:
+        system_name: Name of the system (e.g., 'azure', 'postgres', 'kubernetes')
+
+    Returns:
+        Provider information if found, or guidance if not.
+
+    Examples:
+        - check_provider_exists("azure")
+        - check_provider_exists("postgres")
+        - check_provider_exists("custom_internal_api")
+    """
+    logger.info(f"Tool called: check_provider_exists(system_name='{system_name}')")
+
+    store = get_rag()
+    if store is None:
+        # Fallback to basic check
+        known_providers = [
+            'postgres', 'ssh', 'http', 'kubernetes', 'docker',
+            'amazon', 'google', 'microsoft-azure', 'slack', 'redis'
+        ]
+        system_lower = system_name.lower()
+
+        for p in known_providers:
+            if system_lower in p or p in system_lower:
+                return f"# Provider Found: {p}\n\nUse `apache-airflow-providers-{p}` operators."
+
+        return f"# No Provider Found for '{system_name}'\n\nConsider using HTTP/SSH operators or designing a custom provider."
+
+    try:
+        result = store.check_provider_exists(system_name)
+
+        if result:
+            output = f"# ✅ Provider Found\n\n"
+            output += f"**Provider:** {result['provider_name']}\n"
+            output += f"**Package:** `{result['package_name']}`\n"
+            output += f"**Description:** {result.get('description', 'N/A')}\n"
+            if result.get('documentation_url'):
+                output += f"**Docs:** {result['documentation_url']}\n"
+            output += "\n## Provider-First Rule\n"
+            output += "You MUST use this provider's operators instead of BashOperator.\n"
+            output += "Query RAG for usage examples: `query_rag('azure operator examples', doc_types=['dag', 'provider_doc'])`"
+            return output
+        else:
+            output = f"# ❌ No Provider Found for '{system_name}'\n\n"
+            output += "## Options\n\n"
+            output += "1. **Use HTTP Operator** - If the system has a REST API\n"
+            output += "2. **Use SSH Operator** - If accessible via SSH\n"
+            output += "3. **Design a Provider** - For complex integrations\n\n"
+            output += "## If No Provider is Suitable\n"
+            output += "Escalate to create a provider design document:\n"
+            output += "- Document required connections\n"
+            output += "- Define operators/hooks needed\n"
+            output += "- Create `docs/provider_plan_<name>.md`\n"
+            return output
+
+    except Exception as e:
+        error_msg = f"Provider check failed: {str(e)}"
+        logger.error(error_msg, exc_info=True)
+        return f"Error: {error_msg}"
+
+
+@mcp.tool()
+async def compute_confidence_score(
+    task_description: str,
+    doc_types: Optional[List[str]] = None
+) -> str:
+    """
+    Compute confidence score for a task based on RAG knowledge.
+
+    Use this to determine if you have enough context to proceed with a task.
+    Follow the Confidence Policy (ADR-0049):
+    - High (≥0.8): Proceed confidently
+    - Medium (0.6-0.8): Proceed with caveats
+    - Low (<0.6): STOP and request more documentation
+
+    Args:
+        task_description: What you're trying to accomplish
+        doc_types: Document types to search (optional)
+
+    Returns:
+        Confidence assessment with recommendation.
+    """
+    logger.info(f"Tool called: compute_confidence_score(task='{task_description[:50]}...')")
+
+    store = get_rag()
+    if store is None:
+        return "Error: RAG store not available. Cannot compute confidence."
+
+    try:
+        # Search RAG for relevant documents
+        results = store.search_documents(
+            query=task_description,
+            doc_types=doc_types,
+            limit=10,
+            threshold=0.5
+        )
+
+        # Compute confidence factors
+        rag_hit_count = len(results)
+        rag_max_similarity = max([r['similarity'] for r in results]) if results else 0
+
+        # Check for provider if task mentions external system
+        provider_exists = False
+        for keyword in ['azure', 'aws', 'gcp', 'kubernetes', 'postgres', 'redis']:
+            if keyword in task_description.lower():
+                provider_check = store.check_provider_exists(keyword)
+                if provider_check:
+                    provider_exists = True
+                    break
+
+        # Check for similar DAGs
+        dag_results = store.search_documents(
+            query=task_description,
+            doc_types=['dag'],
+            limit=3,
+            threshold=0.6
+        )
+        similar_dag_exists = len(dag_results) > 0
+
+        # Compute score
+        confidence = (
+            0.4 * rag_max_similarity +
+            0.3 * min(rag_hit_count / 5.0, 1.0) +
+            0.2 * (1.0 if provider_exists else 0.0) +
+            0.1 * (1.0 if similar_dag_exists else 0.0)
+        )
+
+        # Determine recommendation
+        if confidence >= 0.8:
+            level = "HIGH"
+            emoji = "✅"
+            recommendation = "Proceed with task. Sufficient context available."
+        elif confidence >= 0.6:
+            level = "MEDIUM"
+            emoji = "⚠️"
+            recommendation = "Proceed with caution. Note any assumptions made."
+        else:
+            level = "LOW"
+            emoji = "❌"
+            recommendation = "STOP. Request additional documentation before proceeding."
+
+        output = f"# Confidence Assessment {emoji}\n\n"
+        output += f"**Task:** {task_description}\n"
+        output += f"**Confidence:** {confidence:.2f} ({level})\n\n"
+
+        output += "## Factors\n"
+        output += f"- RAG Hits: {rag_hit_count} documents\n"
+        output += f"- Best Match Similarity: {rag_max_similarity:.2f}\n"
+        output += f"- Provider Available: {'Yes' if provider_exists else 'No'}\n"
+        output += f"- Similar DAG Exists: {'Yes' if similar_dag_exists else 'No'}\n\n"
+
+        output += f"## Recommendation\n{recommendation}\n"
+
+        if confidence < 0.6:
+            output += "\n## To Increase Confidence\n"
+            output += "1. Provide relevant documentation via `ingest_to_rag()`\n"
+            output += "2. Share example implementations\n"
+            output += "3. Clarify requirements\n"
+
+        # Log decision
+        store.log_decision(
+            agent="calling_llm",
+            decision_type="confidence_check",
+            context={"task": task_description, "doc_types": doc_types},
+            decision=f"{level} confidence ({confidence:.2f})",
+            confidence=confidence,
+            rag_hits=rag_hit_count,
+            rag_max_similarity=rag_max_similarity,
+            session_id=get_session_id()
+        )
+
+        return output
+
+    except Exception as e:
+        error_msg = f"Confidence computation failed: {str(e)}"
+        logger.error(error_msg, exc_info=True)
+        return f"Error: {error_msg}"
+
+
+@mcp.tool()
+async def get_rag_stats() -> str:
+    """
+    Get statistics about the RAG knowledge base.
+
+    Returns:
+        Summary of documents, troubleshooting attempts, and decisions in the store.
+    """
+    logger.info("Tool called: get_rag_stats()")
+
+    store = get_rag()
+    if store is None:
+        return "Error: RAG store not available."
+
+    try:
+        stats = store.get_stats()
+
+        output = "# RAG Knowledge Base Statistics\n\n"
+
+        output += "## Documents by Type\n"
+        if stats.get('documents'):
+            for doc_type, count in stats['documents'].items():
+                output += f"- **{doc_type}:** {count}\n"
+        else:
+            output += "No documents ingested yet.\n"
+
+        output += "\n## Troubleshooting Attempts\n"
+        if stats.get('troubleshooting'):
+            total = sum(stats['troubleshooting'].values())
+            output += f"- **Total:** {total}\n"
+            for result, count in stats['troubleshooting'].items():
+                emoji = "✅" if result == 'success' else "❌" if result == 'failed' else "⚠️"
+                output += f"- {emoji} **{result}:** {count}\n"
+        else:
+            output += "No troubleshooting attempts logged yet.\n"
+
+        output += "\n## Agent Decisions\n"
+        if stats.get('decisions'):
+            for agent, count in stats['decisions'].items():
+                output += f"- **{agent}:** {count} decisions\n"
+        else:
+            output += "No decisions logged yet.\n"
+
+        output += f"\n## Current Session\n"
+        output += f"**ID:** {get_session_id()[:8]}...\n"
+
+        return output
+
+    except Exception as e:
+        error_msg = f"Failed to get stats: {str(e)}"
+        logger.error(error_msg, exc_info=True)
+        return f"Error: {error_msg}"
+
+
 def main():
     """Main entry point"""
     if not MCP_ENABLED:
@@ -920,14 +1552,15 @@ def main():
         logger.warning("To enable: export AIRFLOW_MCP_ENABLED=true")
         logger.warning("=" * 60)
         sys.exit(0)
-    
+
     logger.info("=" * 60)
-    logger.info("Starting FastMCP Airflow Server")
+    logger.info("Starting FastMCP Airflow Server (ADR-0049)")
     logger.info(f"Host: {MCP_HOST}")
     logger.info(f"Port: {MCP_PORT}")
-    logger.info("Tools: 11 total (DAGs: 3, VMs: 5, Status: 1, Info: 1, RAG: 1)")
+    logger.info("Tools: DAGs(3), VMs(5), RAG(6), Troubleshooting(2), Status(2)")
+    logger.info(f"RAG Available: {RAG_AVAILABLE}")
     logger.info("=" * 60)
-    
+
     # FastMCP handles everything!
     mcp.run(transport="sse", host=MCP_HOST, port=MCP_PORT)
 
