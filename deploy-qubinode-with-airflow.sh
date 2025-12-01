@@ -35,8 +35,22 @@ cat << 'EOF'
 EOF
 echo -e "${NC}"
 
+# Step 0: Pre-flight checks (optional but recommended)
+if [[ -f "$SCRIPT_DIR/scripts/preflight-check.sh" ]]; then
+    echo -e "${BLUE}[0/5] Running pre-flight checks...${NC}"
+    if ! "$SCRIPT_DIR/scripts/preflight-check.sh" --fix; then
+        echo -e "${YELLOW}Pre-flight checks found issues. Continue anyway? (y/N)${NC}"
+        read -r response
+        if [[ ! "$response" =~ ^[Yy]$ ]]; then
+            echo -e "${RED}Deployment cancelled. Fix issues and retry.${NC}"
+            exit 1
+        fi
+    fi
+    echo ""
+fi
+
 # Step 1: Deploy base infrastructure
-echo -e "${BLUE}[1/4] Deploying base infrastructure...${NC}"
+echo -e "${BLUE}[1/5] Deploying base infrastructure...${NC}"
 if [[ -f "$SCRIPT_DIR/deploy-qubinode.sh" ]]; then
     # Run the base deployment (handles hypervisor, AI Assistant, etc.)
     "$SCRIPT_DIR/deploy-qubinode.sh" || {
