@@ -14,16 +14,32 @@ Tools:
 - Agent Orchestration: delegate_to_developer, override_developer
 - Provider Checks: check_provider_exists
 - Lineage: get_dag_lineage, get_failure_blast_radius
+
+NOTE: This file is loaded by the MCP server profile only.
+It requires fastmcp to be installed.
 """
 
 import os
 import sys
 import logging
+
+# Guard against import when fastmcp is not installed
+# This file should only be loaded with the 'mcp' profile
+try:
+    from fastmcp import FastMCP
+except ImportError:
+    print("Warning: fastmcp not installed. MCP server will not be available.", file=sys.stderr)
+    print("Install with: pip install mcp starlette uvicorn sse-starlette", file=sys.stderr)
+    # Exit early if not running as main script (being imported by plugins)
+    if __name__ != "__main__":
+        raise SystemExit(0)
+    else:
+        raise
+
 import subprocess
 import uuid
 from typing import Optional, Dict, Any, List
 from datetime import datetime
-from fastmcp import FastMCP
 
 # Configure logging
 logging.basicConfig(

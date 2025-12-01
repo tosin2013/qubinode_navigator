@@ -106,7 +106,7 @@ services:
   postgres:
     # ADR-0049: Using pgvector-enabled PostgreSQL for RAG vector storage
     # This replaces the standard postgres:15 image
-    image: pgvector/pgvector:pg15
+    image: docker.io/pgvector/pgvector:pg15
     # ADR-0043: Use host network so other services can connect via localhost
     network_mode: host
     environment:
@@ -171,11 +171,12 @@ services:
     # This enables DAGs to reach VMs on 192.168.122.x and other libvirt networks
     network_mode: host
     healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
+      # Scheduler doesn't expose HTTP health - check if scheduler job is running
+      test: ["CMD-SHELL", "airflow jobs check --job-type SchedulerJob --hostname \"$(hostname)\""]
       interval: 30s
-      timeout: 10s
+      timeout: 30s
       retries: 5
-      start_period: 30s
+      start_period: 60s
     restart: always
     # ADR-0050: Resource limits for scheduler (most critical for stability)
     # Formula: 256MB base + (parallelism * 100MB) = ~1.5GB for parallelism=12
@@ -196,7 +197,7 @@ services:
   airflow-mcp-server:
     <<: *airflow-common
     entrypoint: /bin/bash
-    command: -c "python3 /opt/airflow/plugins/qubinode/mcp_server_fastmcp.py"
+    command: -c "python3 /opt/airflow/scripts/mcp_server_fastmcp.py"
     # ADR-0043: Use host network for VM connectivity
     network_mode: host
     # Note: MCP server listens on port 8889 directly on host
@@ -223,6 +224,8 @@ services:
 
   airflow-init:
     <<: *airflow-common
+    # ADR-0043: Use host network so init can connect to postgres on localhost
+    network_mode: host
     entrypoint: /bin/bash
     command:
       - -c
@@ -242,6 +245,8 @@ services:
 
   airflow-cli:
     <<: *airflow-common
+    # ADR-0043: Use host network for consistent access
+    network_mode: host
     profiles:
       - debug
     environment:
