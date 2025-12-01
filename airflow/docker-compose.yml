@@ -48,6 +48,15 @@ x-airflow-common:
     AIRFLOW_MCP_TOOLS_VM_OPS: ${AIRFLOW_MCP_TOOLS_VM_OPS:-true}
     AIRFLOW_MCP_TOOLS_LOG_ACCESS: ${AIRFLOW_MCP_TOOLS_LOG_ACCESS:-true}
     AIRFLOW_MCP_TOOLS_READ_ONLY: ${AIRFLOW_MCP_TOOLS_READ_ONLY:-false}
+    # ADR-0049 Phase 4: OpenLineage Configuration
+    # Enable OpenLineage integration (requires --profile lineage)
+    AIRFLOW__OPENLINEAGE__DISABLED: ${OPENLINEAGE_DISABLED:-true}
+    AIRFLOW__OPENLINEAGE__TRANSPORT: '{"type": "http", "url": "http://localhost:5001", "endpoint": "api/v1/lineage"}'
+    AIRFLOW__OPENLINEAGE__NAMESPACE: 'qubinode'
+    # Custom facets directory for code lineage tracking
+    AIRFLOW__OPENLINEAGE__CONFIG_PATH: '/opt/airflow/config/openlineage.yml'
+    # Marquez API endpoint for lineage queries
+    MARQUEZ_API_URL: 'http://localhost:5001'
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
@@ -193,6 +202,61 @@ services:
       - bash
       - -c
       - airflow
+
+  # ==========================================================================
+  # ADR-0049 Phase 4: OpenLineage / Marquez Integration
+  # ==========================================================================
+  # Marquez is the reference implementation for OpenLineage
+  # It provides lineage storage, API, and visualization
+
+  marquez:
+    image: marquezproject/marquez:latest
+    network_mode: host
+    environment:
+      # Marquez uses its own PostgreSQL database (separate from Airflow)
+      MARQUEZ_PORT: 5001
+      MARQUEZ_ADMIN_PORT: 5002
+      # Database configuration - using Airflow's PostgreSQL with separate schema
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: airflow
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      # Marquez will create its own schema within the airflow database
+      MARQUEZ_DB_SCHEMA: marquez
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:5001/api/v1/namespaces"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - lineage  # Optional profile - enable with: docker-compose --profile lineage up
+
+  marquez-web:
+    image: marquezproject/marquez-web:latest
+    network_mode: host
+    environment:
+      MARQUEZ_HOST: localhost
+      MARQUEZ_PORT: 5001
+      # Web UI port
+      WEB_PORT: 3000
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    restart: always
+    depends_on:
+      marquez:
+        condition: service_healthy
+    profiles:
+      - lineage  # Optional profile - enable with: docker-compose --profile lineage up
 
 volumes:
   postgres-db-volume:

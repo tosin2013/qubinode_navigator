@@ -1,0 +1,86 @@
+# ADR-0049: OpenLineage Configuration for Qubinode Navigator
+# This configuration controls how Airflow emits lineage events to Marquez
+#
+# Documentation: https://openlineage.io/docs/client/python
+# Airflow Provider: https://airflow.apache.org/docs/apache-airflow-providers-openlineage/stable/index.html
+
+transport:
+  type: http
+  url: http://localhost:5001
+  endpoint: api/v1/lineage
+  # Optional authentication (if Marquez requires it)
+  # auth:
+  #   type: api_key
+  #   api_key: ${MARQUEZ_API_KEY}
+
+# Namespace for all Qubinode lineage events
+# This groups all DAGs and datasets under a common namespace
+namespace: qubinode
+
+# =============================================================================
+# Custom Facets Configuration
+# =============================================================================
+# Facets provide additional metadata about jobs and datasets
+# We use custom facets to track code lineage (git commits, branches, etc.)
+
+facets:
+  # Include default facets
+  disabled:
+    - spark.logicalPlan  # Not using Spark
+    - spark.unknown      # Not using Spark
+
+# =============================================================================
+# Dataset Configuration
+# =============================================================================
+# Configure how datasets (inputs/outputs) are named and tracked
+
+dataset:
+  # Namespace resolver for different dataset types
+  namespace_resolvers:
+    # PostgreSQL datasets
+    - type: hostPort
+      hosts:
+        - localhost
+        - 127.0.0.1
+      scheme: postgresql
+      namespace: qubinode_postgres
+
+    # File datasets (DAG outputs, configs)
+    - type: pattern
+      pattern: "file:/opt/airflow/.*"
+      namespace: qubinode_files
+
+    # VM-related datasets
+    - type: pattern
+      pattern: "vm://.*"
+      namespace: qubinode_vms
+
+# =============================================================================
+# Job Configuration
+# =============================================================================
+# Configure how jobs (DAG tasks) are identified and tracked
+
+job:
+  # Include DAG ID in job name
+  namespace: qubinode
+
+  # Custom job facets to always include
+  owners:
+    - name: qubinode-team
+      type: team
+
+# =============================================================================
+# Event Filtering
+# =============================================================================
+# Control which events are emitted to Marquez
+
+filters:
+  # Don't emit lineage for these DAG patterns
+  exclude_dag_patterns:
+    - "^test_.*"           # Test DAGs
+    - "^example_.*"        # Example DAGs
+    - ".*_debug$"          # Debug DAGs
+
+  # Don't emit lineage for these task patterns
+  exclude_task_patterns:
+    - "^_.*"               # Internal/private tasks

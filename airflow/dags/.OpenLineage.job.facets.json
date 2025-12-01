@@ -1,0 +1,59 @@
+{
+  "_comment": "ADR-0049: Custom OpenLineage facets for code lineage tracking",
+  "_generated": "Template - actual values populated by generate-lineage-facets.sh",
+
+  "codeLineage": {
+    "_producer": "qubinode-navigator",
+    "_schemaURL": "https://openlineage.io/spec/facets/1-0-0/CodeLineageFacet.json",
+    "gitRepository": "https://github.com/qubinode/qubinode_navigator",
+    "gitBranch": "${GIT_BRANCH}",
+    "gitCommit": "${GIT_COMMIT_SHA}",
+    "gitCommitMessage": "${GIT_COMMIT_MESSAGE}",
+    "gitAuthor": "${GIT_AUTHOR}",
+    "gitCommitTimestamp": "${GIT_COMMIT_TIMESTAMP}",
+    "dagFilePath": "${DAG_FILE_PATH}",
+    "dagFileChecksum": "${DAG_FILE_CHECKSUM}"
+  },
+
+  "sourceCode": {
+    "_producer": "qubinode-navigator",
+    "_schemaURL": "https://openlineage.io/spec/facets/1-0-0/SourceCodeFacet.json",
+    "language": "python",
+    "sourceCodeLocation": {
+      "type": "git",
+      "url": "https://github.com/qubinode/qubinode_navigator",
+      "path": "airflow/dags/${DAG_FILE_NAME}",
+      "version": "${GIT_COMMIT_SHA}",
+      "tag": "${GIT_TAG}",
+      "branch": "${GIT_BRANCH}"
+    }
+  },
+
+  "environment": {
+    "_producer": "qubinode-navigator",
+    "_schemaURL": "https://openlineage.io/spec/facets/1-0-0/EnvironmentFacet.json",
+    "environmentType": "${ENVIRONMENT_TYPE}",
+    "airflowVersion": "${AIRFLOW_VERSION}",
+    "pythonVersion": "${PYTHON_VERSION}",
+    "qubinodeVersion": "${QUBINODE_VERSION}"
+  },
+
+  "documentation": {
+    "_producer": "qubinode-navigator",
+    "_schemaURL": "https://openlineage.io/spec/facets/1-0-0/DocumentationFacet.json",
+    "description": "${DAG_DESCRIPTION}",
+    "relatedADRs": "${RELATED_ADRS}",
+    "runbook": "${RUNBOOK_URL}"
+  },
+
+  "ownership": {
+    "_producer": "qubinode-navigator",
+    "_schemaURL": "https://openlineage.io/spec/facets/1-0-0/OwnershipFacet.json",
+    "owners": [
+      {
+        "name": "${DAG_OWNER}",
+        "type": "MAINTAINER"
+      }
+    ]
+  }
+}

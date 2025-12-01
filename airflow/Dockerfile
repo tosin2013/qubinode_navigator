@@ -46,6 +46,11 @@ RUN pip install --no-cache-dir \
     aider-chat>=0.30.0 \
     pydantic>=2.0.0
 
+# ADR-0049: Phase 4 - OpenLineage integration for data/code lineage
+RUN pip install --no-cache-dir \
+    apache-airflow-providers-openlineage>=1.0.0 \
+    openlineage-python>=1.0.0
+
 # Switch back to root for entrypoint
 USER root
 

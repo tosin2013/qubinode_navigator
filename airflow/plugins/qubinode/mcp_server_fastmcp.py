@@ -1544,6 +1544,332 @@ async def get_rag_stats() -> str:
         return f"Error: {error_msg}"
 
 
+# =============================================================================
+# ADR-0049 Phase 4: OpenLineage / Lineage Query Tools
+# =============================================================================
+
+# Import lineage service
+LINEAGE_AVAILABLE = False
+lineage_service = None
+try:
+    from qubinode.lineage_service import LineageService, get_lineage_service
+    LINEAGE_AVAILABLE = True
+    logger.info("Lineage service available")
+except ImportError as e:
+    logger.warning(f"Lineage service not available: {e}")
+
+
+def get_lineage():
+    """Get lineage service singleton."""
+    global lineage_service
+    if LINEAGE_AVAILABLE and lineage_service is None:
+        try:
+            lineage_service = get_lineage_service()
+        except Exception as e:
+            logger.error(f"Failed to initialize lineage service: {e}")
+    return lineage_service
+
+
+@mcp.tool()
+async def get_dag_lineage(
+    dag_id: str,
+    depth: int = 5
+) -> str:
+    """
+    Get lineage information for a DAG, showing upstream and downstream dependencies.
+
+    This tool queries the OpenLineage/Marquez backend to understand:
+    - What tasks are in the DAG
+    - What datasets each task produces/consumes
+    - What other DAGs depend on or are dependencies of this DAG
+
+    Args:
+        dag_id: The DAG identifier to analyze
+        depth: How deep to traverse the lineage graph (default: 5)
+
+    Returns:
+        Formatted lineage information including tasks, datasets, and dependencies.
+    """
+    logger.info(f"Tool called: get_dag_lineage(dag_id={dag_id}, depth={depth})")
+
+    service = get_lineage()
+    if service is None:
+        return "Error: Lineage service not available. Enable with: docker-compose --profile lineage up"
+
+    try:
+        # Check if Marquez is available
+        if not await service.is_available():
+            return "Error: Marquez lineage backend is not available. Start with: docker-compose --profile lineage up"
+
+        lineage = await service.get_dag_lineage(dag_id, depth=depth)
+
+        if "error" in lineage:
+            return f"Error getting lineage: {lineage['error']}"
+
+        # Format output
+        output = f"# Lineage for DAG: {dag_id}\n\n"
+        output += f"**Namespace:** {lineage.get('namespace', 'qubinode')}\n\n"
+
+        # Tasks
+        output += "## Tasks\n"
+        tasks = lineage.get('tasks', [])
+        if tasks:
+            for task in tasks:
+                output += f"\n### {task['name']}\n"
+                output += f"- **Job:** {task['job_name']}\n"
+
+                inputs = task.get('inputs', [])
+                if inputs:
+                    output += f"- **Inputs:** {', '.join([i.get('name', 'unknown') for i in inputs])}\n"
+
+                outputs = task.get('outputs', [])
+                if outputs:
+                    output += f"- **Outputs:** {', '.join([o.get('name', 'unknown') for o in outputs])}\n"
+
+                latest_run = task.get('latest_run')
+                if latest_run:
+                    output += f"- **Latest Run:** {latest_run.get('state', 'unknown')}\n"
+        else:
+            output += "No tasks found. DAG may not have run yet.\n"
+
+        # Datasets
+        output += "\n## Datasets\n"
+        datasets = lineage.get('datasets', [])
+        if datasets:
+            for ds in datasets:
+                output += f"- {ds}\n"
+        else:
+            output += "No datasets tracked yet.\n"
+
+        # Dependencies
+        upstream = lineage.get('upstream_dags', [])
+        downstream = lineage.get('downstream_dags', [])
+
+        if upstream or downstream:
+            output += "\n## Dependencies\n"
+            if upstream:
+                output += f"**Upstream DAGs:** {', '.join(upstream)}\n"
+            if downstream:
+                output += f"**Downstream DAGs:** {', '.join(downstream)}\n"
+
+        return output
+
+    except Exception as e:
+        error_msg = f"Failed to get DAG lineage: {str(e)}"
+        logger.error(error_msg, exc_info=True)
+        return f"Error: {error_msg}"
+
+
+@mcp.tool()
+async def get_failure_blast_radius(
+    dag_id: str,
+    task_id: Optional[str] = None
+) -> str:
+    """
+    Analyze the impact (blast radius) of a DAG or task failure.
+
+    This helps understand what would be affected if a DAG/task fails:
+    - Downstream jobs that depend on this one
+    - Datasets that would be affected
+    - Severity assessment
+    - Recommended action
+
+    Use this before retrying failed tasks to understand the impact.
+
+    Args:
+        dag_id: The DAG to analyze
+        task_id: Specific task within the DAG (optional)
+
+    Returns:
+        Impact analysis with severity rating and recommendations.
+    """
+    logger.info(f"Tool called: get_failure_blast_radius(dag_id={dag_id}, task_id={task_id})")
+
+    service = get_lineage()
+    if service is None:
+        return "Error: Lineage service not available. Enable with: docker-compose --profile lineage up"
+
+    try:
+        if not await service.is_available():
+            return "Error: Marquez lineage backend is not available."
+
+        result = await service.get_failure_blast_radius(dag_id, task_id)
+
+        if "error" in result:
+            return f"Error: {result['error']}"
+
+        # Format output
+        source = result.get('source', {})
+        impact = result.get('impact', {})
+
+        output = "# Failure Blast Radius Analysis\n\n"
+        output += "## Source\n"
+        output += f"- **DAG:** {source.get('dag_id', dag_id)}\n"
+        if source.get('task_id'):
+            output += f"- **Task:** {source.get('task_id')}\n"
+        output += f"- **Job Name:** {source.get('job_name', 'unknown')}\n"
+
+        output += "\n## Impact Assessment\n"
+        severity = result.get('severity', 'unknown')
+        severity_emoji = {"none": "✅", "low": "🟡", "medium": "🟠", "high": "🔴"}.get(severity, "❓")
+        output += f"**Severity:** {severity_emoji} {severity.upper()}\n\n"
+
+        output += f"- **Downstream Jobs Affected:** {impact.get('job_count', 0)}\n"
+        output += f"- **Datasets Affected:** {impact.get('dataset_count', 0)}\n"
+
+        downstream_jobs = impact.get('downstream_jobs', [])
+        if downstream_jobs:
+            output += "\n### Affected Jobs:\n"
+            for job in downstream_jobs[:10]:
+                output += f"- {job}\n"
+            if len(downstream_jobs) > 10:
+                output += f"- ... and {len(downstream_jobs) - 10} more\n"
+
+        output += f"\n## Recommendation\n"
+        output += f"{result.get('recommendation', 'No specific recommendation')}\n"
+
+        if result.get('note'):
+            output += f"\n*Note: {result.get('note')}*\n"
+
+        return output
+
+    except Exception as e:
+        error_msg = f"Failed to analyze blast radius: {str(e)}"
+        logger.error(error_msg, exc_info=True)
+        return f"Error: {error_msg}"
+
+
+@mcp.tool()
+async def get_dataset_lineage(
+    dataset_name: str
+) -> str:
+    """
+    Get lineage information for a specific dataset.
+
+    Shows which jobs produce and consume the dataset, enabling
+    understanding of data flow through the system.
+
+    Args:
+        dataset_name: Name of the dataset to analyze
+
+    Returns:
+        Dataset lineage including producers, consumers, and schema.
+    """
+    logger.info(f"Tool called: get_dataset_lineage(dataset_name={dataset_name})")
+
+    service = get_lineage()
+    if service is None:
+        return "Error: Lineage service not available."
+
+    try:
+        if not await service.is_available():
+            return "Error: Marquez lineage backend is not available."
+
+        result = await service.get_dataset_lineage(dataset_name)
+
+        if "error" in result:
+            return f"Error: {result['error']}"
+
+        output = f"# Dataset Lineage: {dataset_name}\n\n"
+        output += f"**Namespace:** {result.get('namespace', 'qubinode')}\n"
+        output += f"**Description:** {result.get('description', 'No description')}\n\n"
+
+        output += "## Producer\n"
+        output += f"**Job:** {result.get('producers', 'unknown')}\n\n"
+
+        schema = result.get('schema', [])
+        if schema:
+            output += "## Schema\n"
+            for field in schema:
+                output += f"- **{field.get('name', 'unknown')}**: {field.get('type', 'unknown')}\n"
+
+        output += "\n## Metadata\n"
+        output += f"- **Created:** {result.get('created_at', 'unknown')}\n"
+        output += f"- **Updated:** {result.get('updated_at', 'unknown')}\n"
+
+        tags = result.get('tags', [])
+        if tags:
+            output += f"- **Tags:** {', '.join(tags)}\n"
+
+        return output
+
+    except Exception as e:
+        error_msg = f"Failed to get dataset lineage: {str(e)}"
+        logger.error(error_msg, exc_info=True)
+        return f"Error: {error_msg}"
+
+
+@mcp.tool()
+async def get_lineage_stats() -> str:
+    """
+    Get statistics about the OpenLineage/Marquez lineage system.
+
+    Returns summary of:
+    - Total jobs and their states
+    - Total datasets being tracked
+    - Success rate of recent runs
+    - System availability
+
+    Returns:
+        Lineage system statistics.
+    """
+    logger.info("Tool called: get_lineage_stats()")
+
+    service = get_lineage()
+    if service is None:
+        return "Error: Lineage service not available. Enable with: docker-compose --profile lineage up"
+
+    try:
+        available = await service.is_available()
+        if not available:
+            return """# Lineage System Status
+
+**Status:** ❌ Not Available
+
+The Marquez lineage backend is not running.
+
+## To Enable Lineage Tracking:
+
+```bash
+cd airflow
+docker-compose --profile lineage up -d
+```
+
+This will start:
+- Marquez API (port 5001)
+- Marquez Web UI (port 3000)
+
+Then set `OPENLINEAGE_DISABLED=false` to enable lineage emission from Airflow.
+"""
+
+        stats = await service.get_lineage_stats()
+
+        output = "# Lineage System Statistics\n\n"
+        output += "**Status:** ✅ Available\n\n"
+
+        jobs = stats.get('jobs', {})
+        output += "## Jobs\n"
+        output += f"- **Total:** {jobs.get('total', 0)}\n"
+        output += f"- **Running:** {jobs.get('running', 0)}\n"
+        output += f"- **Failed:** {jobs.get('failed', 0)}\n"
+        output += f"- **Success Rate:** {jobs.get('success_rate', 0):.1f}%\n\n"
+
+        datasets = stats.get('datasets', {})
+        output += "## Datasets\n"
+        output += f"- **Total:** {datasets.get('total', 0)}\n\n"
+
+        output += "## Access\n"
+        output += "- **API:** http://localhost:5001/api/v1\n"
+        output += "- **Web UI:** http://localhost:3000\n"
+
+        return output
+
+    except Exception as e:
+        error_msg = f"Failed to get lineage stats: {str(e)}"
+        logger.error(error_msg, exc_info=True)
+        return f"Error: {error_msg}"
+
+
 def main():
     """Main entry point"""
     if not MCP_ENABLED:
@@ -1557,8 +1883,9 @@ def main():
     logger.info("Starting FastMCP Airflow Server (ADR-0049)")
     logger.info(f"Host: {MCP_HOST}")
     logger.info(f"Port: {MCP_PORT}")
-    logger.info("Tools: DAGs(3), VMs(5), RAG(6), Troubleshooting(2), Status(2)")
+    logger.info("Tools: DAGs(3), VMs(5), RAG(6), Troubleshooting(2), Lineage(4), Status(2)")
     logger.info(f"RAG Available: {RAG_AVAILABLE}")
+    logger.info(f"Lineage Available: {LINEAGE_AVAILABLE}")
     logger.info("=" * 60)
 
     # FastMCP handles everything!
