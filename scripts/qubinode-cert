@@ -1,0 +1,974 @@
+#!/bin/bash
+# =============================================================================
+# Qubinode Universal Certificate Management CLI
+# ADR-0054: Unified Certificate Management
+# =============================================================================
+#
+# Supports three Certificate Authorities:
+#   - Step-CA:      Internal PKI for disconnected/private environments
+#   - Vault PKI:    Dynamic short-lived certificates
+#   - Let's Encrypt: Public-facing services with trusted certificates
+#
+# Usage:
+#   qubinode-cert request <hostname> [options]
+#   qubinode-cert renew [--all | <hostname>]
+#   qubinode-cert list
+#   qubinode-cert revoke <hostname>
+#   qubinode-cert install-ca [step-ca|vault]
+#
+# =============================================================================
+
+set -euo pipefail
+
+# Version
+VERSION="1.0.0"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+# Default paths
+CONFIG_FILE="${QUBINODE_CERT_CONFIG:-/etc/qubinode/cert-config.yaml}"
+CERT_BASE_DIR="${QUBINODE_CERT_DIR:-/etc/qubinode/certs}"
+INVENTORY_FILE="${CERT_BASE_DIR}/inventory.json"
+
+# Logging functions
+log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
+log_success() { echo -e "${GREEN}[OK]${NC} $1"; }
+log_warning() { echo -e "${YELLOW}[WARN]${NC} $1"; }
+log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
+log_debug() { [[ "${DEBUG:-}" == "true" ]] && echo -e "${CYAN}[DEBUG]${NC} $1" || true; }
+
+# =============================================================================
+# Configuration Loading
+# =============================================================================
+
+load_config() {
+    # Create default config if not exists
+    if [[ ! -f "$CONFIG_FILE" ]]; then
+        mkdir -p "$(dirname "$CONFIG_FILE")"
+        create_default_config
+    fi
+
+    # Parse YAML config (basic parsing without yq dependency)
+    if command -v yq &>/dev/null; then
+        STEP_CA_ENABLED=$(yq -r '.ca.step_ca.enabled // "true"' "$CONFIG_FILE" 2>/dev/null || echo "true")
+        STEP_CA_URL=$(yq -r '.ca.step_ca.url // ""' "$CONFIG_FILE" 2>/dev/null || echo "")
+        STEP_CA_FINGERPRINT=$(yq -r '.ca.step_ca.fingerprint // ""' "$CONFIG_FILE" 2>/dev/null || echo "")
+
+        VAULT_ENABLED=$(yq -r '.ca.vault.enabled // "false"' "$CONFIG_FILE" 2>/dev/null || echo "false")
+        VAULT_URL=$(yq -r '.ca.vault.url // "http://localhost:8200"' "$CONFIG_FILE" 2>/dev/null || echo "http://localhost:8200")
+        VAULT_PKI_MOUNT=$(yq -r '.ca.vault.mount_point // "pki"' "$CONFIG_FILE" 2>/dev/null || echo "pki")
+        VAULT_PKI_ROLE=$(yq -r '.ca.vault.role // "qubinode-issuer"' "$CONFIG_FILE" 2>/dev/null || echo "qubinode-issuer")
+
+        LE_ENABLED=$(yq -r '.ca.letsencrypt.enabled // "true"' "$CONFIG_FILE" 2>/dev/null || echo "true")
+        LE_EMAIL=$(yq -r '.ca.letsencrypt.email // ""' "$CONFIG_FILE" 2>/dev/null || echo "")
+        LE_STAGING=$(yq -r '.ca.letsencrypt.staging // "false"' "$CONFIG_FILE" 2>/dev/null || echo "false")
+    else
+        # Fallback: use grep/sed for basic parsing
+        STEP_CA_ENABLED="true"
+        STEP_CA_URL=""
+        STEP_CA_FINGERPRINT=""
+        VAULT_ENABLED="false"
+        VAULT_URL="http://localhost:8200"
+        VAULT_PKI_MOUNT="pki"
+        VAULT_PKI_ROLE="qubinode-issuer"
+        LE_ENABLED="true"
+        LE_EMAIL=""
+        LE_STAGING="false"
+    fi
+
+    # Environment overrides
+    STEP_CA_URL="${STEP_CA_URL:-$QUBINODE_STEP_CA_URL}"
+    STEP_CA_FINGERPRINT="${STEP_CA_FINGERPRINT:-$QUBINODE_STEP_CA_FINGERPRINT}"
+    VAULT_URL="${VAULT_ADDR:-$VAULT_URL}"
+    LE_EMAIL="${LE_EMAIL:-$QUBINODE_LE_EMAIL}"
+}
+
+create_default_config() {
+    cat > "$CONFIG_FILE" << 'EOF'
+# Qubinode Certificate Management Configuration
+# ADR-0054: Unified Certificate Management
+
+ca:
+  # Step-CA (internal PKI for disconnected environments)
+  step_ca:
+    enabled: true
+    url: ""  # e.g., https://step-ca-server.example.com:443
+    fingerprint: ""  # CA fingerprint (auto-discovered if empty)
+    provisioner: acme
+    default_duration: 720h  # 30 days
+
+  # Vault PKI (dynamic short-lived certificates)
+  vault:
+    enabled: false
+    url: http://localhost:8200
+    mount_point: pki
+    role: qubinode-issuer
+    default_duration: 24h
+
+  # Let's Encrypt (public-facing services)
+  letsencrypt:
+    enabled: true
+    email: ""  # Required for Let's Encrypt
+    staging: false  # Set true for testing
+    challenge: http-01  # http-01 or dns-01
+
+defaults:
+  ca: auto  # auto, step-ca, vault, letsencrypt
+  output_dir: /etc/qubinode/certs
+  renewal_days: 30
+
+# Service-specific configurations
+services:
+  nginx:
+    cert_path: /etc/nginx/ssl/cert.pem
+    key_path: /etc/nginx/ssl/key.pem
+    chain_path: /etc/nginx/ssl/chain.pem
+    fullchain_path: /etc/nginx/ssl/fullchain.pem
+    reload_cmd: systemctl reload nginx
+    user: nginx
+    group: nginx
+    mode: "0640"
+
+  haproxy:
+    cert_path: /etc/haproxy/certs/combined.pem
+    reload_cmd: systemctl reload haproxy
+    user: haproxy
+    group: haproxy
+    mode: "0640"
+
+  httpd:
+    cert_path: /etc/pki/tls/certs/server.crt
+    key_path: /etc/pki/tls/private/server.key
+    chain_path: /etc/pki/tls/certs/ca-bundle.crt
+    reload_cmd: systemctl reload httpd
+    user: root
+    group: root
+    mode: "0600"
+
+  harbor:
+    cert_path: /data/cert/server.crt
+    key_path: /data/cert/server.key
+    reload_cmd: cd /opt/harbor && docker-compose restart
+    user: root
+    group: root
+    mode: "0644"
+
+  postgresql:
+    cert_path: /var/lib/pgsql/data/server.crt
+    key_path: /var/lib/pgsql/data/server.key
+    reload_cmd: systemctl reload postgresql
+    user: postgres
+    group: postgres
+    mode: "0600"
+
+  registry:
+    cert_path: /etc/docker/certs.d/registry/ca.crt
+    key_path: /etc/docker/certs.d/registry/client.key
+    reload_cmd: systemctl restart docker
+    user: root
+    group: root
+    mode: "0644"
+EOF
+    log_info "Created default config at $CONFIG_FILE"
+}
+
+# =============================================================================
+# CA Detection and Selection
+# =============================================================================
+
+detect_available_cas() {
+    local available=()
+
+    # Check Step-CA
+    if [[ -n "${STEP_CA_URL:-}" ]] && curl -sk "${STEP_CA_URL}/health" 2>/dev/null | grep -q "ok"; then
+        available+=("step-ca")
+        log_debug "Step-CA available at $STEP_CA_URL"
+    fi
+
+    # Check Vault PKI
+    if [[ "${VAULT_ENABLED:-}" == "true" ]] && curl -s "${VAULT_URL}/v1/sys/health" 2>/dev/null | grep -q "initialized"; then
+        if curl -s -H "X-Vault-Token: ${VAULT_TOKEN:-}" "${VAULT_URL}/v1/${VAULT_PKI_MOUNT}/ca/pem" 2>/dev/null | grep -q "BEGIN CERTIFICATE"; then
+            available+=("vault")
+            log_debug "Vault PKI available at $VAULT_URL"
+        fi
+    fi
+
+    # Check Let's Encrypt (need certbot and internet)
+    if [[ "${LE_ENABLED:-}" == "true" ]] && command -v certbot &>/dev/null; then
+        if curl -s --max-time 5 https://acme-v02.api.letsencrypt.org/directory &>/dev/null; then
+            available+=("letsencrypt")
+            log_debug "Let's Encrypt available"
+        fi
+    fi
+
+    echo "${available[@]}"
+}
+
+select_ca() {
+    local hostname="$1"
+    local force_ca="${2:-auto}"
+
+    if [[ "$force_ca" != "auto" ]]; then
+        echo "$force_ca"
+        return
+    fi
+
+    # Auto-selection logic
+    local available
+    available=$(detect_available_cas)
+
+    # Check if hostname is publicly resolvable
+    local public_ip
+    public_ip=$(dig +short "$hostname" @8.8.8.8 2>/dev/null | head -1)
+
+    if [[ -n "$public_ip" ]] && [[ " $available " =~ " letsencrypt " ]]; then
+        # Public hostname - prefer Let's Encrypt
+        echo "letsencrypt"
+    elif [[ " $available " =~ " step-ca " ]]; then
+        # Internal - prefer Step-CA
+        echo "step-ca"
+    elif [[ " $available " =~ " vault " ]]; then
+        # Fallback to Vault PKI
+        echo "vault"
+    elif [[ " $available " =~ " letsencrypt " ]]; then
+        # Last resort - Let's Encrypt
+        echo "letsencrypt"
+    else
+        log_error "No certificate authority available"
+        return 1
+    fi
+}
+
+# =============================================================================
+# Step-CA Functions
+# =============================================================================
+
+step_ca_request() {
+    local hostname="$1"
+    local output_dir="$2"
+    local san_list="${3:-}"
+    local duration="${4:-720h}"
+
+    log_info "Requesting certificate from Step-CA for $hostname"
+
+    # Ensure step CLI is installed
+    if ! command -v step &>/dev/null; then
+        log_error "step CLI not found. Install with: dnf install step-cli"
+        return 1
+    fi
+
+    # Bootstrap if needed
+    if [[ ! -f ~/.step/config/defaults.json ]]; then
+        log_info "Bootstrapping Step-CA client..."
+        if [[ -z "${STEP_CA_FINGERPRINT:-}" ]]; then
+            # Try to get fingerprint from CA
+            STEP_CA_FINGERPRINT=$(curl -sk "${STEP_CA_URL}/roots.pem" | step certificate fingerprint /dev/stdin 2>/dev/null)
+        fi
+
+        if [[ -z "$STEP_CA_FINGERPRINT" ]]; then
+            log_error "Cannot determine Step-CA fingerprint. Set QUBINODE_STEP_CA_FINGERPRINT or configure in $CONFIG_FILE"
+            return 1
+        fi
+
+        step ca bootstrap --ca-url "$STEP_CA_URL" --fingerprint "$STEP_CA_FINGERPRINT" --install
+    fi
+
+    mkdir -p "$output_dir"
+
+    # Build SAN arguments
+    local san_args=""
+    if [[ -n "$san_list" ]]; then
+        IFS=',' read -ra SANS <<< "$san_list"
+        for san in "${SANS[@]}"; do
+            san_args="$san_args --san $san"
+        done
+    fi
+
+    # Request certificate
+    step ca certificate "$hostname" \
+        "$output_dir/cert.pem" \
+        "$output_dir/key.pem" \
+        --not-after="$duration" \
+        $san_args \
+        --force
+
+    # Get CA chain
+    step ca root "$output_dir/chain.pem" --force 2>/dev/null || true
+
+    # Create fullchain
+    cat "$output_dir/cert.pem" "$output_dir/chain.pem" > "$output_dir/fullchain.pem" 2>/dev/null || \
+        cp "$output_dir/cert.pem" "$output_dir/fullchain.pem"
+
+    # Set permissions
+    chmod 644 "$output_dir/cert.pem" "$output_dir/chain.pem" "$output_dir/fullchain.pem" 2>/dev/null || true
+    chmod 600 "$output_dir/key.pem"
+
+    log_success "Certificate issued by Step-CA"
+}
+
+step_ca_renew() {
+    local cert_path="$1"
+    local key_path="$2"
+
+    log_info "Renewing certificate via Step-CA: $cert_path"
+    step ca renew --force "$cert_path" "$key_path"
+    log_success "Certificate renewed"
+}
+
+# =============================================================================
+# Vault PKI Functions
+# =============================================================================
+
+vault_pki_request() {
+    local hostname="$1"
+    local output_dir="$2"
+    local san_list="${3:-}"
+    local duration="${4:-24h}"
+
+    log_info "Requesting certificate from Vault PKI for $hostname"
+
+    if [[ -z "${VAULT_TOKEN:-}" ]]; then
+        log_error "VAULT_TOKEN not set"
+        return 1
+    fi
+
+    mkdir -p "$output_dir"
+
+    # Build request
+    local alt_names=""
+    if [[ -n "$san_list" ]]; then
+        alt_names="$san_list"
+    fi
+
+    # Request certificate from Vault
+    local response
+    response=$(curl -s -X POST \
+        -H "X-Vault-Token: $VAULT_TOKEN" \
+        -d "{\"common_name\": \"$hostname\", \"alt_names\": \"$alt_names\", \"ttl\": \"$duration\"}" \
+        "${VAULT_URL}/v1/${VAULT_PKI_MOUNT}/issue/${VAULT_PKI_ROLE}")
+
+    if echo "$response" | grep -q '"errors"'; then
+        log_error "Vault PKI error: $(echo "$response" | jq -r '.errors[]' 2>/dev/null || echo "$response")"
+        return 1
+    fi
+
+    # Extract certificates
+    echo "$response" | jq -r '.data.certificate' > "$output_dir/cert.pem"
+    echo "$response" | jq -r '.data.private_key' > "$output_dir/key.pem"
+    echo "$response" | jq -r '.data.ca_chain[]' > "$output_dir/chain.pem" 2>/dev/null || \
+        echo "$response" | jq -r '.data.issuing_ca' > "$output_dir/chain.pem"
+
+    # Create fullchain
+    cat "$output_dir/cert.pem" "$output_dir/chain.pem" > "$output_dir/fullchain.pem"
+
+    # Set permissions
+    chmod 644 "$output_dir/cert.pem" "$output_dir/chain.pem" "$output_dir/fullchain.pem"
+    chmod 600 "$output_dir/key.pem"
+
+    # Store lease info for renewal
+    echo "$response" | jq '{lease_id: .lease_id, lease_duration: .lease_duration, serial_number: .data.serial_number}' \
+        > "$output_dir/.vault-lease.json"
+
+    log_success "Certificate issued by Vault PKI"
+}
+
+# =============================================================================
+# Let's Encrypt Functions
+# =============================================================================
+
+letsencrypt_request() {
+    local hostname="$1"
+    local output_dir="$2"
+    local san_list="${3:-}"
+    local webroot="${4:-}"
+
+    log_info "Requesting certificate from Let's Encrypt for $hostname"
+
+    if ! command -v certbot &>/dev/null; then
+        log_error "certbot not found. Install with: dnf install certbot"
+        return 1
+    fi
+
+    if [[ -z "${LE_EMAIL:-}" ]]; then
+        log_error "Let's Encrypt email not configured. Set QUBINODE_LE_EMAIL or configure in $CONFIG_FILE"
+        return 1
+    fi
+
+    mkdir -p "$output_dir"
+
+    # Build domain arguments
+    local domain_args="-d $hostname"
+    if [[ -n "$san_list" ]]; then
+        IFS=',' read -ra SANS <<< "$san_list"
+        for san in "${SANS[@]}"; do
+            domain_args="$domain_args -d $san"
+        done
+    fi
+
+    # Staging flag
+    local staging_arg=""
+    if [[ "${LE_STAGING:-}" == "true" ]]; then
+        staging_arg="--staging"
+        log_warning "Using Let's Encrypt staging environment (certificates won't be trusted)"
+    fi
+
+    # Request certificate
+    if [[ -n "$webroot" ]]; then
+        certbot certonly \
+            --webroot -w "$webroot" \
+            $domain_args \
+            --email "$LE_EMAIL" \
+            --agree-tos \
+            --non-interactive \
+            $staging_arg
+    else
+        certbot certonly \
+            --standalone \
+            $domain_args \
+            --email "$LE_EMAIL" \
+            --agree-tos \
+            --non-interactive \
+            $staging_arg
+    fi
+
+    # Copy certificates to our structure
+    local le_dir="/etc/letsencrypt/live/$hostname"
+    if [[ -d "$le_dir" ]]; then
+        cp "$le_dir/cert.pem" "$output_dir/cert.pem"
+        cp "$le_dir/privkey.pem" "$output_dir/key.pem"
+        cp "$le_dir/chain.pem" "$output_dir/chain.pem"
+        cp "$le_dir/fullchain.pem" "$output_dir/fullchain.pem"
+
+        chmod 644 "$output_dir/cert.pem" "$output_dir/chain.pem" "$output_dir/fullchain.pem"
+        chmod 600 "$output_dir/key.pem"
+    fi
+
+    log_success "Certificate issued by Let's Encrypt"
+}
+
+letsencrypt_renew() {
+    local hostname="$1"
+
+    log_info "Renewing Let's Encrypt certificate for $hostname"
+    certbot renew --cert-name "$hostname" --non-interactive
+    log_success "Certificate renewed"
+}
+
+# =============================================================================
+# Service Installation
+# =============================================================================
+
+install_cert_for_service() {
+    local hostname="$1"
+    local service="$2"
+    local source_dir="$3"
+
+    log_info "Installing certificate for service: $service"
+
+    case "$service" in
+        nginx)
+            mkdir -p /etc/nginx/ssl
+            cp "$source_dir/cert.pem" /etc/nginx/ssl/cert.pem
+            cp "$source_dir/key.pem" /etc/nginx/ssl/key.pem
+            cp "$source_dir/chain.pem" /etc/nginx/ssl/chain.pem 2>/dev/null || true
+            cp "$source_dir/fullchain.pem" /etc/nginx/ssl/fullchain.pem 2>/dev/null || true
+            chown nginx:nginx /etc/nginx/ssl/*.pem 2>/dev/null || true
+            chmod 640 /etc/nginx/ssl/*.pem
+            chmod 600 /etc/nginx/ssl/key.pem
+            systemctl reload nginx 2>/dev/null && log_success "Nginx reloaded" || log_warning "Could not reload nginx"
+            ;;
+
+        haproxy)
+            mkdir -p /etc/haproxy/certs
+            cat "$source_dir/cert.pem" "$source_dir/key.pem" > /etc/haproxy/certs/combined.pem
+            if [[ -f "$source_dir/chain.pem" ]]; then
+                cat "$source_dir/chain.pem" >> /etc/haproxy/certs/combined.pem
+            fi
+            chown haproxy:haproxy /etc/haproxy/certs/combined.pem 2>/dev/null || true
+            chmod 640 /etc/haproxy/certs/combined.pem
+            systemctl reload haproxy 2>/dev/null && log_success "HAProxy reloaded" || log_warning "Could not reload haproxy"
+            ;;
+
+        httpd|apache)
+            mkdir -p /etc/pki/tls/certs /etc/pki/tls/private
+            cp "$source_dir/cert.pem" /etc/pki/tls/certs/server.crt
+            cp "$source_dir/key.pem" /etc/pki/tls/private/server.key
+            cp "$source_dir/chain.pem" /etc/pki/tls/certs/ca-bundle.crt 2>/dev/null || true
+            chmod 644 /etc/pki/tls/certs/server.crt
+            chmod 600 /etc/pki/tls/private/server.key
+            systemctl reload httpd 2>/dev/null && log_success "Apache reloaded" || log_warning "Could not reload httpd"
+            ;;
+
+        harbor)
+            mkdir -p /data/cert
+            cp "$source_dir/cert.pem" /data/cert/server.crt
+            cp "$source_dir/key.pem" /data/cert/server.key
+            chmod 644 /data/cert/server.crt
+            chmod 600 /data/cert/server.key
+            if [[ -d /opt/harbor ]]; then
+                cd /opt/harbor && docker-compose restart 2>/dev/null && log_success "Harbor restarted" || log_warning "Could not restart Harbor"
+            fi
+            ;;
+
+        postgresql|postgres)
+            local pg_data="${PGDATA:-/var/lib/pgsql/data}"
+            cp "$source_dir/cert.pem" "$pg_data/server.crt"
+            cp "$source_dir/key.pem" "$pg_data/server.key"
+            chown postgres:postgres "$pg_data/server.crt" "$pg_data/server.key"
+            chmod 600 "$pg_data/server.crt" "$pg_data/server.key"
+            systemctl reload postgresql 2>/dev/null && log_success "PostgreSQL reloaded" || log_warning "Could not reload postgresql"
+            ;;
+
+        registry|docker-registry)
+            mkdir -p "/etc/docker/certs.d/$hostname"
+            cp "$source_dir/cert.pem" "/etc/docker/certs.d/$hostname/ca.crt"
+            log_success "Certificate installed for Docker registry"
+            ;;
+
+        generic|*)
+            log_info "Generic installation - certificates at $source_dir"
+            ;;
+    esac
+}
+
+# =============================================================================
+# Inventory Management
+# =============================================================================
+
+update_inventory() {
+    local hostname="$1"
+    local ca="$2"
+    local service="${3:-generic}"
+    local output_dir="$4"
+
+    mkdir -p "$(dirname "$INVENTORY_FILE")"
+
+    # Get certificate info
+    local expiry=""
+    local serial=""
+    if [[ -f "$output_dir/cert.pem" ]]; then
+        expiry=$(openssl x509 -in "$output_dir/cert.pem" -noout -enddate 2>/dev/null | cut -d= -f2)
+        serial=$(openssl x509 -in "$output_dir/cert.pem" -noout -serial 2>/dev/null | cut -d= -f2)
+    fi
+
+    # Create metadata
+    local metadata="{
+        \"hostname\": \"$hostname\",
+        \"ca\": \"$ca\",
+        \"service\": \"$service\",
+        \"cert_dir\": \"$output_dir\",
+        \"issued\": \"$(date -Iseconds)\",
+        \"expiry\": \"$expiry\",
+        \"serial\": \"$serial\"
+    }"
+
+    echo "$metadata" > "$output_dir/.metadata.json"
+
+    # Update inventory
+    if [[ -f "$INVENTORY_FILE" ]]; then
+        local tmp=$(mktemp)
+        jq --arg h "$hostname" --argjson m "$metadata" \
+            '.certificates[$h] = $m' "$INVENTORY_FILE" > "$tmp" && mv "$tmp" "$INVENTORY_FILE"
+    else
+        echo "{\"certificates\": {\"$hostname\": $metadata}}" | jq . > "$INVENTORY_FILE"
+    fi
+}
+
+list_certificates() {
+    echo ""
+    echo "========================================"
+    echo "Managed Certificates"
+    echo "========================================"
+
+    if [[ ! -f "$INVENTORY_FILE" ]]; then
+        log_warning "No certificates managed yet"
+        return
+    fi
+
+    echo ""
+    printf "%-30s %-12s %-15s %s\n" "HOSTNAME" "CA" "SERVICE" "EXPIRY"
+    printf "%-30s %-12s %-15s %s\n" "--------" "--" "-------" "------"
+
+    jq -r '.certificates | to_entries[] | [.value.hostname, .value.ca, .value.service, .value.expiry] | @tsv' "$INVENTORY_FILE" | \
+    while IFS=$'\t' read -r hostname ca service expiry; do
+        # Check if expiring soon
+        if [[ -n "$expiry" ]]; then
+            local expiry_epoch=$(date -d "$expiry" +%s 2>/dev/null || echo "0")
+            local now_epoch=$(date +%s)
+            local days_left=$(( (expiry_epoch - now_epoch) / 86400 ))
+
+            if [[ $days_left -lt 7 ]]; then
+                expiry="${RED}$expiry (${days_left}d)${NC}"
+            elif [[ $days_left -lt 30 ]]; then
+                expiry="${YELLOW}$expiry (${days_left}d)${NC}"
+            else
+                expiry="$expiry (${days_left}d)"
+            fi
+        fi
+
+        printf "%-30s %-12s %-15s %b\n" "$hostname" "$ca" "$service" "$expiry"
+    done
+
+    echo ""
+}
+
+# =============================================================================
+# CA Root Certificate Installation
+# =============================================================================
+
+install_ca_root() {
+    local ca="$1"
+
+    log_info "Installing $ca root certificate to system trust store"
+
+    mkdir -p "$CERT_BASE_DIR/ca"
+
+    case "$ca" in
+        step-ca)
+            if [[ -z "${STEP_CA_URL:-}" ]]; then
+                log_error "Step-CA URL not configured"
+                return 1
+            fi
+
+            # Get root certificate
+            curl -sk "${STEP_CA_URL}/roots.pem" > "$CERT_BASE_DIR/ca/step-ca-root.crt"
+
+            # Install to system trust
+            if [[ -d /etc/pki/ca-trust/source/anchors ]]; then
+                cp "$CERT_BASE_DIR/ca/step-ca-root.crt" /etc/pki/ca-trust/source/anchors/
+                update-ca-trust
+                log_success "Step-CA root installed to system trust (RHEL/CentOS)"
+            elif [[ -d /usr/local/share/ca-certificates ]]; then
+                cp "$CERT_BASE_DIR/ca/step-ca-root.crt" /usr/local/share/ca-certificates/step-ca-root.crt
+                update-ca-certificates
+                log_success "Step-CA root installed to system trust (Debian/Ubuntu)"
+            fi
+            ;;
+
+        vault)
+            if [[ -z "${VAULT_TOKEN:-}" ]]; then
+                log_error "VAULT_TOKEN not set"
+                return 1
+            fi
+
+            # Get root certificate
+            curl -s -H "X-Vault-Token: $VAULT_TOKEN" \
+                "${VAULT_URL}/v1/${VAULT_PKI_MOUNT}/ca/pem" > "$CERT_BASE_DIR/ca/vault-root.crt"
+
+            # Install to system trust
+            if [[ -d /etc/pki/ca-trust/source/anchors ]]; then
+                cp "$CERT_BASE_DIR/ca/vault-root.crt" /etc/pki/ca-trust/source/anchors/
+                update-ca-trust
+                log_success "Vault PKI root installed to system trust (RHEL/CentOS)"
+            elif [[ -d /usr/local/share/ca-certificates ]]; then
+                cp "$CERT_BASE_DIR/ca/vault-root.crt" /usr/local/share/ca-certificates/vault-root.crt
+                update-ca-certificates
+                log_success "Vault PKI root installed to system trust (Debian/Ubuntu)"
+            fi
+            ;;
+
+        *)
+            log_error "Unknown CA: $ca"
+            return 1
+            ;;
+    esac
+
+    # Create combined CA bundle
+    cat "$CERT_BASE_DIR/ca/"*.crt > "$CERT_BASE_DIR/ca/ca-bundle.crt" 2>/dev/null || true
+}
+
+# =============================================================================
+# Main Command Handler
+# =============================================================================
+
+cmd_request() {
+    local hostname="${1:-}"
+    shift || true
+
+    if [[ -z "$hostname" ]]; then
+        log_error "Usage: qubinode-cert request <hostname> [options]"
+        exit 1
+    fi
+
+    # Parse options
+    local ca="auto"
+    local service="generic"
+    local san_list=""
+    local duration=""
+    local output_dir=""
+    local install="false"
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --ca) ca="$2"; shift 2 ;;
+            --service) service="$2"; shift 2 ;;
+            --san) san_list="$2"; shift 2 ;;
+            --duration) duration="$2"; shift 2 ;;
+            --output) output_dir="$2"; shift 2 ;;
+            --install) install="true"; shift ;;
+            *) log_warning "Unknown option: $1"; shift ;;
+        esac
+    done
+
+    # Set defaults
+    output_dir="${output_dir:-$CERT_BASE_DIR/$hostname}"
+
+    # Select CA
+    ca=$(select_ca "$hostname" "$ca")
+    if [[ -z "$ca" ]]; then
+        log_error "No certificate authority available for $hostname"
+        exit 1
+    fi
+
+    log_info "Selected CA: $ca"
+
+    # Request certificate
+    case "$ca" in
+        step-ca)
+            duration="${duration:-720h}"
+            step_ca_request "$hostname" "$output_dir" "$san_list" "$duration"
+            ;;
+        vault)
+            duration="${duration:-24h}"
+            vault_pki_request "$hostname" "$output_dir" "$san_list" "$duration"
+            ;;
+        letsencrypt)
+            letsencrypt_request "$hostname" "$output_dir" "$san_list"
+            ;;
+        *)
+            log_error "Unknown CA: $ca"
+            exit 1
+            ;;
+    esac
+
+    # Update inventory
+    update_inventory "$hostname" "$ca" "$service" "$output_dir"
+
+    # Install if requested
+    if [[ "$install" == "true" ]]; then
+        install_cert_for_service "$hostname" "$service" "$output_dir"
+    fi
+
+    echo ""
+    echo "========================================"
+    echo "Certificate Details"
+    echo "========================================"
+    echo "Hostname:    $hostname"
+    echo "CA:          $ca"
+    echo "Service:     $service"
+    echo "Location:    $output_dir"
+    echo ""
+    echo "Files:"
+    ls -la "$output_dir"/*.pem 2>/dev/null || true
+    echo ""
+
+    if [[ -f "$output_dir/cert.pem" ]]; then
+        echo "Certificate Info:"
+        openssl x509 -in "$output_dir/cert.pem" -noout -subject -issuer -dates 2>/dev/null || true
+    fi
+    echo "========================================"
+}
+
+cmd_renew() {
+    local target="${1:---all}"
+
+    if [[ "$target" == "--all" ]]; then
+        log_info "Checking all certificates for renewal..."
+
+        if [[ ! -f "$INVENTORY_FILE" ]]; then
+            log_warning "No certificates to renew"
+            return
+        fi
+
+        jq -r '.certificates | to_entries[] | [.value.hostname, .value.ca, .value.cert_dir] | @tsv' "$INVENTORY_FILE" | \
+        while IFS=$'\t' read -r hostname ca cert_dir; do
+            if [[ -f "$cert_dir/cert.pem" ]]; then
+                local expiry_epoch=$(openssl x509 -in "$cert_dir/cert.pem" -noout -enddate 2>/dev/null | \
+                    cut -d= -f2 | xargs -I{} date -d "{}" +%s)
+                local now_epoch=$(date +%s)
+                local days_left=$(( (expiry_epoch - now_epoch) / 86400 ))
+
+                local renewal_threshold=30
+                [[ "$ca" == "vault" ]] && renewal_threshold=1
+
+                if [[ $days_left -lt $renewal_threshold ]]; then
+                    log_info "Renewing $hostname ($days_left days left)"
+                    cmd_request "$hostname" --ca "$ca"
+                else
+                    log_debug "$hostname: $days_left days remaining, skipping"
+                fi
+            fi
+        done
+    else
+        local hostname="$target"
+        local metadata_file="$CERT_BASE_DIR/$hostname/.metadata.json"
+
+        if [[ ! -f "$metadata_file" ]]; then
+            log_error "No certificate found for $hostname"
+            exit 1
+        fi
+
+        local ca=$(jq -r '.ca' "$metadata_file")
+        cmd_request "$hostname" --ca "$ca"
+    fi
+}
+
+cmd_revoke() {
+    local hostname="${1:-}"
+
+    if [[ -z "$hostname" ]]; then
+        log_error "Usage: qubinode-cert revoke <hostname>"
+        exit 1
+    fi
+
+    local cert_dir="$CERT_BASE_DIR/$hostname"
+    local metadata_file="$cert_dir/.metadata.json"
+
+    if [[ ! -f "$metadata_file" ]]; then
+        log_error "No certificate found for $hostname"
+        exit 1
+    fi
+
+    local ca=$(jq -r '.ca' "$metadata_file")
+
+    log_warning "This will revoke the certificate for $hostname (CA: $ca)"
+    read -p "Are you sure? (yes/no): " confirm
+
+    if [[ "$confirm" != "yes" ]]; then
+        log_info "Revocation cancelled"
+        return
+    fi
+
+    case "$ca" in
+        step-ca)
+            step ca revoke --cert "$cert_dir/cert.pem" 2>/dev/null || log_warning "Could not revoke via Step-CA"
+            ;;
+        vault)
+            local serial=$(jq -r '.serial' "$metadata_file")
+            curl -s -X POST \
+                -H "X-Vault-Token: $VAULT_TOKEN" \
+                "${VAULT_URL}/v1/${VAULT_PKI_MOUNT}/revoke" \
+                -d "{\"serial_number\": \"$serial\"}" 2>/dev/null || log_warning "Could not revoke via Vault"
+            ;;
+        letsencrypt)
+            certbot revoke --cert-path "$cert_dir/cert.pem" --non-interactive 2>/dev/null || log_warning "Could not revoke via Let's Encrypt"
+            ;;
+    esac
+
+    # Remove from inventory
+    if [[ -f "$INVENTORY_FILE" ]]; then
+        local tmp=$(mktemp)
+        jq --arg h "$hostname" 'del(.certificates[$h])' "$INVENTORY_FILE" > "$tmp" && mv "$tmp" "$INVENTORY_FILE"
+    fi
+
+    # Archive the certificate directory
+    mv "$cert_dir" "$cert_dir.revoked.$(date +%Y%m%d%H%M%S)" 2>/dev/null || rm -rf "$cert_dir"
+
+    log_success "Certificate revoked for $hostname"
+}
+
+show_help() {
+    cat << EOF
+Qubinode Universal Certificate Management CLI v$VERSION
+ADR-0054: Unified Certificate Management
+
+USAGE:
+    qubinode-cert <command> [options]
+
+COMMANDS:
+    request <hostname>    Request a new certificate
+    renew [hostname]      Renew certificate(s) (--all for all expiring)
+    list                  List all managed certificates
+    revoke <hostname>     Revoke and remove a certificate
+    install-ca <ca>       Install CA root certificate to system trust
+    help                  Show this help message
+
+REQUEST OPTIONS:
+    --ca <ca>             Force specific CA: step-ca, vault, letsencrypt (default: auto)
+    --service <service>   Target service: nginx, haproxy, httpd, harbor, postgresql, generic
+    --san <list>          Subject Alternative Names (comma-separated)
+    --duration <time>     Certificate duration (e.g., 720h, 30d)
+    --output <dir>        Output directory for certificates
+    --install             Auto-install certificate for the service
+
+ENVIRONMENT VARIABLES:
+    QUBINODE_STEP_CA_URL          Step-CA server URL
+    QUBINODE_STEP_CA_FINGERPRINT  Step-CA fingerprint
+    VAULT_ADDR                    Vault server URL
+    VAULT_TOKEN                   Vault authentication token
+    QUBINODE_LE_EMAIL             Let's Encrypt registration email
+
+EXAMPLES:
+    # Request certificate for internal service (auto-selects Step-CA)
+    qubinode-cert request myapp.internal.example.com --service nginx --install
+
+    # Request Let's Encrypt certificate for public website
+    qubinode-cert request www.example.com --ca letsencrypt --service nginx --install
+
+    # Request short-lived certificate from Vault
+    qubinode-cert request api.example.com --ca vault --duration 1h
+
+    # Request certificate with SANs
+    qubinode-cert request registry.example.com --san "registry,localhost,192.168.1.100"
+
+    # List all certificates
+    qubinode-cert list
+
+    # Renew all expiring certificates
+    qubinode-cert renew --all
+
+    # Install Step-CA root to system trust
+    qubinode-cert install-ca step-ca
+
+For more information, see: ADR-0054 Unified Certificate Management
+EOF
+}
+
+# =============================================================================
+# Entry Point
+# =============================================================================
+
+main() {
+    # Load configuration
+    load_config
+
+    local command="${1:-help}"
+    shift || true
+
+    case "$command" in
+        request)
+            cmd_request "$@"
+            ;;
+        renew)
+            cmd_renew "$@"
+            ;;
+        list)
+            list_certificates
+            ;;
+        revoke)
+            cmd_revoke "$@"
+            ;;
+        install-ca)
+            install_ca_root "$@"
+            ;;
+        help|--help|-h)
+            show_help
+            ;;
+        version|--version|-v)
+            echo "qubinode-cert v$VERSION"
+            ;;
+        *)
+            log_error "Unknown command: $command"
+            show_help
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"

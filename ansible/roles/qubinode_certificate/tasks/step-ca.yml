@@ -1,0 +1,133 @@
+---
+# Request certificate from Step-CA
+
+- name: Ensure step CLI is installed
+  ansible.builtin.package:
+    name: step-cli
+    state: present
+  failed_when: false
+  register: step_cli_pkg
+
+- name: Install step CLI from URL if package not available
+  when: step_cli_pkg.failed | default(false)
+  block:
+    - name: Download step CLI RPM
+      ansible.builtin.get_url:
+        url: https://dl.smallstep.com/cli/docs-ca-install/latest/step-cli_amd64.rpm
+        dest: /tmp/step-cli_amd64.rpm
+        mode: '0644'
+
+    - name: Install step CLI from RPM
+      ansible.builtin.dnf:
+        name: /tmp/step-cli_amd64.rpm
+        state: present
+        disable_gpg_check: true
+
+- name: Get Step-CA fingerprint if not provided
+  when: step_ca_fingerprint | length == 0
+  block:
+    - name: Fetch CA root certificate
+      ansible.builtin.uri:
+        url: "{{ step_ca_url }}/roots.pem"
+        method: GET
+        validate_certs: false
+        return_content: true
+      register: ca_root_pem
+
+    - name: Save CA root temporarily
+      ansible.builtin.copy:
+        content: "{{ ca_root_pem.content }}"
+        dest: /tmp/step-ca-root.pem
+        mode: '0644'
+
+    - name: Get fingerprint from root certificate
+      ansible.builtin.command:
+        cmd: step certificate fingerprint /tmp/step-ca-root.pem
+      register: fingerprint_result
+      changed_when: false
+
+    - name: Set fingerprint fact
+      ansible.builtin.set_fact:
+        step_ca_fingerprint: "{{ fingerprint_result.stdout }}"
+
+- name: Check if Step-CA is bootstrapped
+  ansible.builtin.stat:
+    path: ~/.step/config/defaults.json
+  register: step_bootstrap
+
+- name: Bootstrap Step-CA client
+  ansible.builtin.command:
+    cmd: >
+      step ca bootstrap
+      --ca-url {{ step_ca_url }}
+      --fingerprint {{ step_ca_fingerprint }}
+      --install
+  when: not step_bootstrap.stat.exists
+  changed_when: true
+
+- name: Build SAN arguments
+  ansible.builtin.set_fact:
+    san_args: "{{ cert_san_list | map('regex_replace', '^(.*)$', '--san \\1') | join(' ') }}"
+  when: cert_san_list | length > 0
+
+- name: Set empty SAN args if no SANs
+  ansible.builtin.set_fact:
+    san_args: ""
+  when: cert_san_list | length == 0
+
+- name: Set certificate duration
+  ansible.builtin.set_fact:
+    cert_ttl: "{{ cert_duration if cert_duration | length > 0 else '720h' }}"
+
+- name: Request certificate from Step-CA
+  ansible.builtin.command:
+    cmd: >
+      step ca certificate {{ cert_hostname }}
+      {{ cert_output_dir }}/cert.pem
+      {{ cert_output_dir }}/key.pem
+      --not-after={{ cert_ttl }}
+      {{ san_args }}
+      --force
+  changed_when: true
+
+- name: Get CA chain
+  ansible.builtin.command:
+    cmd: step ca root {{ cert_output_dir }}/chain.pem --force
+  changed_when: true
+  failed_when: false
+
+- name: Create fullchain certificate
+  ansible.builtin.shell:
+    cmd: cat {{ cert_output_dir }}/cert.pem {{ cert_output_dir }}/chain.pem > {{ cert_output_dir }}/fullchain.pem
+  args:
+    creates: "{{ cert_output_dir }}/fullchain.pem"
+  changed_when: true
+
+- name: Set certificate file permissions
+  ansible.builtin.file:
+    path: "{{ cert_output_dir }}/{{ item }}"
+    mode: '0644'
+  loop:
+    - cert.pem
+    - chain.pem
+    - fullchain.pem
+  failed_when: false
+
+- name: Set private key permissions
+  ansible.builtin.file:
+    path: "{{ cert_output_dir }}/key.pem"
+    mode: '0600'
+
+- name: Save certificate metadata
+  ansible.builtin.copy:
+    content: |
+      {
+        "hostname": "{{ cert_hostname }}",
+        "ca": "step-ca",
+        "service": "{{ cert_service }}",
+        "cert_dir": "{{ cert_output_dir }}",
+        "issued": "{{ ansible_date_time.iso8601 }}",
+        "ca_url": "{{ step_ca_url }}"
+      }
+    dest: "{{ cert_output_dir }}/.metadata.json"
+    mode: '0644'

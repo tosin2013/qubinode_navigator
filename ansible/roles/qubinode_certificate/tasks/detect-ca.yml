@@ -1,0 +1,68 @@
+---
+# Detect available Certificate Authorities
+
+- name: Check if hostname is publicly resolvable
+  ansible.builtin.command:
+    cmd: dig +short {{ cert_hostname }} @8.8.8.8
+  register: public_dns
+  changed_when: false
+  failed_when: false
+
+- name: Check Step-CA availability
+  ansible.builtin.uri:
+    url: "{{ step_ca_url }}/health"
+    method: GET
+    validate_certs: false
+    timeout: 5
+  register: step_ca_health
+  failed_when: false
+  when: step_ca_url | length > 0
+
+- name: Check Vault PKI availability
+  ansible.builtin.uri:
+    url: "{{ vault_addr }}/v1/{{ vault_pki_mount }}/ca/pem"
+    method: GET
+    validate_certs: false
+    timeout: 5
+  register: vault_pki_health
+  failed_when: false
+  when: vault_addr | length > 0
+
+- name: Check Let's Encrypt availability
+  ansible.builtin.uri:
+    url: https://acme-v02.api.letsencrypt.org/directory
+    method: GET
+    timeout: 5
+  register: letsencrypt_health
+  failed_when: false
+
+- name: Check certbot availability
+  ansible.builtin.command:
+    cmd: which certbot
+  register: certbot_check
+  changed_when: false
+  failed_when: false
+
+- name: Select CA based on availability
+  ansible.builtin.set_fact:
+    detected_ca: >-
+      {%- if public_dns.stdout | length > 0 and letsencrypt_health.status == 200 and certbot_check.rc == 0 -%}
+      letsencrypt
+      {%- elif step_ca_health.status is defined and step_ca_health.status == 200 -%}
+      step-ca
+      {%- elif vault_pki_health.status is defined and vault_pki_health.status == 200 -%}
+      vault
+      {%- elif letsencrypt_health.status == 200 and certbot_check.rc == 0 -%}
+      letsencrypt
+      {%- else -%}
+      none
+      {%- endif -%}
+
+- name: Display detected CA
+  ansible.builtin.debug:
+    msg: "Auto-detected CA: {{ detected_ca }}"
+
+- name: Fail if no CA available
+  ansible.builtin.fail:
+    msg: "No certificate authority available. Configure step_ca_url, vault_addr, or ensure internet access for Let's Encrypt."
+  when: detected_ca == 'none'

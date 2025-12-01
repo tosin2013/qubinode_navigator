@@ -1,0 +1,114 @@
+---
+# Qubinode Certificate Role - Default Variables
+# ADR-0054: Unified Certificate Management
+
+# Certificate Authority Selection
+# Options: auto, step-ca, vault, letsencrypt
+cert_ca: auto
+
+# Certificate request parameters
+cert_hostname: "{{ inventory_hostname }}"
+cert_san_list: []  # Additional SANs
+cert_duration: ""  # Default: 720h for Step-CA, 24h for Vault, 90d for LE
+cert_service: generic  # nginx, haproxy, httpd, harbor, postgresql, registry, generic
+
+# Installation options
+cert_install: true
+cert_reload_service: true
+
+# Certificate storage
+cert_base_dir: /etc/qubinode/certs
+cert_output_dir: "{{ cert_base_dir }}/{{ cert_hostname }}"
+
+# Step-CA configuration
+step_ca_url: ""
+step_ca_fingerprint: ""
+step_ca_provisioner: acme
+
+# Vault PKI configuration
+vault_addr: "{{ lookup('env', 'VAULT_ADDR') | default('http://localhost:8200', true) }}"
+vault_token: "{{ lookup('env', 'VAULT_TOKEN') | default('', true) }}"
+vault_pki_mount: pki
+vault_pki_role: qubinode-issuer
+
+# Let's Encrypt configuration
+letsencrypt_email: ""
+letsencrypt_staging: false
+letsencrypt_webroot: ""  # If empty, uses standalone mode
+
+# Service-specific paths
+cert_service_paths:
+  nginx:
+    cert: /etc/nginx/ssl/cert.pem
+    key: /etc/nginx/ssl/key.pem
+    chain: /etc/nginx/ssl/chain.pem
+    fullchain: /etc/nginx/ssl/fullchain.pem
+    owner: nginx
+    group: nginx
+    mode: "0640"
+    key_mode: "0600"
+    reload_cmd: systemctl reload nginx
+
+  haproxy:
+    combined: /etc/haproxy/certs/combined.pem
+    owner: haproxy
+    group: haproxy
+    mode: "0640"
+    reload_cmd: systemctl reload haproxy
+
+  httpd:
+    cert: /etc/pki/tls/certs/server.crt
+    key: /etc/pki/tls/private/server.key
+    chain: /etc/pki/tls/certs/ca-bundle.crt
+    owner: root
+    group: root
+    mode: "0644"
+    key_mode: "0600"
+    reload_cmd: systemctl reload httpd
+
+  harbor:
+    cert: /data/cert/server.crt
+    key: /data/cert/server.key
+    owner: root
+    group: root
+    mode: "0644"
+    key_mode: "0600"
+    reload_cmd: cd /opt/harbor && docker-compose restart
+
+  postgresql:
+    cert: /var/lib/pgsql/data/server.crt
+    key: /var/lib/pgsql/data/server.key
+    owner: postgres
+    group: postgres
+    mode: "0600"
+    key_mode: "0600"
+    reload_cmd: systemctl reload postgresql
+
+  registry:
+    cert: "/etc/docker/certs.d/{{ cert_hostname }}/ca.crt"
+    owner: root
+    group: root
+    mode: "0644"
+
+  generic:
+    cert: "{{ cert_output_dir }}/cert.pem"
+    key: "{{ cert_output_dir }}/key.pem"
+    chain: "{{ cert_output_dir }}/chain.pem"
+    fullchain: "{{ cert_output_dir }}/fullchain.pem"
+    owner: root
+    group: root
+    mode: "0644"
+    key_mode: "0600"
+
+# CA root installation
+install_ca_root: false
+ca_root_sources:
+  - step-ca
+  - vault
+
+# Renewal configuration
+cert_auto_renew: true
+cert_renewal_days: 30  # Renew when expiry is within this many days
+
+# systemd timer for auto-renewal
+cert_enable_renewal_timer: false

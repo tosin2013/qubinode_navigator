@@ -1,0 +1,92 @@
+---
+# Request certificate from Vault PKI
+
+- name: Validate Vault configuration
+  ansible.builtin.assert:
+    that:
+      - vault_addr | length > 0
+      - vault_token | length > 0
+    fail_msg: "vault_addr and vault_token must be configured for Vault PKI"
+
+- name: Set certificate duration
+  ansible.builtin.set_fact:
+    cert_ttl: "{{ cert_duration if cert_duration | length > 0 else '24h' }}"
+
+- name: Build alt_names string
+  ansible.builtin.set_fact:
+    alt_names_str: "{{ cert_san_list | join(',') }}"
+  when: cert_san_list | length > 0
+
+- name: Set empty alt_names if no SANs
+  ansible.builtin.set_fact:
+    alt_names_str: ""
+  when: cert_san_list | length == 0
+
+- name: Request certificate from Vault PKI
+  ansible.builtin.uri:
+    url: "{{ vault_addr }}/v1/{{ vault_pki_mount }}/issue/{{ vault_pki_role }}"
+    method: POST
+    headers:
+      X-Vault-Token: "{{ vault_token }}"
+    body_format: json
+    body:
+      common_name: "{{ cert_hostname }}"
+      alt_names: "{{ alt_names_str }}"
+      ttl: "{{ cert_ttl }}"
+    validate_certs: false
+  register: vault_cert_response
+
+- name: Extract certificate
+  ansible.builtin.copy:
+    content: "{{ vault_cert_response.json.data.certificate }}"
+    dest: "{{ cert_output_dir }}/cert.pem"
+    mode: '0644'
+
+- name: Extract private key
+  ansible.builtin.copy:
+    content: "{{ vault_cert_response.json.data.private_key }}"
+    dest: "{{ cert_output_dir }}/key.pem"
+    mode: '0600'
+
+- name: Extract CA chain
+  ansible.builtin.copy:
+    content: "{{ vault_cert_response.json.data.ca_chain | default([vault_cert_response.json.data.issuing_ca]) | join('\n') }}"
+    dest: "{{ cert_output_dir }}/chain.pem"
+    mode: '0644'
+
+- name: Create fullchain certificate
+  ansible.builtin.shell:
+    cmd: cat {{ cert_output_dir }}/cert.pem {{ cert_output_dir }}/chain.pem > {{ cert_output_dir }}/fullchain.pem
+  changed_when: true
+
+- name: Set fullchain permissions
+  ansible.builtin.file:
+    path: "{{ cert_output_dir }}/fullchain.pem"
+    mode: '0644'
+
+- name: Save Vault lease information
+  ansible.builtin.copy:
+    content: |
+      {
+        "lease_id": "{{ vault_cert_response.json.lease_id | default('') }}",
+        "lease_duration": {{ vault_cert_response.json.lease_duration | default(0) }},
+        "serial_number": "{{ vault_cert_response.json.data.serial_number | default('') }}"
+      }
+    dest: "{{ cert_output_dir }}/.vault-lease.json"
+    mode: '0600'
+
+- name: Save certificate metadata
+  ansible.builtin.copy:
+    content: |
+      {
+        "hostname": "{{ cert_hostname }}",
+        "ca": "vault",
+        "service": "{{ cert_service }}",
+        "cert_dir": "{{ cert_output_dir }}",
+        "issued": "{{ ansible_date_time.iso8601 }}",
+        "vault_addr": "{{ vault_addr }}",
+        "pki_mount": "{{ vault_pki_mount }}",
+        "pki_role": "{{ vault_pki_role }}"
+      }
+    dest: "{{ cert_output_dir }}/.metadata.json"
+    mode: '0644'

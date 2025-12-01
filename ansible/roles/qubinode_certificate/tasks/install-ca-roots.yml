@@ -1,0 +1,84 @@
+---
+# Install CA root certificates to system trust store
+
+- name: Install Step-CA root certificate
+  when: "'step-ca' in ca_root_sources and step_ca_url | length > 0"
+  block:
+    - name: Fetch Step-CA root certificate
+      ansible.builtin.uri:
+        url: "{{ step_ca_url }}/roots.pem"
+        method: GET
+        validate_certs: false
+        return_content: true
+      register: step_ca_root
+
+    - name: Save Step-CA root to qubinode certs
+      ansible.builtin.copy:
+        content: "{{ step_ca_root.content }}"
+        dest: "{{ cert_base_dir }}/ca/step-ca-root.crt"
+        mode: '0644'
+
+    - name: Install Step-CA root to system trust (RHEL/CentOS)
+      ansible.builtin.copy:
+        content: "{{ step_ca_root.content }}"
+        dest: /etc/pki/ca-trust/source/anchors/step-ca-root.crt
+        mode: '0644'
+      when: ansible_os_family == 'RedHat'
+      notify: update ca trust rhel
+
+    - name: Install Step-CA root to system trust (Debian/Ubuntu)
+      ansible.builtin.copy:
+        content: "{{ step_ca_root.content }}"
+        dest: /usr/local/share/ca-certificates/step-ca-root.crt
+        mode: '0644'
+      when: ansible_os_family == 'Debian'
+      notify: update ca trust debian
+
+- name: Install Vault PKI root certificate
+  when: "'vault' in ca_root_sources and vault_addr | length > 0"
+  block:
+    - name: Fetch Vault PKI root certificate
+      ansible.builtin.uri:
+        url: "{{ vault_addr }}/v1/{{ vault_pki_mount }}/ca/pem"
+        method: GET
+        validate_certs: false
+        return_content: true
+        headers:
+          X-Vault-Token: "{{ vault_token }}"
+      register: vault_ca_root
+      failed_when: false
+
+    - name: Save Vault root to qubinode certs
+      ansible.builtin.copy:
+        content: "{{ vault_ca_root.content }}"
+        dest: "{{ cert_base_dir }}/ca/vault-root.crt"
+        mode: '0644'
+      when: vault_ca_root.status == 200
+
+    - name: Install Vault root to system trust (RHEL/CentOS)
+      ansible.builtin.copy:
+        content: "{{ vault_ca_root.content }}"
+        dest: /etc/pki/ca-trust/source/anchors/vault-root.crt
+        mode: '0644'
+      when:
+        - vault_ca_root.status == 200
+        - ansible_os_family == 'RedHat'
+      notify: update ca trust rhel
+
+    - name: Install Vault root to system trust (Debian/Ubuntu)
+      ansible.builtin.copy:
+        content: "{{ vault_ca_root.content }}"
+        dest: /usr/local/share/ca-certificates/vault-root.crt
+        mode: '0644'
+      when:
+        - vault_ca_root.status == 200
+        - ansible_os_family == 'Debian'
+      notify: update ca trust debian
+
+- name: Create combined CA bundle
+  ansible.builtin.assemble:
+    src: "{{ cert_base_dir }}/ca/"
+    dest: "{{ cert_base_dir }}/ca/ca-bundle.crt"
+    regexp: '.*\.crt$'
+    mode: '0644'
+  failed_when: false

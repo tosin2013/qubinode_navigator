@@ -198,7 +198,113 @@ SECRET_ID=$(vault write -field=secret_id -f auth/approle/role/airflow/secret-id)
 log_success "Created AppRole for Airflow"
 
 # =============================================================================
-# 6. Enable Audit Logging (ADR-0052)
+# 6. Enable PKI Secrets Engine (ADR-0054: Unified Certificate Management)
+# =============================================================================
+log_info "Enabling PKI secrets engine for certificate management..."
+
+PKI_DOMAIN="${PKI_DOMAIN:-example.com}"
+PKI_MOUNT="${PKI_MOUNT:-pki}"
+
+if vault secrets list | grep -q "^${PKI_MOUNT}/"; then
+    log_warning "PKI secrets engine already enabled at ${PKI_MOUNT}/"
+else
+    vault secrets enable -path="${PKI_MOUNT}" pki
+    log_success "PKI secrets engine enabled"
+
+    # Set max TTL to 10 years for root CA
+    vault secrets tune -max-lease-ttl=87600h "${PKI_MOUNT}"
+fi
+
+# Generate internal root CA (for development/testing)
+log_info "Configuring PKI root CA..."
+if ! vault read "${PKI_MOUNT}/cert/ca" &>/dev/null; then
+    vault write "${PKI_MOUNT}/root/generate/internal" \
+        common_name="Qubinode Root CA" \
+        issuer_name="qubinode-root" \
+        ttl=87600h \
+        key_bits=4096 2>/dev/null || log_warning "Root CA may already exist"
+
+    log_success "Generated internal root CA"
+fi
+
+# Configure CA and CRL URLs
+vault write "${PKI_MOUNT}/config/urls" \
+    issuing_certificates="${VAULT_ADDR}/v1/${PKI_MOUNT}/ca" \
+    crl_distribution_points="${VAULT_ADDR}/v1/${PKI_MOUNT}/crl" 2>/dev/null || true
+
+# Create a role for issuing certificates
+log_info "Creating PKI issuer role..."
+vault write "${PKI_MOUNT}/roles/qubinode-issuer" \
+    allowed_domains="${PKI_DOMAIN}" \
+    allow_subdomains=true \
+    allow_localhost=true \
+    allow_ip_sans=true \
+    allow_any_name=true \
+    max_ttl=8760h \
+    ttl=720h \
+    key_bits=2048 \
+    key_type=rsa 2>/dev/null || log_warning "qubinode-issuer role may already exist"
+
+# Create a short-lived role for dynamic certificates
+vault write "${PKI_MOUNT}/roles/qubinode-dynamic" \
+    allowed_domains="${PKI_DOMAIN}" \
+    allow_subdomains=true \
+    allow_localhost=true \
+    allow_ip_sans=true \
+    max_ttl=24h \
+    ttl=1h \
+    key_bits=2048 \
+    key_type=rsa 2>/dev/null || log_warning "qubinode-dynamic role may already exist"
+
+log_success "PKI secrets engine configured"
+
+# =============================================================================
+# 7. Enable SSH Secrets Engine (for SSH Certificate Authority)
+# =============================================================================
+log_info "Enabling SSH secrets engine for SSH CA..."
+
+SSH_MOUNT="${SSH_MOUNT:-ssh}"
+
+if vault secrets list | grep -q "^${SSH_MOUNT}/"; then
+    log_warning "SSH secrets engine already enabled at ${SSH_MOUNT}/"
+else
+    vault secrets enable -path="${SSH_MOUNT}" ssh
+    log_success "SSH secrets engine enabled"
+fi
+
+# Configure SSH CA
+log_info "Configuring SSH CA..."
+if ! vault read "${SSH_MOUNT}/config/ca" &>/dev/null 2>&1; then
+    vault write "${SSH_MOUNT}/config/ca" generate_signing_key=true 2>/dev/null || \
+        log_warning "SSH CA may already be configured"
+    log_success "SSH CA configured"
+fi
+
+# Create SSH role for signing user keys
+vault write "${SSH_MOUNT}/roles/vm-admin" \
+    key_type=ca \
+    default_user=root \
+    allowed_users="root,cloud-user,admin,ansible" \
+    allowed_extensions="permit-pty,permit-agent-forwarding" \
+    ttl=1h \
+    max_ttl=24h 2>/dev/null || log_warning "vm-admin SSH role may already exist"
+
+# Create SSH role for signing host keys
+vault write "${SSH_MOUNT}/roles/host-key" \
+    key_type=ca \
+    cert_type=host \
+    allowed_domains="${PKI_DOMAIN}" \
+    allow_subdomains=true \
+    ttl=8760h \
+    max_ttl=87600h 2>/dev/null || log_warning "host-key SSH role may already exist"
+
+log_success "SSH secrets engine configured"
+
+# Get SSH CA public key for trust
+SSH_CA_PUBLIC_KEY=$(vault read -field=public_key "${SSH_MOUNT}/config/ca" 2>/dev/null || echo "")
+
+# =============================================================================
+# 8. Enable Audit Logging (ADR-0052)
 # =============================================================================
 log_info "Enabling audit logging..."
 
@@ -208,6 +314,78 @@ else
     vault audit enable file file_path=/vault/logs/audit.log 2>/dev/null || \
         log_warning "Could not enable audit logging (may need permissions)"
 fi
+
+# =============================================================================
+# 9. Update Policies for PKI and SSH
+# =============================================================================
+log_info "Updating policies for PKI and SSH access..."
+
+# Certificate issuer policy
+cat <<EOF | vault policy write cert-issuer -
+# Certificate issuer policy (ADR-0054)
+path "${PKI_MOUNT}/issue/qubinode-issuer" {
+  capabilities = ["create", "update"]
+}
+
+path "${PKI_MOUNT}/issue/qubinode-dynamic" {
+  capabilities = ["create", "update"]
+}
+
+path "${PKI_MOUNT}/ca/pem" {
+  capabilities = ["read"]
+}
+
+path "${PKI_MOUNT}/cert/ca" {
+  capabilities = ["read"]
+}
+
+# SSH certificate signing
+path "${SSH_MOUNT}/sign/vm-admin" {
+  capabilities = ["create", "update"]
+}
+
+path "${SSH_MOUNT}/config/ca" {
+  capabilities = ["read"]
+}
+EOF
+
+log_success "Created cert-issuer policy"
+
+# Update airflow-admin policy to include PKI
+cat <<EOF | vault policy write airflow-admin -
+# Airflow admin access (for development)
+path "${MOUNT_POINT}/*" {
+  capabilities = ["create", "read", "update", "delete", "list"]
+}
+
+path "database/creds/*" {
+  capabilities = ["read"]
+}
+
+path "sys/leases/revoke" {
+  capabilities = ["update"]
+}
+
+# PKI access for certificate management
+path "${PKI_MOUNT}/issue/*" {
+  capabilities = ["create", "update"]
+}
+
+path "${PKI_MOUNT}/ca/pem" {
+  capabilities = ["read"]
+}
+
+# SSH CA access
+path "${SSH_MOUNT}/sign/*" {
+  capabilities = ["create", "update"]
+}
+
+path "${SSH_MOUNT}/config/ca" {
+  capabilities = ["read"]
+}
+EOF
+
+log_success "Updated airflow-admin policy"
 
 # =============================================================================
 # Summary
@@ -226,6 +404,43 @@ echo "AppRole Credentials (for Airflow):"
 echo "  Role ID:    ${ROLE_ID}"
 echo "  Secret ID:  ${SECRET_ID}"
 echo ""
+echo "=============================================="
+echo "PKI Secrets Engine (ADR-0054)"
+echo "=============================================="
+echo "Mount Point:  ${PKI_MOUNT}/"
+echo "Domain:       ${PKI_DOMAIN}"
+echo "Roles:"
+echo "  - qubinode-issuer (30 day default TTL)"
+echo "  - qubinode-dynamic (1 hour default TTL)"
+echo ""
+echo "Request a certificate:"
+echo "  vault write ${PKI_MOUNT}/issue/qubinode-issuer \\"
+echo "    common_name=\"myservice.${PKI_DOMAIN}\" \\"
+echo "    ttl=\"720h\""
+echo ""
+echo "Get root CA certificate:"
+echo "  vault read -field=certificate ${PKI_MOUNT}/cert/ca"
+echo ""
+echo "=============================================="
+echo "SSH Secrets Engine"
+echo "=============================================="
+echo "Mount Point:  ${SSH_MOUNT}/"
+echo "Roles:"
+echo "  - vm-admin (user key signing, 1h TTL)"
+echo "  - host-key (host key signing, 1y TTL)"
+echo ""
+if [[ -n "${SSH_CA_PUBLIC_KEY:-}" ]]; then
+echo "SSH CA Public Key (add to /etc/ssh/trusted-user-ca-keys.pub):"
+echo "  ${SSH_CA_PUBLIC_KEY}"
+fi
+echo ""
+echo "Sign an SSH user key:"
+echo "  vault write ${SSH_MOUNT}/sign/vm-admin public_key=@~/.ssh/id_rsa.pub"
+echo ""
+echo "=============================================="
+echo "Airflow Integration"
+echo "=============================================="
+echo ""
 echo "To configure Airflow secrets backend, set:"
 echo ""
 echo "  VAULT_SECRETS_BACKEND=airflow.providers.hashicorp.secrets.vault.VaultBackend"
@@ -237,6 +452,17 @@ echo "  Host: ${VAULT_ADDR}"
 echo "  Login: ${ROLE_ID}"
 echo "  Password: ${SECRET_ID}"
 echo ""
-echo "Test dynamic credentials:"
+echo "=============================================="
+echo "qubinode-cert Integration"
+echo "=============================================="
+echo ""
+echo "Configure qubinode-cert to use Vault PKI:"
+echo ""
+echo "  export VAULT_ADDR=${VAULT_ADDR}"
+echo "  export VAULT_TOKEN=<your-token>"
+echo "  qubinode-cert request myservice.${PKI_DOMAIN} --ca vault --service nginx --install"
+echo ""
+echo "Test commands:"
 echo "  vault read database/creds/airflow-readonly"
+echo "  vault write ${PKI_MOUNT}/issue/qubinode-issuer common_name=\"test.${PKI_DOMAIN}\""
 echo ""

@@ -1,0 +1,110 @@
+---
+# Install certificate for specific service
+
+- name: Get service configuration
+  ansible.builtin.set_fact:
+    svc_config: "{{ cert_service_paths[cert_service] | default(cert_service_paths['generic']) }}"
+
+- name: Create service certificate directory (nginx)
+  ansible.builtin.file:
+    path: /etc/nginx/ssl
+    state: directory
+    mode: '0755'
+  when: cert_service == 'nginx'
+
+- name: Create service certificate directory (haproxy)
+  ansible.builtin.file:
+    path: /etc/haproxy/certs
+    state: directory
+    mode: '0755'
+  when: cert_service == 'haproxy'
+
+- name: Create service certificate directory (harbor)
+  ansible.builtin.file:
+    path: /data/cert
+    state: directory
+    mode: '0755'
+  when: cert_service == 'harbor'
+
+- name: Create registry certificate directory
+  ansible.builtin.file:
+    path: "/etc/docker/certs.d/{{ cert_hostname }}"
+    state: directory
+    mode: '0755'
+  when: cert_service == 'registry'
+
+- name: Install certificate for service
+  ansible.builtin.copy:
+    src: "{{ cert_output_dir }}/cert.pem"
+    dest: "{{ svc_config.cert }}"
+    owner: "{{ svc_config.owner | default('root') }}"
+    group: "{{ svc_config.group | default('root') }}"
+    mode: "{{ svc_config.mode | default('0644') }}"
+    remote_src: true
+  when: svc_config.cert is defined
+  notify: reload service
+
+- name: Install private key for service
+  ansible.builtin.copy:
+    src: "{{ cert_output_dir }}/key.pem"
+    dest: "{{ svc_config.key }}"
+    owner: "{{ svc_config.owner | default('root') }}"
+    group: "{{ svc_config.group | default('root') }}"
+    mode: "{{ svc_config.key_mode | default('0600') }}"
+    remote_src: true
+  when: svc_config.key is defined
+  notify: reload service
+
+- name: Install CA chain for service
+  ansible.builtin.copy:
+    src: "{{ cert_output_dir }}/chain.pem"
+    dest: "{{ svc_config.chain }}"
+    owner: "{{ svc_config.owner | default('root') }}"
+    group: "{{ svc_config.group | default('root') }}"
+    mode: "{{ svc_config.mode | default('0644') }}"
+    remote_src: true
+  when: svc_config.chain is defined
+  failed_when: false
+  notify: reload service
+
+- name: Install fullchain for service
+  ansible.builtin.copy:
+    src: "{{ cert_output_dir }}/fullchain.pem"
+    dest: "{{ svc_config.fullchain }}"
+    owner: "{{ svc_config.owner | default('root') }}"
+    group: "{{ svc_config.group | default('root') }}"
+    mode: "{{ svc_config.mode | default('0644') }}"
+    remote_src: true
+  when: svc_config.fullchain is defined
+  failed_when: false
+  notify: reload service
+
+- name: Create combined PEM for HAProxy
+  ansible.builtin.shell:
+    cmd: |
+      cat {{ cert_output_dir }}/cert.pem {{ cert_output_dir }}/key.pem > {{ svc_config.combined }}
+      if [ -f {{ cert_output_dir }}/chain.pem ]; then
+        cat {{ cert_output_dir }}/chain.pem >> {{ svc_config.combined }}
+      fi
+  when: cert_service == 'haproxy'
+  changed_when: true
+  notify: reload service
+
+- name: Set HAProxy combined PEM permissions
+  ansible.builtin.file:
+    path: "{{ svc_config.combined }}"
+    owner: "{{ svc_config.owner | default('haproxy') }}"
+    group: "{{ svc_config.group | default('haproxy') }}"
+    mode: "{{ svc_config.mode | default('0640') }}"
+  when: cert_service == 'haproxy'
+
+- name: Save renewal hook script
+  ansible.builtin.copy:
+    content: |
+      #!/bin/bash
+      # Auto-generated renewal hook for {{ cert_hostname }}
+      # Service: {{ cert_service }}
+      {{ svc_config.reload_cmd | default('# No reload command configured') }}
+    dest: "{{ cert_output_dir }}/.renew-hook.sh"
+    mode: '0755'
+  when: svc_config.reload_cmd is defined

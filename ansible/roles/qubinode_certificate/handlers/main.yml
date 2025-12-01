@@ -1,0 +1,25 @@
+---
+# Handlers for qubinode_certificate role
+
+- name: reload service
+  ansible.builtin.command:
+    cmd: "{{ svc_config.reload_cmd }}"
+  when:
+    - cert_reload_service | bool
+    - svc_config.reload_cmd is defined
+  failed_when: false
+  changed_when: true
+
+- name: update ca trust rhel
+  ansible.builtin.command:
+    cmd: update-ca-trust
+  changed_when: true
+
+- name: update ca trust debian
+  ansible.builtin.command:
+    cmd: update-ca-certificates
+  changed_when: true
+
+- name: reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true

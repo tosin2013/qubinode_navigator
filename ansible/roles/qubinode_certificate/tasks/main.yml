@@ -1,0 +1,48 @@
+---
+# Qubinode Certificate Role - Main Tasks
+# ADR-0054: Unified Certificate Management
+
+- name: Validate required variables
+  ansible.builtin.assert:
+    that:
+      - cert_hostname is defined
+      - cert_hostname | length > 0
+    fail_msg: "cert_hostname must be defined"
+
+- name: Create certificate directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ cert_base_dir }}"
+    - "{{ cert_output_dir }}"
+    - "{{ cert_base_dir }}/ca"
+
+- name: Install CA root certificates
+  ansible.builtin.include_tasks: install-ca-roots.yml
+  when: install_ca_root | bool
+
+- name: Detect available CAs
+  ansible.builtin.include_tasks: detect-ca.yml
+  when: cert_ca == 'auto'
+
+- name: Request certificate from Step-CA
+  ansible.builtin.include_tasks: step-ca.yml
+  when: cert_ca == 'step-ca' or (cert_ca == 'auto' and detected_ca == 'step-ca')
+
+- name: Request certificate from Vault PKI
+  ansible.builtin.include_tasks: vault-pki.yml
+  when: cert_ca == 'vault' or (cert_ca == 'auto' and detected_ca == 'vault')
+
+- name: Request certificate from Let's Encrypt
+  ansible.builtin.include_tasks: letsencrypt.yml
+  when: cert_ca == 'letsencrypt' or (cert_ca == 'auto' and detected_ca == 'letsencrypt')
+
+- name: Install certificate for service
+  ansible.builtin.include_tasks: install-service.yml
+  when: cert_install | bool
+
+- name: Configure auto-renewal timer
+  ansible.builtin.include_tasks: renewal-timer.yml
+  when: cert_enable_renewal_timer | bool

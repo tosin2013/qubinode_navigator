@@ -1,0 +1,48 @@
+---
+# Configure systemd timer for automatic certificate renewal
+
+- name: Create renewal script
+  ansible.builtin.template:
+    src: qubinode-cert-renew.sh.j2
+    dest: /usr/local/bin/qubinode-cert-renew.sh
+    mode: '0755'
+
+- name: Create systemd service for renewal
+  ansible.builtin.copy:
+    content: |
+      [Unit]
+      Description=Qubinode Certificate Renewal
+      After=network-online.target
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/local/bin/qubinode-cert-renew.sh
+      StandardOutput=journal
+      StandardError=journal
+    dest: /etc/systemd/system/qubinode-cert-renew.service
+    mode: '0644'
+  notify: reload systemd
+
+- name: Create systemd timer for daily renewal check
+  ansible.builtin.copy:
+    content: |
+      [Unit]
+      Description=Daily Qubinode Certificate Renewal Check
+
+      [Timer]
+      OnCalendar=daily
+      RandomizedDelaySec=3600
+      Persistent=true
+
+      [Install]
+      WantedBy=timers.target
+    dest: /etc/systemd/system/qubinode-cert-renew.timer
+    mode: '0644'
+  notify: reload systemd
+
+- name: Enable and start renewal timer
+  ansible.builtin.systemd:
+    name: qubinode-cert-renew.timer
+    enabled: true
+    state: started
+    daemon_reload: true

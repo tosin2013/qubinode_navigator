@@ -1,0 +1,98 @@
+---
+# Request certificate from Let's Encrypt
+
+- name: Validate Let's Encrypt configuration
+  ansible.builtin.assert:
+    that:
+      - letsencrypt_email | length > 0
+    fail_msg: "letsencrypt_email must be configured for Let's Encrypt certificates"
+
+- name: Ensure certbot is installed
+  ansible.builtin.package:
+    name: certbot
+    state: present
+
+- name: Build domain arguments
+  ansible.builtin.set_fact:
+    domain_args: "-d {{ cert_hostname }}{% for san in cert_san_list %} -d {{ san }}{% endfor %}"
+
+- name: Set staging argument
+  ansible.builtin.set_fact:
+    staging_arg: "{{ '--staging' if letsencrypt_staging | bool else '' }}"
+
+- name: Request certificate using standalone mode
+  ansible.builtin.command:
+    cmd: >
+      certbot certonly
+      --standalone
+      {{ domain_args }}
+      --email {{ letsencrypt_email }}
+      --agree-tos
+      --non-interactive
+      {{ staging_arg }}
+  when: letsencrypt_webroot | length == 0
+  register: certbot_standalone
+  changed_when: "'Certificate not yet due for renewal' not in certbot_standalone.stdout"
+  failed_when: certbot_standalone.rc != 0 and 'Certificate not yet due for renewal' not in certbot_standalone.stdout
+
+- name: Request certificate using webroot mode
+  ansible.builtin.command:
+    cmd: >
+      certbot certonly
+      --webroot -w {{ letsencrypt_webroot }}
+      {{ domain_args }}
+      --email {{ letsencrypt_email }}
+      --agree-tos
+      --non-interactive
+      {{ staging_arg }}
+  when: letsencrypt_webroot | length > 0
+  register: certbot_webroot
+  changed_when: "'Certificate not yet due for renewal' not in certbot_webroot.stdout"
+  failed_when: certbot_webroot.rc != 0 and 'Certificate not yet due for renewal' not in certbot_webroot.stdout
+
+- name: Set Let's Encrypt certificate directory
+  ansible.builtin.set_fact:
+    le_cert_dir: "/etc/letsencrypt/live/{{ cert_hostname }}"
+
+- name: Copy certificate to output directory
+  ansible.builtin.copy:
+    src: "{{ le_cert_dir }}/cert.pem"
+    dest: "{{ cert_output_dir }}/cert.pem"
+    remote_src: true
+    mode: '0644'
+
+- name: Copy private key to output directory
+  ansible.builtin.copy:
+    src: "{{ le_cert_dir }}/privkey.pem"
+    dest: "{{ cert_output_dir }}/key.pem"
+    remote_src: true
+    mode: '0600'
+
+- name: Copy chain to output directory
+  ansible.builtin.copy:
+    src: "{{ le_cert_dir }}/chain.pem"
+    dest: "{{ cert_output_dir }}/chain.pem"
+    remote_src: true
+    mode: '0644'
+
+- name: Copy fullchain to output directory
+  ansible.builtin.copy:
+    src: "{{ le_cert_dir }}/fullchain.pem"
+    dest: "{{ cert_output_dir }}/fullchain.pem"
+    remote_src: true
+    mode: '0644'
+
+- name: Save certificate metadata
+  ansible.builtin.copy:
+    content: |
+      {
+        "hostname": "{{ cert_hostname }}",
+        "ca": "letsencrypt",
+        "service": "{{ cert_service }}",
+        "cert_dir": "{{ cert_output_dir }}",
+        "issued": "{{ ansible_date_time.iso8601 }}",
+        "staging": {{ letsencrypt_staging | lower }},
+        "le_cert_dir": "{{ le_cert_dir }}"
+      }
+    dest: "{{ cert_output_dir }}/.metadata.json"
+    mode: '0644'
