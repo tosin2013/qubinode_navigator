@@ -1,0 +1,102 @@
+# DAG Registry - Qubinode Navigator
+# ADR-0046: DAG Factory Pattern for Consistent Deployments
+#
+# This registry defines simple deployment DAGs that are auto-generated
+# by the DAG factory. Each entry creates a standardized DAG with:
+# - Environment validation
+# - SSH-based execution (ADR-0046)
+# - Create/delete/status actions
+# - Cleanup on failure
+#
+# For complex DAGs requiring multi-stage workflows, manual steps,
+# or conditional branching, use Python factory functions instead.
+#
+# Valid categories: compute, network, identity, storage, security, monitoring
+
+version: "1.0"
+
+defaults:
+  owner: qubinode
+  retries: 2
+  retry_delay_minutes: 3
+
+dags:
+  # ===========================================================================
+  # Identity Services
+  # ===========================================================================
+
+  # FreeIPA Identity Management
+  - component: freeipa
+    description: Deploy FreeIPA Identity Management Server
+    script_path: /opt/kcli-pipelines/freeipa
+    tags: [identity, dns, kerberos, ldap, ipa]
+    category: identity
+    params:
+      action: create
+      community_version: "true"
+      os_version: "9"
+      domain: example.com
+      realm: EXAMPLE.COM
+      idm_hostname: idm
+      dns_forwarder: 8.8.8.8
+    volume_mounts:
+      - /opt/freeipa-workshop-deployer:/opt/freeipa-workshop-deployer
+      - /root/.generated:/root/.generated
+
+  # ===========================================================================
+  # Network Services
+  # ===========================================================================
+
+  # VyOS Router
+  - component: vyos
+    description: Deploy VyOS Router for Network Segmentation
+    script_path: /opt/kcli-pipelines/vyos-router
+    tags: [network, router, firewall, nat, dhcp]
+    category: network
+    params:
+      action: create
+      vyos_version: "1.5-rolling"
+      configure_router: "true"
+      add_host_routes: "true"
+
+  # ===========================================================================
+  # Security Services
+  # ===========================================================================
+
+  # Step-CA Certificate Authority
+  - component: stepca
+    description: Deploy Step-CA PKI for Certificate Management
+    script_path: /opt/kcli-pipelines/step-ca-server
+    tags: [security, pki, certificates, tls, ca]
+    category: security
+    params:
+      action: create
+      domain: example.com
+      vm_name: step-ca-server
+      community_version: "false"
+      target_server: localhost
+      network: default
+
+# ===========================================================================
+# Future Entries (Examples)
+# ===========================================================================
+#
+#   # Keycloak SSO
+#   - component: keycloak
+#     description: Deploy Keycloak Identity Provider
+#     script_path: /opt/kcli-pipelines/keycloak
+#     tags: [identity, sso, oauth, oidc]
+#     category: identity
+#     params:
+#       action: create
+#       keycloak_version: "24.0"
+#
+#   # Harbor Registry
+#   - component: harbor
+#     description: Deploy Harbor Container Registry
+#     script_path: /opt/kcli-pipelines/harbor
+#     tags: [storage, registry, containers]
+#     category: storage
+#     params:
+#       action: create
+#       harbor_version: "2.10"

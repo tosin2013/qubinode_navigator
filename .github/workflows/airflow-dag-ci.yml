@@ -55,11 +55,111 @@ jobs:
           export AIRFLOW_HOME=${{ env.AIRFLOW_HOME }}
           airflow db init
       
+      - name: Install PyYAML for Registry Validation
+        run: |
+          pip install pyyaml
+
+      - name: Validate DAG Registry (ADR-0046)
+        run: |
+          export PYTHONPATH="${PYTHONPATH}:${PWD}/airflow/dags"
+
+          echo "Validating DAG registry.yaml..."
+          if [ -f "airflow/dags/registry.yaml" ]; then
+            python << 'PYTHON_SCRIPT'
+          import yaml
+          import re
+          import sys
+
+          REQUIRED_FIELDS = ['component', 'description', 'script_path', 'tags', 'category']
+          VALID_CATEGORIES = ['compute', 'network', 'identity', 'storage', 'security', 'monitoring']
+          NAMING_PATTERN = r'^[a-z][a-z0-9_]*$'
+
+          with open('airflow/dags/registry.yaml') as f:
+              registry = yaml.safe_load(f)
+
+          errors = []
+          for dag_config in registry.get('dags', []):
+              component = dag_config.get('component', 'unknown')
+
+              # Check required fields
+              for field in REQUIRED_FIELDS:
+                  if field not in dag_config:
+                      errors.append(f"{component}: Missing required field '{field}'")
+
+              # Check naming convention
+              if not re.match(NAMING_PATTERN, component):
+                  errors.append(f"{component}: Name must be snake_case")
+
+              # Check category
+              category = dag_config.get('category', '')
+              if category and category not in VALID_CATEGORIES:
+                  errors.append(f"{component}: Invalid category '{category}'")
+
+          if errors:
+              print("❌ Registry validation failed:")
+              for e in errors:
+                  print(f"  - {e}")
+              sys.exit(1)
+
+          dag_count = len(registry.get('dags', []))
+          print(f"✅ Registry valid: {dag_count} DAG definitions")
+          for dag in registry.get('dags', []):
+              print(f"   - {dag['component']}_deployment ({dag['category']})")
+          PYTHON_SCRIPT
+          else
+            echo "⚠️  No registry.yaml found (optional)"
+          fi
+
+      - name: Validate DAG Factory Module
+        run: |
+          export PYTHONPATH="${PYTHONPATH}:${PWD}/airflow/dags"
+
+          if [ -f "airflow/dags/dag_factory.py" ]; then
+            echo "Validating dag_factory.py..."
+            python -c "
+          import dag_factory
+          print('✅ dag_factory module imports successfully')
+          print(f'   Version: {dag_factory.__version__}')
+          print(f'   Functions: {dag_factory.__all__}')
+          "
+          else
+            echo "⚠️  dag_factory.py not found (optional)"
+          fi
+
+      - name: Test Registry DAG Generation
+        run: |
+          export AIRFLOW_HOME=${{ env.AIRFLOW_HOME }}
+          export PYTHONPATH="${PYTHONPATH}:${PWD}/airflow/dags:${PWD}/airflow/plugins"
+
+          if [ -f "airflow/dags/dag_factory.py" ] && [ -f "airflow/dags/registry.yaml" ]; then
+            echo "Testing DAG generation from registry..."
+            python << 'PYTHON_SCRIPT'
+          import sys
+          sys.path.insert(0, 'airflow/dags')
+
+          from dag_factory import load_registry_dags, validate_registry_entry
+
+          # Load registry DAGs
+          dags = load_registry_dags('airflow/dags/registry.yaml')
+
+          if not dags:
+              print("⚠️  No DAGs generated from registry")
+              sys.exit(0)
+
+          print(f"✅ Generated {len(dags)} DAGs from registry:")
+          for dag_id, dag in dags.items():
+              task_count = len(dag.tasks)
+              print(f"   - {dag_id}: {task_count} tasks")
+          PYTHON_SCRIPT
+          else
+            echo "⚠️  Skipping registry DAG generation test"
+          fi
+
       - name: Validate DAG Syntax
         run: |
           export AIRFLOW_HOME=${{ env.AIRFLOW_HOME }}
           export PYTHONPATH="${PYTHONPATH}:${PWD}"
-          
+
           echo "Validating DAG Python syntax..."
           for dag in airflow/dags/*.py; do
             if [[ "$dag" != *"__init__.py"* ]]; then
