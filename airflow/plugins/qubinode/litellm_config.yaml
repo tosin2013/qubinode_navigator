@@ -1,0 +1,189 @@
+# ADR-0049: Multi-Agent LLM Memory Architecture
+# LiteLLM Configuration for Model Routing
+#
+# This configuration defines available LLM models for the multi-agent system.
+# Models are prioritized for disconnected/air-gapped environments with local models.
+#
+# Usage:
+#   Set LITELLM_CONFIG_PATH environment variable to this file path
+#   Or load programmatically via llm_router.py
+
+model_list:
+  # ==========================================================================
+  # Local Models (Ollama) - Primary for disconnected environments
+  # ==========================================================================
+
+  # Granite models - IBM's enterprise-grade LLMs
+  - model_name: granite-code
+    litellm_params:
+      model: ollama/granite-code:8b
+      api_base: ${OLLAMA_BASE_URL:-http://localhost:11434}
+    model_info:
+      description: "IBM Granite Code 8B - Code generation and analysis"
+      context_window: 8192
+      supports_function_calling: true
+
+  - model_name: granite-instruct
+    litellm_params:
+      model: ollama/granite3.1-dense:8b
+      api_base: ${OLLAMA_BASE_URL:-http://localhost:11434}
+    model_info:
+      description: "IBM Granite 3.1 Dense 8B - General instruction following"
+      context_window: 8192
+      supports_function_calling: true
+
+  # Llama models - Meta's open models
+  - model_name: llama3
+    litellm_params:
+      model: ollama/llama3.2:latest
+      api_base: ${OLLAMA_BASE_URL:-http://localhost:11434}
+    model_info:
+      description: "Llama 3.2 - General purpose reasoning"
+      context_window: 128000
+      supports_function_calling: true
+
+  # CodeLlama for code-specific tasks
+  - model_name: codellama
+    litellm_params:
+      model: ollama/codellama:13b
+      api_base: ${OLLAMA_BASE_URL:-http://localhost:11434}
+    model_info:
+      description: "CodeLlama 13B - Specialized code model"
+      context_window: 16384
+      supports_function_calling: false
+
+  # ==========================================================================
+  # Cloud Models (Optional - for connected environments)
+  # ==========================================================================
+
+  # OpenAI models
+  - model_name: gpt-4
+    litellm_params:
+      model: gpt-4
+      api_key: ${OPENAI_API_KEY:-}
+    model_info:
+      description: "OpenAI GPT-4 - High capability reasoning"
+      context_window: 8192
+      supports_function_calling: true
+
+  - model_name: gpt-4-turbo
+    litellm_params:
+      model: gpt-4-turbo-preview
+      api_key: ${OPENAI_API_KEY:-}
+    model_info:
+      description: "OpenAI GPT-4 Turbo - Extended context"
+      context_window: 128000
+      supports_function_calling: true
+
+  # Anthropic Claude models
+  - model_name: claude-3-sonnet
+    litellm_params:
+      model: claude-3-sonnet-20240229
+      api_key: ${ANTHROPIC_API_KEY:-}
+    model_info:
+      description: "Anthropic Claude 3 Sonnet - Balanced performance"
+      context_window: 200000
+      supports_function_calling: true
+
+  - model_name: claude-3-opus
+    litellm_params:
+      model: claude-3-opus-20240229
+      api_key: ${ANTHROPIC_API_KEY:-}
+    model_info:
+      description: "Anthropic Claude 3 Opus - Highest capability"
+      context_window: 200000
+      supports_function_calling: true
+
+# ==========================================================================
+# Router Settings
+# ==========================================================================
+
+router_settings:
+  # Routing strategy: simple, least-busy, latency-based, cost-based
+  routing_strategy: simple
+
+  # Number of retries on failure
+  num_retries: 3
+
+  # Timeout in seconds
+  timeout: 300
+
+  # Fallback models (in order of preference)
+  fallbacks:
+    - granite-code
+    - llama3
+    - codellama
+
+# ==========================================================================
+# Model Aliases for Agent Roles
+# ==========================================================================
+
+# These aliases map agent roles to specific models
+# Adjust based on your available models and requirements
+
+model_aliases:
+  # Manager Agent - needs good reasoning and planning
+  manager: granite-instruct
+  manager_fallback: llama3
+
+  # Developer Agent - needs code generation
+  developer: granite-code
+  developer_fallback: codellama
+
+  # Embedding model (for RAG - handled separately by embedding_service.py)
+  embedding: sentence-transformers/all-MiniLM-L6-v2
+
+# ==========================================================================
+# Environment-Specific Overrides
+# ==========================================================================
+
+environments:
+  disconnected:
+    # Air-gapped environment - only local models
+    allowed_models:
+      - granite-code
+      - granite-instruct
+      - llama3
+      - codellama
+    default_model: granite-instruct
+
+  connected:
+    # Full connectivity - all models available
+    allowed_models:
+      - granite-code
+      - granite-instruct
+      - llama3
+      - codellama
+      - gpt-4
+      - gpt-4-turbo
+      - claude-3-sonnet
+      - claude-3-opus
+    default_model: granite-instruct
+
+  development:
+    # Development environment - local models only
+    allowed_models:
+      - granite-code
+      - granite-instruct
+      - llama3
+    default_model: llama3
+
+# ==========================================================================
+# Logging and Observability
+# ==========================================================================
+
+litellm_settings:
+  # Enable logging
+  set_verbose: false
+
+  # Log successful requests
+  success_callback: []
+
+  # Log failed requests
+  failure_callback: []
+
+  # Request timeout
+  request_timeout: 300
+
+  # Drop unmapped params
+  drop_params: true

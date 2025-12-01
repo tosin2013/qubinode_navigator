@@ -34,6 +34,18 @@ RUN pip install --no-cache-dir \
     httpx>=0.24.0 \
     sse-starlette>=1.6.0
 
+# ADR-0049: Phase 1 - Embedding and RAG dependencies
+RUN pip install --no-cache-dir \
+    sentence-transformers>=2.2.0 \
+    pgvector>=0.2.0 \
+    psycopg2-binary>=2.9.0
+
+# ADR-0049: Phase 3 - Multi-Agent LLM Architecture dependencies
+RUN pip install --no-cache-dir \
+    litellm>=1.0.0 \
+    aider-chat>=0.30.0 \
+    pydantic>=2.0.0
+
 # Switch back to root for entrypoint
 USER root
 
