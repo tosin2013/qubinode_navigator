@@ -17,6 +17,7 @@ Different certificate authorities (CAs) serve different needs:
 
 | CA | Best For | Trust | Auto-Renewal |
 |----|----------|-------|--------------|
+| **FreeIPA CA** | Domain-joined hosts, Kerberos environments | Private (enterprise PKI) | Yes (certmonger) |
 | **Step-CA** | Internal services, disconnected environments | Private (must distribute root CA) | Yes (ACME) |
 | **Vault PKI** | Dynamic/short-lived certs, microservices | Private (must distribute root CA) | Yes (via operators) |
 | **Let's Encrypt** | Public-facing services | Public (trusted by browsers) | Yes (ACME/certbot) |
@@ -48,13 +49,13 @@ Implement a **unified certificate management system** that:
                     |   (Universal CLI)      |
                     +------------------------+
                               |
-        +---------------------+---------------------+
-        |                     |                     |
-        v                     v                     v
-+---------------+    +----------------+    +------------------+
-|   Step-CA     |    |   Vault PKI    |    |  Let's Encrypt   |
-| (Internal)    |    |   (Dynamic)    |    |    (Public)      |
-+---------------+    +----------------+    +------------------+
+     +------------+-----------+-----------+------------+
+     |            |           |           |            |
+     v            v           v           v            v
++---------+ +---------+ +----------+ +----------+ +--------+
+| FreeIPA | | Step-CA | | Vault    | | Let's    | | Self-  |
+| CA      | | (ACME)  | | PKI      | | Encrypt  | | Signed |
++---------+ +---------+ +----------+ +----------+ +--------+
         |                     |                     |
         +---------------------+---------------------+
                               |
@@ -80,15 +81,22 @@ qubinode-cert request <hostname> --service <service>
    └── Yes → Let's Encrypt (free, trusted)
    └── No → Continue
 
-2. Is Vault PKI configured AND service needs short-lived certs?
+2. Is host joined to FreeIPA domain?
+   └── Yes → FreeIPA CA (enterprise PKI, certmonger)
+   └── No → Continue
+
+3. Is Vault PKI configured AND service needs short-lived certs?
    └── Yes → Vault PKI (dynamic, auto-revoke)
    └── No → Continue
 
-3. Is Step-CA available?
+4. Is Step-CA available?
    └── Yes → Step-CA (internal PKI)
-   └── No → Error (no CA available)
+   └── No → Continue
 
-Override: --ca=step-ca|vault|letsencrypt
+5. Generate self-signed certificate (fallback)
+   └── Warn user about trust implications
+
+Override: --ca=freeipa|step-ca|vault|letsencrypt|self-signed
 ```
 
 ### Universal Certificate Request Script
@@ -277,9 +285,11 @@ services:
 - [ ] Add to FreeIPA/Harbor/OpenShift deployments
 
 ## Related ADRs
+- ADR-0039: FreeIPA and VyOS Airflow DAG Integration
 - ADR-0048: Step-CA Integration for Disconnected Deployments
 - ADR-0051: HashiCorp Vault Secrets Management
 - ADR-0053: Dynamic Secrets for Airflow Tasks
+- ADR-0055: Zero-Friction Infrastructure Services
 
 ## References
 - [Step-CA Documentation](https://smallstep.com/docs/step-ca)

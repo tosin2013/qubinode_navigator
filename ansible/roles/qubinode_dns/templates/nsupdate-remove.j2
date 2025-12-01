@@ -1,0 +1,7 @@
+server {{ dns_server | default('127.0.0.1') }}
+update delete {{ dns_fqdn }}. A
+send
+{% if dns_ip | length > 0 %}
+update delete {{ reverse_record }}.{{ reverse_zone }}. PTR
+send
+{% endif %}

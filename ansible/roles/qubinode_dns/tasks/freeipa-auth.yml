@@ -1,0 +1,28 @@
+---
+# Ensure FreeIPA Kerberos authentication
+# ADR-0055: Zero-Friction Infrastructure Services
+
+- name: Check for valid Kerberos ticket
+  ansible.builtin.command: klist -s
+  register: kerberos_check
+  changed_when: false
+  failed_when: false
+
+- name: Obtain Kerberos ticket
+  when: kerberos_check.rc != 0
+  block:
+    - name: kinit with password
+      ansible.builtin.expect:
+        command: "kinit {{ freeipa_admin }}"
+        responses:
+          "Password for": "{{ freeipa_admin_password }}"
+      when: freeipa_admin_password | length > 0
+      no_log: true
+
+    - name: kinit interactively
+      ansible.builtin.command: "kinit {{ freeipa_admin }}"
+      when: freeipa_admin_password | length == 0
+
+- name: Verify Kerberos ticket
+  ansible.builtin.command: klist -s
+  changed_when: false

@@ -1,0 +1,25 @@
+---
+# Sync DNS records from certificate inventory
+# ADR-0055: Zero-Friction Infrastructure Services
+
+- name: Read certificate inventory
+  ansible.builtin.slurp:
+    src: "{{ cert_inventory_file }}"
+  register: cert_inventory_raw
+  failed_when: false
+
+- name: Parse certificate inventory
+  ansible.builtin.set_fact:
+    cert_inventory: "{{ (cert_inventory_raw.content | b64decode | from_json).certificates | default([]) }}"
+  when: cert_inventory_raw.content is defined
+
+- name: Sync DNS for each certificate
+  ansible.builtin.include_tasks: add.yml
+  vars:
+    dns_hostname: "{{ item.hostname }}"
+    dns_ip: "{{ item.ip }}"
+  loop: "{{ cert_inventory }}"
+  when:
+    - cert_inventory is defined
+    - item.ip is defined
+    - item.ip | length > 0

@@ -1,0 +1,17 @@
+---
+# Main tasks for qubinode_dns role
+# ADR-0055: Zero-Friction Infrastructure Services
+
+- name: Include DNS provider detection
+  ansible.builtin.include_tasks: detect-provider.yml
+  when: dns_provider == 'auto'
+
+- name: Validate required variables
+  ansible.builtin.assert:
+    that:
+      - dns_hostname is defined
+      - dns_hostname | length > 0
+    fail_msg: "dns_hostname must be defined"
+
+- name: Execute DNS action
+  ansible.builtin.include_tasks: "{{ dns_action }}.yml"

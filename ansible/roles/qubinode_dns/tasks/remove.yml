@@ -1,0 +1,100 @@
+---
+# Remove DNS records
+# ADR-0055: Zero-Friction Infrastructure Services
+
+- name: Construct FQDN
+  ansible.builtin.set_fact:
+    dns_fqdn: "{{ dns_hostname if '.' in dns_hostname else dns_hostname + '.' + dns_domain }}"
+
+- name: Extract zone and record name
+  ansible.builtin.set_fact:
+    dns_record_name: "{{ dns_fqdn.split('.')[0] }}"
+    dns_record_zone: "{{ dns_fqdn.split('.')[1:] | join('.') }}"
+
+- name: Debug DNS info
+  ansible.builtin.debug:
+    msg: "Removing DNS: {{ dns_record_name }}.{{ dns_record_zone }}"
+
+- name: Remove DNS via FreeIPA
+  when: dns_provider == 'freeipa'
+  block:
+    - name: Ensure Kerberos ticket
+      ansible.builtin.include_tasks: freeipa-auth.yml
+
+    - name: Get current A record IP
+      ansible.builtin.command: "ipa dnsrecord-show {{ dns_record_zone }} {{ dns_record_name }}"
+      register: current_record
+      changed_when: false
+      failed_when: false
+
+    - name: Extract IP from record
+      ansible.builtin.set_fact:
+        dns_ip: "{{ current_record.stdout | regex_search('A record: ([0-9.]+)', '\\1') | first | default('') }}"
+      when: current_record.rc == 0
+
+    - name: Remove A record
+      ansible.builtin.command: "ipa dnsrecord-del {{ dns_record_zone }} {{ dns_record_name }} --del-all"
+      register: delete_result
+      changed_when: "'Deleted record' in delete_result.stdout"
+      failed_when: false
+
+    - name: Remove PTR record
+      when:
+        - dns_ip | default('') | length > 0
+        - dns_create_ptr | bool
+      block:
+        - name: Calculate reverse zone
+          ansible.builtin.set_fact:
+            reverse_octets: "{{ dns_ip.split('.') }}"
+
+        - name: Set reverse zone and record
+          ansible.builtin.set_fact:
+            reverse_zone: "{{ reverse_octets[2] }}.{{ reverse_octets[1] }}.{{ reverse_octets[0] }}.in-addr.arpa"
+            reverse_record: "{{ reverse_octets[3] }}"
+
+        - name: Remove PTR record
+          ansible.builtin.command: "ipa dnsrecord-del {{ reverse_zone }} {{ reverse_record }} --del-all"
+          failed_when: false
+
+- name: Remove DNS via nsupdate
+  when: dns_provider == 'nsupdate'
+  block:
+    - name: Get current IP
+      ansible.builtin.command: "dig +short {{ dns_fqdn }} A"
+      register: dig_result
+      changed_when: false
+      failed_when: false
+
+    - name: Set IP from dig
+      ansible.builtin.set_fact:
+        dns_ip: "{{ dig_result.stdout_lines[0] | default('') }}"
+
+    - name: Create nsupdate script
+      ansible.builtin.template:
+        src: nsupdate-remove.j2
+        dest: /tmp/nsupdate-remove.txt
+        mode: '0600'
+
+    - name: Execute nsupdate
+      ansible.builtin.command: nsupdate /tmp/nsupdate-remove.txt
+      changed_when: true
+
+    - name: Remove nsupdate script
+      ansible.builtin.file:
+        path: /tmp/nsupdate-remove.txt
+        state: absent
+
+- name: Remove CNAME aliases
+  when:
+    - dns_aliases | length > 0
+    - dns_provider == 'freeipa'
+  ansible.builtin.command: >
+    ipa dnsrecord-del {{ item.split('.')[1:] | join('.') | default(dns_domain) }}
+    {{ item.split('.')[0] }}
+    --del-all
+  loop: "{{ dns_aliases }}"
+  failed_when: false
+
+- name: Display success
+  ansible.builtin.debug:
+    msg: "DNS record removed: {{ dns_fqdn }}"

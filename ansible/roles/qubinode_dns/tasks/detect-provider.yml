@@ -1,0 +1,54 @@
+---
+# Detect available DNS provider
+# ADR-0055: Zero-Friction Infrastructure Services
+
+- name: Check if FreeIPA client is installed
+  ansible.builtin.command: which ipa
+  register: ipa_check
+  changed_when: false
+  failed_when: false
+
+- name: Check for valid Kerberos ticket
+  ansible.builtin.command: klist -s
+  register: kerberos_check
+  changed_when: false
+  failed_when: false
+  when: ipa_check.rc == 0
+
+- name: Detect FreeIPA server via DNS
+  ansible.builtin.command: "dig +short _ldap._tcp.{{ dns_domain }} SRV"
+  register: freeipa_srv_lookup
+  changed_when: false
+  failed_when: false
+  when: ipa_check.rc != 0 or kerberos_check.rc != 0
+
+- name: Set FreeIPA as provider
+  ansible.builtin.set_fact:
+    dns_provider: freeipa
+    freeipa_server: "{{ freeipa_srv_lookup.stdout.split()[-1] | default('') | regex_replace('\\.$', '') }}"
+  when:
+    - ipa_check.rc == 0
+    - kerberos_check.rc == 0 or (freeipa_srv_lookup.stdout | length > 0)
+
+- name: Check for nsupdate
+  ansible.builtin.command: which nsupdate
+  register: nsupdate_check
+  changed_when: false
+  failed_when: false
+  when: dns_provider == 'auto'
+
+- name: Set nsupdate as provider
+  ansible.builtin.set_fact:
+    dns_provider: nsupdate
+  when:
+    - dns_provider == 'auto'
+    - nsupdate_check.rc == 0
+
+- name: Fail if no provider detected
+  ansible.builtin.fail:
+    msg: "No DNS provider detected. Install ipa-client or nsupdate."
+  when: dns_provider == 'auto'
+
+- name: Display detected provider
+  ansible.builtin.debug:
+    msg: "DNS provider: {{ dns_provider }}"

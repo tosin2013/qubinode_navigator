@@ -1,0 +1,52 @@
+---
+# Default variables for qubinode_dns role
+# ADR-0055: Zero-Friction Infrastructure Services
+
+# DNS action: add, remove, sync
+dns_action: add
+
+# Hostname to manage (defaults to inventory hostname)
+dns_hostname: "{{ inventory_hostname }}"
+
+# IP address for DNS record
+dns_ip: "{{ ansible_default_ipv4.address | default('') }}"
+
+# Domain
+dns_domain: "{{ qubinode_domain | default('example.com') }}"
+
+# DNS provider: auto, freeipa, nsupdate
+dns_provider: auto
+
+# Create reverse PTR record
+dns_create_ptr: true
+
+# DNS TTL in seconds
+dns_ttl: 3600
+
+# FreeIPA settings
+freeipa_server: ""
+freeipa_realm: ""
+freeipa_admin: admin
+freeipa_admin_password: ""
+
+# Additional SANs to add as CNAME aliases
+dns_aliases: []
+
+# SRV records to create
+dns_srv_records: []
+# Example:
+# dns_srv_records:
+#   - service: "_ldap._tcp"
+#     target: "{{ inventory_hostname }}"
+#     port: 389
+#     priority: 10
+#     weight: 100
+
+# Whether to sync certificate inventory
+dns_sync_certs: false
+
+# Certificate inventory file
+cert_inventory_file: /etc/qubinode/certs/inventory.json
+
+# Batch mode - add DNS for all hosts in group
+dns_batch_group: ""

@@ -1,0 +1,128 @@
+---
+# Add DNS records
+# ADR-0055: Zero-Friction Infrastructure Services
+
+- name: Validate IP address
+  ansible.builtin.assert:
+    that:
+      - dns_ip is defined
+      - dns_ip | length > 0
+      - dns_ip | ansible.utils.ipaddr
+    fail_msg: "dns_ip must be a valid IP address"
+
+- name: Construct FQDN
+  ansible.builtin.set_fact:
+    dns_fqdn: "{{ dns_hostname if '.' in dns_hostname else dns_hostname + '.' + dns_domain }}"
+
+- name: Extract zone and record name
+  ansible.builtin.set_fact:
+    dns_record_name: "{{ dns_fqdn.split('.')[0] }}"
+    dns_record_zone: "{{ dns_fqdn.split('.')[1:] | join('.') }}"
+
+- name: Debug DNS info
+  ansible.builtin.debug:
+    msg: "Adding DNS: {{ dns_record_name }}.{{ dns_record_zone }} -> {{ dns_ip }}"
+
+- name: Add DNS via FreeIPA
+  when: dns_provider == 'freeipa'
+  block:
+    - name: Ensure Kerberos ticket
+      ansible.builtin.include_tasks: freeipa-auth.yml
+
+    - name: Check if zone exists
+      ansible.builtin.command: "ipa dnszone-show {{ dns_record_zone }}"
+      register: zone_check
+      changed_when: false
+      failed_when: false
+
+    - name: Create zone if not exists
+      ansible.builtin.command: "ipa dnszone-add {{ dns_record_zone }} --skip-overlap-check"
+      when: zone_check.rc != 0
+
+    - name: Add A record
+      ansible.builtin.command: >
+        ipa dnsrecord-add {{ dns_record_zone }} {{ dns_record_name }}
+        --a-rec={{ dns_ip }}
+        --a-rec-ttl={{ dns_ttl }}
+      register: a_record_result
+      changed_when: "'Added record' in a_record_result.stdout"
+      failed_when: false
+
+    - name: Modify A record if exists
+      ansible.builtin.command: >
+        ipa dnsrecord-mod {{ dns_record_zone }} {{ dns_record_name }}
+        --a-rec={{ dns_ip }}
+      when: "'already exists' in a_record_result.stderr | default('')"
+
+    - name: Add PTR record
+      when: dns_create_ptr | bool
+      block:
+        - name: Calculate reverse zone
+          ansible.builtin.set_fact:
+            reverse_octets: "{{ dns_ip.split('.') }}"
+
+        - name: Set reverse zone and record
+          ansible.builtin.set_fact:
+            reverse_zone: "{{ reverse_octets[2] }}.{{ reverse_octets[1] }}.{{ reverse_octets[0] }}.in-addr.arpa"
+            reverse_record: "{{ reverse_octets[3] }}"
+
+        - name: Check if reverse zone exists
+          ansible.builtin.command: "ipa dnszone-show {{ reverse_zone }}"
+          register: rev_zone_check
+          changed_when: false
+          failed_when: false
+
+        - name: Create reverse zone if not exists
+          ansible.builtin.command: "ipa dnszone-add {{ reverse_zone }} --skip-overlap-check"
+          when: rev_zone_check.rc != 0
+          failed_when: false
+
+        - name: Add PTR record
+          ansible.builtin.command: >
+            ipa dnsrecord-add {{ reverse_zone }} {{ reverse_record }}
+            --ptr-rec={{ dns_fqdn }}.
+          failed_when: false
+
+- name: Add DNS via nsupdate
+  when: dns_provider == 'nsupdate'
+  block:
+    - name: Create nsupdate script
+      ansible.builtin.template:
+        src: nsupdate-add.j2
+        dest: /tmp/nsupdate-add.txt
+        mode: '0600'
+
+    - name: Execute nsupdate
+      ansible.builtin.command: nsupdate /tmp/nsupdate-add.txt
+      changed_when: true
+
+    - name: Remove nsupdate script
+      ansible.builtin.file:
+        path: /tmp/nsupdate-add.txt
+        state: absent
+
+- name: Add CNAME aliases
+  when:
+    - dns_aliases | length > 0
+    - dns_provider == 'freeipa'
+  ansible.builtin.command: >
+    ipa dnsrecord-add {{ item.split('.')[1:] | join('.') | default(dns_domain) }}
+    {{ item.split('.')[0] }}
+    --cname-rec={{ dns_fqdn }}.
+  loop: "{{ dns_aliases }}"
+  failed_when: false
+
+- name: Add SRV records
+  when:
+    - dns_srv_records | length > 0
+    - dns_provider == 'freeipa'
+  ansible.builtin.command: >
+    ipa dnsrecord-add {{ dns_domain }}
+    {{ item.service }}
+    --srv-rec="{{ item.priority | default(10) }} {{ item.weight | default(100) }} {{ item.port }} {{ item.target | default(dns_fqdn) }}."
+  loop: "{{ dns_srv_records }}"
+  failed_when: false
+
+- name: Display success
+  ansible.builtin.debug:
+    msg: "DNS record added: {{ dns_fqdn }} -> {{ dns_ip }}"

@@ -1,0 +1,9 @@
+server {{ dns_server | default('127.0.0.1') }}
+update delete {{ dns_fqdn }}. A
+update add {{ dns_fqdn }}. {{ dns_ttl }} A {{ dns_ip }}
+send
+{% if dns_create_ptr | bool %}
+update delete {{ reverse_record }}.{{ reverse_zone }}. PTR
+update add {{ reverse_record }}.{{ reverse_zone }}. {{ dns_ttl }} PTR {{ dns_fqdn }}.
+send
+{% endif %}
