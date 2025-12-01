@@ -33,19 +33,23 @@ def discover_examples():
     """Discover available example configurations from the examples directory."""
     examples = []
     examples_path = Path(EXAMPLES_DIR)
-    
-    if examples_path.exists():
-        for example_dir in sorted(examples_path.iterdir()):
-            if example_dir.is_dir():
-                # Check if it has cluster.yml or nodes.yml (agent-based config)
-                has_cluster = (example_dir / 'cluster.yml').exists()
-                has_nodes = (example_dir / 'nodes.yml').exists()
-                # Check if it has appliance-vars.yml (appliance config)
-                has_appliance = (example_dir / 'appliance-vars.yml').exists()
-                
-                if has_cluster or has_nodes or has_appliance:
-                    examples.append(example_dir.name)
-    
+
+    try:
+        if examples_path.exists():
+            for example_dir in sorted(examples_path.iterdir()):
+                if example_dir.is_dir():
+                    # Check if it has cluster.yml or nodes.yml (agent-based config)
+                    has_cluster = (example_dir / 'cluster.yml').exists()
+                    has_nodes = (example_dir / 'nodes.yml').exists()
+                    # Check if it has appliance-vars.yml (appliance config)
+                    has_appliance = (example_dir / 'appliance-vars.yml').exists()
+
+                    if has_cluster or has_nodes or has_appliance:
+                        examples.append(example_dir.name)
+    except (PermissionError, OSError):
+        # Handle CI environments where /root is not accessible
+        pass
+
     return examples if examples else ['sno-disconnected']
 
 # Get examples at DAG parse time
