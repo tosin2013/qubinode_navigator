@@ -7,15 +7,24 @@ Qubinode Navigator is an AI-enhanced, container-first infrastructure automation 
 
 ## TL;DR
 
-**Qubinode Navigator** - Modern Enterprise Infrastructure Automation Platform with AI-powered MCP servers.
+**Qubinode Navigator** - Modern Enterprise Infrastructure Automation Platform with AI-powered workflow orchestration.
 
 **Key features:**
+- **Apache Airflow Integration**: VM provisioning, infrastructure deployment, certificate management
 - **🔌 Modular Plugin Architecture**: Extensible framework with OS, cloud provider, and deployment plugins
 - **🤖 AI-Powered MCP Servers**: Model Context Protocol integration for LLM-driven infrastructure management
-- **Airflow MCP Server**: DAG management and VM operations (9 tools)
-- **AI Assistant MCP Server**: RAG-powered documentation search and chat (3 tools)
+- **Zero-Friction Infrastructure**: Automatic DNS and certificate management for VMs
 
-**Quick start:** `git clone https://github.com/Qubinode/qubinode_navigator.git && cd qubinode_navigator && ./setup_modernized.sh`
+**Quick start (15 minutes):**
+```bash
+git clone https://github.com/Qubinode/qubinode_navigator.git
+cd qubinode_navigator
+./scripts/preflight-check.sh --fix   # Validate prerequisites
+./deploy-qubinode-with-airflow.sh    # Deploy everything
+# Access Airflow UI at http://YOUR_IP/ (admin/admin)
+```
+
+**[Full Quick Start Guide](QUICKSTART.md)** | **[Airflow DAG Reference](airflow/README.md)**
 
 ## 🚀 Key Features
 
@@ -44,13 +53,35 @@ Qubinode Navigator is an AI-enhanced, container-first infrastructure automation 
 
 ## 🚀 Quick Start
 
-### Modern Setup (Recommended)
+### Full Stack with Airflow (Recommended)
+
+Deploy the complete platform with workflow orchestration:
+
 ```bash
 # Clone the repository
 git clone https://github.com/Qubinode/qubinode_navigator.git
 cd qubinode_navigator
 
-# Run the modernized setup script
+# Run pre-flight checks (validates and fixes prerequisites)
+./scripts/preflight-check.sh --fix
+
+# Deploy everything (Airflow + AI Assistant + Nginx)
+./deploy-qubinode-with-airflow.sh
+```
+
+**After deployment:**
+- Airflow UI: http://YOUR_IP/ (admin/admin)
+- Enable DAGs and trigger workflows to provision VMs, deploy FreeIPA, etc.
+
+See **[QUICKSTART.md](QUICKSTART.md)** for detailed instructions.
+
+### Minimal Setup (Without Airflow)
+
+For hypervisor-only setup without workflow orchestration:
+
+```bash
+git clone https://github.com/Qubinode/qubinode_navigator.git
+cd qubinode_navigator
 ./setup_modernized.sh
 ```
 
@@ -70,6 +101,20 @@ python3 qubinode_cli.py deploy --plugin rhel10
 # Get plugin information
 python3 qubinode_cli.py info --plugin rocky_linux
 ```
+
+## 📊 Available Workflows (Airflow DAGs)
+
+| DAG | Description |
+|-----|-------------|
+| `example_kcli_vm_provisioning` | Create and manage VMs with kcli |
+| `infrastructure_health_check` | Monitor FreeIPA, Step-CA, VyOS, Vault |
+| `freeipa_deployment` | Deploy FreeIPA identity management |
+| `stepca_deployment` | Deploy Step-CA certificate authority |
+| `vyos_router_deployment` | Deploy VyOS network router |
+| `certificate_provisioning` | Request/renew TLS certificates |
+| `dns_management` | Manage DNS records in FreeIPA |
+
+See [airflow/README.md](airflow/README.md) for complete DAG documentation.
 
 ## 🏗️ Architecture
 
