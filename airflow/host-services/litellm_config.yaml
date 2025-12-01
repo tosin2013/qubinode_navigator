@@ -1,0 +1,114 @@
+# LiteLLM Proxy Configuration
+# ADR-0050: Hybrid Host-Container Architecture
+#
+# This proxy runs on the host and routes LLM requests to:
+# - Local Ollama (Granite models) for disconnected/air-gapped environments
+# - External APIs (OpenAI, Anthropic) when connected
+#
+# Port: 4000
+
+model_list:
+  # ==========================================================================
+  # LOCAL MODELS (via Ollama)
+  # ==========================================================================
+  # These models run locally and work in disconnected environments
+
+  # Granite Code - optimized for code generation
+  - model_name: granite-code
+    litellm_params:
+      model: ollama/granite-code:8b
+      api_base: http://localhost:11434
+
+  # Granite Instruct - general purpose assistant
+  - model_name: granite-instruct
+    litellm_params:
+      model: ollama/granite3.1-dense:8b
+      api_base: http://localhost:11434
+
+  # Granite 3B - lighter model for simpler tasks
+  - model_name: granite-3b
+    litellm_params:
+      model: ollama/granite3.1-dense:3b
+      api_base: http://localhost:11434
+
+  # Fallback local model
+  - model_name: local
+    litellm_params:
+      model: ollama/granite3.1-dense:8b
+      api_base: http://localhost:11434
+
+  # ==========================================================================
+  # EXTERNAL MODELS (optional, requires API keys)
+  # ==========================================================================
+  # These models require internet connectivity and API keys
+
+  # Anthropic Claude (if ANTHROPIC_API_KEY is set)
+  - model_name: claude-sonnet
+    litellm_params:
+      model: claude-3-sonnet-20240229
+      api_key: os.environ/ANTHROPIC_API_KEY
+
+  - model_name: claude-haiku
+    litellm_params:
+      model: claude-3-haiku-20240307
+      api_key: os.environ/ANTHROPIC_API_KEY
+
+  # OpenAI (if OPENAI_API_KEY is set)
+  - model_name: gpt-4
+    litellm_params:
+      model: gpt-4-turbo-preview
+      api_key: os.environ/OPENAI_API_KEY
+
+  - model_name: gpt-3.5
+    litellm_params:
+      model: gpt-3.5-turbo
+      api_key: os.environ/OPENAI_API_KEY
+
+# ==========================================================================
+# ROUTER SETTINGS
+# ==========================================================================
+router_settings:
+  # Retry failed requests
+  num_retries: 2
+  retry_after: 5
+
+  # Timeout settings
+  timeout: 120
+
+  # Fallback chain: try local first, then external
+  fallbacks:
+    - granite-code: [granite-instruct, local]
+    - granite-instruct: [granite-3b, local]
+    - claude-sonnet: [granite-instruct, local]
+    - gpt-4: [granite-instruct, local]
+
+# ==========================================================================
+# GENERAL SETTINGS
+# ==========================================================================
+general_settings:
+  # Master key for API authentication (set via environment)
+  master_key: os.environ/LITELLM_MASTER_KEY
+
+  # Enable request logging
+  # Note: Logs are stored in /var/log/litellm/
+  # enable_json_schema_validation: true
+
+# ==========================================================================
+# LITELLM SETTINGS
+# ==========================================================================
+litellm_settings:
+  # Drop unsupported parameters instead of erroring
+  drop_params: true
+
+  # Disable verbose logging in production
+  set_verbose: false
+
+  # Cache settings (use Redis if available, else in-memory)
+  cache: false
+  # cache_params:
+  #   type: redis
+  #   host: localhost
+  #   port: 6379
+
+  # Telemetry (disable for privacy)
+  telemetry: false

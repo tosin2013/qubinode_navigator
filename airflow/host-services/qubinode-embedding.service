@@ -1,0 +1,60 @@
+# Qubinode Embedding Service - Systemd Unit File
+# ADR-0050: Hybrid Host-Container Architecture
+#
+# Install: cp qubinode-embedding.service /etc/systemd/system/
+# Enable:  systemctl enable --now qubinode-embedding.service
+# Status:  systemctl status qubinode-embedding.service
+# Logs:    journalctl -u qubinode-embedding.service -f
+
+[Unit]
+Description=Qubinode Embedding Service (sentence-transformers)
+Documentation=https://github.com/Qubinode/qubinode_navigator
+After=network.target
+
+# Start after Ollama if both are present
+After=ollama.service
+Wants=ollama.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+
+# Working directory
+WorkingDirectory=/opt/qubinode/services
+
+# Environment
+Environment=EMBEDDING_MODEL=all-MiniLM-L6-v2
+Environment=EMBEDDING_SERVICE_PORT=8891
+Environment=EMBEDDING_SERVICE_HOST=0.0.0.0
+Environment=TRANSFORMERS_CACHE=/opt/qubinode/models
+Environment=HF_HOME=/opt/qubinode/models
+
+# CUDA settings (if GPU available)
+Environment=CUDA_VISIBLE_DEVICES=0
+
+# Start command
+ExecStart=/usr/bin/python3 /opt/qubinode/services/embedding_service.py
+
+# Restart policy
+Restart=always
+RestartSec=10
+
+# Resource limits
+MemoryMax=3G
+MemoryHigh=2G
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/opt/qubinode/models
+PrivateTmp=true
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=qubinode-embedding
+
+[Install]
+WantedBy=multi-user.target

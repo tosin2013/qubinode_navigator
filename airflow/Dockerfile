@@ -1,64 +1,45 @@
-# Custom Airflow image with kcli for Qubinode Navigator
+# Slim Airflow image for Qubinode Navigator
+# ADR-0050: Hybrid Host-Container Architecture
+# Heavy AI/ML components (sentence-transformers, litellm, aider) run on host
+# This container focuses on orchestration only
+#
 # Based on official Apache Airflow 2.10.4
 # Using Python 3.12 for forward compatibility (aligned with ADR-0001 and ADR-0025)
 FROM docker.io/apache/airflow:2.10.4-python3.12
 
-# Switch to root to install system packages
-USER root
-
-# Install system dependencies for kcli and libvirt
-RUN apt-get update && apt-get install -y \
-    libvirt-clients \
-    libvirt-dev \
-    pkg-config \
-    gcc \
-    python3-dev \
-    genisoimage \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Switch to airflow user
+# Switch to airflow user (no root needed for slim image)
 USER airflow
 
-# Install kcli and ansible via pip (use latest version to avoid getiterator bug in 99.0)
+# Core dependencies for Qubinode integration
+# These are lightweight and needed for DAG execution
 RUN pip install --no-cache-dir \
-    kcli \
-    libvirt-python \
-    paramiko \
-    ansible \
-    ansible-core \
-    mcp>=0.9.0 \
-    fastmcp>=0.2.0 \
-    starlette>=0.27.0 \
-    uvicorn>=0.30.0 \
+    # HTTP client for calling host services
     httpx>=0.24.0 \
-    sse-starlette>=1.6.0
-
-# ADR-0049: Phase 1 - Embedding and RAG dependencies
-RUN pip install --no-cache-dir \
-    sentence-transformers>=2.2.0 \
+    # PostgreSQL vector extension client
     pgvector>=0.2.0 \
-    psycopg2-binary>=2.9.0
-
-# ADR-0049: Phase 3 - Multi-Agent LLM Architecture dependencies
-RUN pip install --no-cache-dir \
-    litellm>=1.0.0 \
-    aider-chat>=0.30.0 \
+    psycopg2-binary>=2.9.0 \
+    # Pydantic for data validation
     pydantic>=2.0.0
 
-# ADR-0049: Phase 4 - OpenLineage integration for data/code lineage
+# ADR-0049 Phase 4: OpenLineage integration for data/code lineage
 RUN pip install --no-cache-dir \
     apache-airflow-providers-openlineage>=1.0.0 \
     openlineage-python>=1.0.0
 
-# Switch back to root for entrypoint
-USER root
+# ============================================================================
+# REMOVED FROM CONTAINER (now run on host per ADR-0050):
+# ============================================================================
+# - sentence-transformers (1.5GB with PyTorch) -> Host embedding service :8891
+# - litellm (500MB+) -> Host LiteLLM proxy :4000
+# - aider-chat -> Host tool, direct filesystem access
+# - kcli, libvirt-python -> Host tool, direct libvirt access
+# - libvirt-dev, gcc, python3-dev -> Not needed without libvirt-python
+# ============================================================================
 
-# Create directory for kcli config
-RUN mkdir -p /root/.kcli && chmod 755 /root/.kcli
+# Environment variables for host service integration
+ENV QUBINODE_EMBEDDING_SERVICE_URL=http://localhost:8891 \
+    QUBINODE_LITELLM_PROXY_URL=http://localhost:4000 \
+    QUBINODE_OLLAMA_URL=http://localhost:11434
 
-# Set environment variables for libvirt
-ENV LIBVIRT_DEFAULT_URI=qemu:///system
-
-# Switch back to airflow user (will be overridden by docker-compose user setting)
+# Stay as airflow user
 USER airflow

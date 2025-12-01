@@ -99,6 +99,12 @@ export AIRFLOW_NETWORK="${AIRFLOW_NETWORK:-airflow_default}"
 export QUBINODE_ENABLE_NGINX_PROXY="${QUBINODE_ENABLE_NGINX_PROXY:-false}"
 export NGINX_PORT="${NGINX_PORT:-80}"
 
+# ADR-0050: Host AI Services Configuration (Hybrid Architecture)
+# These services run on the host for better performance and smaller containers
+export QUBINODE_ENABLE_AI_SERVICES="${QUBINODE_ENABLE_AI_SERVICES:-false}"
+export EMBEDDING_SERVICE_PORT="${EMBEDDING_SERVICE_PORT:-8891}"
+export LITELLM_PROXY_PORT="${LITELLM_PROXY_PORT:-4000}"
+
 # Internal variables
 DEPLOYMENT_LOG="/tmp/qubinode-deployment-$(date +%Y%m%d-%H%M%S).log"
 AI_ASSISTANT_CONTAINER=""
@@ -514,6 +520,82 @@ deploy_airflow_services() {
         log_error "Airflow deployment failed"
         ask_ai_for_help "airflow_deploy" "Airflow deployment via deploy-airflow.sh failed"
         return 1
+    fi
+}
+
+# =============================================================================
+# ADR-0050: HOST AI SERVICES (Hybrid Architecture)
+# =============================================================================
+# These services run on the host (not in containers) to:
+# - Reduce container image size from 10.5GB to ~2-3GB
+# - Allow GPU access for embedding models
+# - Share services across multiple tools
+
+deploy_host_ai_services() {
+    if [[ "$QUBINODE_ENABLE_AI_SERVICES" != "true" ]]; then
+        log_info "Host AI services disabled, skipping..."
+        return 0
+    fi
+
+    log_step "Deploying Host AI Services (ADR-0050)..."
+
+    # Check if the install script exists
+    local install_script="$SCRIPT_DIR/airflow/host-services/install-host-services.sh"
+    if [[ ! -f "$install_script" ]]; then
+        log_error "Host services install script not found: $install_script"
+        return 1
+    fi
+
+    # Run the install script
+    log_info "Installing Embedding Service and LiteLLM Proxy..."
+    if bash "$install_script"; then
+        log_success "Host AI services installed successfully"
+    else
+        log_error "Host AI services installation failed"
+        ask_ai_for_help "ai_services_install" "Host AI services installation failed"
+        return 1
+    fi
+
+    # Verify services are running
+    log_info "Verifying host AI services..."
+    local services_ok=true
+
+    # Check Embedding Service
+    if systemctl is-active --quiet qubinode-embedding.service; then
+        log_success "Embedding Service running on port ${EMBEDDING_SERVICE_PORT}"
+    else
+        log_warning "Embedding Service not running"
+        services_ok=false
+    fi
+
+    # Check LiteLLM Proxy
+    if systemctl is-active --quiet qubinode-litellm.service; then
+        log_success "LiteLLM Proxy running on port ${LITELLM_PROXY_PORT}"
+    else
+        log_warning "LiteLLM Proxy not running"
+        services_ok=false
+    fi
+
+    # Health checks
+    sleep 5
+    if curl -s http://localhost:${EMBEDDING_SERVICE_PORT}/health > /dev/null 2>&1; then
+        log_success "Embedding Service health check passed"
+    else
+        log_warning "Embedding Service health check failed (may still be starting)"
+    fi
+
+    if curl -s http://localhost:${LITELLM_PROXY_PORT}/health > /dev/null 2>&1; then
+        log_success "LiteLLM Proxy health check passed"
+    else
+        log_warning "LiteLLM Proxy health check failed (may still be starting)"
+    fi
+
+    if [[ "$services_ok" == "true" ]]; then
+        log_success "All host AI services deployed successfully"
+        return 0
+    else
+        log_warning "Some host AI services failed to start, but deployment continues"
+        return 0  # Non-blocking
     fi
 }
 
@@ -1725,6 +1807,7 @@ main() {
     validate_configuration || exit 1
     detect_deployment_target || exit 1  # New: Detect deployment target based on research
     start_ai_assistant  # Non-blocking, continues even if AI Assistant fails
+    deploy_host_ai_services  # ADR-0050: Host AI services for hybrid architecture
     deploy_airflow_services  # Non-blocking, continues even if Airflow fails
     get_qubinode_navigator "$MY_DIR" || exit 1
     fix_dns_configuration || exit 1  # Auto-fix DNS configuration in inventory files
@@ -1751,9 +1834,12 @@ case "${1:-}" in
         echo "  QUBINODE_DEPLOYMENT_MODE     - Deployment mode (default: production)"
         echo "  QUBINODE_ENABLE_AI_ASSISTANT - Enable AI Assistant (default: true)"
         echo "  QUBINODE_ENABLE_AIRFLOW      - Enable Airflow orchestration (default: false)"
+        echo "  QUBINODE_ENABLE_AI_SERVICES  - Enable host AI services (default: false, ADR-0050)"
         echo "  QUBINODE_ENABLE_NGINX_PROXY  - Enable nginx reverse proxy (auto-enabled with Airflow)"
         echo "  AI_ASSISTANT_PORT            - AI Assistant port (default: 8080)"
         echo "  AIRFLOW_PORT                 - Airflow webserver port (default: 8888)"
+        echo "  EMBEDDING_SERVICE_PORT       - Embedding service port (default: 8891)"
+        echo "  LITELLM_PROXY_PORT           - LiteLLM proxy port (default: 4000)"
         echo ""
         echo "Options:"
         echo "  --help, -h     Show this help message"
@@ -1771,6 +1857,14 @@ case "${1:-}" in
         echo "  export QUBINODE_ADMIN_USER=admin"
         echo "  export QUBINODE_CLUSTER_NAME=mycluster"
         echo "  export QUBINODE_ENABLE_AIRFLOW=true"
+        echo "  ./deploy-qubinode.sh"
+        echo ""
+        echo "  # Full deployment with Airflow + Host AI Services (ADR-0050)"
+        echo "  export QUBINODE_DOMAIN=example.com"
+        echo "  export QUBINODE_ADMIN_USER=admin"
+        echo "  export QUBINODE_CLUSTER_NAME=mycluster"
+        echo "  export QUBINODE_ENABLE_AIRFLOW=true"
+        echo "  export QUBINODE_ENABLE_AI_SERVICES=true"
         echo "  ./deploy-qubinode.sh"
         echo ""
         echo "  # Using .env file"

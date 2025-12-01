@@ -5,6 +5,7 @@ version: '3.8'
 # Based on: ADR-0036 (Airflow Integration), ADR-0037 (Git-Based DAG Management)
 # Updated: ADR-0043 (Host Network Access for VM Connectivity)
 # Updated: ADR-0049 (Multi-Agent LLM Memory Architecture - PgVector + OpenLineage)
+# Updated: ADR-0050 (Hybrid Host-Container Architecture for Resource Optimization)
 
 x-airflow-common:
   &airflow-common
@@ -57,6 +58,20 @@ x-airflow-common:
     AIRFLOW__OPENLINEAGE__CONFIG_PATH: '/opt/airflow/config/openlineage.yml'
     # Marquez API endpoint for lineage queries
     MARQUEZ_API_URL: 'http://localhost:5001'
+    # ADR-0050: Scheduler optimization to reduce memory usage
+    # Increase parse interval to reduce DAG parsing frequency (default 30s)
+    AIRFLOW__SCHEDULER__MIN_FILE_PROCESS_INTERVAL: '60'
+    # Reduce number of DAG parsing processes (default is based on CPU count)
+    AIRFLOW__SCHEDULER__PARSING_PROCESSES: '2'
+    # Limit scheduler to process fewer DAGs per loop
+    AIRFLOW__SCHEDULER__MAX_DAGRUNS_TO_CREATE_PER_LOOP: '10'
+    # Reduce DAG dir list refresh interval (default 300s)
+    AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: '120'
+    # ADR-0050: Host services endpoints for hybrid architecture
+    # Embedding service runs on host (sentence-transformers is too heavy for container)
+    QUBINODE_EMBEDDING_SERVICE_URL: 'http://localhost:8891'
+    # LiteLLM proxy runs on host (connects to local Ollama/Granite)
+    QUBINODE_LITELLM_PROXY_URL: 'http://localhost:4000'
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
@@ -108,6 +123,15 @@ services:
       retries: 5
       start_period: 5s
     restart: always
+    # ADR-0050: Resource limits for PostgreSQL
+    # Memory: 512MB base + buffer for vector operations
+    mem_limit: 1g
+    mem_reservation: 512m
+    # ADR-0050: ulimits to prevent RHEL/Rocky memory explosion issue
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     # Note: With host network, postgres listens on localhost:5432 directly
 
   airflow-webserver:
@@ -128,6 +152,13 @@ services:
       retries: 5
       start_period: 30s
     restart: always
+    # ADR-0050: Resource limits for webserver
+    mem_limit: 1g
+    mem_reservation: 512m
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
@@ -146,6 +177,17 @@ services:
       retries: 5
       start_period: 30s
     restart: always
+    # ADR-0050: Resource limits for scheduler (most critical for stability)
+    # Formula: 256MB base + (parallelism * 100MB) = ~1.5GB for parallelism=12
+    # Setting 2GB to allow for DAG complexity headroom
+    mem_limit: 2g
+    mem_reservation: 1g
+    # ADR-0050: ulimits to prevent RHEL/Rocky memory explosion issue
+    # See: https://github.com/apache/airflow/discussions/29731
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
@@ -165,6 +207,13 @@ services:
       retries: 5
       start_period: 10s
     restart: always
+    # ADR-0050: Resource limits for MCP server (lightweight service)
+    mem_limit: 512m
+    mem_reservation: 256m
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
@@ -231,6 +280,13 @@ services:
       retries: 5
       start_period: 30s
     restart: always
+    # ADR-0050: Resource limits for Marquez
+    mem_limit: 1g
+    mem_reservation: 512m
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     depends_on:
       postgres:
         condition: service_healthy
@@ -252,6 +308,13 @@ services:
       retries: 5
       start_period: 10s
     restart: always
+    # ADR-0050: Resource limits for Marquez Web UI (lightweight)
+    mem_limit: 256m
+    mem_reservation: 128m
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     depends_on:
       marquez:
         condition: service_healthy
