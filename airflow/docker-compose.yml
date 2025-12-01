@@ -72,6 +72,13 @@ x-airflow-common:
     QUBINODE_EMBEDDING_SERVICE_URL: 'http://localhost:8891'
     # LiteLLM proxy runs on host (connects to local Ollama/Granite)
     QUBINODE_LITELLM_PROXY_URL: 'http://localhost:4000'
+    # ADR-0051: HashiCorp Vault secrets backend configuration
+    # Enable with --profile vault, otherwise uses default secrets backend
+    AIRFLOW__SECRETS__BACKEND: ${VAULT_SECRETS_BACKEND:-}
+    AIRFLOW__SECRETS__BACKEND_KWARGS: ${VAULT_BACKEND_KWARGS:-}
+    # Vault connection for dynamic secrets operators
+    VAULT_ADDR: 'http://localhost:8200'
+    VAULT_TOKEN: ${VAULT_DEV_ROOT_TOKEN:-qubinode-dev-token}
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
@@ -326,5 +333,50 @@ services:
     profiles:
       - lineage  # Optional profile - enable with: docker-compose --profile lineage up
 
+  # ==========================================================================
+  # ADR-0051: HashiCorp Vault for Secrets Management
+  # ==========================================================================
+  # Vault provides centralized secrets management with:
+  # - Dynamic secrets (database, AWS, SSH)
+  # - Automatic credential rotation
+  # - Audit logging for compliance
+  # Enable with: docker-compose --profile vault up
+
+  vault:
+    image: docker.io/hashicorp/vault:1.15
+    network_mode: host
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_DEV_ROOT_TOKEN:-qubinode-dev-token}
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+      VAULT_ADDR: http://localhost:8200
+      # Enable audit logging to file
+      VAULT_LOG_LEVEL: info
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      # Persist Vault data (for dev mode, optional)
+      - vault-data:/vault/data
+      # Vault configuration
+      - ${AIRFLOW_PROJ_DIR:-.}/config/vault:/vault/config:ro
+      # Audit logs
+      - ${AIRFLOW_PROJ_DIR:-.}/logs/vault:/vault/logs
+    healthcheck:
+      test: ["CMD", "vault", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: always
+    # ADR-0050: Resource limits for Vault
+    mem_limit: 512m
+    mem_reservation: 256m
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    profiles:
+      - vault  # Optional profile - enable with: docker-compose --profile vault up
+
 volumes:
   postgres-db-volume:
+  vault-data:

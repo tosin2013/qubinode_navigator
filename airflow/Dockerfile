@@ -26,6 +26,11 @@ RUN pip install --no-cache-dir \
     apache-airflow-providers-openlineage>=1.0.0 \
     openlineage-python>=1.0.0
 
+# ADR-0051: HashiCorp Vault integration for secrets management
+# Official Airflow provider for Vault (includes VaultHook, VaultBackend)
+RUN pip install --no-cache-dir \
+    apache-airflow-providers-hashicorp>=3.0.0
+
 # ============================================================================
 # REMOVED FROM CONTAINER (now run on host per ADR-0050):
 # ============================================================================
