@@ -53,10 +53,9 @@ x-airflow-common:
     # Issue #2 Fix: Enable OpenLineage by default for lineage tracking
     # Set OPENLINEAGE_DISABLED=true in environment to disable
     AIRFLOW__OPENLINEAGE__DISABLED: ${OPENLINEAGE_DISABLED:-false}
-    AIRFLOW__OPENLINEAGE__TRANSPORT: '{"type": "http", "url": "http://localhost:5001", "endpoint": "api/v1/lineage"}'
+    # Transport config via JSON (takes precedence over config file)
+    AIRFLOW__OPENLINEAGE__TRANSPORT: '{"type": "http", "url": "http://localhost:5001", "endpoint": "api/v1/lineage", "timeout": 5}'
     AIRFLOW__OPENLINEAGE__NAMESPACE: 'qubinode'
-    # Custom facets directory for code lineage tracking
-    AIRFLOW__OPENLINEAGE__CONFIG_PATH: '/opt/airflow/config/openlineage.yml'
     # Marquez API endpoint for lineage queries
     MARQUEZ_API_URL: 'http://localhost:5001'
     # ADR-0050: Scheduler optimization to reduce memory usage
