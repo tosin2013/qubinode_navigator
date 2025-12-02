@@ -114,3 +114,7 @@ exclude:
   - user-guides/
   - vault-setup/
   - internal/
+  # ADRs contain complex code examples (Python f-strings, Jinja2/Ansible templates)
+  # Many use {{ }} patterns that conflict with Jekyll's Liquid templating
+  # ADRs are accessible directly from GitHub repository
+  - adrs/
