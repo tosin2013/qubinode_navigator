@@ -377,7 +377,7 @@ jobs:
           category: trivy
           
       - name: Run Hadolint Dockerfile linter
-        uses: hadolint/hadolint-action@v3.1.0
+        uses: hadolint/hadolint-action@v3.3.0
         if: always()  # Always run Hadolint even if Trivy fails
         with:
           dockerfile: ./ai-assistant/Dockerfile
