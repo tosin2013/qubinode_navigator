@@ -91,6 +91,27 @@ def execute_plugins(plugin_manager: PluginManager, config_manager: ConfigManager
                 print(f"    {key}: {value}")
 
 
+def start_interactive_chat(ai_port: int = 8080) -> int:
+    """Start interactive chat mode with Rich UI."""
+    try:
+        from qubinode_chat import QuibinodeChat
+        ai_url = f"http://localhost:{ai_port}"
+        chat = QuibinodeChat(ai_url=ai_url)
+        chat.run_interactive()
+        return 0
+    except ImportError:
+        print("❌ Interactive chat requires additional dependencies.")
+        print("   Install with: pip install rich prompt_toolkit")
+        print("\n   Or use the standalone: ./qubinode_chat.py")
+        return 1
+    except KeyboardInterrupt:
+        print("\n👋 Chat ended.")
+        return 0
+    except Exception as e:
+        print(f"❌ Chat error: {e}")
+        return 1
+
+
 def ask_ai(question: str, ai_port: int = 8080):
     """Ask the AI Assistant a question"""
     try:
@@ -201,7 +222,7 @@ def main():
     # Status command
     subparsers.add_parser('status', help='Show plugin manager status')
     
-    # Ask AI command
+    # Ask AI command (single question)
     ask_parser = subparsers.add_parser('ask', help='Ask the AI Assistant a question')
     ask_parser.add_argument(
         'question',
@@ -214,7 +235,16 @@ def main():
         default=8080,
         help='AI Assistant port (default: 8080)'
     )
-    
+
+    # Chat command (interactive mode)
+    chat_parser = subparsers.add_parser('chat', help='Start interactive chat with AI Assistant')
+    chat_parser.add_argument(
+        '--port',
+        type=int,
+        default=8080,
+        help='AI Assistant port (default: 8080)'
+    )
+
     args = parser.parse_args()
     
     if not args.command:
@@ -230,6 +260,10 @@ def main():
             question = ' '.join(args.question)
             ask_ai(question, args.port)
             return 0
+
+        # Handle chat command (interactive mode)
+        if args.command == 'chat':
+            return start_interactive_chat(args.port)
             
         # Initialize components for other commands
         config_manager = ConfigManager(args.config)

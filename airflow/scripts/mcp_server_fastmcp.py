@@ -115,7 +115,21 @@ def get_rag() -> Optional['RAGStore']:
 async def list_dags() -> str:
     """
     List all available Airflow DAGs with their schedules, tags, and owners.
-    
+
+    WHEN TO USE: Call this FIRST when you need to understand what workflows
+    are available. This is your discovery tool for finding DAG IDs to use
+    with other tools like get_dag_info() or trigger_dag().
+
+    WHAT YOU GET: A formatted list showing each DAG's:
+    - dag_id (use this for other DAG tools)
+    - schedule interval (when it runs automatically)
+    - tags (categories like 'vm', 'freeipa', 'network')
+    - owner (who maintains it)
+
+    NEXT STEPS after calling:
+    - Use get_dag_info(dag_id) to see DAG details and required parameters
+    - Use trigger_dag(dag_id) to execute a workflow
+
     Returns:
         Formatted list of all DAGs with metadata
     """
@@ -189,13 +203,27 @@ async def get_dag_info(dag_id: str) -> str:
 async def trigger_dag(dag_id: str, conf: Optional[Dict[str, Any]] = None) -> str:
     """
     Trigger an Airflow DAG execution with optional configuration.
-    
+
+    WHEN TO USE: Execute a workflow after you've confirmed:
+    1. The DAG exists (use list_dags() first)
+    2. You understand the required parameters (use get_dag_info() first)
+    3. You have the correct conf dictionary for the DAG
+
+    IMPORTANT: This is a WRITE operation. In read-only mode, this will fail.
+
     Args:
-        dag_id: The ID of the DAG to trigger
-        conf: Optional configuration dictionary for the DAG run
-    
+        dag_id: The ID of the DAG to trigger (get from list_dags())
+        conf: Optional configuration dictionary. Common patterns:
+            - VM DAGs: {"vm_name": "myvm", "cpu": 4, "memory": 8192}
+            - FreeIPA DAGs: {"domain": "example.com", "realm": "EXAMPLE.COM"}
+            - Network DAGs: {"network_name": "qubinat", "cidr": "192.168.1.0/24"}
+
+    EXAMPLES:
+        trigger_dag("example_kcli_vm_provisioning")
+        trigger_dag("vm_creation", {"vm_name": "test-vm", "memory": 4096})
+
     Returns:
-        Success message with run ID or error message
+        Success message with run ID, or error message if failed
     """
     logger.info(f"Tool called: trigger_dag(dag_id='{dag_id}', conf={conf})")
     
@@ -220,10 +248,191 @@ async def trigger_dag(dag_id: str, conf: Optional[Dict[str, Any]] = None) -> str
 # =============================================================================
 
 @mcp.tool()
+async def preflight_vm_creation(
+    name: str,
+    image: str = "centos10stream",
+    memory: int = 2048,
+    cpus: int = 2,
+    disk_size: int = 10
+) -> str:
+    """
+    Run pre-flight checks before VM creation to ensure success.
+
+    ALWAYS CALL THIS BEFORE create_vm(). This tool validates:
+    1. VM name doesn't already exist
+    2. Requested image is available (or can be downloaded)
+    3. Host has sufficient resources (memory, disk, CPU)
+    4. Libvirt/kcli services are running
+
+    If all checks pass, you can safely call create_vm() with the same parameters.
+    If checks fail, the response tells you exactly how to fix each issue.
+
+    Args:
+        name: Proposed VM name to validate
+        image: Image to check availability
+        memory: Memory in MB to validate against available
+        cpus: CPUs to validate against available
+        disk_size: Disk in GB to validate against available space
+
+    Returns:
+        Detailed pre-flight report with PASS/FAIL status and fix commands
+    """
+    logger.info(f"Tool called: preflight_vm_creation(name='{name}', image='{image}')")
+
+    output = "# VM Creation Pre-Flight Check\n\n"
+    all_passed = True
+    fixes_needed = []
+
+    # Check 1: VM name doesn't exist
+    output += "## 1. VM Name Availability\n"
+    try:
+        result = subprocess.run(
+            ["virsh", "-c", "qemu:///system", "dominfo", name],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        if result.returncode == 0:
+            output += f"❌ **FAIL**: VM '{name}' already exists\n"
+            output += f"   Fix: Choose a different name or delete existing VM\n"
+            output += f"   Command: `kcli delete vm {name} -y`\n\n"
+            all_passed = False
+            fixes_needed.append(f"delete_vm('{name}') or choose different name")
+        else:
+            output += f"✅ **PASS**: Name '{name}' is available\n\n"
+    except Exception as e:
+        output += f"⚠️ **WARN**: Could not check VM existence: {e}\n\n"
+
+    # Check 2: Image availability
+    output += "## 2. Image Availability\n"
+    try:
+        result = subprocess.run(
+            ["kcli", "list", "images"],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        if result.returncode == 0:
+            if image in result.stdout:
+                output += f"✅ **PASS**: Image '{image}' is available\n\n"
+            else:
+                output += f"❌ **FAIL**: Image '{image}' not found\n"
+                output += f"   Available images:\n```\n{result.stdout[:500]}\n```\n"
+                output += f"   Fix: Download the image first\n"
+                output += f"   Command: `kcli download image {image}`\n\n"
+                all_passed = False
+                fixes_needed.append(f"Run: kcli download image {image}")
+        else:
+            output += f"⚠️ **WARN**: Could not list images: {result.stderr}\n\n"
+    except Exception as e:
+        output += f"⚠️ **WARN**: Could not check images: {e}\n\n"
+
+    # Check 3: Available memory
+    output += "## 3. Host Memory\n"
+    try:
+        result = subprocess.run(
+            ["free", "-m"],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if result.returncode == 0:
+            lines = result.stdout.strip().split('\n')
+            for line in lines:
+                if line.startswith('Mem:'):
+                    parts = line.split()
+                    available_mb = int(parts[6]) if len(parts) > 6 else int(parts[3])
+                    if available_mb >= memory + 1024:  # Need buffer
+                        output += f"✅ **PASS**: {available_mb}MB available (need {memory}MB + buffer)\n\n"
+                    else:
+                        output += f"❌ **FAIL**: Only {available_mb}MB available, need {memory}MB + 1GB buffer\n"
+                        output += f"   Fix: Stop unused VMs or reduce requested memory\n\n"
+                        all_passed = False
+                        fixes_needed.append("Stop unused VMs or reduce memory request")
+                    break
+    except Exception as e:
+        output += f"⚠️ **WARN**: Could not check memory: {e}\n\n"
+
+    # Check 4: Disk space
+    output += "## 4. Disk Space\n"
+    try:
+        result = subprocess.run(
+            ["df", "-BG", "/var/lib/libvirt/images"],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if result.returncode == 0:
+            lines = result.stdout.strip().split('\n')
+            if len(lines) > 1:
+                parts = lines[1].split()
+                available_gb = int(parts[3].replace('G', ''))
+                if available_gb >= disk_size + 10:  # Need buffer
+                    output += f"✅ **PASS**: {available_gb}GB available (need {disk_size}GB + buffer)\n\n"
+                else:
+                    output += f"❌ **FAIL**: Only {available_gb}GB available, need {disk_size}GB + 10GB buffer\n"
+                    output += f"   Fix: Free up disk space or reduce disk_size\n\n"
+                    all_passed = False
+                    fixes_needed.append("Free disk space or reduce disk_size")
+    except Exception as e:
+        output += f"⚠️ **WARN**: Could not check disk: {e}\n\n"
+
+    # Check 5: Libvirt service
+    output += "## 5. Libvirt Service\n"
+    try:
+        result = subprocess.run(
+            ["systemctl", "is-active", "libvirtd"],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if result.stdout.strip() == "active":
+            output += "✅ **PASS**: libvirtd is running\n\n"
+        else:
+            output += "❌ **FAIL**: libvirtd is not running\n"
+            output += "   Fix: `sudo systemctl start libvirtd`\n\n"
+            all_passed = False
+            fixes_needed.append("Run: sudo systemctl start libvirtd")
+    except Exception as e:
+        output += f"⚠️ **WARN**: Could not check libvirtd: {e}\n\n"
+
+    # Summary
+    output += "---\n\n## Summary\n\n"
+    if all_passed:
+        output += "✅ **ALL CHECKS PASSED** - Safe to create VM\n\n"
+        output += "**Next step:** Call `create_vm()` with these parameters:\n"
+        output += f"```\ncreate_vm(\n    name=\"{name}\",\n    image=\"{image}\",\n"
+        output += f"    memory={memory},\n    cpus={cpus},\n    disk_size={disk_size}\n)\n```\n"
+    else:
+        output += "❌ **CHECKS FAILED** - Fix issues before creating VM\n\n"
+        output += "**Fixes needed:**\n"
+        for fix in fixes_needed:
+            output += f"- {fix}\n"
+        output += "\n**After fixing:** Run `preflight_vm_creation()` again to verify.\n"
+
+    return output
+
+
+@mcp.tool()
 async def list_vms() -> str:
     """
     List all virtual machines managed by kcli/virsh.
-    
+
+    WHEN TO USE: Call this to see existing infrastructure before:
+    - Creating new VMs (to check naming conventions and available resources)
+    - Getting VM details (to find exact VM names)
+    - Deleting VMs (to verify the VM exists)
+
+    WHAT YOU GET: A list showing each VM's:
+    - ID (internal libvirt ID)
+    - Name (use this for get_vm_info, delete_vm, etc.)
+    - State (running, shut off, paused)
+
+    NEXT STEPS:
+    - Use get_vm_info(vm_name) to see CPU, memory, disk details
+    - Use create_vm() if you need a new VM
+    - Use delete_vm(vm_name) to remove a VM
+
     Returns:
         Formatted list of VMs with their states
     """
@@ -296,16 +505,40 @@ async def create_vm(
 ) -> str:
     """
     Create a new virtual machine using kcli.
-    
+
+    WHEN TO USE: Create infrastructure for testing, development, or deployment.
+
+    BEFORE CALLING:
+    1. Call list_vms() to check existing VMs and naming conventions
+    2. Ensure the name is unique and follows your naming pattern
+    3. Verify you have sufficient host resources for the requested specs
+
+    IMPORTANT: This is a WRITE operation that takes 1-5 minutes.
+    In read-only mode, this will fail.
+
     Args:
-        name: Name for the new VM
-        image: Base image (default: centos10stream)
-        memory: Memory in MB (default: 2048)
-        cpus: Number of CPUs (default: 2)
-        disk_size: Disk size in GB (default: 10)
-    
+        name: Unique name for the new VM (e.g., "dev-web-01", "test-db")
+              Naming convention: <env>-<role>-<number>
+        image: Base image. Available options:
+              - "centos10stream" (default, recommended)
+              - "rhel9", "rhel8"
+              - "fedora40", "fedora39"
+              - "ubuntu2404", "ubuntu2204"
+        memory: Memory in MB. Recommendations:
+              - 2048 (2GB): Minimal workloads
+              - 4096 (4GB): Standard applications
+              - 8192 (8GB): Databases, Java apps
+              - 16384 (16GB): Heavy workloads
+        cpus: Number of vCPUs (1-16 typical)
+        disk_size: Disk size in GB (10-500 typical)
+
+    EXAMPLES:
+        create_vm("test-vm")  # Minimal defaults
+        create_vm("prod-web-01", memory=4096, cpus=4, disk_size=50)
+        create_vm("db-server", image="rhel9", memory=16384, cpus=8, disk_size=200)
+
     Returns:
-        Success message with VM details or error
+        Success message with VM details, or error if creation failed
     """
     logger.info(f"Tool called: create_vm(name='{name}', image='{image}', memory={memory}, cpus={cpus}, disk_size={disk_size})")
     
@@ -987,8 +1220,20 @@ async def query_rag(
     """
     Search the RAG knowledge base for relevant documents using semantic similarity.
 
+    WHEN TO USE: Before attempting any task, search for existing knowledge:
+    - Error messages you encounter
+    - Configuration questions
+    - Best practices for a technology
+    - Past solutions to similar problems
+
     Use this tool to find documentation, ADRs, past troubleshooting solutions,
     and DAG examples related to your query.
+
+    WORKFLOW:
+    1. Call query_rag() with your question or error message
+    2. If results found, use the information to proceed
+    3. If no results, lower threshold or broaden query
+    4. After solving a problem, use log_troubleshooting_attempt() to save solution
 
     Args:
         query: Natural language search query (e.g., "How to configure FreeIPA DNS?")
@@ -998,17 +1243,22 @@ async def query_rag(
             - 'dag': Example DAG code
             - 'troubleshooting': Past troubleshooting solutions
             - 'guide': How-to guides
-            - None: Search all types
-        limit: Maximum number of results (default: 5)
+            - None: Search all types (recommended first)
+        limit: Maximum number of results (default: 5, max: 20)
         threshold: Minimum similarity score 0-1 (default: 0.7)
+            - 0.8+: High confidence matches only
+            - 0.6-0.8: Good matches
+            - 0.5-0.6: Broader search
+            - <0.5: May return less relevant results
 
     Returns:
         Formatted list of matching documents with similarity scores and content excerpts.
 
-    Examples:
-        - query_rag("FreeIPA DNS configuration")
-        - query_rag("OpenShift deployment errors", doc_types=["troubleshooting"])
-        - query_rag("SSH operator usage", doc_types=["provider_doc", "dag"])
+    EXAMPLES:
+        query_rag("FreeIPA DNS configuration")
+        query_rag("OpenShift deployment errors", doc_types=["troubleshooting"])
+        query_rag("SSH operator usage", doc_types=["provider_doc", "dag"])
+        query_rag("connection refused", threshold=0.5)  # Broader error search
     """
     logger.info(f"Tool called: query_rag(query='{query[:50]}...', doc_types={doc_types}, limit={limit})")
 
@@ -1886,6 +2136,473 @@ Then set `OPENLINEAGE_DISABLED=false` to enable lineage emission from Airflow.
         return f"Error: {error_msg}"
 
 
+# =============================================================================
+# WORKFLOW ORCHESTRATION TOOLS (ADR-0034 Enhancement)
+# =============================================================================
+
+WORKFLOW_TEMPLATES = {
+    "create_openshift_cluster": {
+        "name": "Create OpenShift Cluster",
+        "description": "Deploy a new OpenShift cluster from scratch",
+        "steps": [
+            {"name": "Verify prerequisites", "tool": "preflight_vm_creation", "required": True},
+            {"name": "Check DNS configuration", "tool": "query_rag", "query": "openshift dns requirements"},
+            {"name": "Create bootstrap VM", "tool": "create_vm", "params": {"memory": 16384, "cpus": 4}},
+            {"name": "Trigger deployment DAG", "tool": "trigger_dag", "dag_id": "openshift_deploy_cluster"},
+            {"name": "Monitor progress", "tool": "get_dag_info", "check_status": True}
+        ],
+        "estimated_duration": "45-90 minutes",
+        "confidence_threshold": 0.8
+    },
+    "setup_freeipa": {
+        "name": "Setup FreeIPA Server",
+        "description": "Deploy FreeIPA for identity management",
+        "steps": [
+            {"name": "Check existing setup", "tool": "list_vms", "check_for": "freeipa"},
+            {"name": "Run preflight checks", "tool": "preflight_vm_creation", "required": True},
+            {"name": "Create FreeIPA VM", "tool": "create_vm", "params": {"memory": 4096, "cpus": 2}},
+            {"name": "Trigger FreeIPA DAG", "tool": "trigger_dag", "dag_id": "freeipa_deploy"},
+            {"name": "Verify DNS records", "tool": "query_rag", "query": "freeipa dns verification"}
+        ],
+        "estimated_duration": "20-30 minutes",
+        "confidence_threshold": 0.75
+    },
+    "deploy_vm_basic": {
+        "name": "Deploy Basic VM",
+        "description": "Create and configure a simple virtual machine",
+        "steps": [
+            {"name": "Run preflight checks", "tool": "preflight_vm_creation", "required": True},
+            {"name": "Create VM", "tool": "create_vm", "required": True},
+            {"name": "Verify VM is running", "tool": "get_vm_info", "check_status": True},
+            {"name": "Log success", "tool": "log_troubleshooting_attempt", "log_success": True}
+        ],
+        "estimated_duration": "5-10 minutes",
+        "confidence_threshold": 0.7
+    },
+    "troubleshoot_vm": {
+        "name": "Troubleshoot VM Issues",
+        "description": "Diagnose and fix common VM problems",
+        "steps": [
+            {"name": "Check VM state", "tool": "get_vm_info", "required": True},
+            {"name": "Search past solutions", "tool": "get_troubleshooting_history", "required": True},
+            {"name": "Query knowledge base", "tool": "query_rag", "query": "vm troubleshooting"},
+            {"name": "Check host resources", "tool": "preflight_vm_creation", "diagnostics_only": True},
+            {"name": "Review related DAGs", "tool": "list_dags", "filter": "vm"}
+        ],
+        "estimated_duration": "10-20 minutes",
+        "confidence_threshold": 0.6
+    }
+}
+
+
+@mcp.tool()
+async def get_workflow_guide(
+    workflow_type: str = "",
+    goal_description: str = ""
+) -> str:
+    """
+    Get step-by-step guidance for multi-step infrastructure workflows.
+
+    WHEN TO USE: Call this FIRST when you need to:
+    - Deploy OpenShift clusters
+    - Setup FreeIPA identity management
+    - Create VMs with proper validation
+    - Troubleshoot infrastructure issues
+    - Plan any multi-step operation
+
+    WHAT YOU GET: A structured workflow plan showing:
+    - Ordered steps with specific tools to call
+    - Required vs optional steps
+    - Confidence thresholds to meet
+    - Estimated duration
+    - What to do if a step fails
+
+    HOW IT IMPROVES SUCCESS:
+    - Ensures prerequisites are checked first
+    - Prevents common ordering mistakes
+    - Links to troubleshooting history if steps fail
+    - Provides rollback guidance
+
+    Args:
+        workflow_type: One of: 'create_openshift_cluster', 'setup_freeipa',
+                      'deploy_vm_basic', 'troubleshoot_vm'
+                      Leave empty to see all available workflows.
+        goal_description: Natural language description of what you want to achieve
+                         (used if workflow_type is not specified)
+
+    EXAMPLES:
+        get_workflow_guide(workflow_type="deploy_vm_basic")
+        get_workflow_guide(goal_description="I need to set up DNS for my cluster")
+
+    NEXT STEPS after getting the guide:
+    - Follow steps in order, calling each tool
+    - If a step fails, check get_troubleshooting_history()
+    - After completion, call log_troubleshooting_attempt() to record success
+    """
+    logger.info(f"Tool called: get_workflow_guide(workflow_type='{workflow_type}', goal='{goal_description}')")
+
+    output = "# Workflow Orchestration Guide\n\n"
+
+    # If no workflow specified, show all available
+    if not workflow_type and not goal_description:
+        output += "## Available Workflows\n\n"
+        for wf_id, wf in WORKFLOW_TEMPLATES.items():
+            output += f"### `{wf_id}`\n"
+            output += f"**{wf['name']}**: {wf['description']}\n"
+            output += f"- Steps: {len(wf['steps'])}\n"
+            output += f"- Duration: {wf['estimated_duration']}\n"
+            output += f"- Confidence needed: {wf['confidence_threshold']:.0%}\n\n"
+
+        output += "---\n\n"
+        output += "**To get detailed steps:** Call `get_workflow_guide(workflow_type='workflow_id')`\n\n"
+        output += "**Or describe your goal:** Call `get_workflow_guide(goal_description='what you want to do')`\n"
+        return output
+
+    # Try to match goal description to workflow
+    if goal_description and not workflow_type:
+        goal_lower = goal_description.lower()
+        if any(term in goal_lower for term in ["openshift", "ocp", "cluster"]):
+            workflow_type = "create_openshift_cluster"
+        elif any(term in goal_lower for term in ["freeipa", "idm", "identity", "dns"]):
+            workflow_type = "setup_freeipa"
+        elif any(term in goal_lower for term in ["troubleshoot", "fix", "error", "problem", "issue"]):
+            workflow_type = "troubleshoot_vm"
+        elif any(term in goal_lower for term in ["vm", "virtual", "create", "deploy"]):
+            workflow_type = "deploy_vm_basic"
+        else:
+            output += f"## Goal Analysis\n\n"
+            output += f"**Your goal:** {goal_description}\n\n"
+            output += "I couldn't match this to a specific workflow. Here's what I recommend:\n\n"
+            output += "1. **Search the knowledge base first:**\n"
+            output += f"   ```\n   query_rag(query=\"{goal_description}\")\n   ```\n\n"
+            output += "2. **Check for existing solutions:**\n"
+            output += f"   ```\n   get_troubleshooting_history(error_pattern=\"{goal_description[:50]}\")\n   ```\n\n"
+            output += "3. **Review available DAGs:**\n"
+            output += "   ```\n   list_dags()\n   ```\n\n"
+            return output
+
+    # Get the workflow template
+    workflow = WORKFLOW_TEMPLATES.get(workflow_type)
+    if not workflow:
+        output += f"❌ Unknown workflow: `{workflow_type}`\n\n"
+        output += "Available workflows:\n"
+        for wf_id in WORKFLOW_TEMPLATES:
+            output += f"- `{wf_id}`\n"
+        return output
+
+    # Generate detailed step-by-step guide
+    output += f"## {workflow['name']}\n\n"
+    output += f"**Description:** {workflow['description']}\n"
+    output += f"**Estimated Duration:** {workflow['estimated_duration']}\n"
+    output += f"**Minimum Confidence Required:** {workflow['confidence_threshold']:.0%}\n\n"
+
+    output += "---\n\n"
+    output += "## Step-by-Step Execution Plan\n\n"
+
+    for i, step in enumerate(workflow['steps'], 1):
+        required = step.get('required', False)
+        req_badge = "🔴 REQUIRED" if required else "🟢 Recommended"
+
+        output += f"### Step {i}: {step['name']} {req_badge}\n\n"
+        output += f"**Tool:** `{step['tool']}`\n\n"
+
+        # Generate example call
+        if step['tool'] == 'preflight_vm_creation':
+            output += "```python\n"
+            if step.get('diagnostics_only'):
+                output += "# Run preflight for diagnostics (check resources)\n"
+            output += f"result = preflight_vm_creation(name='your-vm-name')\n"
+            output += "# ⚠️ STOP if any checks fail. Fix issues before proceeding.\n"
+            output += "```\n\n"
+
+        elif step['tool'] == 'create_vm':
+            params = step.get('params', {})
+            mem = params.get('memory', 2048)
+            cpus = params.get('cpus', 2)
+            output += "```python\n"
+            output += f"result = create_vm(\n"
+            output += f"    name='your-vm-name',\n"
+            output += f"    memory={mem},\n"
+            output += f"    cpus={cpus}\n"
+            output += ")\n"
+            output += "```\n\n"
+
+        elif step['tool'] == 'trigger_dag':
+            dag_id = step.get('dag_id', 'your_dag_id')
+            output += "```python\n"
+            output += f"result = trigger_dag(dag_id='{dag_id}')\n"
+            output += "# Note the run_id from the response\n"
+            output += "```\n\n"
+
+        elif step['tool'] == 'query_rag':
+            query = step.get('query', 'your query')
+            output += "```python\n"
+            output += f"result = query_rag(query='{query}')\n"
+            output += "```\n\n"
+
+        elif step['tool'] == 'get_troubleshooting_history':
+            output += "```python\n"
+            output += "result = get_troubleshooting_history(only_successful=True, limit=5)\n"
+            output += "```\n\n"
+
+        elif step['tool'] == 'list_vms':
+            check_for = step.get('check_for', '')
+            output += "```python\n"
+            output += f"result = list_vms()\n"
+            if check_for:
+                output += f"# Look for existing VMs containing '{check_for}'\n"
+            output += "```\n\n"
+
+        elif step['tool'] == 'get_vm_info':
+            output += "```python\n"
+            output += "result = get_vm_info(vm_name='your-vm-name')\n"
+            if step.get('check_status'):
+                output += "# Verify state is 'running'\n"
+            output += "```\n\n"
+
+        elif step['tool'] == 'get_dag_info':
+            output += "```python\n"
+            output += f"result = get_dag_info(dag_id='{step.get('dag_id', 'your_dag_id')}')\n"
+            output += "# Check last_run_state for completion\n"
+            output += "```\n\n"
+
+        else:
+            output += f"```python\n{step['tool']}()\n```\n\n"
+
+        # Failure guidance
+        output += "**If this step fails:**\n"
+        output += "1. Call `get_troubleshooting_history(error_pattern='<error message>')`\n"
+        output += "2. Call `query_rag(query='<error message> solution')`\n"
+        if required:
+            output += "3. **DO NOT proceed** until this step succeeds\n"
+        output += "\n---\n\n"
+
+    output += "## Post-Completion\n\n"
+    output += "After successful completion, **always log the result:**\n"
+    output += "```python\n"
+    output += f"log_troubleshooting_attempt(\n"
+    output += f"    task='{workflow['name']}',\n"
+    output += f"    solution='Followed workflow steps 1-{len(workflow['steps'])}',\n"
+    output += f"    result='success',\n"
+    output += f"    component='workflow_orchestrator'\n"
+    output += ")\n"
+    output += "```\n\n"
+
+    output += "This builds the knowledge base for future success.\n"
+
+    return output
+
+
+@mcp.tool()
+async def diagnose_issue(
+    symptom: str,
+    component: str = "unknown",
+    error_message: str = "",
+    affected_resource: str = ""
+) -> str:
+    """
+    Structured diagnostic tool for complex infrastructure issues.
+
+    WHEN TO USE: Call this when facing:
+    - VM won't start or is unreachable
+    - DAG failures with unclear causes
+    - Network/DNS issues
+    - Resource exhaustion problems
+    - Any error that isn't immediately clear
+
+    WHAT YOU GET: A systematic diagnostic plan showing:
+    - Categorized checks to run
+    - Specific commands/tools for each check
+    - Historical solutions for similar issues
+    - Escalation paths if basic checks don't help
+
+    HOW IT IMPROVES SUCCESS:
+    - Prevents random troubleshooting attempts
+    - Checks most common causes first
+    - Links to past successful solutions
+    - Ensures nothing obvious is missed
+
+    Args:
+        symptom: Brief description of what's wrong
+                 (e.g., "VM not responding", "DAG stuck in running state")
+        component: The component affected: 'vm', 'dag', 'network', 'storage',
+                   'freeipa', 'openshift', or 'unknown'
+        error_message: Any error message you're seeing (optional but helpful)
+        affected_resource: Name of the VM, DAG, or resource having issues (optional)
+
+    EXAMPLES:
+        diagnose_issue(symptom="VM won't boot", component="vm", affected_resource="test-vm-1")
+        diagnose_issue(symptom="DAG failed", component="dag", error_message="Task timeout")
+        diagnose_issue(symptom="cannot resolve hostname", component="network")
+
+    NEXT STEPS after diagnosis:
+    - Run the diagnostic checks in order
+    - When you find the cause, apply the suggested fix
+    - Call log_troubleshooting_attempt() with the solution that worked
+    """
+    logger.info(f"Tool called: diagnose_issue(symptom='{symptom}', component='{component}')")
+
+    output = "# Structured Diagnostic Analysis\n\n"
+    output += f"**Symptom:** {symptom}\n"
+    output += f"**Component:** {component}\n"
+    if error_message:
+        output += f"**Error Message:** `{error_message}`\n"
+    if affected_resource:
+        output += f"**Affected Resource:** {affected_resource}\n"
+    output += "\n---\n\n"
+
+    # Search for historical solutions first
+    output += "## Step 1: Check Historical Solutions\n\n"
+    output += "First, let's see if this issue has been solved before:\n\n"
+    output += "```python\n"
+    if error_message:
+        output += f"get_troubleshooting_history(\n"
+        output += f"    error_pattern='{error_message[:50]}',\n"
+        output += f"    component='{component}',\n"
+        output += f"    only_successful=True,\n"
+        output += f"    limit=5\n"
+        output += ")\n"
+    else:
+        output += f"get_troubleshooting_history(\n"
+        output += f"    error_pattern='{symptom[:50]}',\n"
+        output += f"    only_successful=True,\n"
+        output += f"    limit=5\n"
+        output += ")\n"
+    output += "```\n\n"
+
+    # Search RAG
+    output += "## Step 2: Search Knowledge Base\n\n"
+    search_query = f"{symptom} {component} troubleshooting"
+    output += "```python\n"
+    output += f"query_rag(\n"
+    output += f"    query='{search_query}',\n"
+    output += f"    doc_types=['runbook', 'adr', 'troubleshooting'],\n"
+    output += f"    limit=5\n"
+    output += ")\n"
+    output += "```\n\n"
+
+    # Component-specific diagnostics
+    output += "## Step 3: Run Diagnostic Checks\n\n"
+
+    if component == "vm" or "vm" in symptom.lower():
+        output += "### VM-Specific Diagnostics\n\n"
+        output += "**Check 1: VM State**\n"
+        if affected_resource:
+            output += f"```python\nget_vm_info(vm_name='{affected_resource}')\n```\n\n"
+        else:
+            output += "```python\nlist_vms()  # Find the VM name first\n```\n\n"
+
+        output += "**Check 2: Host Resources**\n"
+        output += "```python\npreflight_vm_creation(name='diagnostic-check')\n```\n"
+        output += "This will show available memory, disk, and CPU.\n\n"
+
+        output += "**Check 3: Libvirt Service**\n"
+        output += "```bash\nsystemctl status libvirtd\n```\n\n"
+
+        output += "**Check 4: VM Console/Logs**\n"
+        if affected_resource:
+            output += f"```bash\nvirsh console {affected_resource}\n"
+            output += f"# Or check logs:\nvirsh domblklist {affected_resource}\n```\n\n"
+        else:
+            output += "```bash\nvirsh console <vm-name>\n```\n\n"
+
+        output += "### Common VM Issues & Fixes\n\n"
+        output += "| Symptom | Likely Cause | Fix |\n"
+        output += "|---------|--------------|-----|\n"
+        output += "| Won't start | Insufficient memory | Free up RAM or reduce VM memory |\n"
+        output += "| No network | libvirt network down | `virsh net-start default` |\n"
+        output += "| Boot fails | Corrupt image | Recreate VM with fresh image |\n"
+        output += "| Stuck shutting off | Zombie process | `virsh destroy <vm>` |\n\n"
+
+    elif component == "dag" or "dag" in symptom.lower():
+        output += "### DAG-Specific Diagnostics\n\n"
+        output += "**Check 1: DAG Status**\n"
+        if affected_resource:
+            output += f"```python\nget_dag_info(dag_id='{affected_resource}')\n```\n\n"
+        else:
+            output += "```python\nlist_dags()  # Find active DAGs\n```\n\n"
+
+        output += "**Check 2: Airflow Health**\n"
+        output += "```python\nget_airflow_status()\n```\n\n"
+
+        output += "**Check 3: DAG Lineage (Upstream Failures)**\n"
+        if affected_resource:
+            output += f"```python\nget_dag_lineage(dag_id='{affected_resource}')\n```\n\n"
+        output += "Check if upstream DAGs failed first.\n\n"
+
+        output += "**Check 4: Task Logs**\n"
+        output += "Access Airflow UI at http://localhost:8080 → DAG → Task Instance → Logs\n\n"
+
+        output += "### Common DAG Issues & Fixes\n\n"
+        output += "| Symptom | Likely Cause | Fix |\n"
+        output += "|---------|--------------|-----|\n"
+        output += "| Stuck queued | Worker overload | Scale workers or wait |\n"
+        output += "| Import error | Syntax/dep issue | Check DAG file syntax |\n"
+        output += "| Task timeout | Long-running op | Increase timeout or optimize |\n"
+        output += "| Sensor timeout | Upstream stuck | Check sensor's poke_interval |\n\n"
+
+    elif component == "network" or any(term in symptom.lower() for term in ["dns", "network", "connect", "resolve"]):
+        output += "### Network-Specific Diagnostics\n\n"
+        output += "**Check 1: DNS Resolution**\n"
+        output += "```bash\nnslookup <hostname>\ndig <hostname>\n```\n\n"
+
+        output += "**Check 2: Network Connectivity**\n"
+        output += "```bash\nping <target>\nnetstat -tulpn | grep LISTEN\n```\n\n"
+
+        output += "**Check 3: Firewall Rules**\n"
+        output += "```bash\nfirewall-cmd --list-all\niptables -L -n\n```\n\n"
+
+        output += "**Check 4: Libvirt Network**\n"
+        output += "```bash\nvirsh net-list --all\nvirsh net-info default\n```\n\n"
+
+        output += "**Check 5: FreeIPA DNS (if applicable)**\n"
+        output += "```python\nquery_rag(query='freeipa dns troubleshooting')\n```\n\n"
+
+    elif component == "storage" or any(term in symptom.lower() for term in ["disk", "storage", "space", "full"]):
+        output += "### Storage-Specific Diagnostics\n\n"
+        output += "**Check 1: Disk Space**\n"
+        output += "```bash\ndf -h\ndf -i  # inodes\n```\n\n"
+
+        output += "**Check 2: Libvirt Storage Pools**\n"
+        output += "```bash\nvirsh pool-list --all\nvirsh pool-info default\n```\n\n"
+
+        output += "**Check 3: Large Files**\n"
+        output += "```bash\ndu -sh /var/lib/libvirt/images/*\nfind /var -size +1G -exec ls -lh {} \\;\n```\n\n"
+
+    else:
+        output += "### General Diagnostics\n\n"
+        output += "**Check 1: System Health**\n"
+        output += "```python\nget_system_info()\n```\n\n"
+
+        output += "**Check 2: Airflow Status**\n"
+        output += "```python\nget_airflow_status()\n```\n\n"
+
+        output += "**Check 3: Resource Availability**\n"
+        output += "```python\npreflight_vm_creation(name='health-check')\n```\n\n"
+
+        output += "**Check 4: Recent Changes**\n"
+        output += "```python\nget_troubleshooting_history(limit=10)\n```\n"
+        output += "Look for recent activities that might have caused the issue.\n\n"
+
+    output += "---\n\n"
+    output += "## Step 4: Log Your Findings\n\n"
+    output += "After resolving the issue, **always log it**:\n\n"
+    output += "```python\n"
+    output += "log_troubleshooting_attempt(\n"
+    output += f"    task='{symptom}',\n"
+    output += "    solution='<what fixed it>',\n"
+    output += "    result='success',  # or 'failed'\n"
+    if error_message:
+        output += f"    error_message='{error_message[:100]}',\n"
+    output += f"    component='{component}'\n"
+    output += ")\n"
+    output += "```\n\n"
+
+    output += "This helps future troubleshooting succeed faster.\n"
+
+    return output
+
+
 def main():
     """Main entry point"""
     if not MCP_ENABLED:
@@ -1899,7 +2616,7 @@ def main():
     logger.info("Starting FastMCP Airflow Server (ADR-0049)")
     logger.info(f"Host: {MCP_HOST}")
     logger.info(f"Port: {MCP_PORT}")
-    logger.info("Tools: DAGs(3), VMs(5), RAG(6), Troubleshooting(2), Lineage(4), Status(2)")
+    logger.info("Tools: DAGs(3), VMs(5), RAG(6), Troubleshooting(2), Lineage(4), Status(2), Orchestration(2)")
     logger.info(f"RAG Available: {RAG_AVAILABLE}")
     logger.info(f"Lineage Available: {LINEAGE_AVAILABLE}")
     logger.info("=" * 60)
