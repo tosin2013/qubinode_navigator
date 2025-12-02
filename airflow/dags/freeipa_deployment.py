@@ -74,128 +74,117 @@ decide_action_task = BranchPythonOperator(
 # Task: Validate environment
 validate_environment = BashOperator(
     task_id='validate_environment',
-    bash_command='''
+    bash_command="""
     echo "========================================"
     echo "Validating FreeIPA Deployment Environment"
     echo "========================================"
     
-    COMMUNITY_VERSION="{{ params.community_version }}"
-    OS_VERSION="{{ params.os_version }}"
-    
-    echo "Community Version: $COMMUNITY_VERSION"
-    echo "OS Version: $OS_VERSION"
-    
-    # Determine image name
-    if [ "$COMMUNITY_VERSION" == "true" ]; then
-        if [ "$OS_VERSION" == "9" ]; then
-            IMAGE_NAME="centos9stream"
+    # ADR-0046: Run validation on host via SSH
+    ssh -o StrictHostKeyChecking=no \
+        -o UserKnownHostsFile=/dev/null \
+        -o LogLevel=ERROR \
+        root@localhost \
+        '
+        COMMUNITY_VERSION="{{ params.community_version }}"
+        OS_VERSION="{{ params.os_version }}"
+        
+        echo "Community Version: $COMMUNITY_VERSION"
+        echo "OS Version: $OS_VERSION"
+        
+        if [ "$COMMUNITY_VERSION" == "true" ]; then
+            [ "$OS_VERSION" == "9" ] && IMAGE_NAME=centos9stream || IMAGE_NAME=centos8stream
         else
-            IMAGE_NAME="centos8stream"
+            [ "$OS_VERSION" == "9" ] && IMAGE_NAME=rhel9 || IMAGE_NAME=rhel8
         fi
-    else
-        if [ "$OS_VERSION" == "9" ]; then
-            IMAGE_NAME="rhel9"
-        else
-            IMAGE_NAME="rhel8"
-        fi
-    fi
-    echo "Image: $IMAGE_NAME"
-    
-    # Check kcli
-    if ! command -v kcli &> /dev/null; then
-        echo "[ERROR] kcli not installed"
-        exit 1
-    fi
-    echo "[OK] kcli installed: $(kcli --version 2>&1 | head -1)"
-    
-    # Check image exists
-    if kcli list images | grep -q "$IMAGE_NAME"; then
-        echo "[OK] Image $IMAGE_NAME available"
-    else
-        echo "[WARN]  Image $IMAGE_NAME not found, downloading..."
-        kcli download image $IMAGE_NAME || {
-            echo "[ERROR] Failed to download image"
+        echo "Image: $IMAGE_NAME"
+        
+        if ! command -v kcli &> /dev/null; then
+            echo "[ERROR] kcli not installed"
             exit 1
-        }
-    fi
-    
-    # Check vault.yml exists
-    VAULT_FILE="/opt/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml"
-    if [ -f "$VAULT_FILE" ]; then
-        echo "[OK] vault.yml found"
-    else
-        echo "[ERROR] vault.yml not found at $VAULT_FILE"
-        echo "Run: deploy-qubinode-with-airflow.sh to create it"
-        exit 1
-    fi
-    
-    # Check freeipa-workshop-deployer
-    if [ -d "/opt/freeipa-workshop-deployer" ]; then
-        echo "[OK] freeipa-workshop-deployer found"
-    else
-        echo "[WARN]  Cloning freeipa-workshop-deployer..."
-        git clone https://github.com/tosin2013/freeipa-workshop-deployer.git /opt/freeipa-workshop-deployer
-    fi
-    
-    echo ""
-    echo "[OK] Environment validation complete"
-    ''',
+        fi
+        echo "[OK] kcli installed: $(kcli --version 2>&1 | head -1)"
+        
+        if kcli list images | grep -q "$IMAGE_NAME"; then
+            echo "[OK] Image $IMAGE_NAME available"
+        else
+            echo "[WARN] Image $IMAGE_NAME not found, will download during VM creation"
+        fi
+        
+        VAULT_FILE=/opt/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml
+        if [ -f "$VAULT_FILE" ]; then
+            echo "[OK] vault.yml found"
+        else
+            echo "[ERROR] vault.yml not found at $VAULT_FILE"
+            exit 1
+        fi
+        
+        if [ -d /opt/freeipa-workshop-deployer ]; then
+            echo "[OK] freeipa-workshop-deployer found"
+        else
+            echo "[WARN] Cloning freeipa-workshop-deployer..."
+            git clone https://github.com/tosin2013/freeipa-workshop-deployer.git /opt/freeipa-workshop-deployer
+        fi
+        
+        echo ""
+        echo "[OK] Environment validation complete"
+        '
+    """,
     dag=dag,
 )
 
 # Task: Create FreeIPA VM
 create_freeipa_vm = BashOperator(
     task_id='create_freeipa_vm',
-    bash_command='''
+    bash_command="""
     echo "========================================"
     echo "Creating FreeIPA VM"
     echo "========================================"
     
-    COMMUNITY_VERSION="{{ params.community_version }}"
-    OS_VERSION="{{ params.os_version }}"
-    DOMAIN="{{ params.domain }}"
-    IDM_HOSTNAME="{{ params.idm_hostname }}"
-    
-    # Determine image
-    if [ "$COMMUNITY_VERSION" == "true" ]; then
-        [ "$OS_VERSION" == "9" ] && IMAGE_NAME="centos9stream" || IMAGE_NAME="centos8stream"
-        LOGIN_USER="cloud-user"
-    else
-        [ "$OS_VERSION" == "9" ] && IMAGE_NAME="rhel9" || IMAGE_NAME="rhel8"
-        LOGIN_USER="cloud-user"
-    fi
-    
-    VM_NAME="freeipa"
-    
-    # Check if VM exists
-    if kcli info vm $VM_NAME &>/dev/null; then
-        echo "[WARN]  VM $VM_NAME already exists"
+    # ADR-0046: Run kcli on host via SSH
+    ssh -o StrictHostKeyChecking=no \
+        -o UserKnownHostsFile=/dev/null \
+        -o LogLevel=ERROR \
+        root@localhost \
+        '
+        COMMUNITY_VERSION="{{ params.community_version }}"
+        OS_VERSION="{{ params.os_version }}"
+        
+        if [ "$COMMUNITY_VERSION" == "true" ]; then
+            [ "$OS_VERSION" == "9" ] && IMAGE_NAME=centos9stream || IMAGE_NAME=centos8stream
+        else
+            [ "$OS_VERSION" == "9" ] && IMAGE_NAME=rhel9 || IMAGE_NAME=rhel8
+        fi
+        
+        VM_NAME=freeipa
+        
+        if kcli info vm $VM_NAME &>/dev/null; then
+            echo "[WARN] VM $VM_NAME already exists"
+            kcli info vm $VM_NAME
+            exit 0
+        fi
+        
+        echo "Creating VM: $VM_NAME"
+        echo "  Image: $IMAGE_NAME"
+        echo "  Memory: 4096 MB"
+        echo "  CPUs: 2"
+        echo "  Disk: 50 GB"
+        
+        kcli create vm $VM_NAME \
+            -i $IMAGE_NAME \
+            -P memory=4096 \
+            -P numcpus=2 \
+            -P disks=[50] \
+            -P nets=[default] \
+            --wait || {
+            echo "[ERROR] Failed to create VM"
+            exit 1
+        }
+        
+        echo ""
+        echo "[OK] VM created successfully"
         kcli info vm $VM_NAME
-        exit 0
-    fi
-    
-    echo "Creating VM: $VM_NAME"
-    echo "  Image: $IMAGE_NAME"
-    echo "  Memory: 4096 MB"
-    echo "  CPUs: 2"
-    echo "  Disk: 50 GB"
-    
-    # Create VM
-    kcli create vm $VM_NAME \
-        -i $IMAGE_NAME \
-        -P memory=4096 \
-        -P numcpus=2 \
-        -P disks=[50] \
-        -P nets=[default] \
-        --wait || {
-        echo "[ERROR] Failed to create VM"
-        exit 1
-    }
-    
-    echo ""
-    echo "[OK] VM created successfully"
-    kcli info vm $VM_NAME
-    ''',
+        '
+    """,
     execution_timeout=timedelta(minutes=10),
     dag=dag,
 )
@@ -203,57 +192,59 @@ create_freeipa_vm = BashOperator(
 # Task: Wait for VM and get IP
 wait_for_vm = BashOperator(
     task_id='wait_for_vm',
-    bash_command='''
+    bash_command="""
     echo "========================================"
     echo "Waiting for FreeIPA VM to be Ready"
     echo "========================================"
     
-    VM_NAME="freeipa"
-    MAX_ATTEMPTS=60
-    
-    echo "Waiting for VM to get IP address..."
-    
-    for i in $(seq 1 $MAX_ATTEMPTS); do
-        # Get IP from kcli
-        VM_INFO=$(kcli info vm $VM_NAME 2>/dev/null)
-        IP=$(echo "$VM_INFO" | grep "^ip:" | awk '{print $2}')
+    # ADR-0046: Run kcli on host via SSH
+    ssh -o StrictHostKeyChecking=no \
+        -o UserKnownHostsFile=/dev/null \
+        -o LogLevel=ERROR \
+        root@localhost \
+        '
+        VM_NAME=freeipa
+        MAX_ATTEMPTS=60
         
-        if [ -n "$IP" ] && [ "$IP" != "None" ] && [ "$IP" != "" ]; then
-            echo "[OK] VM IP: $IP"
-            
-            # Wait for SSH
-            echo "Waiting for SSH..."
-            for j in $(seq 1 30); do
-                if nc -z -w5 $IP 22 2>/dev/null; then
-                    echo "[OK] SSH is available"
-                    
-                    # Save IP for next tasks
-                    echo "$IP" > /tmp/freeipa_ip.txt
-                    
-                    echo ""
-                    echo "========================================"
-                    echo "FreeIPA VM Ready"
-                    echo "========================================"
-                    echo "VM Name: $VM_NAME"
-                    echo "IP Address: $IP"
-                    echo "SSH: ssh cloud-user@$IP"
-                    exit 0
-                fi
-                echo "  Attempt $j/30: SSH not ready..."
-                sleep 5
-            done
-            
-            echo "[WARN]  SSH not available after 30 attempts"
-            exit 0
-        fi
+        echo "Waiting for VM to get IP address..."
         
-        echo "  Attempt $i/$MAX_ATTEMPTS: Waiting for IP..."
-        sleep 5
-    done
-    
-    echo "[ERROR] Failed to get VM IP after $MAX_ATTEMPTS attempts"
-    exit 1
-    ''',
+        for i in $(seq 1 $MAX_ATTEMPTS); do
+            VM_INFO=$(kcli info vm $VM_NAME 2>/dev/null)
+            IP=$(echo "$VM_INFO" | grep "^ip:" | awk "{print \\$2}")
+            
+            if [ -n "$IP" ] && [ "$IP" != "None" ] && [ "$IP" != "" ]; then
+                echo "[OK] VM IP: $IP"
+                
+                echo "Waiting for SSH..."
+                for j in $(seq 1 30); do
+                    if nc -z -w5 $IP 22 2>/dev/null; then
+                        echo "[OK] SSH is available"
+                        
+                        echo ""
+                        echo "========================================"
+                        echo "FreeIPA VM Ready"
+                        echo "========================================"
+                        echo "VM Name: $VM_NAME"
+                        echo "IP Address: $IP"
+                        echo "SSH: ssh cloud-user@$IP"
+                        exit 0
+                    fi
+                    echo "  Attempt $j/30: SSH not ready..."
+                    sleep 5
+                done
+                
+                echo "[WARN] SSH not available after 30 attempts"
+                exit 0
+            fi
+            
+            echo "  Attempt $i/$MAX_ATTEMPTS: Waiting for IP..."
+            sleep 5
+        done
+        
+        echo "[ERROR] Failed to get VM IP after $MAX_ATTEMPTS attempts"
+        exit 1
+        '
+    """,
     execution_timeout=timedelta(minutes=10),
     dag=dag,
 )
@@ -453,33 +444,38 @@ validate_freeipa = BashOperator(
 
 destroy_freeipa = BashOperator(
     task_id='destroy_freeipa',
-    bash_command='''
+    bash_command="""
     echo "========================================"
     echo "Destroying FreeIPA VM"
     echo "========================================"
     
-    VM_NAME="freeipa"
-    
-    if kcli info vm $VM_NAME &>/dev/null; then
-        echo "Deleting VM: $VM_NAME"
-        kcli delete vm $VM_NAME -y
-        echo "[OK] VM deleted"
-    else
-        echo "[WARN]  VM $VM_NAME does not exist"
-    fi
-    
-    # Clean up inventory
-    DOMAIN="{{ params.domain }}"
-    IDM_HOSTNAME="{{ params.idm_hostname }}"
-    rm -rf "$HOME/.generated/.${IDM_HOSTNAME}.${DOMAIN}" 2>/dev/null || true
-    
-    # Clean up /etc/hosts
-    grep -v "${IDM_HOSTNAME}" /etc/hosts > /tmp/hosts.tmp 2>/dev/null || true
-    cp /tmp/hosts.tmp /etc/hosts 2>/dev/null || true
-    
-    echo ""
-    echo "[OK] FreeIPA cleanup complete"
-    ''',
+    # ADR-0046: Run kcli on host via SSH
+    ssh -o StrictHostKeyChecking=no \
+        -o UserKnownHostsFile=/dev/null \
+        -o LogLevel=ERROR \
+        root@localhost \
+        '
+        VM_NAME=freeipa
+        
+        if kcli info vm $VM_NAME &>/dev/null; then
+            echo "Deleting VM: $VM_NAME"
+            kcli delete vm $VM_NAME -y
+            echo "[OK] VM deleted"
+        else
+            echo "[WARN] VM $VM_NAME does not exist"
+        fi
+        
+        DOMAIN="{{ params.domain }}"
+        IDM_HOSTNAME="{{ params.idm_hostname }}"
+        rm -rf $HOME/.generated/.${IDM_HOSTNAME}.${DOMAIN} 2>/dev/null || true
+        
+        grep -v "${IDM_HOSTNAME}" /etc/hosts > /tmp/hosts.tmp 2>/dev/null || true
+        cp /tmp/hosts.tmp /etc/hosts 2>/dev/null || true
+        
+        echo ""
+        echo "[OK] FreeIPA cleanup complete"
+        '
+    """,
     dag=dag,
 )
 

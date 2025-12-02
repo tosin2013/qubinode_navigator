@@ -41,8 +41,8 @@ x-airflow-common:
     QUBINODE_AI_ASSISTANT_URL: 'http://localhost:8080'
     QUBINODE_KCLI_ENABLED: 'true'
     QUBINODE_RAG_INTEGRATION: 'true'
-    # MCP Server Configuration (opt-in feature)
-    AIRFLOW_MCP_ENABLED: ${AIRFLOW_MCP_ENABLED:-false}
+    # MCP Server Configuration - Enabled by default for AI assistant integration
+    AIRFLOW_MCP_ENABLED: ${AIRFLOW_MCP_ENABLED:-true}
     AIRFLOW_MCP_PORT: ${AIRFLOW_MCP_PORT:-8889}
     AIRFLOW_MCP_API_KEY: 'b8c909cc21b988703db529ff2287cdbe0cc3ffca67678e9c97bd912790df6486'
     AIRFLOW_MCP_TOOLS_DAG_MGMT: ${AIRFLOW_MCP_TOOLS_DAG_MGMT:-true}
@@ -50,8 +50,9 @@ x-airflow-common:
     AIRFLOW_MCP_TOOLS_LOG_ACCESS: ${AIRFLOW_MCP_TOOLS_LOG_ACCESS:-true}
     AIRFLOW_MCP_TOOLS_READ_ONLY: ${AIRFLOW_MCP_TOOLS_READ_ONLY:-false}
     # ADR-0049 Phase 4: OpenLineage Configuration
-    # Enable OpenLineage integration (requires --profile lineage)
-    AIRFLOW__OPENLINEAGE__DISABLED: ${OPENLINEAGE_DISABLED:-true}
+    # Issue #2 Fix: Enable OpenLineage by default for lineage tracking
+    # Set OPENLINEAGE_DISABLED=true in environment to disable
+    AIRFLOW__OPENLINEAGE__DISABLED: ${OPENLINEAGE_DISABLED:-false}
     AIRFLOW__OPENLINEAGE__TRANSPORT: '{"type": "http", "url": "http://localhost:5001", "endpoint": "api/v1/lineage"}'
     AIRFLOW__OPENLINEAGE__NAMESPACE: 'qubinode'
     # Custom facets directory for code lineage tracking
@@ -59,14 +60,19 @@ x-airflow-common:
     # Marquez API endpoint for lineage queries
     MARQUEZ_API_URL: 'http://localhost:5001'
     # ADR-0050: Scheduler optimization to reduce memory usage
-    # Increase parse interval to reduce DAG parsing frequency (default 30s)
-    AIRFLOW__SCHEDULER__MIN_FILE_PROCESS_INTERVAL: '60'
+    # Issue #1 Fix: DAG Cache/Parsing - Faster DAG refresh for development
+    # Reduce parse interval to detect DAG changes faster (default 30s)
+    AIRFLOW__SCHEDULER__MIN_FILE_PROCESS_INTERVAL: '30'
     # Reduce number of DAG parsing processes (default is based on CPU count)
     AIRFLOW__SCHEDULER__PARSING_PROCESSES: '2'
     # Limit scheduler to process fewer DAGs per loop
     AIRFLOW__SCHEDULER__MAX_DAGRUNS_TO_CREATE_PER_LOOP: '10'
-    # Reduce DAG dir list refresh interval (default 300s)
-    AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: '120'
+    # Reduce DAG dir list refresh interval for faster new DAG detection (default 300s)
+    AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: '30'
+    # Issue #1 Fix: Force reserialize serialized DAGs more frequently
+    AIRFLOW__CORE__MIN_SERIALIZED_DAG_UPDATE_INTERVAL: '30'
+    # Issue #1 Fix: Increase timeout for complex DAG imports
+    AIRFLOW__CORE__DAGBAG_IMPORT_TIMEOUT: '60'
     # ADR-0050: Host services endpoints for hybrid architecture
     # Embedding service runs on host (sentence-transformers is too heavy for container)
     QUBINODE_EMBEDDING_SERVICE_URL: 'http://localhost:8891'
@@ -209,11 +215,12 @@ services:
     network_mode: host
     # Note: MCP server listens on port 8889 directly on host
     healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:8889/sse"]
+      # SSE endpoint never closes, so check if port is listening via Python
+      test: ["CMD-SHELL", "python3 -c \"import socket; s=socket.socket(); s.settimeout(2); s.connect(('localhost',8889)); s.close()\""]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 10s
+      start_period: 15s
     restart: always
     # ADR-0050: Resource limits for MCP server (lightweight service)
     mem_limit: 512m
@@ -226,8 +233,7 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
-    profiles:
-      - mcp  # Optional profile - enable with: docker-compose --profile mcp up
+    # MCP server enabled by default - no profile required
 
   airflow-init:
     <<: *airflow-common
@@ -270,27 +276,33 @@ services:
   # Marquez is the reference implementation for OpenLineage
   # It provides lineage storage, API, and visualization
 
+  # Issue #2 Fix: Marquez enabled by default for lineage visualization
+  # To disable, set LINEAGE_DISABLED=true or use: docker-compose up postgres airflow-webserver airflow-scheduler
   marquez:
-    image: marquezproject/marquez:latest
+    image: docker.io/marquezproject/marquez:latest
     network_mode: host
     environment:
-      # Marquez uses its own PostgreSQL database (separate from Airflow)
+      # Marquez API ports (5001/5002 to avoid conflicts with AI Assistant on 8080)
       MARQUEZ_PORT: 5001
       MARQUEZ_ADMIN_PORT: 5002
-      # Database configuration - using Airflow's PostgreSQL with separate schema
+      # Database configuration - using dedicated marquez database
+      # Created by init-scripts/002-marquez-db.sql
       POSTGRES_HOST: localhost
       POSTGRES_PORT: 5432
-      POSTGRES_DB: airflow
-      POSTGRES_USER: airflow
-      POSTGRES_PASSWORD: airflow
-      # Marquez will create its own schema within the airflow database
-      MARQUEZ_DB_SCHEMA: marquez
+      POSTGRES_DB: marquez
+      POSTGRES_USER: marquez
+      POSTGRES_PASSWORD: marquez
+      # Point to our custom config
+      MARQUEZ_CONFIG: /etc/marquez/marquez.yml
+    volumes:
+      # Mount Marquez configuration
+      - ${AIRFLOW_PROJ_DIR:-.}/config/marquez.yml:/etc/marquez/marquez.yml:ro
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:5001/api/v1/namespaces"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 30s
+      start_period: 60s
     restart: always
     # ADR-0050: Resource limits for Marquez
     mem_limit: 1g
@@ -302,11 +314,10 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    profiles:
-      - lineage  # Optional profile - enable with: docker-compose --profile lineage up
 
+  # Issue #2 Fix: Marquez Web UI enabled by default
   marquez-web:
-    image: marquezproject/marquez-web:latest
+    image: docker.io/marquezproject/marquez-web:latest
     network_mode: host
     environment:
       MARQUEZ_HOST: localhost
@@ -314,7 +325,8 @@ services:
       # Web UI port
       WEB_PORT: 3000
     healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:3000"]
+      # Alpine-based image doesn't have curl, use wget
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -330,8 +342,6 @@ services:
     depends_on:
       marquez:
         condition: service_healthy
-    profiles:
-      - lineage  # Optional profile - enable with: docker-compose --profile lineage up
 
   # ==========================================================================
   # ADR-0051: HashiCorp Vault for Secrets Management

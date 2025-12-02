@@ -222,6 +222,32 @@ Set up webhooks in your Git provider to trigger immediate DAG updates on push:
 - **GitLab**: Settings → Integrations → Webhooks
 - **URL**: http://your-airflow-host:8080/api/v1/dags/sync
 
+## 📊 Lineage & DAG Visualization
+
+Qubinode Navigator includes OpenLineage integration for DAG lineage tracking.
+
+### Access Lineage Services
+
+| Service | URL | Description |
+|---------|-----|-------------|
+| Marquez API | http://localhost:5001 | Lineage data API |
+| Marquez Web UI | http://localhost:3000 | Visual lineage explorer |
+| Airflow UI | http://localhost:8888 | DAG management |
+
+### What You Can Do with Lineage
+
+- **Visualize complete DAG task graphs** - See all dependencies
+- **Understand data flow between tasks** - Track inputs and outputs
+- **Analyze failure blast radius** - See what tasks are affected by failures
+- **Debug task dependency issues** - Identify missing or incorrect dependencies
+
+### Query Lineage via MCP
+
+```python
+# Using the MCP server
+get_dag_lineage("freeipa_deployment")
+```
+
 ## 📊 Monitoring
 
 ### View DAG Execution
@@ -234,7 +260,32 @@ Set up webhooks in your Git provider to trigger immediate DAG updates on push:
 ### Metrics
 
 Airflow exposes metrics at:
-- http://localhost:8080/metrics
+- http://localhost:8888/metrics
+
+## 🛠️ Makefile Commands
+
+Common operations are available via make:
+
+```bash
+# Service Management
+make up                  # Start all services
+make up-all              # Start with lineage and MCP server
+make down                # Stop all services
+make restart             # Restart all services
+make status              # Show service status
+
+# DAG Management
+make clear-dag-cache     # Clear DAG cache and reload
+make validate-dags       # Validate DAG syntax
+make lint-dags           # Check for common issues
+
+# Testing
+make test-mcp            # Test MCP server
+make test-lineage        # Test Marquez/lineage
+
+# Initialization
+make init-prereqs        # Initialize vault.yml, clone repos
+```
 
 ## 🧪 Testing DAGs
 
@@ -242,13 +293,13 @@ Test your DAG before deployment:
 
 ```bash
 # Validate DAG structure
-docker-compose run airflow-cli airflow dags test my_custom_workflow 2025-11-19
+podman-compose run airflow-cli airflow dags test my_custom_workflow 2025-11-19
 
 # List all DAGs
-docker-compose run airflow-cli airflow dags list
+podman-compose run airflow-cli airflow dags list
 
 # Test a specific task
-docker-compose run airflow-cli airflow tasks test my_custom_workflow create_vm 2025-11-19
+podman-compose run airflow-cli airflow tasks test my_custom_workflow create_vm 2025-11-19
 ```
 
 ## 🛠️ Troubleshooting

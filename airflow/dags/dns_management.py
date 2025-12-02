@@ -138,15 +138,17 @@ decide_operation_task = BranchPythonOperator(
 
 
 # Task: Validate FreeIPA
+# Issue #4 Fix: Use SSH to execute kcli commands on host (ADR-0046)
 validate_freeipa = BashOperator(
     task_id='validate_freeipa',
-    bash_command='''
+    bash_command="""
     echo "========================================"
     echo "Validating FreeIPA Environment"
     echo "========================================"
 
-    # Check if FreeIPA VM exists
-    FREEIPA_IP=$(kcli info vm freeipa 2>/dev/null | grep "^ip:" | awk '{print $2}' | head -1)
+    # Check if FreeIPA VM exists (ADR-0046: Execute kcli via SSH to host)
+    FREEIPA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        "kcli info vm freeipa 2>/dev/null | grep '^ip:' | awk '{print \\$2}' | head -1")
 
     if [ -z "$FREEIPA_IP" ] || [ "$FREEIPA_IP" == "None" ]; then
         echo "[ERROR] FreeIPA VM not found"
@@ -156,30 +158,31 @@ validate_freeipa = BashOperator(
 
     echo "[OK] FreeIPA VM found at: $FREEIPA_IP"
 
-    # Check Kerberos ticket
-    if ! klist -s 2>/dev/null; then
-        echo "[WARN] No valid Kerberos ticket"
+    # Check Kerberos ticket (on host)
+    if ! ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost "klist -s" 2>/dev/null; then
+        echo "[WARN] No valid Kerberos ticket on host"
         echo "Attempting kinit..."
 
         # Try to get ticket
         if [ -n "${FREEIPA_PASSWORD:-}" ]; then
-            echo "$FREEIPA_PASSWORD" | kinit admin 2>/dev/null || {
+            ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+                "echo '$FREEIPA_PASSWORD' | kinit admin" 2>/dev/null || {
                 echo "[ERROR] Failed to obtain Kerberos ticket"
                 exit 1
             }
         else
             echo "[ERROR] No FREEIPA_PASSWORD set and no ticket"
-            echo "Run: kinit admin"
+            echo "Run on host: kinit admin"
             exit 1
         fi
     fi
 
     echo "[OK] Valid Kerberos ticket"
-    klist
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost "klist"
 
     echo ""
     echo "[OK] FreeIPA environment validated"
-    ''',
+    """,
     dag=dag,
 )
 
@@ -187,7 +190,7 @@ validate_freeipa = BashOperator(
 # Task: Add DNS Record
 add_dns_record = BashOperator(
     task_id='add_dns_record',
-    bash_command='''
+    bash_command="""
     echo "========================================"
     echo "Adding DNS Record"
     echo "========================================"
@@ -220,10 +223,13 @@ add_dns_record = BashOperator(
     echo "TTL: $TTL"
     echo "Create PTR: $CREATE_PTR"
 
+    # ADR-0046: Execute ipa commands via SSH to host (requires Kerberos ticket)
+    SSH_CMD="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR root@localhost"
+
     # Check if zone exists
-    if ! ipa dnszone-show "$RECORD_ZONE" &>/dev/null; then
+    if ! $SSH_CMD "ipa dnszone-show '$RECORD_ZONE'" &>/dev/null; then
         echo "[WARN] Zone $RECORD_ZONE does not exist, creating..."
-        ipa dnszone-add "$RECORD_ZONE" --skip-overlap-check || {
+        $SSH_CMD "ipa dnszone-add '$RECORD_ZONE' --skip-overlap-check" || {
             echo "[ERROR] Failed to create zone"
             exit 1
         }
@@ -232,11 +238,8 @@ add_dns_record = BashOperator(
     # Add A record
     echo ""
     echo "Adding A record..."
-    ipa dnsrecord-add "$RECORD_ZONE" "$RECORD_NAME" \
-        --a-rec="$IP" \
-        --a-rec-ttl="$TTL" 2>/dev/null || \
-    ipa dnsrecord-mod "$RECORD_ZONE" "$RECORD_NAME" \
-        --a-rec="$IP" 2>/dev/null || {
+    $SSH_CMD "ipa dnsrecord-add '$RECORD_ZONE' '$RECORD_NAME' --a-rec='$IP' --a-rec-ttl='$TTL'" 2>/dev/null || \
+    $SSH_CMD "ipa dnsrecord-mod '$RECORD_ZONE' '$RECORD_NAME' --a-rec='$IP'" 2>/dev/null || {
         echo "[ERROR] Failed to add A record"
         exit 1
     }
@@ -253,13 +256,12 @@ add_dns_record = BashOperator(
         REV_RECORD="${OCTETS[3]}"
 
         # Check if reverse zone exists
-        if ! ipa dnszone-show "$REV_ZONE" &>/dev/null; then
+        if ! $SSH_CMD "ipa dnszone-show '$REV_ZONE'" &>/dev/null; then
             echo "[WARN] Reverse zone $REV_ZONE does not exist, creating..."
-            ipa dnszone-add "$REV_ZONE" --skip-overlap-check 2>/dev/null || true
+            $SSH_CMD "ipa dnszone-add '$REV_ZONE' --skip-overlap-check" 2>/dev/null || true
         fi
 
-        ipa dnsrecord-add "$REV_ZONE" "$REV_RECORD" \
-            --ptr-rec="${FQDN}." 2>/dev/null || true
+        $SSH_CMD "ipa dnsrecord-add '$REV_ZONE' '$REV_RECORD' --ptr-rec='${FQDN}.'" 2>/dev/null || true
 
         echo "[OK] PTR record added: $IP -> $FQDN"
     fi
@@ -270,7 +272,7 @@ add_dns_record = BashOperator(
     echo "========================================"
     echo "Hostname: $FQDN"
     echo "IP: $IP"
-    ''',
+    """,
     trigger_rule='none_failed_min_one_success',
     dag=dag,
 )
@@ -279,7 +281,7 @@ add_dns_record = BashOperator(
 # Task: Remove DNS Record
 remove_dns_record = BashOperator(
     task_id='remove_dns_record',
-    bash_command='''
+    bash_command="""
     echo "========================================"
     echo "Removing DNS Record"
     echo "========================================"
@@ -306,14 +308,17 @@ remove_dns_record = BashOperator(
     echo "Record: $RECORD_NAME"
     echo "Zone: $RECORD_ZONE"
 
+    # ADR-0046: Execute ipa commands via SSH to host (requires Kerberos ticket)
+    SSH_CMD="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR root@localhost"
+
     # Get current IP for PTR cleanup
-    IP=$(ipa dnsrecord-show "$RECORD_ZONE" "$RECORD_NAME" 2>/dev/null | \
+    IP=$($SSH_CMD "ipa dnsrecord-show '$RECORD_ZONE' '$RECORD_NAME'" 2>/dev/null | \
          grep "A record:" | awk '{print $3}')
 
     # Remove A record
     echo ""
     echo "Removing A record..."
-    ipa dnsrecord-del "$RECORD_ZONE" "$RECORD_NAME" --del-all 2>/dev/null || {
+    $SSH_CMD "ipa dnsrecord-del '$RECORD_ZONE' '$RECORD_NAME' --del-all" 2>/dev/null || {
         echo "[WARN] Record may not exist"
     }
 
@@ -325,12 +330,12 @@ remove_dns_record = BashOperator(
         REV_ZONE="${OCTETS[2]}.${OCTETS[1]}.${OCTETS[0]}.in-addr.arpa"
         REV_RECORD="${OCTETS[3]}"
 
-        ipa dnsrecord-del "$REV_ZONE" "$REV_RECORD" --del-all 2>/dev/null || true
+        $SSH_CMD "ipa dnsrecord-del '$REV_ZONE' '$REV_RECORD' --del-all" 2>/dev/null || true
     fi
 
     echo ""
     echo "[OK] DNS record removed: $FQDN"
-    ''',
+    """,
     trigger_rule='none_failed_min_one_success',
     dag=dag,
 )
@@ -339,7 +344,7 @@ remove_dns_record = BashOperator(
 # Task: Add CNAME Record
 add_cname_record = BashOperator(
     task_id='add_cname_record',
-    bash_command='''
+    bash_command="""
     echo "========================================"
     echo "Adding CNAME Record"
     echo "========================================"
@@ -372,15 +377,17 @@ add_cname_record = BashOperator(
     echo "Alias: $FQDN"
     echo "Target: $TARGET_FQDN"
 
-    ipa dnsrecord-add "$RECORD_ZONE" "$RECORD_NAME" \
-        --cname-rec="${TARGET_FQDN}." || {
+    # ADR-0046: Execute ipa commands via SSH to host (requires Kerberos ticket)
+    SSH_CMD="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR root@localhost"
+
+    $SSH_CMD "ipa dnsrecord-add '$RECORD_ZONE' '$RECORD_NAME' --cname-rec='${TARGET_FQDN}.'" || {
         echo "[ERROR] Failed to add CNAME record"
         exit 1
     }
 
     echo ""
     echo "[OK] CNAME record added: $FQDN -> $TARGET_FQDN"
-    ''',
+    """,
     trigger_rule='none_failed_min_one_success',
     dag=dag,
 )
@@ -389,7 +396,7 @@ add_cname_record = BashOperator(
 # Task: Add SRV Record
 add_srv_record = BashOperator(
     task_id='add_srv_record',
-    bash_command='''
+    bash_command="""
     echo "========================================"
     echo "Adding SRV Record"
     echo "========================================"
@@ -419,15 +426,17 @@ add_srv_record = BashOperator(
     echo "Priority: $PRIORITY"
     echo "Weight: $WEIGHT"
 
-    ipa dnsrecord-add "$DOMAIN" "$SERVICE" \
-        --srv-rec="$PRIORITY $WEIGHT $PORT ${HOSTNAME}." || {
+    # ADR-0046: Execute ipa commands via SSH to host (requires Kerberos ticket)
+    SSH_CMD="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR root@localhost"
+
+    $SSH_CMD "ipa dnsrecord-add '$DOMAIN' '$SERVICE' --srv-rec='$PRIORITY $WEIGHT $PORT ${HOSTNAME}.'" || {
         echo "[ERROR] Failed to add SRV record"
         exit 1
     }
 
     echo ""
     echo "[OK] SRV record added"
-    ''',
+    """,
     trigger_rule='none_failed_min_one_success',
     dag=dag,
 )
@@ -436,7 +445,7 @@ add_srv_record = BashOperator(
 # Task: List DNS Records
 list_dns_records = BashOperator(
     task_id='list_dns_records',
-    bash_command='''
+    bash_command="""
     echo "========================================"
     echo "Listing DNS Records"
     echo "========================================"
@@ -446,11 +455,14 @@ list_dns_records = BashOperator(
     echo "Zone: $DOMAIN"
     echo ""
 
-    ipa dnsrecord-find "$DOMAIN" || {
+    # ADR-0046: Execute ipa commands via SSH to host (requires Kerberos ticket)
+    SSH_CMD="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR root@localhost"
+
+    $SSH_CMD "ipa dnsrecord-find '$DOMAIN'" || {
         echo "[ERROR] Failed to list records for zone: $DOMAIN"
         exit 1
     }
-    ''',
+    """,
     trigger_rule='none_failed_min_one_success',
     dag=dag,
 )
@@ -459,7 +471,7 @@ list_dns_records = BashOperator(
 # Task: Check DNS Record
 check_dns_record = BashOperator(
     task_id='check_dns_record',
-    bash_command='''
+    bash_command="""
     echo "========================================"
     echo "Checking DNS Record"
     echo "========================================"
@@ -496,8 +508,10 @@ check_dns_record = BashOperator(
     echo "FreeIPA record details:"
     RECORD_NAME="${FQDN%%.*}"
     RECORD_ZONE="${FQDN#*.}"
-    ipa dnsrecord-show "$RECORD_ZONE" "$RECORD_NAME" 2>/dev/null || echo "  Not found in FreeIPA"
-    ''',
+    # ADR-0046: Execute ipa commands via SSH to host (requires Kerberos ticket)
+    SSH_CMD="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR root@localhost"
+    $SSH_CMD "ipa dnsrecord-show '$RECORD_ZONE' '$RECORD_NAME'" 2>/dev/null || echo "  Not found in FreeIPA"
+    """,
     trigger_rule='none_failed_min_one_success',
     dag=dag,
 )
@@ -506,7 +520,7 @@ check_dns_record = BashOperator(
 # Task: Bulk Add Records
 bulk_add_records = BashOperator(
     task_id='bulk_add_records',
-    bash_command='''
+    bash_command="""
     echo "========================================"
     echo "Bulk Adding DNS Records"
     echo "========================================"
@@ -522,6 +536,9 @@ bulk_add_records = BashOperator(
 
     echo "Processing records..."
     echo ""
+
+    # ADR-0046: Execute ipa commands via SSH to host (requires Kerberos ticket)
+    SSH_CMD="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR root@localhost"
 
     # Parse JSON and add each record
     echo "$BULK_RECORDS" | jq -r '.[] | "\\(.hostname) \\(.ip)"' | while read -r hostname ip; do
@@ -539,14 +556,12 @@ bulk_add_records = BashOperator(
             echo "Adding: $FQDN -> $ip"
 
             # Ensure zone exists
-            ipa dnszone-show "$RECORD_ZONE" &>/dev/null || \
-                ipa dnszone-add "$RECORD_ZONE" --skip-overlap-check &>/dev/null || true
+            $SSH_CMD "ipa dnszone-show '$RECORD_ZONE'" &>/dev/null || \
+                $SSH_CMD "ipa dnszone-add '$RECORD_ZONE' --skip-overlap-check" &>/dev/null || true
 
             # Add record
-            ipa dnsrecord-add "$RECORD_ZONE" "$RECORD_NAME" \
-                --a-rec="$ip" --a-rec-ttl="$TTL" &>/dev/null || \
-            ipa dnsrecord-mod "$RECORD_ZONE" "$RECORD_NAME" \
-                --a-rec="$ip" &>/dev/null || true
+            $SSH_CMD "ipa dnsrecord-add '$RECORD_ZONE' '$RECORD_NAME' --a-rec='$ip' --a-rec-ttl='$TTL'" &>/dev/null || \
+            $SSH_CMD "ipa dnsrecord-mod '$RECORD_ZONE' '$RECORD_NAME' --a-rec='$ip'" &>/dev/null || true
 
             echo "  [OK] Added"
         fi
@@ -554,7 +569,7 @@ bulk_add_records = BashOperator(
 
     echo ""
     echo "[OK] Bulk DNS addition complete"
-    ''',
+    """,
     trigger_rule='none_failed_min_one_success',
     dag=dag,
 )
@@ -563,7 +578,7 @@ bulk_add_records = BashOperator(
 # Task: Sync from Certificate Inventory
 sync_inventory = BashOperator(
     task_id='sync_inventory',
-    bash_command='''
+    bash_command="""
     echo "========================================"
     echo "Syncing DNS from Certificate Inventory"
     echo "========================================"
@@ -580,6 +595,9 @@ sync_inventory = BashOperator(
 
     echo "Reading inventory: $INVENTORY_FILE"
     echo ""
+
+    # ADR-0046: Execute ipa commands via SSH to host (requires Kerberos ticket)
+    SSH_CMD="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR root@localhost"
 
     # Parse inventory and add records
     jq -r '.certificates[] | "\\(.hostname) \\(.ip // "")"' "$INVENTORY_FILE" 2>/dev/null | \
@@ -598,16 +616,14 @@ sync_inventory = BashOperator(
             echo "Syncing: $FQDN -> $ip"
 
             # Add record
-            ipa dnsrecord-add "$RECORD_ZONE" "$RECORD_NAME" \
-                --a-rec="$ip" --a-rec-ttl="$TTL" &>/dev/null || \
-            ipa dnsrecord-mod "$RECORD_ZONE" "$RECORD_NAME" \
-                --a-rec="$ip" &>/dev/null || true
+            $SSH_CMD "ipa dnsrecord-add '$RECORD_ZONE' '$RECORD_NAME' --a-rec='$ip' --a-rec-ttl='$TTL'" &>/dev/null || \
+            $SSH_CMD "ipa dnsrecord-mod '$RECORD_ZONE' '$RECORD_NAME' --a-rec='$ip'" &>/dev/null || true
         fi
     done
 
     echo ""
     echo "[OK] Inventory sync complete"
-    ''',
+    """,
     trigger_rule='none_failed_min_one_success',
     dag=dag,
 )

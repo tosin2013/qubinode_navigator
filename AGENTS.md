@@ -123,17 +123,24 @@ This checks: CPU virtualization, podman, libvirtd, disk space, network.
 
 **Option 1: Full Stack (Recommended)**
 ```bash
-# Creates: Airflow + PostgreSQL + AI Assistant + Nginx
+# Creates: Airflow + PostgreSQL + MCP Server + Marquez Lineage + AI Assistant + Nginx
 ./deploy-qubinode-with-airflow.sh
 ```
 
-**Option 2: Airflow Only**
+**Option 2: Airflow via Makefile**
+```bash
+cd airflow
+make install    # Full installation (prereqs + build + start)
+make uninstall  # Stop and remove containers/volumes
+```
+
+**Option 3: Airflow Manual**
 ```bash
 cd airflow
 ./deploy-airflow.sh
 ```
 
-**Option 3: AI Assistant Only**
+**Option 4: AI Assistant Only**
 ```bash
 cd ai-assistant
 ./scripts/build.sh
@@ -145,9 +152,19 @@ podman run -d --name qubinode-ai -p 8080:8080 localhost/qubinode-ai-assistant:la
 # Check all services
 curl -s localhost:8888/health    # Airflow
 curl -s localhost:8080/health    # AI Assistant
-curl -s localhost:8889/health    # MCP Server (if enabled)
+curl -s localhost:8889/health    # MCP Server
+curl -s localhost:5001/api/v1/namespaces  # Marquez Lineage API
 kcli list vm                     # KVM/libvirt
 ```
+
+### Services (All Enabled by Default)
+| Service | Port | URL |
+|---------|------|-----|
+| Airflow UI | 8888 | http://localhost:8888 |
+| MCP Server | 8889 | http://localhost:8889 |
+| Marquez API | 5001 | http://localhost:5001 |
+| Marquez Web | 3000 | http://localhost:3000 |
+| AI Assistant | 8080 | http://localhost:8080 |
 
 ---
 
@@ -251,7 +268,25 @@ task = BashOperator(
 ```
 
 ### SSH Execution Pattern (ADR-0046)
-Run commands on host from Airflow container:
+Run commands on host from Airflow container. Use the helper functions in `dag_helpers.py`:
+
+```python
+from dag_helpers import ssh_to_host_command, ssh_to_host_script, get_kcli_command
+
+# Simple command
+bash_command = ssh_to_host_command("kcli list vm")
+
+# Multi-line script
+bash_command = ssh_to_host_script("""
+cd /opt/kcli-pipelines
+./deploy.sh
+""")
+
+# kcli with automatic SSH wrapping
+bash_command = get_kcli_command("info vm freeipa")
+```
+
+Or manually:
 ```python
 bash_command="""
 ssh -o StrictHostKeyChecking=no root@localhost \
@@ -331,6 +366,71 @@ trigger_dag("stepca_deployment", {
 
 ---
 
+## Airflow Makefile Commands
+
+The Airflow directory includes a Makefile for common operations:
+
+```bash
+cd airflow
+
+# Installation
+make install      # Full installation (prereqs + build + start)
+make uninstall    # Stop and remove containers/volumes
+make build        # Build container image only
+
+# Service Management
+make up           # Start all services
+make down         # Stop all services
+make restart      # Restart all services
+make status       # Show service status
+make logs         # View logs
+
+# DAG Management
+make clear-dag-cache              # Clear cache and reload all DAGs
+make clear-dag-cache-id DAG_ID=x  # Clear cache for specific DAG
+make validate-dags                # Validate DAG syntax
+make lint-dags                    # Check ADR-0045/0046 compliance
+make list-dags                    # List all DAGs
+
+# Testing
+make test-mcp      # Test MCP server
+make test-lineage  # Test Marquez lineage
+make health        # Check all service health
+
+# Initialization
+make init-prereqs  # Initialize vault.yml, clone repos, setup SSH
+make init-db       # Initialize Airflow database
+```
+
+---
+
+## Lineage & DAG Visualization
+
+OpenLineage/Marquez is enabled by default for DAG lineage tracking.
+
+### Access Lineage
+| Service | URL | Purpose |
+|---------|-----|---------|
+| Marquez Web | http://localhost:3000 | Visual lineage explorer |
+| Marquez API | http://localhost:5001 | Lineage data API |
+
+### Use Cases
+- **Visualize DAG dependencies** - See complete task graphs
+- **Track data flow** - Understand inputs/outputs between tasks
+- **Analyze failure impact** - See what tasks are affected by failures
+- **Debug dependencies** - Identify missing or incorrect task dependencies
+
+### Query Lineage
+```bash
+# Via MCP
+get_dag_lineage("freeipa_deployment")
+
+# Via API
+curl http://localhost:5001/api/v1/namespaces/qubinode/jobs
+```
+
+---
+
 ## Debugging & Troubleshooting
 
 ### Service Health Checks
@@ -347,16 +447,23 @@ podman logs qubinode-ai-assistant         # AI service
 
 ### Common Issues
 
-**DAG not appearing:**
+**DAG not appearing or showing stale version:**
 ```bash
+# Clear DAG cache and force reload
+cd airflow
+make clear-dag-cache
+
+# Or for a specific DAG
+make clear-dag-cache-id DAG_ID=freeipa_deployment
+
+# Lint DAGs for common issues
+make lint-dags
+
 # Check for Python syntax errors
 python3 -c "import ast; ast.parse(open('airflow/dags/my_dag.py').read())"
 
 # Check Airflow import
 python3 -c "from airflow.models import DagBag; db = DagBag('airflow/dags'); print(db.import_errors)"
-
-# Force rescan
-cd airflow && podman-compose restart airflow-scheduler
 ```
 
 **VM operations failing:**
@@ -540,4 +647,5 @@ When starting a new session:
 ---
 
 *Last updated: 2025-12-02*
+*Version: 2.0 - Added MCP/Lineage by default, Makefile commands, SSH helpers*
 *Compatible with: Claude Code, Cursor, GitHub Copilot, VS Code AI, and 20+ other agents*

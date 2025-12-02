@@ -31,6 +31,15 @@ RUN pip install --no-cache-dir \
 RUN pip install --no-cache-dir \
     apache-airflow-providers-hashicorp>=3.0.0
 
+# ADR-0038: FastMCP framework for MCP server
+# Required for MCP server integration with Claude/AI assistants
+RUN pip install --no-cache-dir \
+    fastmcp>=0.1.0 \
+    mcp>=1.0.0 \
+    starlette>=0.27.0 \
+    uvicorn>=0.23.0 \
+    sse-starlette>=1.6.0
+
 # ============================================================================
 # REMOVED FROM CONTAINER (now run on host per ADR-0050):
 # ============================================================================

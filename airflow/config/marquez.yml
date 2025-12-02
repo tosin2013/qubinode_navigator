@@ -1,0 +1,52 @@
+# =============================================================================
+# Marquez Configuration for Qubinode Navigator
+# =============================================================================
+# Based on: https://github.com/MarquezProject/marquez/blob/main/marquez.example.yml
+# Ports adjusted to avoid conflicts:
+#   - API: 5001 (default 8080 conflicts with AI Assistant)
+#   - Admin: 5002 (default 8081)
+
+### HTTP SERVER CONFIG ###
+server:
+  applicationConnectors:
+  - type: http
+    port: ${MARQUEZ_PORT:-5001}
+    httpCompliance: RFC7230_LEGACY
+  adminConnectors:
+  - type: http
+    port: ${MARQUEZ_ADMIN_PORT:-5002}
+
+### DATABASE CONFIG ###
+db:
+  driverClass: org.postgresql.Driver
+  url: jdbc:postgresql://${POSTGRES_HOST:-localhost}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-marquez}
+  user: ${POSTGRES_USER:-marquez}
+  password: ${POSTGRES_PASSWORD:-marquez}
+
+# Enable database migration on startup
+migrateOnStartup: true
+
+# Disable search (we don't have OpenSearch)
+search:
+  enabled: false
+
+# Enable GraphQL endpoint
+graphql:
+  enabled: true
+
+### LOGGING CONFIG ###
+logging:
+  level: ${LOG_LEVEL:-INFO}
+  appenders:
+    - type: console
+
+### CUSTOMIZATION ###
+tags:
+  - name: PII
+    description: Personally identifiable information
+  - name: SENSITIVE
+    description: Contains sensitive information
+  - name: INFRASTRUCTURE
+    description: Infrastructure deployment related
+  - name: QUBINODE
+    description: Qubinode Navigator workflow

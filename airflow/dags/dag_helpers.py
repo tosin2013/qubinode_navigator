@@ -652,7 +652,7 @@ def create_cleanup_on_failure_task(dag, vm_name_param: str = "{{ params.vm_name 
     """
     Create a BashOperator task for cleanup on failure.
     Import this in your DAG and add to task dependencies.
-    
+
     Usage in DAG:
         from dag_helpers import create_cleanup_on_failure_task
         cleanup = create_cleanup_on_failure_task(dag)
@@ -660,11 +660,175 @@ def create_cleanup_on_failure_task(dag, vm_name_param: str = "{{ params.vm_name 
     """
     from airflow.operators.bash import BashOperator
     from airflow.utils.trigger_rule import TriggerRule
-    
+
     return BashOperator(
         task_id='cleanup_on_failure',
         bash_command=get_cleanup_on_failure_task_command(vm_name_param),
         trigger_rule=TriggerRule.ONE_FAILED,
         dag=dag,
     )
+
+
+# =============================================================================
+# SSH Execution Helpers (ADR-0046 Compliance)
+# =============================================================================
+# Issue #4 Fix: Provide standardized SSH execution patterns for host commands
+
+def ssh_to_host_command(cmd: str, host: str = "localhost", user: str = "root") -> str:
+    """
+    Wrap a command to execute on the host via SSH (ADR-0046).
+
+    Use this for commands that need host access from Airflow containers:
+    - kcli commands (VM management)
+    - virsh commands (libvirt)
+    - ansible-playbook execution
+    - Host system commands
+
+    Args:
+        cmd: Command to execute on host
+        host: Target host (default: localhost)
+        user: SSH user (default: root)
+
+    Returns:
+        SSH-wrapped command string using single quotes for clean escaping
+
+    Example:
+        >>> ssh_to_host_command("kcli list vm")
+        'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR root@localhost \'kcli list vm\''
+
+    Usage in DAG:
+        from dag_helpers import ssh_to_host_command
+
+        bash_command = ssh_to_host_command("kcli list vm")
+        # Or with variables (use double quotes in command):
+        bash_command = ssh_to_host_command(f'kcli create vm -i centos10stream {vm_name}')
+    """
+    return f'''ssh -o StrictHostKeyChecking=no \\
+    -o UserKnownHostsFile=/dev/null \\
+    -o LogLevel=ERROR \\
+    {user}@{host} \\
+    '{cmd}'
+    '''
+
+
+def ssh_to_host_script(script: str, host: str = "localhost", user: str = "root") -> str:
+    """
+    Execute a multi-line script on the host via SSH (ADR-0046).
+
+    For complex scripts that need host execution. Uses heredoc pattern
+    to avoid escaping issues.
+
+    Args:
+        script: Multi-line bash script to execute
+        host: Target host (default: localhost)
+        user: SSH user (default: root)
+
+    Returns:
+        SSH command with heredoc for script execution
+
+    Example:
+        >>> script = '''
+        ... kcli list vm
+        ... virsh list --all
+        ... '''
+        >>> ssh_to_host_script(script)
+
+    Usage in DAG:
+        from dag_helpers import ssh_to_host_script
+
+        script = '''
+        export VM_NAME="$1"
+        kcli info vm "$VM_NAME"
+        virsh dominfo "$VM_NAME"
+        '''
+        bash_command = ssh_to_host_script(script)
+    """
+    return f'''ssh -o StrictHostKeyChecking=no \\
+    -o UserKnownHostsFile=/dev/null \\
+    -o LogLevel=ERROR \\
+    {user}@{host} << 'REMOTE_SCRIPT'
+{script}
+REMOTE_SCRIPT
+    '''
+
+
+def get_kcli_command(cmd: str, via_ssh: bool = True) -> str:
+    """
+    Generate a kcli command with proper PATH and optional SSH wrapper.
+
+    Args:
+        cmd: kcli command (e.g., "list vm", "info vm freeipa")
+        via_ssh: Whether to wrap in SSH for host execution (default: True)
+
+    Returns:
+        Complete bash command string
+
+    Example:
+        >>> get_kcli_command("list vm")
+        >>> get_kcli_command("create vm -i centos10stream test-vm")
+
+    Usage in DAG:
+        from dag_helpers import get_kcli_command
+
+        list_vms = BashOperator(
+            task_id='list_vms',
+            bash_command=get_kcli_command("list vm"),
+            dag=dag,
+        )
+    """
+    full_cmd = f'''export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
+kcli {cmd}'''
+
+    if via_ssh:
+        return ssh_to_host_script(full_cmd)
+    return full_cmd
+
+
+def get_ansible_playbook_command(
+    playbook_path: str,
+    inventory: str = "/opt/qubinode_navigator/inventories/localhost",
+    extra_vars: Optional[Dict[str, str]] = None,
+    vault_password_file: str = "/root/.vault_password",
+    via_ssh: bool = True
+) -> str:
+    """
+    Generate an ansible-playbook command with proper configuration.
+
+    Per ADR-0046, Ansible playbooks should be executed on the host via SSH,
+    not inside the Airflow container.
+
+    Args:
+        playbook_path: Path to the playbook file
+        inventory: Path to inventory directory
+        extra_vars: Optional dictionary of extra variables
+        vault_password_file: Path to vault password file
+        via_ssh: Whether to wrap in SSH for host execution (default: True)
+
+    Returns:
+        Complete bash command string
+
+    Example:
+        >>> get_ansible_playbook_command(
+        ...     "/opt/freeipa-workshop-deployer/freeipa.yml",
+        ...     extra_vars={"action": "create"}
+        ... )
+    """
+    cmd_parts = [
+        "ansible-playbook",
+        playbook_path,
+        f"-i {inventory}",
+    ]
+
+    if vault_password_file:
+        cmd_parts.append(f"--vault-password-file {vault_password_file}")
+
+    if extra_vars:
+        for key, value in extra_vars.items():
+            cmd_parts.append(f'-e "{key}={value}"')
+
+    full_cmd = " ".join(cmd_parts)
+
+    if via_ssh:
+        return ssh_to_host_script(full_cmd)
+    return full_cmd
 

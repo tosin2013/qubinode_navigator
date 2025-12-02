@@ -49,6 +49,16 @@ if [[ -f "$SCRIPT_DIR/scripts/preflight-check.sh" ]]; then
     echo ""
 fi
 
+# Step 0.5: Initialize prerequisites for infrastructure DAGs (Issue #3 Fix)
+echo -e "${BLUE}[0.5/5] Initializing prerequisites for infrastructure DAGs...${NC}"
+if [[ -f "$SCRIPT_DIR/airflow/scripts/init-prerequisites.sh" ]]; then
+    "$SCRIPT_DIR/airflow/scripts/init-prerequisites.sh" || {
+        echo -e "${YELLOW}Warning: Some prerequisites could not be initialized${NC}"
+        echo -e "${YELLOW}Infrastructure DAGs may require manual configuration${NC}"
+    }
+    echo ""
+fi
+
 # Step 1: Deploy base infrastructure
 echo -e "${BLUE}[1/5] Deploying base infrastructure...${NC}"
 if [[ -f "$SCRIPT_DIR/deploy-qubinode.sh" ]]; then

@@ -1,0 +1,177 @@
+# =============================================================================
+# Airflow Infrastructure DAG Validation
+# =============================================================================
+# Validates Airflow configuration, DAG syntax, and container builds
+# Note: Full VM testing requires self-hosted runner with KVM access
+#
+# What this validates (GitHub-hosted runners):
+# - DAG Python syntax
+# - DAG linting (ADR-0045/ADR-0046 compliance)
+# - Container image builds
+# - docker-compose.yml syntax
+#
+# What requires self-hosted runner with KVM:
+# - VM provisioning (kcli, libvirt)
+# - Full integration tests
+# - Ansible playbook execution
+
+name: Airflow Validation
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'airflow/**'
+      - '.github/workflows/airflow-validate.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'airflow/**'
+  workflow_dispatch:
+
+jobs:
+  # ==========================================================================
+  # DAG Validation (runs on GitHub-hosted runners)
+  # ==========================================================================
+  validate-dags:
+    name: Validate DAGs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install apache-airflow==2.10.4
+          pip install apache-airflow-providers-postgres
+          pip install pyyaml
+
+      - name: Validate DAG syntax
+        run: |
+          echo "Validating DAG Python syntax..."
+          for dag in airflow/dags/*.py; do
+            echo "Checking $dag..."
+            python3 -c "import ast; ast.parse(open('$dag').read())" || exit 1
+          done
+          echo "[OK] All DAGs have valid Python syntax"
+
+      - name: Lint DAGs (ADR-0045/ADR-0046)
+        run: |
+          chmod +x airflow/scripts/lint-dags.sh
+          ./airflow/scripts/lint-dags.sh airflow/dags/
+
+      - name: Check Airflow DAG imports
+        run: |
+          cd airflow
+          export AIRFLOW_HOME=$(pwd)
+          export AIRFLOW__CORE__DAGS_FOLDER=$(pwd)/dags
+          export AIRFLOW__CORE__LOAD_EXAMPLES=false
+          export AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=sqlite:///airflow.db
+
+          # Initialize minimal Airflow DB
+          airflow db init
+
+          # List DAGs to check for import errors
+          airflow dags list 2>&1 | tee dag_list.txt
+
+          # Check for import errors
+          if grep -i "error" dag_list.txt; then
+            echo "[ERROR] DAG import errors found"
+            exit 1
+          fi
+          echo "[OK] All DAGs imported successfully"
+
+  # ==========================================================================
+  # Container Build Validation (runs on GitHub-hosted runners)
+  # ==========================================================================
+  validate-containers:
+    name: Validate Container Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate docker-compose.yml syntax
+        run: |
+          # Install docker-compose if needed
+          docker compose version || pip install docker-compose
+
+          cd airflow
+          docker compose config --quiet && echo "[OK] docker-compose.yml is valid"
+
+      - name: Build Airflow image
+        run: |
+          cd airflow
+          docker compose build --no-cache airflow-webserver
+          echo "[OK] Airflow image built successfully"
+
+      - name: Verify required files exist
+        run: |
+          echo "Checking required files..."
+
+          required_files=(
+            "airflow/docker-compose.yml"
+            "airflow/Dockerfile"
+            "airflow/Makefile"
+            "airflow/config/marquez.yml"
+            "airflow/scripts/mcp_server_fastmcp.py"
+            "airflow/scripts/clear-dag-cache.sh"
+            "airflow/scripts/init-prerequisites.sh"
+            "airflow/scripts/lint-dags.sh"
+            "airflow/init-scripts/001-pgvector-schema.sql"
+            "airflow/init-scripts/002-marquez-db.sql"
+          )
+
+          for file in "${required_files[@]}"; do
+            if [[ -f "$file" ]]; then
+              echo "[OK] $file"
+            else
+              echo "[ERROR] Missing: $file"
+              exit 1
+            fi
+          done
+
+          echo "[OK] All required files exist"
+
+  # ==========================================================================
+  # Full Integration Tests (requires self-hosted runner with KVM)
+  # ==========================================================================
+  # integration-tests:
+  #   name: Integration Tests (KVM Required)
+  #   runs-on: [self-hosted, kvm]
+  #   needs: [validate-dags, validate-containers]
+  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  #
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Start Airflow stack
+  #       run: |
+  #         cd airflow
+  #         make install
+  #
+  #     - name: Wait for services
+  #       run: |
+  #         sleep 60
+  #         cd airflow
+  #         make health
+  #
+  #     - name: Run DAG tests
+  #       run: |
+  #         cd airflow
+  #         # Test DAG execution (requires KVM for VM operations)
+  #         podman-compose exec airflow-scheduler airflow dags test freeipa_deployment 2025-01-01
+  #
+  #     - name: Cleanup
+  #       if: always()
+  #       run: |
+  #         cd airflow
+  #         make uninstall
