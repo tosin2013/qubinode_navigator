@@ -250,80 +250,87 @@ wait_for_vm = BashOperator(
 )
 
 # Task: Prepare Ansible Inventory
+# ADR-0046: Run all host-dependent commands via SSH
 prepare_ansible = BashOperator(
     task_id='prepare_ansible',
-    bash_command='''
+    bash_command="""
     echo "========================================"
     echo "Preparing Ansible for FreeIPA Installation"
     echo "========================================"
-    
-    DOMAIN="{{ params.domain }}"
-    IDM_HOSTNAME="{{ params.idm_hostname }}"
-    DNS_FORWARDER="{{ params.dns_forwarder }}"
-    COMMUNITY_VERSION="{{ params.community_version }}"
-    
-    # Get IP
-    VM_NAME="freeipa"
-    export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
-    IP=$(kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk '{print $2}')
-    
-    if [ -z "$IP" ] || [ "$IP" == "None" ]; then
-        echo "[ERROR] Could not get VM IP"
-        exit 1
-    fi
-    
-    echo "VM IP: $IP"
-    echo "Domain: $DOMAIN"
-    echo "IDM Hostname: $IDM_HOSTNAME"
-    
-    # Determine login user
-    [ "$COMMUNITY_VERSION" == "true" ] && LOGIN_USER="cloud-user" || LOGIN_USER="cloud-user"
-    
-    # Create inventory directory
-    INVENTORY_DIR="$HOME/.generated/.${IDM_HOSTNAME}.${DOMAIN}"
-    mkdir -p "$INVENTORY_DIR"
-    
-    # Create Ansible inventory
-    cat > "$INVENTORY_DIR/inventory" << EOF
+
+    # ADR-0046: Run kcli and ansible-galaxy on host via SSH
+    ssh -o StrictHostKeyChecking=no \
+        -o UserKnownHostsFile=/dev/null \
+        -o LogLevel=ERROR \
+        root@localhost \
+        '
+        DOMAIN="{{ params.domain }}"
+        IDM_HOSTNAME="{{ params.idm_hostname }}"
+        DNS_FORWARDER="{{ params.dns_forwarder }}"
+        COMMUNITY_VERSION="{{ params.community_version }}"
+
+        # Get IP via kcli on host
+        VM_NAME="freeipa"
+        IP=$(kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{print \\$2}")
+
+        if [ -z "$IP" ] || [ "$IP" == "None" ]; then
+            echo "[ERROR] Could not get VM IP"
+            exit 1
+        fi
+
+        echo "VM IP: $IP"
+        echo "Domain: $DOMAIN"
+        echo "IDM Hostname: $IDM_HOSTNAME"
+
+        # Determine login user
+        [ "$COMMUNITY_VERSION" == "true" ] && LOGIN_USER="cloud-user" || LOGIN_USER="cloud-user"
+
+        # Create inventory directory
+        INVENTORY_DIR="/root/.generated/.${IDM_HOSTNAME}.${DOMAIN}"
+        mkdir -p "$INVENTORY_DIR"
+
+        # Create Ansible inventory
+        cat > "$INVENTORY_DIR/inventory" << INVENTORY_EOF
 [idm]
 ${IDM_HOSTNAME}
 
 [all:vars]
 ansible_ssh_private_key_file=/root/.ssh/id_rsa
 ansible_ssh_user=${LOGIN_USER}
-ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+ansible_ssh_common_args=-o StrictHostKeyChecking=no
 ansible_host=${IP}
 ansible_internal_private_ip=${IP}
-EOF
-    
-    echo "[OK] Inventory created at $INVENTORY_DIR/inventory"
-    cat "$INVENTORY_DIR/inventory"
-    
-    # Update /etc/hosts
-    grep -v "${IDM_HOSTNAME}" /etc/hosts > /tmp/hosts.tmp || true
-    echo "${IP} ${IDM_HOSTNAME}.${DOMAIN} ${IDM_HOSTNAME}" >> /tmp/hosts.tmp
-    cp /tmp/hosts.tmp /etc/hosts
-    echo "[OK] Updated /etc/hosts"
-    
-    # Test SSH connectivity
-    echo ""
-    echo "Testing SSH connectivity..."
-    ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${LOGIN_USER}@${IP} "hostname" || {
-        echo "[WARN]  SSH test failed - may need to wait longer"
-    }
-    
-    # Install Ansible collections
-    echo ""
-    echo "Installing Ansible collections..."
-    cd /opt/freeipa-workshop-deployer
-    if [ -f "2_ansible_config/collections/requirements.yaml" ]; then
-        ansible-galaxy install --force -r /opt/freeipa-workshop-deployer/2_ansible_config/collections/requirements.yaml 2>/dev/null || true
-        ansible-galaxy collection install freeipa.ansible_freeipa 2>/dev/null || true
-    fi
-    
-    echo ""
-    echo "[OK] Ansible preparation complete"
-    ''',
+INVENTORY_EOF
+
+        echo "[OK] Inventory created at $INVENTORY_DIR/inventory"
+        cat "$INVENTORY_DIR/inventory"
+
+        # Update /etc/hosts
+        grep -v "${IDM_HOSTNAME}" /etc/hosts > /tmp/hosts.tmp || true
+        echo "${IP} ${IDM_HOSTNAME}.${DOMAIN} ${IDM_HOSTNAME}" >> /tmp/hosts.tmp
+        cp /tmp/hosts.tmp /etc/hosts
+        echo "[OK] Updated /etc/hosts"
+
+        # Test SSH connectivity
+        echo ""
+        echo "Testing SSH connectivity..."
+        ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${LOGIN_USER}@${IP} "hostname" || {
+            echo "[WARN] SSH test failed - may need to wait longer"
+        }
+
+        # Install Ansible collections
+        echo ""
+        echo "Installing Ansible collections..."
+        cd /opt/freeipa-workshop-deployer
+        if [ -f "2_ansible_config/collections/requirements.yaml" ]; then
+            ansible-galaxy install --force -r /opt/freeipa-workshop-deployer/2_ansible_config/collections/requirements.yaml 2>/dev/null || true
+            ansible-galaxy collection install freeipa.ansible_freeipa 2>/dev/null || true
+        fi
+
+        echo ""
+        echo "[OK] Ansible preparation complete"
+        '
+    """,
     dag=dag,
 )
 
@@ -332,108 +339,114 @@ EOF
 install_freeipa = BashOperator(
     task_id='install_freeipa',
     bash_command="""
-    export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
-    set -e
     echo "========================================"
     echo "Installing FreeIPA via Ansible"
     echo "========================================"
-    
+
     RUN_ANSIBLE="{{ params.run_ansible_install }}"
-    
+
     if [ "$RUN_ANSIBLE" != "true" ]; then
-        echo "SKIP: Ansible installation skipped"
+        echo "[SKIP] Ansible installation skipped"
         exit 0
     fi
-    
-    DOMAIN="{{ params.domain }}"
-    IDM_HOSTNAME="{{ params.idm_hostname }}"
-    DNS_FORWARDER="{{ params.dns_forwarder }}"
-    
-    VM_NAME="freeipa"
-    IP=$(kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk '{print $2}')
-    
-    if [ -z "$IP" ]; then
-        echo "ERROR: Could not get VM IP"
-        exit 1
-    fi
-    
-    INVENTORY_DIR="/root/.generated/.${IDM_HOSTNAME}.${DOMAIN}"
-    PLAYBOOK_DIR="/root/freeipa-workshop-deployer"
-    
-    echo "Running Ansible playbook on host via SSH..."
-    echo "  Inventory: $INVENTORY_DIR/inventory"
-    echo "  Playbook: $PLAYBOOK_DIR/2_ansible_config/deploy_idm.yaml"
-    echo "  Domain: $DOMAIN"
-    echo "  IDM Hostname: $IDM_HOSTNAME"
-    echo "  DNS Forwarder: $DNS_FORWARDER"
-    echo "  VM IP: $IP"
-    
-    # Execute Ansible on host via SSH (ADR-0046)
-    # This ensures we use the host's Ansible version and collections
+
+    # ADR-0046: Run kcli and ansible-playbook on host via SSH
     ssh -o StrictHostKeyChecking=no \
         -o UserKnownHostsFile=/dev/null \
         -o LogLevel=ERROR \
         root@localhost \
-        "cd $PLAYBOOK_DIR && \
-         ANSIBLE_HOST_KEY_CHECKING=False \
-         ansible-playbook \
-         -i $INVENTORY_DIR/inventory \
-         --extra-vars 'idm_hostname=${IDM_HOSTNAME}' \
-         --extra-vars 'private_ip=${IP}' \
-         --extra-vars 'domain=${DOMAIN}' \
-         --extra-vars 'dns_forwarder=${DNS_FORWARDER}' \
-         2_ansible_config/deploy_idm.yaml \
-         -v"
-    
-    echo ""
-    echo "========================================"
-    echo "FreeIPA Installation Complete!"
-    echo "========================================"
-    echo "FreeIPA Web UI: https://${IDM_HOSTNAME}.${DOMAIN}"
-    echo "IP Address: ${IP}"
-    echo "Username: admin"
+        '
+        set -e
+        DOMAIN="{{ params.domain }}"
+        IDM_HOSTNAME="{{ params.idm_hostname }}"
+        DNS_FORWARDER="{{ params.dns_forwarder }}"
+
+        VM_NAME="freeipa"
+        IP=$(kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{print \\$2}")
+
+        if [ -z "$IP" ]; then
+            echo "[ERROR] Could not get VM IP"
+            exit 1
+        fi
+
+        INVENTORY_DIR="/root/.generated/.${IDM_HOSTNAME}.${DOMAIN}"
+        PLAYBOOK_DIR="/opt/freeipa-workshop-deployer"
+
+        echo "Running Ansible playbook..."
+        echo "  Inventory: $INVENTORY_DIR/inventory"
+        echo "  Playbook: $PLAYBOOK_DIR/2_ansible_config/deploy_idm.yaml"
+        echo "  Domain: $DOMAIN"
+        echo "  IDM Hostname: $IDM_HOSTNAME"
+        echo "  DNS Forwarder: $DNS_FORWARDER"
+        echo "  VM IP: $IP"
+
+        cd $PLAYBOOK_DIR
+        ANSIBLE_HOST_KEY_CHECKING=False \
+        ansible-playbook \
+            -i $INVENTORY_DIR/inventory \
+            --extra-vars "idm_hostname=${IDM_HOSTNAME}" \
+            --extra-vars "private_ip=${IP}" \
+            --extra-vars "domain=${DOMAIN}" \
+            --extra-vars "dns_forwarder=${DNS_FORWARDER}" \
+            2_ansible_config/deploy_idm.yaml \
+            -v
+
+        echo ""
+        echo "========================================"
+        echo "FreeIPA Installation Complete!"
+        echo "========================================"
+        echo "FreeIPA Web UI: https://${IDM_HOSTNAME}.${DOMAIN}"
+        echo "IP Address: ${IP}"
+        echo "Username: admin"
+        '
     """,
     execution_timeout=timedelta(minutes=30),
     dag=dag,
 )
 
 # Task: Validate FreeIPA Installation
+# ADR-0046: Run kcli on host via SSH
 validate_freeipa = BashOperator(
     task_id='validate_freeipa',
     bash_command="""
-    export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Validating FreeIPA Installation"
     echo "========================================"
-    
-    DOMAIN="{{ params.domain }}"
-    IDM_HOSTNAME="{{ params.idm_hostname }}"
-    RUN_ANSIBLE="{{ params.run_ansible_install }}"
-    
-    VM_NAME="freeipa"
-    export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
-    IP=$(kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk '{print $2}')
-    
-    echo "Checking FreeIPA services on $IP..."
-    
-    if [ "$RUN_ANSIBLE" == "true" ]; then
-        ssh -o StrictHostKeyChecking=no cloud-user@$IP "sudo ipactl status" 2>/dev/null || echo "Note: Could not verify FreeIPA services yet"
-    else
-        echo "Note: Ansible installation was skipped"
-    fi
-    
-    echo ""
-    echo "========================================"
-    echo "FreeIPA Deployment Summary"
-    echo "========================================"
-    echo "VM Name: $VM_NAME"
-    echo "IP Address: $IP"
-    echo "FQDN: ${IDM_HOSTNAME}.${DOMAIN}"
-    echo ""
-    echo "Access:"
-    echo "  SSH: ssh cloud-user@$IP"
-    echo "  Web UI: https://${IDM_HOSTNAME}.${DOMAIN}"
-    echo "  Username: admin"
+
+    # ADR-0046: Run kcli on host via SSH
+    ssh -o StrictHostKeyChecking=no \
+        -o UserKnownHostsFile=/dev/null \
+        -o LogLevel=ERROR \
+        root@localhost \
+        '
+        DOMAIN="{{ params.domain }}"
+        IDM_HOSTNAME="{{ params.idm_hostname }}"
+        RUN_ANSIBLE="{{ params.run_ansible_install }}"
+
+        VM_NAME="freeipa"
+        IP=$(kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{print \\$2}")
+
+        echo "Checking FreeIPA services on $IP..."
+
+        if [ "$RUN_ANSIBLE" == "true" ]; then
+            ssh -o StrictHostKeyChecking=no cloud-user@$IP "sudo ipactl status" 2>/dev/null || echo "[WARN] Could not verify FreeIPA services yet"
+        else
+            echo "[INFO] Ansible installation was skipped"
+        fi
+
+        echo ""
+        echo "========================================"
+        echo "FreeIPA Deployment Summary"
+        echo "========================================"
+        echo "VM Name: $VM_NAME"
+        echo "IP Address: $IP"
+        echo "FQDN: ${IDM_HOSTNAME}.${DOMAIN}"
+        echo ""
+        echo "Access:"
+        echo "  SSH: ssh cloud-user@$IP"
+        echo "  Web UI: https://${IDM_HOSTNAME}.${DOMAIN}"
+        echo "  Username: admin"
+        '
     """,
     dag=dag,
 )
