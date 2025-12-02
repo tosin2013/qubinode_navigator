@@ -5,14 +5,14 @@ on:
     branches: [ main, develop ]
     paths:
       - 'ai-assistant/mcp_*.py'
-      - 'airflow/plugins/qubinode/mcp_*.py'
+      - 'airflow/scripts/mcp_*.py'
       - 'tests/mcp/**'
       - '.github/workflows/mcp-server-ci.yml'
   pull_request:
     branches: [ main, develop ]
     paths:
       - 'ai-assistant/mcp_*.py'
-      - 'airflow/plugins/qubinode/mcp_*.py'
+      - 'airflow/scripts/mcp_*.py'
       - 'tests/mcp/**'
   workflow_dispatch:
 
@@ -35,7 +35,7 @@ jobs:
             path: "ai-assistant"
             server: "mcp_server_fastmcp.py"
           - name: "Airflow MCP"
-            path: "airflow/plugins/qubinode"
+            path: "airflow/scripts"
             server: "mcp_server_fastmcp.py"
     
     steps:
@@ -155,7 +155,7 @@ jobs:
         run: |
           echo "Checking for MCP servers..."
           ai_mcp=$(find ai-assistant -name "mcp_*.py" -type f | wc -l)
-          airflow_mcp=$(find airflow/plugins/qubinode -name "mcp_*.py" -type f 2>/dev/null | wc -l)
+          airflow_mcp=$(find airflow/scripts -name "mcp_*.py" -type f 2>/dev/null | wc -l)
           
           echo "AI Assistant MCP servers: $ai_mcp"
           echo "Airflow MCP servers: $airflow_mcp"
