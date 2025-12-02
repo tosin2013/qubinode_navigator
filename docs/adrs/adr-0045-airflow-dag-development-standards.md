@@ -212,7 +212,7 @@ fi
 
 ```python
 # WRONG - Confusing mix of Jinja and bash
-echo "Result: {{ params.value | default('${DEFAULT_VALUE}') }}"
+{% raw %}echo "Result: {{ params.value | default('${DEFAULT_VALUE}') }}"{% endraw %}
 ```
 
 ### 7. Volume Mount Requirements

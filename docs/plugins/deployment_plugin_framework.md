@@ -149,6 +149,7 @@ def execute_ai_guided_deployment(user_config):
 ## 📚 **Documentation Integration**
 
 ### **Dynamic Documentation Generation**
+{% raw %}
 ```markdown
 <!-- Example: AI-enhanced documentation with plugin integration -->
 
@@ -179,6 +180,7 @@ def execute_ai_guided_deployment(user_config):
 ### Troubleshooting
 {{ ai_assistant.get_network_troubleshooting_guidance(plugins) }}
 ```
+{% endraw %}
 
 ### **Interactive Plugin Functions**
 ```bash
