@@ -84,7 +84,7 @@ jobs:
           echo "GUID=${{ github.event.inputs.guid }}" >> $GITHUB_ENV
         fi
     - name: Configure RHEL 9 Equinix Server
-      uses: appleboy/ssh-action@v1.2.3
+      uses: appleboy/ssh-action@v1.2.4
       with:
         host: ${{ env.HOSTNAME }}
         username: ${{ secrets.USERNAME }}
