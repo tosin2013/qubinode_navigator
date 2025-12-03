@@ -1,9 +1,11 @@
 # ADR-0045: Airflow DAG Development Standards
 
 ## Status
+
 Accepted
 
 ## Date
+
 2025-11-27
 
 ## Context and Problem Statement
@@ -11,25 +13,25 @@ Accepted
 During the development of FreeIPA and VyOS deployment DAGs, we encountered several issues that caused DAG failures:
 
 1. **Unicode characters** in bash commands caused parsing errors (`unexpected EOF while looking for matching quote`)
-2. **String concatenation** in triple-quoted bash commands broke the command syntax
-3. **Complex error handling** with special characters failed in containerized environments
-4. **Missing volume mounts** caused DAGs to fail when accessing host resources
-5. **Inconsistent coding patterns** made debugging difficult
+1. **String concatenation** in triple-quoted bash commands broke the command syntax
+1. **Complex error handling** with special characters failed in containerized environments
+1. **Missing volume mounts** caused DAGs to fail when accessing host resources
+1. **Inconsistent coding patterns** made debugging difficult
 
 We need a standardized approach for developing Airflow DAGs in the Qubinode Navigator project.
 
 ## Decision Drivers
 
-* DAGs must work reliably in containerized Airflow environments
-* Code should be maintainable and debuggable
-* Standards should be easy to follow for new contributors
-* DAGs should be portable across different environments
+- DAGs must work reliably in containerized Airflow environments
+- Code should be maintainable and debuggable
+- Standards should be easy to follow for new contributors
+- DAGs should be portable across different environments
 
 ## Decision Outcome
 
 Establish the following development standards for all Airflow DAGs in the Qubinode Navigator project.
 
----
+______________________________________________________________________
 
 ## DAG Development Standards
 
@@ -43,6 +45,7 @@ dags/
 ```
 
 **Naming Conventions:**
+
 - DAG files: `snake_case.py`
 - DAG IDs: Match the filename without `.py` extension
 - Task IDs: `snake_case`, descriptive action names
@@ -241,16 +244,16 @@ validate_environment = BashOperator(
     echo "========================================"
     echo "Validating Environment"
     echo "========================================"
-    
+
     # Check kcli is available
     command -v kcli || { echo "[ERROR] kcli not found"; exit 1; }
-    
+
     # Check required files exist
     [ -f "/opt/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml" ] || {
         echo "[ERROR] vault.yml not found"
         exit 1
     }
-    
+
     echo "[OK] Environment validation complete"
     """,
     dag=dag,
@@ -261,13 +264,13 @@ validate_environment = BashOperator(
 
 Use consistent log prefixes:
 
-| Prefix | Meaning |
-|--------|---------|
-| `[OK]` | Success |
+| Prefix    | Meaning       |
+| --------- | ------------- |
+| `[OK]`    | Success       |
 | `[ERROR]` | Error/Failure |
-| `[WARN]` | Warning |
-| `[INFO]` | Informational |
-| `[SKIP]` | Skipped step |
+| `[WARN]`  | Warning       |
+| `[INFO]`  | Informational |
+| `[SKIP]`  | Skipped step  |
 
 ### 10. Testing DAGs
 
@@ -284,17 +287,19 @@ python -c "from airflow.models import DagBag; d = DagBag('.'); print(d.import_er
 airflow dags test my_dag_id 2025-01-01
 ```
 
----
+______________________________________________________________________
 
 ## Consequences
 
 ### Positive
+
 - Consistent, maintainable DAG code across the project
 - Fewer runtime errors from encoding/parsing issues
 - Easier onboarding for new contributors
 - Better debugging experience
 
 ### Negative
+
 - Less visually appealing output (no emojis/Unicode)
 - Requires updating existing DAGs to comply
 - Some flexibility is reduced for standardization

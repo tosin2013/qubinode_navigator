@@ -18,7 +18,7 @@ jobs:
   test-dependabot-pr:
     if: github.actor == 'dependabot[bot]'
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -120,7 +120,7 @@ jobs:
     needs: test-dependabot-pr
     if: github.actor == 'dependabot[bot]'
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Get Dependabot metadata
         id: metadata
@@ -141,15 +141,15 @@ jobs:
         if: steps.metadata.outputs.update-type == 'version-update:semver-major'
         run: |
           gh pr comment "$PR_URL" --body "🚨 **Major version update detected!**
-          
+
           This PR contains a major version update that requires manual review:
           - **Package**: ${{ steps.metadata.outputs.dependency-names }}
           - **Update Type**: ${{ steps.metadata.outputs.update-type }}
           - **Previous Version**: ${{ steps.metadata.outputs.previous-version }}
           - **New Version**: ${{ steps.metadata.outputs.new-version }}
-          
+
           Please review the changelog and test thoroughly before merging.
-          
+
           **Testing checklist:**
           - [ ] Test enhanced_load_variables.py functionality
           - [ ] Test network detection features

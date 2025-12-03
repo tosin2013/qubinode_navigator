@@ -43,16 +43,16 @@ openshift_config:
   use_openshift_routes: true
   vault_integration: kubernetes_auth
   service_account: qubinode-navigator
-  
+
   # Container registry configuration
   registry_auth: pull_secret
-  
+
   # Storage configuration
   storage_class: {{ storage_class | default('gp2') }}
-  
+
   # Network configuration
   network_policy: enabled
-  
+
   # Security context
   security_context:
     run_as_user: 1001
@@ -75,13 +75,13 @@ aws_secret_key: {{ aws_secret_key | default('') }}
 network_config:
   # Use OpenShift SDN/OVN
   use_openshift_sdn: true
-  
+
   # DNS configuration
   dns_forwarder: {{ dns_forwarder | default('8.8.8.8') }}
-  
+
   # Load balancer configuration
   load_balancer: openshift_router
-  
+
   # Ingress configuration
   ingress_controller: openshift_router
 {% endif %}
@@ -90,16 +90,16 @@ network_config:
 kubernetes_config:
   # Namespace for Qubinode Navigator
   namespace: {{ kubernetes_namespace | default('qubinode-navigator') }}
-  
+
   # Service account
   service_account: {{ service_account | default('qubinode-navigator') }}
-  
+
   # RBAC configuration
   rbac_enabled: true
-  
+
   # Pod security
   pod_security_policy: restricted
-  
+
   # Resource limits
   resources:
     requests:
@@ -113,17 +113,17 @@ kubernetes_config:
 {% if vault_enabled %}
 vault_config:
   type: {% if openshift_vault %}openshift{% elif use_hcp %}hcp{% else %}local{% endif %}
-  
+
   address: {{ vault_addr | default('') }}
-  
+
   {% if openshift_vault %}
   auth_method: kubernetes
   role: {{ vault_role | default('qubinode-navigator') }}
   service_account_token_path: /var/run/secrets/kubernetes.io/serviceaccount/token
   {% endif %}
-  
+
   secret_path: ansiblesafe/{{ environment }}
-  
+
   # Vault Secrets Operator integration
   {% if openshift_vault %}
   vso_enabled: {{ vso_enabled | default('true') }}

@@ -15,11 +15,11 @@ Installs Gitleaks, BFG Repo-Cleaner, `pre-commit`, and prepares `.security-backu
 
 ### 1.2 Repository Backup Procedure
 
-| Step | Command | Notes |
-|------|---------|-------|
-| Git bundle | `git bundle create .security-backups/git-bundles/pre-cleanup.bundle --all` | Captures refs pre-cleanup |
-| Working tree | `tar -czf .security-backups/file-backups/$(date +%Y%m%d)-workspace.tgz .` | Includes untracked files |
-| CI evidence | `cp -r artifacts/ .security-backups/scan-results/$(date +%Y%m%d)` | Helpful for audits |
+| Step         | Command                                                                    | Notes                     |
+| ------------ | -------------------------------------------------------------------------- | ------------------------- |
+| Git bundle   | `git bundle create .security-backups/git-bundles/pre-cleanup.bundle --all` | Captures refs pre-cleanup |
+| Working tree | `tar -czf .security-backups/file-backups/$(date +%Y%m%d)-workspace.tgz .`  | Includes untracked files  |
+| CI evidence  | `cp -r artifacts/ .security-backups/scan-results/$(date +%Y%m%d)`          | Helpful for audits        |
 
 > ⚠️ **Warning**: Confirm bundles restore successfully before destructive steps (`git clone repo.bundle repo-restore`).
 
@@ -30,7 +30,7 @@ Installs Gitleaks, BFG Repo-Cleaner, `pre-commit`, and prepares `.security-backu
 - [ ] Assign reviewers for interactive findings
 - [ ] Document responsibilities for secrets vs. documentation fixes
 
----
+______________________________________________________________________
 
 ## 2. Repository Context Analysis Phase
 
@@ -40,17 +40,18 @@ Installs Gitleaks, BFG Repo-Cleaner, `pre-commit`, and prepares `.security-backu
    ```bash
    python3 scripts/analyze_repo_structure.py > .security-backups/scan-results/structure.json
    ```
-2. **Dependency map** – module import graph.
+1. **Dependency map** – module import graph.
    ```bash
    ./scripts/dependency_graph.sh > .security-backups/scan-results/dependencies.json
    ```
-3. **Visualization tips**
+1. **Visualization tips**
    ```bash
    jq '.python_graph | keys' structure.json
    jq '.["core/ai_update_manager.py"]' dependencies.json
    ```
 
 ASCII example:
+
 ```
 qubinode_navigator/
 ├── core/            # orchestration + analytics
@@ -70,7 +71,7 @@ Use `scripts/generate_repo_summary.py` to ingest README + ADR index and produce:
 
 > ℹ️ **Info**: Align cleanup actions with ADR themes documented in `docs/adrs/`. Removing architectural context from public docs must be offset by enhancing contributor docs.
 
----
+______________________________________________________________________
 
 ## 3. Interactive Detection Phase
 
@@ -85,16 +86,16 @@ python3 scripts/review_gitleaks.py   # interactive classification
 
 ### 3.2 Classification Matrix
 
-| Category | Examples | Action | Notes |
-|----------|----------|--------|-------|
-| Critical secrets | API tokens, passwords | Remove + rotate; trigger BFG if committed | Never move to docs |
-| Sensitive architecture | Internal topology, private endpoints | Move to `docs/internal/` or sanitize | Tie back to ADR references |
-| Developer notes | TODO, Claude notes, debug traces | Remove if obsolete; otherwise move to `.dev-notes/` | Include owner + expiry metadata |
-| Public documentation | User guides, READMEs | Sanitize phrasing, keep alignment | Preserve references for end users |
+| Category               | Examples                             | Action                                              | Notes                             |
+| ---------------------- | ------------------------------------ | --------------------------------------------------- | --------------------------------- |
+| Critical secrets       | API tokens, passwords                | Remove + rotate; trigger BFG if committed           | Never move to docs                |
+| Sensitive architecture | Internal topology, private endpoints | Move to `docs/internal/` or sanitize                | Tie back to ADR references        |
+| Developer notes        | TODO, Claude notes, debug traces     | Remove if obsolete; otherwise move to `.dev-notes/` | Include owner + expiry metadata   |
+| Public documentation   | User guides, READMEs                 | Sanitize phrasing, keep alignment                   | Preserve references for end users |
 
 Interactive CLI decisions stored in `.security-backups/scan-results/gitleaks-review.json` for reproducibility.
 
----
+______________________________________________________________________
 
 ## 4. Impact Analysis Phase
 
@@ -123,9 +124,9 @@ impact_modifiers:
   mentioned_in_docs: 1
 ```
 
-Score findings to prioritize remediation (High ≥6, Medium 3–5, Low <3).
+Score findings to prioritize remediation (High ≥6, Medium 3–5, Low \<3).
 
----
+______________________________________________________________________
 
 ## 5. Interactive Cleanup Execution
 
@@ -137,41 +138,42 @@ python3 scripts/interactive_cleanup.py   # shows diff per action
 ```
 
 Actions:
+
 1. **Remove** (critical secrets) – replace with env vars, update docs.
-2. **Move** (useful notes) – relocate to `.dev-notes/<module>/` or `docs/internal/<topic>/`.
-3. **Sanitize** – trim sensitive portions, add ADR references.
+1. **Move** (useful notes) – relocate to `.dev-notes/<module>/` or `docs/internal/<topic>/`.
+1. **Sanitize** – trim sensitive portions, add ADR references.
 
 Add `.dev-notes/` to `.gitignore` if meant for contributors only.
 
 ### 5.2 Verification Steps
 
-| Step | Command | Purpose |
-|------|---------|---------|
-| Security regression | `gitleaks detect -c .gitleaks.toml --no-banner` | Ensure no findings remain |
-| Automated tests | `pytest tests/unit` or targeted suites | Catch note-related fixture changes |
-| Linting | `ansible-lint` / `pre-commit run --all-files` | Validate formatting and hooks |
-| Docs build (optional) | `mkdocs build` or `jekyll build` | Confirm docs references |
+| Step                  | Command                                         | Purpose                            |
+| --------------------- | ----------------------------------------------- | ---------------------------------- |
+| Security regression   | `gitleaks detect -c .gitleaks.toml --no-banner` | Ensure no findings remain          |
+| Automated tests       | `pytest tests/unit` or targeted suites          | Catch note-related fixture changes |
+| Linting               | `ansible-lint` / `pre-commit run --all-files`   | Validate formatting and hooks      |
+| Docs build (optional) | `mkdocs build` or `jekyll build`                | Confirm docs references            |
 
 Rollback options: `git checkout -- <file>`, restore from backups, or reset branch before merge.
 
----
+______________________________________________________________________
 
 ## 6. Git History Cleanup (BFG)
 
 > ⚠️ **Warning**: Coordinate with maintainers; history rewrite requires force push.
 
 1. **Mirror clone**: `git clone --mirror origin repo.git-mirror`.
-2. **Run BFG**:
+1. **Run BFG**:
    ```bash
    bfg --delete-files id_rsa --delete-files '*.pem' --replace-text ../bfg-replacements.txt
    git reflog expire --expire=now --all && git gc --prune=now --aggressive
    ```
-3. **Verify**: `gitleaks detect`, `git fsck`.
-4. **Force push** after team approval; communicate reset instructions for contributors (`git fetch --all`, `git reset --hard origin/main`).
+1. **Verify**: `gitleaks detect`, `git fsck`.
+1. **Force push** after team approval; communicate reset instructions for contributors (`git fetch --all`, `git reset --hard origin/main`).
 
 Maintain backup branch (`backup/pre-bfg-YYYYMMDD`) until cleanup validated.
 
----
+______________________________________________________________________
 
 ## 7. Documentation Restructuring
 
@@ -191,16 +193,17 @@ Maintain backup branch (`backup/pre-bfg-YYYYMMDD`) until cleanup validated.
    origin: scripts/setup-security-tools.sh
    ---
    ```
-2. Maintain `docs/internal/index.md` mapping original paths → new locations.
-3. Reference ADR IDs when removing context from public docs (e.g., “See ADR-0028 for plugin framework internals”).
+1. Maintain `docs/internal/index.md` mapping original paths → new locations.
+1. Reference ADR IDs when removing context from public docs (e.g., “See ADR-0028 for plugin framework internals”).
 
----
+______________________________________________________________________
 
 ## 8. Prevention & Automation
 
 ### 8.1 Pre-commit Hooks
 
 `.pre-commit-config.yaml` snippet:
+
 ```yaml
 repos:
   - repo: https://github.com/zricethezav/gitleaks
@@ -220,6 +223,7 @@ Install via `pre-commit install` and enforce in CI.
 ### 8.2 CI/CD Integration
 
 Add job to `.github/workflows/ai-assistant-ci.yml`:
+
 ```yaml
 - name: Security scan
   uses: gitleaks/gitleaks-action@v2
@@ -235,28 +239,30 @@ Optional: upload `structure.json`, `dependencies.json`, and Gitleaks reports as 
 - Reference ADRs when documenting architecture in code.
 - Conduct quarterly cleanup drills & tabletop exercises for secret exposure scenarios.
 
----
+______________________________________________________________________
 
 ## 9. Ongoing Maintenance
 
-| Frequency | Task |
-|-----------|------|
-| Monthly | Run Gitleaks + review `.dev-notes/` growth |
-| Quarterly | Refresh knowledge graph, dependency reports, and documentation mapping |
-| Release cycle | Verify README vs. contributor docs alignment |
-| Annually | Update tooling versions, revisit classification matrix, audit pre-commit hooks |
+| Frequency     | Task                                                                           |
+| ------------- | ------------------------------------------------------------------------------ |
+| Monthly       | Run Gitleaks + review `.dev-notes/` growth                                     |
+| Quarterly     | Refresh knowledge graph, dependency reports, and documentation mapping         |
+| Release cycle | Verify README vs. contributor docs alignment                                   |
+| Annually      | Update tooling versions, revisit classification matrix, audit pre-commit hooks |
 
 **Monitoring Ideas**
+
 - Dashboards tracking number of developer notes relocated vs. removed
 - Heat map of directories with repeated findings
 - ADR coverage report (files lacking references)
 
 **Continuous Improvement**
-1. Capture lessons learned inside `docs/internal/devsecops-playbook.md` (this file).
-2. Extend `.gitleaks.toml` as new AI note patterns emerge.
-3. Automate reporting (e.g., Slack notifications on new critical findings).
 
----
+1. Capture lessons learned inside `docs/internal/devsecops-playbook.md` (this file).
+1. Extend `.gitleaks.toml` as new AI note patterns emerge.
+1. Automate reporting (e.g., Slack notifications on new critical findings).
+
+______________________________________________________________________
 
 ### Troubleshooting Quick Reference
 
@@ -265,7 +271,7 @@ Optional: upload `structure.json`, `dependencies.json`, and Gitleaks reports as 
 - **Docs broken links**: `rg -n "old/path" -g"*.md"` to update references.
 - **Slow pre-commit**: scope hooks with `files:` patterns or use `--files` overrides.
 
----
+______________________________________________________________________
 
 ### References
 
@@ -273,9 +279,10 @@ Optional: upload `structure.json`, `dependencies.json`, and Gitleaks reports as 
 - [BFG Repo-Cleaner](https://rtyley.github.io/bfg-repo-cleaner/)
 - [ADR Best Practices](https://adr.github.io/)
 
----
+______________________________________________________________________
 
 **Next Actions:**
+
 1. Commit this playbook and supporting scripts.
-2. Schedule first interactive cleanup session using the procedures above.
-3. Track outputs in `.security-backups/scan-results/` for auditability.
+1. Schedule first interactive cleanup session using the procedures above.
+1. Track outputs in `.security-backups/scan-results/` for auditability.

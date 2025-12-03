@@ -174,7 +174,7 @@ if [ "${USE_HASHICORP_VAULT}" = "true" ]; then
     # Check vault connectivity
     if [ -n "${VAULT_ADDR}" ] && ([ -n "${VAULT_TOKEN}" ] || [ "${OPENSHIFT_VAULT}" = "true" ]); then
         print_status "Checking vault connectivity to ${VAULT_ADDR}..."
-        
+
         # Test vault connection using Python
         python3 -c "
 import hvac
@@ -185,7 +185,7 @@ try:
     client = hvac.Client(url='${VAULT_ADDR}', token='${VAULT_TOKEN}')
     if client.is_authenticated():
         print('✅ Vault authentication successful')
-        
+
         # Test reading a secret (optional)
         try:
             response = client.secrets.kv.v2.read_secret_version(path='ansiblesafe/${INVENTORY}')
@@ -203,15 +203,15 @@ except Exception as e:
             print_warning "Please check your VAULT_ADDR and VAULT_TOKEN settings"
             exit 1
         }
-        
+
         print_status "✅ HashiCorp Vault integration test successful"
-        
+
         # Test vault update functionality
         print_status "Testing vault update functionality..."
         python3 enhanced-load-variables.py --generate-config --update-vault || {
             print_warning "Vault update test failed (this may be due to permissions)"
         }
-        
+
     else
         print_warning "VAULT_ADDR or VAULT_TOKEN not set. Skipping vault connectivity test."
     fi

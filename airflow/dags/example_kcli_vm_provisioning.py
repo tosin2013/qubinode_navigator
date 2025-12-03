@@ -12,53 +12,57 @@ This DAG demonstrates:
 from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.bash import BashOperator
-from qubinode.operators import KcliVMCreateOperator, KcliVMDeleteOperator, KcliVMListOperator
+from qubinode.operators import (
+    KcliVMCreateOperator,
+    KcliVMDeleteOperator,
+    KcliVMListOperator,
+)
 from qubinode.sensors import KcliVMStatusSensor
 
 # Default arguments for all tasks
 default_args = {
-    'owner': 'qubinode',
-    'depends_on_past': False,
-    'start_date': datetime(2025, 11, 19),
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 1,
-    'retry_delay': timedelta(minutes=5),
+    "owner": "qubinode",
+    "depends_on_past": False,
+    "start_date": datetime(2025, 11, 19),
+    "email_on_failure": False,
+    "email_on_retry": False,
+    "retries": 1,
+    "retry_delay": timedelta(minutes=5),
 }
 
 # Define the DAG
 dag = DAG(
-    'example_kcli_vm_provisioning',
+    "example_kcli_vm_provisioning",
     default_args=default_args,
-    description='Example DAG for VM provisioning using kcli',
+    description="Example DAG for VM provisioning using kcli",
     schedule_interval=None,  # Manual trigger only
     catchup=False,
-    tags=['qubinode', 'kcli', 'vm-provisioning', 'example'],
+    tags=["qubinode", "kcli", "vm-provisioning", "example"],
 )
 
 # Task 1: List existing VMs
 list_vms_before = KcliVMListOperator(
-    task_id='list_vms_before',
+    task_id="list_vms_before",
     dag=dag,
 )
 
 # Task 2: Create a new VM
 create_vm = KcliVMCreateOperator(
-    task_id='create_test_vm',
+    task_id="create_test_vm",
     vm_name=f'test-centos-{datetime.now().strftime("%Y%m%d")}',
-    image='centos10stream',  # Use existing image (was: centos-stream-10)
+    image="centos10stream",  # Use existing image (was: centos-stream-10)
     memory=2048,
     cpus=2,
-    disk_size='10G',
+    disk_size="10G",
     ai_assistance=True,  # Enable AI guidance for VM creation
     dag=dag,
 )
 
 # Task 3: Wait for VM to be running
 wait_for_vm = KcliVMStatusSensor(
-    task_id='wait_for_vm_running',
+    task_id="wait_for_vm_running",
     vm_name=f'test-centos-{datetime.now().strftime("%Y%m%d")}',
-    expected_status='running',
+    expected_status="running",
     timeout=300,  # 5 minutes
     poke_interval=30,  # Check every 30 seconds
     dag=dag,
@@ -66,34 +70,42 @@ wait_for_vm = KcliVMStatusSensor(
 
 # Task 4: Validate VM (using bash command as example)
 validate_vm = BashOperator(
-    task_id='validate_vm',
+    task_id="validate_vm",
     bash_command='echo "VM validation successful: test-centos-{{ ds_nodash }}"',
     dag=dag,
 )
 
 # Task 5: List VMs again
 list_vms_after = KcliVMListOperator(
-    task_id='list_vms_after',
+    task_id="list_vms_after",
     dag=dag,
 )
 
 # Task 6: Keep VM running for 5 minutes so you can check it
 keep_vm_running = BashOperator(
-    task_id='keep_vm_running_5min',
+    task_id="keep_vm_running_5min",
     bash_command='echo "VM is running. Check it with: kcli list vms" && echo "Waiting 5 minutes before cleanup..." && sleep 300',
     dag=dag,
 )
 
 # Task 7: Clean up - Delete the VM
 delete_vm = KcliVMDeleteOperator(
-    task_id='delete_test_vm',
-    vm_name='test-centos-{{ ds_nodash }}',
+    task_id="delete_test_vm",
+    vm_name="test-centos-{{ ds_nodash }}",
     force=True,
     dag=dag,
 )
 
 # Define task dependencies
-list_vms_before >> create_vm >> wait_for_vm >> validate_vm >> list_vms_after >> keep_vm_running >> delete_vm
+(
+    list_vms_before
+    >> create_vm
+    >> wait_for_vm
+    >> validate_vm
+    >> list_vms_after
+    >> keep_vm_running
+    >> delete_vm
+)
 
 # Task documentation
 dag.doc_md = """

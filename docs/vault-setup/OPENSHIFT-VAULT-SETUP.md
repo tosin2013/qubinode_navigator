@@ -1,19 +1,23 @@
 # HashiCorp Vault on OpenShift Setup for Qubinode Navigator
+
 ### WIP
+
 This guide walks you through deploying HashiCorp Vault on OpenShift and integrating it with the enhanced Qubinode Navigator configuration system.
 
 ## Prerequisites
 
 1. **OpenShift Cluster**: Running OpenShift 4.x cluster with admin access
-2. **oc CLI**: OpenShift command-line tool installed and configured
-3. **Helm** (optional): For Helm-based deployment
-4. **Storage**: Persistent storage available for Vault data
-5. **Network Access**: Ability to access Vault from Qubinode Navigator
+1. **oc CLI**: OpenShift command-line tool installed and configured
+1. **Helm** (optional): For Helm-based deployment
+1. **Storage**: Persistent storage available for Vault data
+1. **Network Access**: Ability to access Vault from Qubinode Navigator
 
 ## Deployment Options
 
 ### Option A: Vault Operator (Recommended)
+
 ### Option B: Helm Chart Deployment
+
 ### Option C: Manual YAML Deployment
 
 ## Option A: HashiCorp Vault Operator Deployment
@@ -55,15 +59,15 @@ metadata:
 spec:
   size: 1
   image: hashicorp/vault:1.15.4
-  
+
   # Storage configuration
   storage:
     - type: "file"
       path: "/vault/data"
-  
+
   # Service configuration
   serviceType: ClusterIP
-  
+
   # Ingress configuration
   ingress:
     enabled: true
@@ -79,7 +83,7 @@ spec:
                 name: qubinode-vault
                 port:
                   number: 8200
-  
+
   # Persistent storage
   volumeClaimTemplates:
     - metadata:
@@ -89,13 +93,13 @@ spec:
         resources:
           requests:
             storage: 10Gi
-  
+
   # Security context
   securityContext:
     runAsUser: 100
     runAsGroup: 1000
     fsGroup: 1000
-  
+
   # Configuration
   config:
     storage:
@@ -159,54 +163,54 @@ server:
   image:
     repository: "hashicorp/vault"
     tag: "1.15.4"
-  
+
   # OpenShift specific configuration
   extraSecretEnvironmentVars:
     - envName: VAULT_CACERT
       secretName: vault-tls
       secretKey: ca.crt
-  
+
   # Storage configuration
   dataStorage:
     enabled: true
     size: 10Gi
     storageClass: null
     accessMode: ReadWriteOnce
-  
+
   # Service configuration
   service:
     enabled: true
     type: ClusterIP
     port: 8200
-  
+
   # Ingress/Route configuration
   ingress:
     enabled: false
-  
+
   # OpenShift Route
   route:
     enabled: true
     host: vault.apps.your-cluster.com
-  
+
   # HA configuration (optional)
   ha:
     enabled: false
     replicas: 3
-  
+
   # Configuration
   config: |
     ui = true
-    
+
     listener "tcp" {
       tls_disable = 1
       address = "[::]:8200"
       cluster_address = "[::]:8201"
     }
-    
+
     storage "file" {
       path = "/vault/data"
     }
-    
+
     # OpenShift specific
     api_addr = "http://0.0.0.0:8200"
     cluster_addr = "http://0.0.0.0:8201"
@@ -272,16 +276,16 @@ metadata:
 data:
   vault.hcl: |
     ui = true
-    
+
     listener "tcp" {
       address = "0.0.0.0:8200"
       tls_disable = 1
     }
-    
+
     storage "file" {
       path = "/vault/data"
     }
-    
+
     api_addr = "http://0.0.0.0:8200"
     cluster_addr = "http://0.0.0.0:8201"
 ---
@@ -616,7 +620,7 @@ data:
     vault {
       address = "https://vault.apps.your-cluster.com"
     }
-    
+
     auto_auth {
       method "kubernetes" {
         mount_path = "auth/kubernetes"
@@ -624,14 +628,14 @@ data:
           role = "qubinode-navigator"
         }
       }
-      
+
       sink "file" {
         config = {
           path = "/vault/secrets/token"
         }
       }
     }
-    
+
     template {
       source      = "/vault/templates/config.yml.tpl"
       destination = "/tmp/config.yml"
@@ -712,24 +716,27 @@ EOF
 ### Common Issues
 
 1. **Pod Security Context**
+
    ```bash
    # Check security context constraints
    oc get scc
    oc adm policy add-scc-to-user anyuid -z vault -n vault-system
    ```
 
-2. **Storage Issues**
+1. **Storage Issues**
+
    ```bash
    # Check PVC status
    oc get pvc -n vault-system
    oc describe pvc vault-data -n vault-system
    ```
 
-3. **Network Connectivity**
+1. **Network Connectivity**
+
    ```bash
    # Test internal connectivity
    oc exec -n vault-system deployment/vault -- vault status
-   
+
    # Test external connectivity
    curl -k https://vault.apps.your-cluster.com/v1/sys/health
    ```
@@ -750,19 +757,19 @@ oc run vault-test --image=hashicorp/vault:1.15.4 --rm -it -- /bin/sh
 ## Security Considerations
 
 1. **TLS Configuration**: Enable TLS for production deployments
-2. **RBAC**: Implement proper role-based access control
-3. **Network Policies**: Restrict network access to Vault
-4. **Audit Logging**: Enable Vault audit logging
-5. **Backup Encryption**: Encrypt backup snapshots
-6. **Token Rotation**: Implement regular token rotation
+1. **RBAC**: Implement proper role-based access control
+1. **Network Policies**: Restrict network access to Vault
+1. **Audit Logging**: Enable Vault audit logging
+1. **Backup Encryption**: Encrypt backup snapshots
+1. **Token Rotation**: Implement regular token rotation
 
 ## Next Steps
 
 1. **Deploy Vault** using your preferred method (Operator recommended)
-2. **Configure authentication** (Kubernetes auth for OpenShift integration)
-3. **Store your secrets** in the KV secrets engine
-4. **Test integration** with enhanced-load-variables.py
-5. **Set up monitoring** and backup procedures
-6. **Implement security hardening** for production use
+1. **Configure authentication** (Kubernetes auth for OpenShift integration)
+1. **Store your secrets** in the KV secrets engine
+1. **Test integration** with enhanced-load-variables.py
+1. **Set up monitoring** and backup procedures
+1. **Implement security hardening** for production use
 
 This setup provides enterprise-grade HashiCorp Vault deployment on OpenShift with full integration for Qubinode Navigator!

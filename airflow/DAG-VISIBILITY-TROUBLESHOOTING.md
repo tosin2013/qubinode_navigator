@@ -5,21 +5,25 @@
 ### ✅ Quick Fix Checklist
 
 1. **Refresh Browser** (Most Common Fix)
+
    ```
    Hard refresh: Ctrl + Shift + R (Windows) or Cmd + Shift + R (Mac)
    ```
 
-2. **Check DAG Toggle**
+1. **Check DAG Toggle**
+
    - Look at the left side of each DAG row
    - Toggle should be **ON** (blue/active)
    - If OFF, click it to activate
 
-3. **Check Filters**
+1. **Check Filters**
+
    - Top of DAGs page has filter options
    - Make sure "Show Active" is selected
    - Clear any tag filters
 
-4. **Navigate Directly**
+1. **Navigate Directly**
+
    ```
    http://localhost:8888/dags
    ```
@@ -89,6 +93,7 @@ curl http://localhost:8888/health
 ### ✅ What You Should See
 
 **DAGs Page:**
+
 ```
 Toggle | DAG ID                       | Owner    | Runs | Last Run
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -97,6 +102,7 @@ Toggle | DAG ID                       | Owner    | Runs | Last Run
 ```
 
 **Each DAG Row Has:**
+
 - 🔵 Blue toggle (active)
 - ▶️ Play button (trigger)
 - 📋 DAG name (clickable)
@@ -105,13 +111,17 @@ Toggle | DAG ID                       | Owner    | Runs | Last Run
 ### 🚫 Common Issues
 
 #### Issue 1: Toggle is OFF (Gray)
+
 **Fix:** Click the toggle to turn it ON (blue)
 
 #### Issue 2: Blank Page
+
 **Fix:** Hard refresh browser (Ctrl + Shift + R)
 
 #### Issue 3: "No DAGs found"
-**Fix:** 
+
+**Fix:**
+
 ```bash
 # Check if DAG files exist
 ls -la /root/qubinode_navigator/airflow/dags/example_*.py
@@ -122,7 +132,9 @@ ls -la /root/qubinode_navigator/airflow/dags/example_*.py
 ```
 
 #### Issue 4: Red Error Message
+
 **Check logs:**
+
 ```bash
 podman logs airflow_airflow-scheduler_1 --tail 50 | grep -i error
 ```
@@ -130,12 +142,14 @@ podman logs airflow_airflow-scheduler_1 --tail 50 | grep -i error
 ### 📱 Browser Compatibility
 
 **Tested Browsers:**
+
 - ✅ Chrome/Chromium
 - ✅ Firefox
 - ✅ Edge
 - ✅ Safari
 
 **Clear Browser Cache:**
+
 ```
 Chrome: Settings → Privacy → Clear browsing data
 Firefox: Preferences → Privacy & Security → Clear Data
@@ -159,24 +173,28 @@ podman exec airflow_airflow-scheduler_1 airflow tasks list example_kcli_vm_provi
 ### 📞 Still Having Issues?
 
 1. **Check Services:**
+
    ```bash
    podman ps | grep airflow
    # All should be "Up" and "healthy"
    ```
 
-2. **Check Logs:**
+1. **Check Logs:**
+
    ```bash
    podman logs airflow_airflow-webserver_1 --tail 50
    podman logs airflow_airflow-scheduler_1 --tail 50
    ```
 
-3. **Restart Everything:**
+1. **Restart Everything:**
+
    ```bash
    cd /root/qubinode_navigator/airflow
    ./deploy-airflow.sh restart
    ```
 
-4. **Access URL Directly:**
+1. **Access URL Directly:**
+
    ```
    http://localhost:8888/dags
    Login: admin / admin
@@ -198,10 +216,10 @@ You know it's working when:
 After fixing:
 
 1. Go to: http://localhost:8888/dags
-2. Click on `example_kcli_vm_provisioning`
-3. Click "Graph" view
-4. You should see: 7 tasks connected in sequence
-5. Click play button ▶️ to trigger
+1. Click on `example_kcli_vm_provisioning`
+1. Click "Graph" view
+1. You should see: 7 tasks connected in sequence
+1. Click play button ▶️ to trigger
 
 If you see all this, everything is working! ✅
 

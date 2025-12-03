@@ -17,12 +17,12 @@ mkdir -p "$BACKUP_DIR"/{git-bundles,file-backups,scan-results}
 # Function to create Git bundle backup
 create_git_bundle() {
     echo "📦 Creating Git bundle backup..."
-    
+
     local bundle_file="$BACKUP_DIR/git-bundles/repo-backup-${TIMESTAMP}.bundle"
-    
+
     cd "$PROJECT_ROOT"
     git bundle create "$bundle_file" --all
-    
+
     if [[ -f "$bundle_file" ]]; then
         echo "✅ Git bundle created: $bundle_file"
         echo "   Size: $(du -h "$bundle_file" | cut -f1)"
@@ -35,11 +35,11 @@ create_git_bundle() {
 # Function to create file system backup
 create_filesystem_backup() {
     echo "📁 Creating filesystem backup..."
-    
+
     local backup_archive="$BACKUP_DIR/file-backups/filesystem-backup-${TIMESTAMP}.tar.gz"
-    
+
     cd "$PROJECT_ROOT"
-    
+
     # Create exclusion list for large/unnecessary files
     cat > /tmp/backup-exclude.txt << 'EOF'
 .git
@@ -56,14 +56,14 @@ ai-assistant/models
 ai-assistant/data/rag-docs
 ai-assistant/data/vector-db
 EOF
-    
+
     tar --exclude-from=/tmp/backup-exclude.txt \
         -czf "$backup_archive" \
         --exclude-vcs \
         .
-    
+
     rm /tmp/backup-exclude.txt
-    
+
     if [[ -f "$backup_archive" ]]; then
         echo "✅ Filesystem backup created: $backup_archive"
         echo "   Size: $(du -h "$backup_archive" | cut -f1)"
@@ -76,10 +76,10 @@ EOF
 # Function to backup sensitive files separately
 backup_sensitive_files() {
     echo "🔐 Backing up sensitive files..."
-    
+
     local sensitive_backup="$BACKUP_DIR/file-backups/sensitive-files-${TIMESTAMP}.tar.gz"
     local sensitive_files=()
-    
+
     # Find potential sensitive files
     while IFS= read -r -d '' file; do
         sensitive_files+=("$file")
@@ -93,12 +93,12 @@ backup_sensitive_files() {
         -name "vault.*" -o \
         -name "*.vault_password" \
         \) -print0 2>/dev/null || true)
-    
+
     if [[ ${#sensitive_files[@]} -gt 0 ]]; then
         tar -czf "$sensitive_backup" "${sensitive_files[@]}" 2>/dev/null || true
         echo "✅ Sensitive files backup created: $sensitive_backup"
         echo "   Files backed up: ${#sensitive_files[@]}"
-        
+
         # List backed up files
         echo "   Sensitive files found:"
         printf '     %s\n' "${sensitive_files[@]}"
@@ -110,9 +110,9 @@ backup_sensitive_files() {
 # Function to create backup verification
 create_backup_verification() {
     echo "🔍 Creating backup verification..."
-    
+
     local verification_file="$BACKUP_DIR/backup-verification-${TIMESTAMP}.txt"
-    
+
     cat > "$verification_file" << EOF
 # Repository Backup Verification Report
 # Generated: $(date)
@@ -149,21 +149,21 @@ To restore filesystem:
 
 ## Verification Checksums
 EOF
-    
+
     # Add checksums for verification
     echo "## File Checksums" >> "$verification_file"
     find "$BACKUP_DIR" -name "*${TIMESTAMP}*" -type f -exec sha256sum {} \; >> "$verification_file"
-    
+
     echo "✅ Verification report created: $verification_file"
 }
 
 # Function to test backup integrity
 test_backup_integrity() {
     echo "🧪 Testing backup integrity..."
-    
+
     local bundle_file="$BACKUP_DIR/git-bundles/repo-backup-${TIMESTAMP}.bundle"
     local filesystem_backup="$BACKUP_DIR/file-backups/filesystem-backup-${TIMESTAMP}.tar.gz"
-    
+
     # Test Git bundle
     if [[ -f "$bundle_file" ]]; then
         if git bundle verify "$bundle_file" >/dev/null 2>&1; then
@@ -173,7 +173,7 @@ test_backup_integrity() {
             exit 1
         fi
     fi
-    
+
     # Test filesystem backup
     if [[ -f "$filesystem_backup" ]]; then
         if tar -tzf "$filesystem_backup" >/dev/null 2>&1; then
@@ -191,19 +191,19 @@ main() {
     echo "   Project: $(basename "$PROJECT_ROOT")"
     echo "   Timestamp: $TIMESTAMP"
     echo ""
-    
+
     # Ensure we're in a Git repository
     if ! git rev-parse --git-dir >/dev/null 2>&1; then
         echo "❌ Not in a Git repository"
         exit 1
     fi
-    
+
     create_git_bundle
     create_filesystem_backup
     backup_sensitive_files
     create_backup_verification
     test_backup_integrity
-    
+
     echo ""
     echo "🎉 Backup complete!"
     echo ""

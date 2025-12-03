@@ -6,10 +6,10 @@ Ansible role for unified DNS management supporting multiple providers.
 
 ## Supported DNS Providers
 
-| Provider | Use Case | Authentication |
-|----------|----------|----------------|
-| **FreeIPA** | Internal environments | Kerberos |
-| **nsupdate** | RFC 2136 dynamic DNS | TSIG key |
+| Provider     | Use Case              | Authentication |
+| ------------ | --------------------- | -------------- |
+| **FreeIPA**  | Internal environments | Kerberos       |
+| **nsupdate** | RFC 2136 dynamic DNS  | TSIG key       |
 
 ## Requirements
 

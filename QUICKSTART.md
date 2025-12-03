@@ -30,6 +30,7 @@ This validates your system and auto-fixes common issues:
 ```
 
 **What it checks:**
+
 - CPU virtualization support
 - Container runtime (podman)
 - Network connectivity
@@ -37,6 +38,7 @@ This validates your system and auto-fixes common issues:
 - Required external repositories
 
 If all checks pass, you'll see:
+
 ```
 Pre-flight checks passed!
 You can proceed with deployment:
@@ -50,6 +52,7 @@ You can proceed with deployment:
 ```
 
 This script deploys:
+
 - Apache Airflow (workflow orchestration)
 - PostgreSQL (Airflow metadata database)
 - AI Assistant (optional)
@@ -60,33 +63,34 @@ This script deploys:
 
 After deployment completes, you'll see:
 
-| Service | URL | Credentials |
-|---------|-----|-------------|
-| **Airflow UI** | http://YOUR_IP/ | admin / admin |
-| **AI Assistant** | http://YOUR_IP/ai/ | (no auth) |
-| **Health Check** | http://YOUR_IP/health | (no auth) |
+| Service          | URL                   | Credentials   |
+| ---------------- | --------------------- | ------------- |
+| **Airflow UI**   | http://YOUR_IP/       | admin / admin |
+| **AI Assistant** | http://YOUR_IP/ai/    | (no auth)     |
+| **Health Check** | http://YOUR_IP/health | (no auth)     |
 
 ## Step 5: Enable and Run DAGs
 
 1. Open Airflow UI in your browser
-2. You'll see several pre-built DAGs:
+1. You'll see several pre-built DAGs:
 
-| DAG | Purpose |
-|-----|---------|
-| `example_kcli_vm_provisioning` | Create/manage VMs with kcli |
-| `infrastructure_health_check` | Monitor infrastructure components |
-| `freeipa_deployment` | Deploy FreeIPA identity management |
-| `stepca_deployment` | Deploy Step-CA certificate authority |
-| `certificate_provisioning` | Request/renew TLS certificates |
-| `dns_management` | Manage DNS records in FreeIPA |
+| DAG                            | Purpose                              |
+| ------------------------------ | ------------------------------------ |
+| `example_kcli_vm_provisioning` | Create/manage VMs with kcli          |
+| `infrastructure_health_check`  | Monitor infrastructure components    |
+| `freeipa_deployment`           | Deploy FreeIPA identity management   |
+| `stepca_deployment`            | Deploy Step-CA certificate authority |
+| `certificate_provisioning`     | Request/renew TLS certificates       |
+| `dns_management`               | Manage DNS records in FreeIPA        |
 
 3. **Enable a DAG**: Click the toggle switch to enable it
-4. **Run a DAG**: Click the "play" button → "Trigger DAG"
-5. **Monitor**: Watch progress in Graph or Grid view
+1. **Run a DAG**: Click the "play" button → "Trigger DAG"
+1. **Monitor**: Watch progress in Graph or Grid view
 
 ## Recommended First DAGs
 
 ### 1. Test Infrastructure Health
+
 ```
 DAG: infrastructure_health_check
 Purpose: Verify all components are working
@@ -94,6 +98,7 @@ Action: Trigger manually
 ```
 
 ### 2. Create Your First VM
+
 ```
 DAG: example_kcli_vm_provisioning
 Purpose: Create a CentOS Stream 10 VM
@@ -101,6 +106,7 @@ Action: Trigger with default parameters
 ```
 
 ### 3. Deploy FreeIPA (Identity Management)
+
 ```
 DAG: freeipa_deployment
 Purpose: Deploy FreeIPA for DNS + identity
@@ -148,6 +154,7 @@ qubinode_navigator/
 ## Troubleshooting
 
 ### Airflow UI not accessible
+
 ```bash
 # Check if containers are running
 cd airflow && podman-compose ps
@@ -157,6 +164,7 @@ podman-compose logs airflow-webserver
 ```
 
 ### DAG not appearing
+
 ```bash
 # Check scheduler logs
 cd airflow && podman-compose logs airflow-scheduler
@@ -166,6 +174,7 @@ podman-compose restart airflow-scheduler
 ```
 
 ### VM operations failing
+
 ```bash
 # Verify kcli is working on the host
 kcli list vm
@@ -175,6 +184,7 @@ systemctl status libvirtd
 ```
 
 ### Pre-flight check failures
+
 ```bash
 # Run with verbose output
 ./scripts/preflight-check.sh --fix 2>&1 | tee preflight.log
@@ -188,9 +198,9 @@ systemctl status libvirtd
 ## Next Steps
 
 1. **Deploy FreeIPA** - Identity management with DNS
-2. **Deploy Step-CA** - Internal certificate authority
-3. **Deploy VyOS** - Network segmentation (requires console access)
-4. **Create custom DAGs** - Automate your infrastructure
+1. **Deploy Step-CA** - Internal certificate authority
+1. **Deploy VyOS** - Network segmentation (requires console access)
+1. **Create custom DAGs** - Automate your infrastructure
 
 ## Getting Help
 
@@ -199,6 +209,6 @@ systemctl status libvirtd
 - **AI Assistant**: Chat at http://YOUR_IP/ai/
 - **Issues**: https://github.com/Qubinode/qubinode_navigator/issues
 
----
+______________________________________________________________________
 
 **Estimated total time**: 15-25 minutes from clone to running Airflow UI

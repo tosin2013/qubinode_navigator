@@ -4,22 +4,22 @@ This comprehensive guide covers both HashiCorp Cloud Platform (HCP) and local va
 
 ## Quick Decision Matrix
 
-| Feature | HCP Vault Secrets | OpenShift Vault | Local Vault | Recommendation |
-|---------|------------------|-----------------|-------------|----------------|
-| **Setup Complexity** | Low | Medium | Medium | HCP for quick start |
-| **Cost** | Paid service | Infrastructure cost | Free | Local for development |
-| **Security** | Managed by HashiCorp | Enterprise-grade | Self-managed | OpenShift for enterprise |
-| **Scalability** | Auto-scaling | Kubernetes scaling | Manual scaling | OpenShift for production |
-| **Control** | Limited | High control | Full control | OpenShift for enterprise |
-| **Maintenance** | Zero maintenance | Kubernetes managed | Self-maintained | HCP for teams |
-| **Integration** | API-based | Native K8s | Direct access | OpenShift for K8s environments |
+| Feature              | HCP Vault Secrets    | OpenShift Vault     | Local Vault     | Recommendation                 |
+| -------------------- | -------------------- | ------------------- | --------------- | ------------------------------ |
+| **Setup Complexity** | Low                  | Medium              | Medium          | HCP for quick start            |
+| **Cost**             | Paid service         | Infrastructure cost | Free            | Local for development          |
+| **Security**         | Managed by HashiCorp | Enterprise-grade    | Self-managed    | OpenShift for enterprise       |
+| **Scalability**      | Auto-scaling         | Kubernetes scaling  | Manual scaling  | OpenShift for production       |
+| **Control**          | Limited              | High control        | Full control    | OpenShift for enterprise       |
+| **Maintenance**      | Zero maintenance     | Kubernetes managed  | Self-maintained | HCP for teams                  |
+| **Integration**      | API-based            | Native K8s          | Direct access   | OpenShift for K8s environments |
 
 ## Prerequisites for Both Options
 
 1. **Enhanced Qubinode Navigator**: ✅ Already implemented
-2. **Python Dependencies**: `jinja2`, `hvac`, `requests` ✅ Already installed
-3. **Environment File**: `.env` with your configuration
-4. **RHEL Subscription**: Valid Red Hat credentials
+1. **Python Dependencies**: `jinja2`, `hvac`, `requests` ✅ Already installed
+1. **Environment File**: `.env` with your configuration
+1. **RHEL Subscription**: Valid Red Hat credentials
 
 ## Option 1: HashiCorp Cloud Platform (HCP) Setup
 
@@ -46,15 +46,16 @@ APP_NAME=qubinode-navigator-secrets
 #### Step 2: Create HCP Application
 
 1. **Log in to HCP**: https://cloud.hashicorp.com/
-2. **Navigate to Vault Secrets**
-3. **Create Application**: Name it `qubinode-navigator-secrets`
-4. **Create Service Principal** with Vault Secrets access
+1. **Navigate to Vault Secrets**
+1. **Create Application**: Name it `qubinode-navigator-secrets`
+1. **Create Service Principal** with Vault Secrets access
 
 #### Step 3: Store Your Secrets
 
 Use the HCP web interface or API to store:
+
 - `rhsm_username`: Your RHEL username
-- `rhsm_password`: Your RHEL password  
+- `rhsm_password`: Your RHEL password
 - `admin_user_password`: Secure admin password
 - `offline_token`: Red Hat offline token
 - `openshift_pull_secret`: OpenShift pull secret
@@ -84,6 +85,7 @@ For development, testing, or when you want full control:
 #### Step 1: Choose Installation Method
 
 **Option A: Podman (Recommended for RHEL 9)**
+
 ```bash
 # Start Vault development server with Podman
 podman run -d \
@@ -100,6 +102,7 @@ export VAULT_TOKEN=myroot
 ```
 
 **Option B: Docker (Alternative)**
+
 ```bash
 # Start Vault development server with Docker
 docker run -d \
@@ -115,6 +118,7 @@ export VAULT_TOKEN=myroot
 ```
 
 **Option C: Binary Installation (Production-ready)**
+
 ```bash
 # Install Vault binary
 wget https://releases.hashicorp.com/vault/1.15.4/vault_1.15.4_linux_amd64.zip
@@ -173,6 +177,7 @@ For enterprise environments running OpenShift/Kubernetes:
 #### Step 1: Choose Deployment Method
 
 **Option A: Vault Operator (Recommended)**
+
 ```bash
 # Install from OperatorHub
 oc new-project vault-system
@@ -191,6 +196,7 @@ EOF
 ```
 
 **Option B: Helm Chart**
+
 ```bash
 # Add HashiCorp Helm repository
 helm repo add hashicorp https://helm.releases.hashicorp.com
@@ -260,6 +266,7 @@ python3 enhanced-load-variables.py --generate-config --template default.yml.j2
 ```
 
 This script will:
+
 - ✅ Detect your vault configuration (HCP vs Local)
 - ✅ Test connectivity and authentication
 - ✅ Validate secret retrieval
@@ -288,10 +295,12 @@ python3 enhanced-load-variables.py --generate-config --template hetzner.yml.j2
 Both HCP and local vault support multiple environments:
 
 #### HCP Approach
+
 - Create separate applications: `qubinode-hetzner-secrets`, `qubinode-equinix-secrets`
 - Use `APP_NAME` environment variable to switch between them
 
 #### Local Vault Approach
+
 - Create separate paths: `kv/ansiblesafe/hetzner`, `kv/ansiblesafe/equinix`
 - Use `INVENTORY` environment variable to switch between them
 
@@ -303,7 +312,7 @@ export INVENTORY="hetzner"
 export APP_NAME="qubinode-hetzner-secrets"  # For HCP
 python3 enhanced-load-variables.py --generate-config --template hetzner.yml.j2
 
-# Equinix environment  
+# Equinix environment
 export INVENTORY="equinix"
 export APP_NAME="qubinode-equinix-secrets"  # For HCP
 python3 enhanced-load-variables.py --generate-config --template default.yml.j2
@@ -314,17 +323,20 @@ python3 enhanced-load-variables.py --generate-config --template default.yml.j2
 ### For Both Environments
 
 1. **Environment File Security**
+
    ```bash
    chmod 600 .env
    echo ".env" >> .gitignore
    ```
 
-2. **Token Management**
+1. **Token Management**
+
    - Rotate tokens regularly
    - Use short-lived tokens when possible
    - Store tokens securely
 
-3. **Access Control**
+1. **Access Control**
+
    - Follow principle of least privilege
    - Use separate credentials per environment
    - Monitor access logs
@@ -371,16 +383,19 @@ curl -H "Authorization: Bearer $HCP_API_TOKEN" \
 ### Common Issues
 
 1. **Authentication Failures**
+
    - Verify credentials in `.env` file
    - Check token expiration
    - Validate network connectivity
 
-2. **Secret Not Found**
+1. **Secret Not Found**
+
    - Verify secret names match exactly
    - Check application/path configuration
    - Ensure secrets are properly stored
 
-3. **Template Errors**
+1. **Template Errors**
+
    - Verify Jinja2 syntax in templates
    - Check variable names in templates
    - Test with basic template first
@@ -404,11 +419,11 @@ print(vars)
 ## Next Steps
 
 1. **Choose your vault setup** (HCP recommended for your case)
-2. **Configure your environment** using the appropriate guide
-3. **Store your actual secrets** (replace example values)
-4. **Test the integration** with real credentials
-5. **Set up CI/CD integration** for automated deployments
-6. **Create environment-specific templates** as needed
+1. **Configure your environment** using the appropriate guide
+1. **Store your actual secrets** (replace example values)
+1. **Test the integration** with real credentials
+1. **Set up CI/CD integration** for automated deployments
+1. **Create environment-specific templates** as needed
 
 ## Support Resources
 

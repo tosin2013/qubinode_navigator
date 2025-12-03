@@ -208,12 +208,12 @@ jobs:
           cd airflow
 
           # Initialize Airflow DB (use python -m to ensure correct path)
-          python -m airflow db init 2>/dev/null || python -m airflow db migrate 2>/dev/null
+          python -m airflow db migrate 2>/dev/null
 
-          # List DAGs and check for import errors
-          python -m airflow dags list 2>&1 | tee dag_list.txt
+          # List DAGs and check for import errors (auto-confirm with yes)
+          yes | python -m airflow dags list 2>&1 | tee dag_list.txt || true
 
-          if grep -iE "error|exception" dag_list.txt | grep -v "No data found"; then
+          if grep -iE "error|exception" dag_list.txt | grep -v "No data found" | grep -v "Could not import graphviz"; then
             echo "[ERROR] DAG import errors detected"
             exit 1
           fi

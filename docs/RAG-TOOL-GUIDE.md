@@ -7,6 +7,7 @@ A new **11th MCP tool** has been implemented: `manage_rag_documents()` for Retri
 ## Tool Status
 
 ✅ **Implemented and Deployed**
+
 - Tool Count: **11 total** (DAGs: 3, VMs: 5, Status: 1, Info: 1, **RAG: 1**)
 - MCP Server: Running on port 8889
 - FastMCP Version: 2.13.1
@@ -15,6 +16,7 @@ A new **11th MCP tool** has been implemented: `manage_rag_documents()` for Retri
 ## RAG Tool Operations
 
 ### 1. `scan` - Discover Documents
+
 Scan `/opt/documents/incoming/` for documents ready for ingestion.
 
 ```python
@@ -22,12 +24,14 @@ manage_rag_documents('scan')
 ```
 
 **Returns:**
+
 - List of discovered files with metadata
 - File types: `.md`, `.markdown`, `.yml`, `.yaml`, `.txt`
 - Total size calculation
 - Document count
 
 **Example Response:**
+
 ```
 # RAG Document Scan
 
@@ -48,6 +52,7 @@ manage_rag_documents('scan')
 ```
 
 ### 2. `ingest` - Trigger Ingestion Pipeline
+
 Start the `rag_document_ingestion` DAG to process discovered documents.
 
 ```python
@@ -55,6 +60,7 @@ manage_rag_documents('ingest')
 ```
 
 **Parameters:**
+
 - Optional `doc_dir`: Custom directory (default: `/opt/documents/incoming`)
 
 ```python
@@ -62,11 +68,13 @@ manage_rag_documents('ingest', {'doc_dir': '/custom/path'})
 ```
 
 **Returns:**
+
 - DAG run ID
 - Status confirmation
 - Next steps for monitoring
 
 **Example Response:**
+
 ```
 # RAG Document Ingestion
 
@@ -84,12 +92,14 @@ manage_rag_documents('ingest', {'doc_dir': '/custom/path'})
 ```
 
 **Behind the Scenes:**
+
 - Triggers `rag_document_ingestion` DAG
 - `scan_documents` task: Discovers files
 - `chunk_documents` task: Splits into chunks
 - `store_metadata` task: Records chunk metadata
 
 ### 3. `status` - Check Ingestion Progress
+
 Get the current status of the RAG ingestion pipeline.
 
 ```python
@@ -97,12 +107,14 @@ manage_rag_documents('status')
 ```
 
 **Returns:**
+
 - DAG information
 - Task pipeline overview
 - Recent run details
 - Link to Airflow UI for detailed logs
 
 **Example Response:**
+
 ```
 # RAG Ingestion Status
 
@@ -123,6 +135,7 @@ manage_rag_documents('status')
 ```
 
 ### 4. `list` - Show Processed Documents
+
 List documents that have been successfully processed and ingested.
 
 ```python
@@ -131,15 +144,18 @@ manage_rag_documents('list', {'limit': 10})
 ```
 
 **Parameters:**
+
 - `limit`: Maximum results to return (default: 10)
 
 **Returns:**
+
 - Processed document metadata
 - Chunk counts
 - Processing timestamps
 - File paths
 
 **Example Response:**
+
 ```
 # Processed RAG Documents
 
@@ -168,6 +184,7 @@ manage_rag_documents('list', {'limit': 10})
 ```
 
 ### 5. `estimate` - Calculate Storage Requirements
+
 Estimate chunking requirements and storage before ingestion.
 
 ```python
@@ -176,6 +193,7 @@ manage_rag_documents('estimate', {'doc_dir': '/custom/path'})
 ```
 
 **Returns:**
+
 - Document statistics (count, size, words)
 - Chunking estimates (chunks, embedding dimension)
 - Storage requirements (vector DB size)
@@ -183,6 +201,7 @@ manage_rag_documents('estimate', {'doc_dir': '/custom/path'})
 - Processing time estimate
 
 **Example Response:**
+
 ```
 # RAG Chunk Estimation
 
@@ -218,26 +237,31 @@ manage_rag_documents('estimate', {'doc_dir': '/custom/path'})
 The tool includes five specialized helper functions:
 
 1. **`_rag_scan_documents(doc_dir)`**
+
    - Recursively scans directory
    - Filters by supported file types
    - Calculates file sizes and statistics
 
-2. **`_rag_trigger_ingestion(doc_dir)`**
+1. **`_rag_trigger_ingestion(doc_dir)`**
+
    - Calls Airflow `trigger_dag_api()`
    - Passes configuration to DAG
    - Returns DAG run ID and status
 
-3. **`_rag_ingestion_status()`**
+1. **`_rag_ingestion_status()`**
+
    - Queries DAG from DagBag
    - Lists task pipeline
    - Provides links to Airflow UI
 
-4. **`_rag_list_processed(limit)`**
+1. **`_rag_list_processed(limit)`**
+
    - Reads metadata from `/opt/documents/processed/metadata.json`
    - Parses and displays document information
    - Limits results as specified
 
-5. **`_rag_estimate_chunks(doc_dir)`**
+1. **`_rag_estimate_chunks(doc_dir)`**
+
    - Scans documents and counts words
    - Calculates chunks (250 words per chunk)
    - Estimates storage (384-dim embeddings * 4 bytes)
@@ -255,17 +279,20 @@ The tool includes five specialized helper functions:
 ## Integration Points
 
 ### Airflow DAG Integration
+
 - Triggers: `rag_document_ingestion` DAG
 - Input: Documents in `/opt/documents/incoming/`
 - Output: Metadata stored in `/opt/documents/processed/`
 - Processing: 3-task pipeline (scan → chunk → store)
 
 ### Vector Database
+
 - Supported backends: Qdrant (recommended), ChromaDB, FAISS
 - Embedding model: `all-MiniLM-L6-v2` (384-dimensional)
 - Storage: `/opt/documents/processed/` and vector DB
 
 ### Directory Structure
+
 ```
 /opt/documents/
 ├── incoming/           # Documents awaiting ingestion
@@ -279,6 +306,7 @@ The tool includes five specialized helper functions:
 ## Usage Examples
 
 ### Example 1: Full Ingestion Workflow
+
 ```python
 # 1. Discover documents
 result = await manage_rag_documents('scan')
@@ -303,9 +331,10 @@ result = await manage_rag_documents('list')
 ```
 
 ### Example 2: Check Custom Directory
+
 ```python
 # Estimate documents in custom location
-result = await manage_rag_documents('estimate', 
+result = await manage_rag_documents('estimate',
     {'doc_dir': '/home/user/my-docs'})
 
 # Ingest from custom directory
@@ -314,6 +343,7 @@ result = await manage_rag_documents('ingest',
 ```
 
 ### Example 3: List Recent Ingestions
+
 ```python
 # Get last 5 processed documents
 result = await manage_rag_documents('list', {'limit': 5})
@@ -322,53 +352,64 @@ result = await manage_rag_documents('list', {'limit': 5})
 ## Troubleshooting
 
 ### Documents not found in scan
+
 **Symptoms:** `No supported documents found` message
 
 **Solutions:**
+
 1. Verify directory exists: `ls -la /opt/documents/incoming/`
-2. Check file permissions: `stat /opt/documents/incoming/`
-3. Ensure files have supported extensions: `.md`, `.yml`, `.yaml`, `.txt`
-4. Files must be readable by Airflow container user
+1. Check file permissions: `stat /opt/documents/incoming/`
+1. Ensure files have supported extensions: `.md`, `.yml`, `.yaml`, `.txt`
+1. Files must be readable by Airflow container user
 
 ### Ingestion fails
+
 **Symptoms:** DAG run status is FAILED or SKIPPED
 
 **Solutions:**
+
 1. Check Airflow UI: http://localhost:8888/dags/rag_document_ingestion
-2. Review task logs for specific errors
-3. Verify PostgreSQL database is healthy: `podman ps | grep postgres`
-4. Ensure scheduler is running: `podman ps | grep scheduler`
+1. Review task logs for specific errors
+1. Verify PostgreSQL database is healthy: `podman ps | grep postgres`
+1. Ensure scheduler is running: `podman ps | grep scheduler`
 
 ### Ingest operation blocked (read-only mode)
+
 **Symptoms:** "operation requires write access but read-only mode is enabled"
 
 **Solutions:**
+
 1. Disable read-only mode: `export AIRFLOW_MCP_TOOLS_READ_ONLY=false`
-2. Restart MCP server with new setting
-3. Other operations (scan, status, list, estimate) still work in read-only mode
+1. Restart MCP server with new setting
+1. Other operations (scan, status, list, estimate) still work in read-only mode
 
 ### Empty list of processed documents
+
 **Symptoms:** `No processed documents yet` message
 
 **Solutions:**
+
 1. Ensure ingestion has completed: `manage_rag_documents('status')`
-2. Wait 30+ seconds after triggering ingest before listing
-3. Check metadata file exists: `ls -la /opt/documents/processed/metadata.json`
-4. Review Airflow UI for DAG execution status
+1. Wait 30+ seconds after triggering ingest before listing
+1. Check metadata file exists: `ls -la /opt/documents/processed/metadata.json`
+1. Review Airflow UI for DAG execution status
 
 ## Monitoring
 
 ### Airflow UI
+
 - **DAG:** http://localhost:8888/dags/rag_document_ingestion
 - **Task Instance Logs:** View detailed task execution output
 - **XCom Pull:** See discovered documents and chunks passed between tasks
 
 ### MCP Server Logs
+
 ```bash
 podman logs $(podman ps | grep mcp-server | awk '{print $1}') | grep -E "manage_rag|RAG|ingestion"
 ```
 
 ### System Resources
+
 ```bash
 # Check disk space for documents
 du -sh /opt/documents/
@@ -437,25 +478,29 @@ podman exec airflow_postgres_1 psql -U airflow -d airflow -c "SELECT COUNT(*) FR
 ## Next Steps
 
 ### For LLM Integration
+
 1. Use `manage_rag_documents('scan')` to discover available documents
-2. Use `manage_rag_documents('estimate')` before large ingestions
-3. Use `manage_rag_documents('ingest')` to trigger processing
-4. Use `manage_rag_documents('list')` to verify completion
+1. Use `manage_rag_documents('estimate')` before large ingestions
+1. Use `manage_rag_documents('ingest')` to trigger processing
+1. Use `manage_rag_documents('list')` to verify completion
 
 ### For Vector Database Expansion
+
 1. Enhance `_rag_store_metadata()` in Airflow DAG for actual embedding generation
-2. Implement vector search interface (query_documents MCP tool)
-3. Add bidirectional learning between Airflow and RAG system
+1. Implement vector search interface (query_documents MCP tool)
+1. Add bidirectional learning between Airflow and RAG system
 
 ### For Production Hardening
+
 1. Add retry logic for failed ingestions
-2. Implement document validation (quality scoring)
-3. Add batch processing for large document sets
-4. Monitor vector DB growth and performance
+1. Implement document validation (quality scoring)
+1. Add batch processing for large document sets
+1. Monitor vector DB growth and performance
 
 ## Configuration
 
 ### Environment Variables
+
 ```bash
 # Enable MCP server
 export AIRFLOW_MCP_ENABLED=true
@@ -471,6 +516,7 @@ export RAG_DOC_DIR=/opt/documents/incoming
 ```
 
 ### Airflow Configuration
+
 ```yaml
 # airflow/config/airflow.env
 AIRFLOW_MCP_ENABLED=true
@@ -490,6 +536,7 @@ AIRFLOW__CORE__DAGS_FOLDER=/opt/airflow/dags
 ## Support & Debugging
 
 ### Enable Debug Logging
+
 ```bash
 export AIRFLOW__LOGGING__LOGGING_LEVEL=DEBUG
 podman-compose restart
@@ -497,18 +544,20 @@ podman logs $(podman ps | grep mcp-server | awk '{print $1}') -f
 ```
 
 ### Check Tool Registration
+
 ```bash
 podman logs $(podman ps | grep mcp-server | awk '{print $1}') 2>&1 | grep "Tools:"
 ```
 
 ### Verify MCP Server
+
 ```bash
 curl -s http://localhost:8889/sse
 # Should respond quickly (may timeout, which is normal for SSE)
 ```
 
----
+______________________________________________________________________
 
-**Status:** ✅ Production Ready  
-**Last Updated:** 2025-11-26  
+**Status:** ✅ Production Ready
+**Last Updated:** 2025-11-26
 **Tool Count:** 11 (DAGs: 3, VMs: 5, Status: 1, Info: 1, **RAG: 1**)

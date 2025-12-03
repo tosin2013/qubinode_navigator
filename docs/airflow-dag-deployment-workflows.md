@@ -1,10 +1,11 @@
----
-nav_exclude: true
----
+______________________________________________________________________
+
+## nav_exclude: true
 
 # DAG Deployment Workflows & Missing Pieces
 
 > **Documentation status**
+>
 > - Validation: `IN PROGRESS` – Example DAG workflows and missing-piece analysis are evolving.
 > - Last reviewed: 2025-11-21
 > - Community: If you adapt these patterns or close some of the identified gaps, please contribute updates via [Contributing to docs](./how-to/contribute.md).
@@ -86,7 +87,7 @@ spec:
     volumeMounts:
     - name: dags
       mountPath: /opt/airflow/dags
-  
+
   - name: git-sync
     image: k8s.gcr.io/git-sync:v3.6.3
     env:
@@ -103,7 +104,7 @@ spec:
     volumeMounts:
     - name: dags
       mountPath: /git
-  
+
   volumes:
   - name: dags
     emptyDir: {}
@@ -177,12 +178,14 @@ Step 6: DAG available in Airflow
 ### 1. **Git Integration Layer** ⚠️ MISSING
 
 **What's Missing:**
+
 - Automatic Git repository detection
 - OAuth/SSH key management
 - Branch/tag selection
 - Webhook integration for instant updates
 
 **Proposed Solution:**
+
 ```python
 # ai-assistant/src/git_integration.py
 
@@ -190,7 +193,7 @@ class GitDAGManager:
     """
     Manage DAGs from Git repositories
     """
-    
+
     def add_repository(self, repo_url: str, branch: str = 'main'):
         """
         Add a Git repository as DAG source
@@ -199,7 +202,7 @@ class GitDAGManager:
         # Set up git-sync or polling
         # Register in Airflow
         pass
-    
+
     def sync_repository(self, repo_id: str):
         """
         Sync DAGs from repository
@@ -209,7 +212,7 @@ class GitDAGManager:
         # Validate DAG syntax
         # Deploy to Airflow
         pass
-    
+
     def setup_webhook(self, repo_url: str):
         """
         Set up webhook for instant updates
@@ -225,12 +228,14 @@ class GitDAGManager:
 ### 2. **DAG Validation Pipeline** ⚠️ MISSING
 
 **What's Missing:**
+
 - Pre-deployment validation
 - Syntax checking
 - Dependency verification
 - Security scanning
 
 **Proposed Solution:**
+
 ```python
 # ai-assistant/src/dag_validator.py
 
@@ -238,7 +243,7 @@ class DAGValidator:
     """
     Validate DAGs before deployment
     """
-    
+
     def validate_syntax(self, dag_file: str) -> dict:
         """
         Check Python syntax and Airflow DAG structure
@@ -247,7 +252,7 @@ class DAGValidator:
         # Verify DAG object exists
         # Check required fields
         pass
-    
+
     def validate_dependencies(self, dag_file: str) -> dict:
         """
         Verify all dependencies are available
@@ -256,7 +261,7 @@ class DAGValidator:
         # Check if packages installed
         # Verify operators exist
         pass
-    
+
     def security_scan(self, dag_file: str) -> dict:
         """
         Scan for security issues
@@ -265,7 +270,7 @@ class DAGValidator:
         # Detect dangerous operations
         # Verify safe operators only
         pass
-    
+
     def validate_before_deploy(self, dag_file: str) -> bool:
         """
         Complete validation pipeline
@@ -275,7 +280,7 @@ class DAGValidator:
             'dependencies': self.validate_dependencies(dag_file),
             'security': self.security_scan(dag_file)
         }
-        
+
         return all(r['passed'] for r in results.values())
 ```
 
@@ -284,12 +289,14 @@ class DAGValidator:
 ### 3. **Repository Management UI** ⚠️ MISSING
 
 **What's Missing:**
+
 - UI to add/remove repositories
 - Repository status monitoring
 - Sync history and logs
 - Access control management
 
 **Proposed Solution:**
+
 ```
 AI Assistant UI Extension:
 
@@ -324,12 +331,14 @@ AI Assistant UI Extension:
 ### 4. **Credential Management** ⚠️ MISSING
 
 **What's Missing:**
+
 - Secure storage for Git credentials
 - SSH key management
 - OAuth token handling
 - Credential rotation
 
 **Proposed Solution:**
+
 ```python
 # ai-assistant/src/credential_manager.py
 
@@ -337,7 +346,7 @@ class CredentialManager:
     """
     Secure credential management for Git repositories
     """
-    
+
     def store_credentials(self, repo_url: str, auth_type: str, credentials: dict):
         """
         Store credentials securely
@@ -346,7 +355,7 @@ class CredentialManager:
         # Store in Airflow connections or HashiCorp Vault
         # Associate with repository
         pass
-    
+
     def get_credentials(self, repo_url: str) -> dict:
         """
         Retrieve credentials for repository
@@ -354,7 +363,7 @@ class CredentialManager:
         # Decrypt credentials
         # Return for git operations
         pass
-    
+
     def rotate_credentials(self, repo_url: str):
         """
         Rotate credentials for security
@@ -370,12 +379,14 @@ class CredentialManager:
 ### 5. **DAG Dependency Management** ⚠️ PARTIALLY MISSING
 
 **What's Missing:**
+
 - Automatic dependency installation
 - Virtual environment per DAG
 - Dependency conflict resolution
 - Version pinning
 
 **Proposed Solution:**
+
 ```python
 # Each DAG can specify dependencies
 """
@@ -404,18 +415,20 @@ class DependencyManager:
 ### 6. **DAG Version Control** ⚠️ MISSING
 
 **What's Missing:**
+
 - Track DAG versions
 - Rollback capability
 - A/B testing different versions
 - Gradual rollout
 
 **Proposed Solution:**
+
 ```python
 class DAGVersionManager:
     """
     Manage DAG versions
     """
-    
+
     def deploy_version(self, dag_id: str, version: str):
         """
         Deploy specific version of a DAG
@@ -424,7 +437,7 @@ class DAGVersionManager:
         # Deploy to Airflow
         # Track active version
         pass
-    
+
     def rollback(self, dag_id: str, to_version: str):
         """
         Rollback to previous version
@@ -433,7 +446,7 @@ class DAGVersionManager:
         # Update Airflow
         # Log rollback event
         pass
-    
+
     def ab_test(self, dag_id: str, version_a: str, version_b: str):
         """
         A/B test two versions
@@ -449,12 +462,14 @@ class DAGVersionManager:
 ### 7. **DAG Marketplace Integration** ⚠️ MISSING
 
 **What's Missing:**
+
 - Search and discovery
 - Rating and reviews
 - Download statistics
 - Automated testing of community DAGs
 
 **Proposed Solution:**
+
 ```bash
 # Enhanced marketplace CLI
 ./dag-marketplace.sh search "aws deployment"
@@ -469,12 +484,14 @@ class DAGVersionManager:
 ### 8. **Multi-Repository Support** ⚠️ MISSING
 
 **What's Missing:**
+
 - Manage multiple Git repositories
 - Namespace isolation
 - Priority/ordering
 - Conflict resolution
 
 **Proposed Solution:**
+
 ```yaml
 # airflow-repos.yaml
 repositories:
@@ -483,13 +500,13 @@ repositories:
     branch: main
     priority: 1
     namespace: company
-    
+
   - name: community-workflows
     url: https://github.com/Qubinode/airflow-dags
     branch: main
     priority: 2
     namespace: community
-    
+
   - name: personal-workflows
     url: https://github.com/user/my-dags
     branch: develop
@@ -502,12 +519,14 @@ repositories:
 ### 9. **Webhook Integration** ⚠️ MISSING
 
 **What's Missing:**
+
 - GitHub/GitLab webhook receiver
 - Instant DAG updates on push
 - PR-based DAG testing
 - Automated deployment on merge
 
 **Proposed Solution:**
+
 ```python
 # ai-assistant/src/webhook_handler.py
 
@@ -522,13 +541,13 @@ async def handle_github_webhook(request: Request):
     """
     payload = await request.json()
     event = request.headers.get('X-GitHub-Event')
-    
+
     if event == 'push':
         # Pull latest changes
         # Validate new/modified DAGs
         # Deploy to Airflow
         return {"status": "synced"}
-    
+
     elif event == 'pull_request':
         # Test DAGs in PR
         # Comment with validation results
@@ -540,12 +559,14 @@ async def handle_github_webhook(request: Request):
 ### 10. **DAG Testing Framework** ⚠️ MISSING
 
 **What's Missing:**
+
 - Automated testing before deployment
 - Mock execution environment
 - Integration tests
 - Performance benchmarks
 
 **Proposed Solution:**
+
 ```python
 # Test DAGs before deployment
 class DAGTester:
@@ -560,7 +581,7 @@ class DAGTester:
             'performance_ok': self.test_performance(dag_file)
         }
         return results
-    
+
     def test_execution(self, dag_file: str) -> bool:
         """
         Test DAG execution with mock data
@@ -575,40 +596,44 @@ class DAGTester:
 
 ## 📋 Complete Missing Pieces Summary
 
-| Feature | Status | Priority | Complexity | Impact |
-|---------|--------|----------|------------|--------|
-| **Git Integration Layer** | ❌ Missing | P1 | Medium | High |
-| **DAG Validation Pipeline** | ❌ Missing | P0 | Medium | Critical |
-| **Repository Management UI** | ❌ Missing | P1 | High | High |
-| **Credential Management** | ❌ Missing | P0 | Medium | Critical |
-| **Dependency Management** | ⚠️ Partial | P1 | High | High |
-| **DAG Version Control** | ❌ Missing | P2 | Medium | Medium |
-| **Marketplace Integration** | ⚠️ Partial | P1 | High | High |
-| **Multi-Repository Support** | ❌ Missing | P1 | Medium | High |
-| **Webhook Integration** | ❌ Missing | P1 | Low | High |
-| **DAG Testing Framework** | ❌ Missing | P0 | High | Critical |
+| Feature                      | Status     | Priority | Complexity | Impact   |
+| ---------------------------- | ---------- | -------- | ---------- | -------- |
+| **Git Integration Layer**    | ❌ Missing | P1       | Medium     | High     |
+| **DAG Validation Pipeline**  | ❌ Missing | P0       | Medium     | Critical |
+| **Repository Management UI** | ❌ Missing | P1       | High       | High     |
+| **Credential Management**    | ❌ Missing | P0       | Medium     | Critical |
+| **Dependency Management**    | ⚠️ Partial | P1       | High       | High     |
+| **DAG Version Control**      | ❌ Missing | P2       | Medium     | Medium   |
+| **Marketplace Integration**  | ⚠️ Partial | P1       | High       | High     |
+| **Multi-Repository Support** | ❌ Missing | P1       | Medium     | High     |
+| **Webhook Integration**      | ❌ Missing | P1       | Low        | High     |
+| **DAG Testing Framework**    | ❌ Missing | P0       | High       | Critical |
 
 ## 🎯 Recommended Implementation Order
 
 ### Phase 1: Security & Validation (Weeks 1-2)
+
 1. **DAG Validation Pipeline** (P0)
-2. **Credential Management** (P0)
-3. **DAG Testing Framework** (P0)
+1. **Credential Management** (P0)
+1. **DAG Testing Framework** (P0)
 
 ### Phase 2: Core Git Integration (Weeks 3-4)
+
 4. **Git Integration Layer** (P1)
-5. **Webhook Integration** (P1)
-6. **Multi-Repository Support** (P1)
+1. **Webhook Integration** (P1)
+1. **Multi-Repository Support** (P1)
 
 ### Phase 3: User Experience (Weeks 5-6)
+
 7. **Repository Management UI** (P1)
-8. **Marketplace Integration** (P1)
-9. **Dependency Management** (P1)
+1. **Marketplace Integration** (P1)
+1. **Dependency Management** (P1)
 
 ### Phase 4: Advanced Features (Weeks 7-8)
+
 10. **DAG Version Control** (P2)
-11. **A/B Testing** (P2)
-12. **Advanced Analytics** (P2)
+01. **A/B Testing** (P2)
+01. **Advanced Analytics** (P2)
 
 ## 🚀 Quick Start: Deploy Your DAGs Today
 
@@ -638,6 +663,6 @@ open http://localhost:8080
 - [Community Ecosystem](./airflow-community-ecosystem.md)
 - [Bidirectional Learning](./airflow-rag-bidirectional-learning.md)
 
----
+______________________________________________________________________
 
 **Yes, users can deploy DAGs from their repos today, but we've identified 10 missing pieces to make it production-ready! 🎯**

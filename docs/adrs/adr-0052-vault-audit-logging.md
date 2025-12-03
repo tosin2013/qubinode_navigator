@@ -1,9 +1,11 @@
 # ADR-0052: Vault Audit Logging and Centralized Audit Trails
 
 ## Status
+
 Accepted
 
 ## Date
+
 2025-12-01
 
 ## Context
@@ -11,15 +13,16 @@ Accepted
 Enterprise compliance frameworks (SOC 2, PCI DSS, HIPAA, GDPR) require:
 
 1. **Tamper-evident audit records** of all access to sensitive data
-2. **End-to-end traceability** of who accessed what secrets and when
-3. **Retention policies** for audit logs
-4. **Alerting** on suspicious access patterns
+1. **End-to-end traceability** of who accessed what secrets and when
+1. **Retention policies** for audit logs
+1. **Alerting** on suspicious access patterns
 
 ADR-0051 establishes HashiCorp Vault as our secrets management solution. This ADR defines the audit logging strategy to meet compliance requirements.
 
 ### Current State
 
 Without centralized audit logging:
+
 - No visibility into which DAGs accessed which secrets
 - Cannot correlate secret access with deployment failures
 - Manual compliance reporting is time-consuming and error-prone
@@ -115,30 +118,30 @@ vault write sys/audit/file/tune \
 
 ### Log Retention Policy
 
-| Environment | Retention Period | Storage Class |
-|-------------|------------------|---------------|
-| Development | 30 days | Standard |
-| Staging | 90 days | Standard |
-| Production | 1 year | Archive after 90 days |
-| Compliance | 7 years | Cold storage |
+| Environment | Retention Period | Storage Class         |
+| ----------- | ---------------- | --------------------- |
+| Development | 30 days          | Standard              |
+| Staging     | 90 days          | Standard              |
+| Production  | 1 year           | Archive after 90 days |
+| Compliance  | 7 years          | Cold storage          |
 
 ### Alerting Rules
 
-| Alert | Condition | Severity | Action |
-|-------|-----------|----------|--------|
-| Root Token Usage | `auth.policies contains "root"` | Critical | Page on-call |
-| Policy Denied | `error.message contains "permission denied"` | Warning | Slack notification |
-| Unusual Access Pattern | >100 requests/min from single accessor | High | Investigate |
-| After-Hours Access | Production access outside business hours | Medium | Log for review |
-| Failed Auth Attempts | >5 failed auths from same IP in 5 min | High | Block IP, alert |
+| Alert                  | Condition                                    | Severity | Action             |
+| ---------------------- | -------------------------------------------- | -------- | ------------------ |
+| Root Token Usage       | `auth.policies contains "root"`              | Critical | Page on-call       |
+| Policy Denied          | `error.message contains "permission denied"` | Warning  | Slack notification |
+| Unusual Access Pattern | >100 requests/min from single accessor       | High     | Investigate        |
+| After-Hours Access     | Production access outside business hours     | Medium   | Log for review     |
+| Failed Auth Attempts   | >5 failed auths from same IP in 5 min        | High     | Block IP, alert    |
 
 ### Compliance Dashboard Metrics
 
 1. **Secret Access Frequency**: Which secrets are accessed most often
-2. **Accessor Activity**: Which services/users access secrets
-3. **Policy Violations**: Denied requests by path and accessor
-4. **Token Lifecycle**: Token creation, renewal, revocation rates
-5. **Auth Method Usage**: AppRole vs OIDC vs other methods
+1. **Accessor Activity**: Which services/users access secrets
+1. **Policy Violations**: Denied requests by path and accessor
+1. **Token Lifecycle**: Token creation, renewal, revocation rates
+1. **Auth Method Usage**: AppRole vs OIDC vs other methods
 
 ## Consequences
 
@@ -159,16 +162,17 @@ vault write sys/audit/file/tune \
 
 ### Mitigations
 
-| Concern | Mitigation |
-|---------|------------|
-| Log volume | Sampling for non-sensitive paths; tiered retention |
-| Sensitive data | HMAC hashing of tokens/values; path sanitization |
-| Performance | Async logging; dedicated audit storage |
-| Storage costs | Compression; lifecycle policies; cold storage |
+| Concern        | Mitigation                                         |
+| -------------- | -------------------------------------------------- |
+| Log volume     | Sampling for non-sensitive paths; tiered retention |
+| Sensitive data | HMAC hashing of tokens/values; path sanitization   |
+| Performance    | Async logging; dedicated audit storage             |
+| Storage costs  | Compression; lifecycle policies; cold storage      |
 
 ## Implementation
 
 ### Phase 1: Basic Audit Logging
+
 ```bash
 # Enable file audit device
 vault audit enable file file_path=/var/log/vault/audit.log
@@ -178,6 +182,7 @@ vault audit list
 ```
 
 ### Phase 2: Log Forwarding
+
 ```yaml
 # Promtail configuration for Loki
 scrape_configs:
@@ -203,6 +208,7 @@ scrape_configs:
 ```
 
 ### Phase 3: Alerting Rules
+
 ```yaml
 # Grafana alerting rule
 groups:

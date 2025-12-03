@@ -128,26 +128,26 @@ if command -v vault &> /dev/null; then
     print_status "✅ Vault CLI found, testing connection..."
     if vault status; then
         print_status "✅ Vault is accessible and unsealed"
-        
+
         # Test basic vault operations
         print_status "Testing basic Vault operations..."
-        
+
         # Enable KV secrets engine
         vault secrets enable -version=2 kv || print_warning "KV engine may already be enabled"
-        
+
         # Store a test secret
         vault kv put kv/test/podman-vault test_key="test_value" created_by="podman-test"
-        
+
         # Retrieve the test secret
         if vault kv get kv/test/podman-vault; then
             print_status "✅ Successfully stored and retrieved test secret"
         else
             print_error "❌ Failed to retrieve test secret"
         fi
-        
+
         # Clean up test secret
         vault kv delete kv/test/podman-vault
-        
+
     else
         print_error "❌ Vault is not accessible"
         exit 1

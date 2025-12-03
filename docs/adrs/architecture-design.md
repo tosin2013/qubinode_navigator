@@ -1,10 +1,6 @@
----
-layout: default
-title: Architecture & Design
-parent: Architectural Decision Records
-nav_order: 4
-has_children: true
----
+______________________________________________________________________
+
+## layout: default title: Architecture & Design parent: Architectural Decision Records nav_order: 4 has_children: true
 
 # Architecture & Design ADRs
 

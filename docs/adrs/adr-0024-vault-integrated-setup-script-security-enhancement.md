@@ -1,20 +1,19 @@
----
-layout: default
-title: ADR-0024 Vault-Integrated Setup Script
-parent: Security & Operations
-grand_parent: Architectural Decision Records
-nav_order: 0024
----
+______________________________________________________________________
+
+## layout: default title: ADR-0024 Vault-Integrated Setup Script parent: Security & Operations grand_parent: Architectural Decision Records nav_order: 0024
 
 # ADR-0024: Vault-Integrated Setup Script to Eliminate /tmp/config.yml Security Risk
 
 ## Status
+
 Accepted
 
 ## Context
-The current Qubinode Navigator setup process creates `/tmp/config.yml` containing sensitive credentials (RHEL passwords, tokens, pull secrets) in plaintext before copying and encrypting it. This creates a security window where sensitive data exists unencrypted on the filesystem. 
+
+The current Qubinode Navigator setup process creates `/tmp/config.yml` containing sensitive credentials (RHEL passwords, tokens, pull secrets) in plaintext before copying and encrypting it. This creates a security window where sensitive data exists unencrypted on the filesystem.
 
 Security analysis revealed:
+
 - `/tmp/config.yml` contains plaintext RHEL subscription credentials
 - Red Hat offline tokens and OpenShift pull secrets exposed
 - Automation Hub tokens and admin passwords in clear text
@@ -24,28 +23,30 @@ Security analysis revealed:
 With HashiCorp Vault now integrated and running locally via Podman, we can eliminate this security risk by having the setup script retrieve secrets directly from vault.
 
 ## Decision
+
 Implement a vault-integrated setup script (`vault-integrated-setup.sh`) that eliminates the `/tmp/config.yml` security concern by:
 
 1. **Direct Vault Integration**: Retrieve secrets directly from HashiCorp Vault without intermediate files
-2. **Secure File Creation**: Create `vault.yml` directly with proper permissions (600)
-3. **Memory Protection**: Clear sensitive environment variables after use
-4. **Automatic Cleanup**: Remove any temporary files automatically
-5. **Dual Mode Support**: Support both CI/CD and interactive modes with vault integration
-6. **Backward Compatibility**: Maintain compatibility with existing ansiblesafe workflow
-7. **Podman Integration**: Leverage existing Podman-based vault infrastructure
+1. **Secure File Creation**: Create `vault.yml` directly with proper permissions (600)
+1. **Memory Protection**: Clear sensitive environment variables after use
+1. **Automatic Cleanup**: Remove any temporary files automatically
+1. **Dual Mode Support**: Support both CI/CD and interactive modes with vault integration
+1. **Backward Compatibility**: Maintain compatibility with existing ansiblesafe workflow
+1. **Podman Integration**: Leverage existing Podman-based vault infrastructure
 
 ### Implementation Details
+
 ```bash
 # Vault-integrated approach (secure)
 create_vault_yml_from_vault() {
     # Create secure temporary file
     local temp_vault_yml=$(mktemp --suffix=.yml)
     chmod 600 "${temp_vault_yml}"
-    
+
     # Retrieve secrets directly from vault
     vault kv get -format=json "kv/ansiblesafe/${INVENTORY}" | \
     jq -r '.data.data | to_entries[] | "\(.key): \(.value)"' >> "${temp_vault_yml}"
-    
+
     # Move to final location and encrypt
     mv "${temp_vault_yml}" "${vault_yml_path}"
     /usr/local/bin/ansiblesafe -f vault.yml -o 1
@@ -55,6 +56,7 @@ create_vault_yml_from_vault() {
 ## Consequences
 
 ### Positive
+
 - **Security Enhancement**: Eliminates plaintext credential exposure in `/tmp/config.yml`
 - **Vault Integration**: Leverages existing Podman-based HashiCorp Vault infrastructure
 - **Automatic Cleanup**: Removes sensitive data from memory and temporary files
@@ -63,11 +65,13 @@ create_vault_yml_from_vault() {
 - **Audit Trail**: All secret access goes through vault with proper logging
 
 ### Negative
+
 - **Vault Dependency**: Requires vault to be running for enhanced security mode
 - **Complexity**: Adds complexity for simple deployments
 - **Setup Requirements**: Need to ensure vault secrets are populated before setup
 
 ### Risks
+
 - **Vault Connectivity**: Setup process depends on vault availability
 - **Secret Population**: Vault must contain required secrets before setup
 - **Fallback Handling**: Need proper fallback when vault is unavailable
@@ -75,9 +79,9 @@ create_vault_yml_from_vault() {
 ## Alternatives Considered
 
 1. **Continue using `/tmp/config.yml`**: Rejected due to security concerns
-2. **Encrypt `/tmp/config.yml` immediately**: Still creates plaintext window
-3. **Environment variables only**: Difficult to manage complex configurations
-4. **File-based encryption**: Adds complexity without eliminating exposure window
+1. **Encrypt `/tmp/config.yml` immediately**: Still creates plaintext window
+1. **Environment variables only**: Difficult to manage complex configurations
+1. **File-based encryption**: Adds complexity without eliminating exposure window
 
 ## Evidence Supporting Decision
 
@@ -99,10 +103,12 @@ create_vault_yml_from_vault() {
 - [ ] Add monitoring for vault connectivity issues
 
 ## Related ADRs
+
 - ADR-0023: Enhanced Configuration Management with Template Support and HashiCorp Vault Integration
 - ADR-0004: Security Architecture with Ansible Vault
 
 ## References
+
 - Security analysis of current setup process
 - HashiCorp Vault integration documentation
 - Podman-based vault setup guide

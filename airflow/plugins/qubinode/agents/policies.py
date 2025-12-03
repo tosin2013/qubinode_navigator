@@ -43,16 +43,18 @@ logger = logging.getLogger(__name__)
 
 class PolicyResult(Enum):
     """Result of policy evaluation."""
-    ALLOW = "allow"           # Policy allows execution
-    DENY = "deny"             # Policy blocks execution
-    ESCALATE = "escalate"     # Escalate to higher authority
-    PLAN = "plan"             # Generate plan instead of executing
-    OVERRIDE = "override"     # Override from Calling LLM
+
+    ALLOW = "allow"  # Policy allows execution
+    DENY = "deny"  # Policy blocks execution
+    ESCALATE = "escalate"  # Escalate to higher authority
+    PLAN = "plan"  # Generate plan instead of executing
+    OVERRIDE = "override"  # Override from Calling LLM
 
 
 @dataclass
 class PolicyEvaluation:
     """Result of a single policy evaluation."""
+
     policy_name: str
     result: PolicyResult
     confidence: float
@@ -64,6 +66,7 @@ class PolicyEvaluation:
 @dataclass
 class PolicyEngineResult:
     """Combined result from all policy evaluations."""
+
     final_action: PolicyResult
     evaluations: List[PolicyEvaluation]
     overall_confidence: float
@@ -88,11 +91,7 @@ class Policy(ABC):
         pass
 
     @abstractmethod
-    async def evaluate(
-        self,
-        task: str,
-        context: Dict[str, Any]
-    ) -> PolicyEvaluation:
+    async def evaluate(self, task: str, context: Dict[str, Any]) -> PolicyEvaluation:
         """
         Evaluate the policy for a given task.
 
@@ -125,11 +124,7 @@ class ConfidencePolicy(Policy):
     def priority(self) -> int:
         return 100  # High priority
 
-    async def evaluate(
-        self,
-        task: str,
-        context: Dict[str, Any]
-    ) -> PolicyEvaluation:
+    async def evaluate(self, task: str, context: Dict[str, Any]) -> PolicyEvaluation:
         confidence = context.get("confidence", 0)
         rag_context = context.get("rag_context", {})
         rag_hits = len(rag_context.get("documents", []))
@@ -146,7 +141,7 @@ class ConfidencePolicy(Policy):
                 confidence=confidence,
                 reason="No RAG context available - cannot make informed decision",
                 recommendations=recommendations,
-                metadata={"rag_hits": rag_hits}
+                metadata={"rag_hits": rag_hits},
             )
 
         # Check confidence threshold
@@ -159,7 +154,7 @@ class ConfidencePolicy(Policy):
                 confidence=confidence,
                 reason=f"Confidence {confidence:.2f} below threshold {self.CONFIDENCE_THRESHOLD}",
                 recommendations=recommendations,
-                metadata={"threshold": self.CONFIDENCE_THRESHOLD, "rag_hits": rag_hits}
+                metadata={"threshold": self.CONFIDENCE_THRESHOLD, "rag_hits": rag_hits},
             )
 
         return PolicyEvaluation(
@@ -168,7 +163,7 @@ class ConfidencePolicy(Policy):
             confidence=confidence,
             reason=f"Confidence {confidence:.2f} acceptable with {rag_hits} RAG hits",
             recommendations=[],
-            metadata={"rag_hits": rag_hits}
+            metadata={"rag_hits": rag_hits},
         )
 
 
@@ -189,11 +184,7 @@ class ProviderFirstPolicy(Policy):
     def priority(self) -> int:
         return 90  # High priority
 
-    async def evaluate(
-        self,
-        task: str,
-        context: Dict[str, Any]
-    ) -> PolicyEvaluation:
+    async def evaluate(self, task: str, context: Dict[str, Any]) -> PolicyEvaluation:
         provider_check = context.get("provider_check", {})
         provider_exists = provider_check.get("provider_exists", False)
         provider_name = provider_check.get("provider_name")
@@ -206,7 +197,7 @@ class ProviderFirstPolicy(Policy):
                 confidence=1.0,
                 reason=f"Using official provider: {provider_name}",
                 recommendations=[f"Import from {provider_name}"],
-                metadata={"provider": provider_name, "system": system}
+                metadata={"provider": provider_name, "system": system},
             )
 
         if system and not provider_exists:
@@ -219,9 +210,9 @@ class ProviderFirstPolicy(Policy):
                 recommendations=[
                     f"Research if {system} has an Airflow provider",
                     "Consider creating custom operator",
-                    "Use BashOperator as fallback"
+                    "Use BashOperator as fallback",
                 ],
-                metadata={"system": system, "provider_available": False}
+                metadata={"system": system, "provider_available": False},
             )
 
         # No system detected in task
@@ -231,7 +222,7 @@ class ProviderFirstPolicy(Policy):
             confidence=0.8,
             reason="No specific system integration required",
             recommendations=[],
-            metadata={}
+            metadata={},
         )
 
 
@@ -252,11 +243,7 @@ class MissingProviderPolicy(Policy):
     def priority(self) -> int:
         return 80  # Medium-high priority
 
-    async def evaluate(
-        self,
-        task: str,
-        context: Dict[str, Any]
-    ) -> PolicyEvaluation:
+    async def evaluate(self, task: str, context: Dict[str, Any]) -> PolicyEvaluation:
         provider_check = context.get("provider_check", {})
         provider_exists = provider_check.get("provider_exists", False)
         system = provider_check.get("system")
@@ -269,7 +256,7 @@ class MissingProviderPolicy(Policy):
                 confidence=1.0,
                 reason="No system-specific integration required",
                 recommendations=[],
-                metadata={}
+                metadata={},
             )
 
         if provider_exists:
@@ -280,7 +267,7 @@ class MissingProviderPolicy(Policy):
                 confidence=1.0,
                 reason="Provider available - proceeding with implementation",
                 recommendations=[],
-                metadata={"system": system}
+                metadata={"system": system},
             )
 
         # Missing provider - generate plan
@@ -293,13 +280,13 @@ class MissingProviderPolicy(Policy):
                 f"Generate implementation plan for {system} integration",
                 "Document prerequisites and dependencies",
                 "Request approval before code generation",
-                "Consider SSH/REST API approach"
+                "Consider SSH/REST API approach",
             ],
             metadata={
                 "system": system,
                 "suggested_approach": "plan_then_implement",
-                "fallback_operators": ["BashOperator", "PythonOperator", "SSHOperator"]
-            }
+                "fallback_operators": ["BashOperator", "PythonOperator", "SSHOperator"],
+            },
         )
 
 
@@ -320,11 +307,7 @@ class OverridePolicy(Policy):
     def priority(self) -> int:
         return 200  # Highest priority
 
-    async def evaluate(
-        self,
-        task: str,
-        context: Dict[str, Any]
-    ) -> PolicyEvaluation:
+    async def evaluate(self, task: str, context: Dict[str, Any]) -> PolicyEvaluation:
         override = context.get("override")
 
         if override:
@@ -334,7 +317,7 @@ class OverridePolicy(Policy):
                 confidence=1.0,
                 reason="Calling LLM override received - executing directly",
                 recommendations=["Log override for audit trail"],
-                metadata={"override_instruction": override[:200]}
+                metadata={"override_instruction": override[:200]},
             )
 
         return PolicyEvaluation(
@@ -343,7 +326,7 @@ class OverridePolicy(Policy):
             confidence=1.0,
             reason="No override present - proceeding with normal evaluation",
             recommendations=[],
-            metadata={}
+            metadata={},
         )
 
 
@@ -364,10 +347,10 @@ class PolicyEngine:
         """
         if policies is None:
             self.policies = [
-                OverridePolicy(),      # Priority 200 - checked first
-                ConfidencePolicy(),    # Priority 100
-                ProviderFirstPolicy(), # Priority 90
-                MissingProviderPolicy() # Priority 80
+                OverridePolicy(),  # Priority 200 - checked first
+                ConfidencePolicy(),  # Priority 100
+                ProviderFirstPolicy(),  # Priority 90
+                MissingProviderPolicy(),  # Priority 80
             ]
         else:
             self.policies = policies
@@ -382,7 +365,7 @@ class PolicyEngine:
         rag_context: Dict[str, Any],
         provider_check: Dict[str, Any],
         confidence: float,
-        override: Optional[str] = None
+        override: Optional[str] = None,
     ) -> PolicyEngineResult:
         """
         Apply all policies to a task.
@@ -401,7 +384,7 @@ class PolicyEngine:
             "rag_context": rag_context,
             "provider_check": provider_check,
             "confidence": confidence,
-            "override": override
+            "override": override,
         }
 
         evaluations: List[PolicyEvaluation] = []
@@ -430,14 +413,16 @@ class PolicyEngine:
 
             except Exception as e:
                 logger.error(f"Policy {policy.name} evaluation failed: {e}")
-                evaluations.append(PolicyEvaluation(
-                    policy_name=policy.name,
-                    result=PolicyResult.DENY,
-                    confidence=0,
-                    reason=f"Policy evaluation error: {e}",
-                    recommendations=["Investigate policy error"],
-                    metadata={"error": str(e)}
-                ))
+                evaluations.append(
+                    PolicyEvaluation(
+                        policy_name=policy.name,
+                        result=PolicyResult.DENY,
+                        confidence=0,
+                        reason=f"Policy evaluation error: {e}",
+                        recommendations=["Investigate policy error"],
+                        metadata={"error": str(e)},
+                    )
+                )
 
         # Determine final state
         should_execute = final_action in [PolicyResult.ALLOW, PolicyResult.OVERRIDE]
@@ -452,13 +437,11 @@ class PolicyEngine:
             overall_confidence=confidence,
             should_execute=should_execute,
             requires_approval=requires_approval,
-            message=message
+            message=message,
         )
 
     def _build_result_message(
-        self,
-        final_action: PolicyResult,
-        evaluations: List[PolicyEvaluation]
+        self, final_action: PolicyResult, evaluations: List[PolicyEvaluation]
     ) -> str:
         """Build human-readable result message."""
         messages = {
@@ -466,7 +449,7 @@ class PolicyEngine:
             PolicyResult.DENY: "Policy blocked execution - see evaluations for details",
             PolicyResult.ESCALATE: "Escalating to Calling LLM for guidance",
             PolicyResult.PLAN: "Generating implementation plan instead of code",
-            PolicyResult.OVERRIDE: "Executing Calling LLM override instruction"
+            PolicyResult.OVERRIDE: "Executing Calling LLM override instruction",
         }
 
         base_message = messages.get(final_action, "Unknown policy result")
@@ -485,10 +468,7 @@ class PolicyEngine:
         return base_message
 
     async def check_single_policy(
-        self,
-        policy_name: str,
-        task: str,
-        context: Dict[str, Any]
+        self, policy_name: str, task: str, context: Dict[str, Any]
     ) -> Optional[PolicyEvaluation]:
         """
         Check a single policy by name.
@@ -530,5 +510,5 @@ __all__ = [
     "ProviderFirstPolicy",
     "MissingProviderPolicy",
     "OverridePolicy",
-    "get_policy_engine"
+    "get_policy_engine",
 ]

@@ -27,22 +27,23 @@ git push origin v0.1.0
 ```
 
 The release workflow will automatically:
+
 1. Validate the version format
-2. Run all tests
-3. Build container images
-4. Create a GitHub release with auto-generated changelog
-5. Create a release announcement issue
+1. Run all tests
+1. Build container images
+1. Create a GitHub release with auto-generated changelog
+1. Create a release announcement issue
 
 ### Method 2: Manual Workflow Dispatch
 
 Trigger a release manually from the GitHub Actions UI:
 
 1. Go to **Actions** tab in GitHub
-2. Select **Release Pipeline** workflow
-3. Click **Run workflow**
-4. Enter the version number (e.g., `0.1.0`)
-5. Optionally mark as pre-release
-6. Click **Run workflow**
+1. Select **Release Pipeline** workflow
+1. Click **Run workflow**
+1. Enter the version number (e.g., `0.1.0`)
+1. Optionally mark as pre-release
+1. Click **Run workflow**
 
 ## Version Numbering
 
@@ -54,6 +55,7 @@ Follow [Semantic Versioning](https://semver.org/):
 - **Pre-release (0.1.0-beta.1)**: Pre-release versions
 
 Examples:
+
 - `v0.1.0` - Initial release
 - `v0.2.0` - New features added
 - `v0.2.1` - Bug fixes
@@ -63,21 +65,25 @@ Examples:
 ## What Happens During a Release
 
 ### 1. Validation
+
 - Checks version format (X.Y.Z)
 - Validates tag doesn't already exist
 - Verifies changelog requirements
 
 ### 2. Testing
+
 - Runs unit tests (`tests/unit/`)
 - Runs integration tests (`tests/integration/`)
 - Must pass before proceeding
 
 ### 3. Container Build
+
 - Builds Jekyll documentation container
 - Pushes to GitHub Container Registry (ghcr.io)
 - Tags: `vX.Y.Z` and `latest`
 
 ### 4. Release Creation
+
 - Generates changelog from commit history
 - Creates GitHub release
 - Attaches release notes
@@ -108,8 +114,8 @@ The documentation site will automatically rebuild with the new release tag.
 ### Verify Release
 
 1. Check the [Releases page](https://github.com/Qubinode/qubinode_navigator/releases)
-2. Verify container images: `ghcr.io/qubinode/qubinode-docs:X.Y.Z`
-3. Test installation from the release tag:
+1. Verify container images: `ghcr.io/qubinode/qubinode-docs:X.Y.Z`
+1. Test installation from the release tag:
 
 ```bash
 git clone https://github.com/Qubinode/qubinode_navigator.git
@@ -132,7 +138,7 @@ The workflow automatically creates an announcement issue, but you may also want 
 ### Release Workflow Fails
 
 1. Check the Actions tab for error details
-2. Common issues:
+1. Common issues:
    - **Tests failing**: Fix tests before releasing
    - **Tag already exists**: Use a new version number
    - **Invalid version format**: Must be `X.Y.Z` or `X.Y.Z-suffix`
@@ -140,8 +146,8 @@ The workflow automatically creates an announcement issue, but you may also want 
 ### Container Build Fails
 
 1. Check Dockerfile.jekyll for errors
-2. Verify GitHub Container Registry permissions
-3. Check build logs in Actions
+1. Verify GitHub Container Registry permissions
+1. Check build logs in Actions
 
 ### Need to Delete a Release
 
@@ -159,6 +165,7 @@ git push origin :refs/tags/vX.Y.Z
 ## Current Version
 
 The current version is defined in:
+
 - `Makefile`: `TAG := 0.1.0`
 
 Update this version number after each release.
@@ -178,6 +185,7 @@ Update this version number after each release.
 ## Support
 
 For questions about the release process:
+
 - Open an issue with the `release` label
 - Check existing release workflow runs in Actions
 - Review this documentation

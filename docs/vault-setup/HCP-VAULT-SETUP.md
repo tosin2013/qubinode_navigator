@@ -5,35 +5,38 @@ This guide walks you through setting up HashiCorp Cloud Platform (HCP) Vault Sec
 ## Prerequisites
 
 1. **HCP Account**: Sign up or log in to [HashiCorp Cloud Platform](https://cloud.hashicorp.com/)
-2. **HCP CLI**: Install HCP CLI on your local machine
+1. **HCP CLI**: Install HCP CLI on your local machine
    ```bash
    # Install HCP CLI (Linux)
    curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
    sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
    sudo apt-get update && sudo apt-get install hcp
    ```
-3. **Service Principal**: HCP service principal with Client ID and Client Secret
-4. **jq**: JSON parser for shell scripts (`sudo dnf install jq -y`)
+1. **Service Principal**: HCP service principal with Client ID and Client Secret
+1. **jq**: JSON parser for shell scripts (`sudo dnf install jq -y`)
 
 ## Step 1: Create HCP Vault Secrets Application
 
 ### 1.1 Log in to HCP
+
 1. Go to [HashiCorp Cloud Platform](https://cloud.hashicorp.com/)
-2. Log in with your credentials
-3. Navigate to **Vault Secrets** from the dashboard
+1. Log in with your credentials
+1. Navigate to **Vault Secrets** from the dashboard
 
 ### 1.2 Create New Application
+
 1. Click **"Create App"** in Vault Secrets interface
-2. Provide application name: `qubinode-navigator-secrets`
-3. Select your organization and project
-4. Click **"Create"** to finalize
+1. Provide application name: `qubinode-navigator-secrets`
+1. Select your organization and project
+1. Click **"Create"** to finalize
 
 ### 1.3 Create Service Principal
+
 1. Go to **Access control (IAM)** in HCP
-2. Click **"Create service principal"**
-3. Name: `qubinode-navigator-sp`
-4. Assign role: **Contributor** (or custom role with Vault Secrets access)
-5. Save the **Client ID** and **Client Secret** securely
+1. Click **"Create service principal"**
+1. Name: `qubinode-navigator-sp`
+1. Assign role: **Contributor** (or custom role with Vault Secrets access)
+1. Save the **Client ID** and **Client Secret** securely
 
 ## Step 2: Configure Environment Variables
 
@@ -199,6 +202,7 @@ python3 enhanced-load-variables.py --generate-config --template default.yml.j2
 ```
 
 This will:
+
 - ✅ Verify HCP connectivity
 - ✅ Test secret retrieval
 - ✅ Generate configuration with HCP secrets
@@ -262,15 +266,16 @@ deploy:
 ### 7.2 Access Control
 
 1. **Principle of Least Privilege**: Grant minimal required permissions
-2. **Service Principal Rotation**: Rotate credentials every 90 days
-3. **Audit Logging**: Monitor HCP access logs
-4. **Environment Separation**: Use separate applications per environment
+1. **Service Principal Rotation**: Rotate credentials every 90 days
+1. **Audit Logging**: Monitor HCP access logs
+1. **Environment Separation**: Use separate applications per environment
 
 ## Troubleshooting
 
 ### Common Issues
 
 1. **Authentication Failures**
+
    ```bash
    # Verify credentials
    curl -s https://auth.idp.hashicorp.com/oauth2/token \
@@ -280,12 +285,14 @@ deploy:
         --data audience="https://api.hashicorp.cloud"
    ```
 
-2. **API Rate Limits**
+1. **API Rate Limits**
+
    - HCP has API rate limits
    - Implement exponential backoff
    - Cache tokens appropriately
 
-3. **Network Connectivity**
+1. **Network Connectivity**
+
    ```bash
    # Test HCP API connectivity
    curl -s https://api.cloud.hashicorp.com/secrets/2023-06-13/health
@@ -307,10 +314,10 @@ echo $HCP_API_TOKEN | jq -R 'split(".") | .[1] | @base64d | fromjson'
 ## Next Steps
 
 1. **Test the integration** with your actual HCP credentials
-2. **Create environment-specific applications** in HCP
-3. **Set up CI/CD integration** with HCP authentication
-4. **Implement secret rotation** procedures
-5. **Monitor and audit** HCP access logs
+1. **Create environment-specific applications** in HCP
+1. **Set up CI/CD integration** with HCP authentication
+1. **Implement secret rotation** procedures
+1. **Monitor and audit** HCP access logs
 
 ## Support
 

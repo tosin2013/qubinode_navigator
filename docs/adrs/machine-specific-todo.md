@@ -13,22 +13,26 @@ Generated from environment analysis and architectural rules for this specific ma
 **Environment Type**: RHEL 9 Hypervisor (Optimal for Qubinode Navigator)
 **Recommended Script**: `rhel9-linux-hypervisor.sh` (RHEL 9 specific)
 
----
+______________________________________________________________________
 
 ## � RHEL 9 Hypervisor Setup (Priority 1)
 
 ### Primary Setup Script: `rhel9-linux-hypervisor.sh`
+
 - [x] **Pre-execution Validation** ✅ **COMPLETE**
+
   - ✅ Verify root access: `sudo -l` - NOPASSWD access confirmed
   - ✅ Check RHEL subscription: `sudo subscription-manager status` - Status: Current
   - ✅ Validate internet connectivity: `ping google.com` - 2.23ms response
   - ✅ **OS Confirmed**: RHEL 9.6 (Plow) - Perfect match for rhel9-linux-hypervisor.sh
 
 - [x] **Execute RHEL 9 Hypervisor Setup** ✅ **COMPLETE**
+
   ```bash
   cd /home/vpcuser/qubinode_navigator
   sudo ./rhel9-linux-hypervisor.sh  # ✅ EXECUTED SUCCESSFULLY
   ```
+
   - ✅ **Functions**: 21 automated setup functions executed
   - ✅ **Packages**: 113+ RHEL 9 packages installed (Podman 5.4.0, Ansible Navigator, KVM tools)
   - ✅ **Duration**: ~6 minutes (much faster than expected)
@@ -37,6 +41,7 @@ Generated from environment analysis and architectural rules for this specific ma
   - ✅ **Python Environment**: All dependencies installed and verified
 
 - [x] **Enhanced Configuration Management** ✅ **COMPLETE**
+
   ```bash
   # Enhanced load-variables.py with template support
   export INVENTORY="localhost"
@@ -45,6 +50,7 @@ Generated from environment analysis and architectural rules for this specific ma
   export ADMIN_USER_PASSWORD="adminpass"
   python3 enhanced-load-variables.py --generate-config --template default.yml.j2
   ```
+
   - ✅ **Template System**: Jinja2 templates for flexible configuration
   - ✅ **Vault Integration**: HashiCorp Vault support with hvac client
   - ✅ **Dynamic Updates**: Ability to update vault with new configurations
@@ -53,10 +59,12 @@ Generated from environment analysis and architectural rules for this specific ma
   - ✅ **Dependencies**: jinja2 and hvac installed for enhanced functionality
 
 - [x] **HashiCorp Vault Integration Setup** ✅ **COMPLETE**
+
   ```bash
   # Created comprehensive vault integration system
   ./setup-vault-integration.sh  # Automated setup and testing script
   ```
+
   - ✅ **ADR Created**: ADR-0023 Enhanced Configuration Management documented
   - ✅ **Environment Template**: .env-example with all required variables
   - ✅ **Setup Script**: setup-vault-integration.sh for automated configuration
@@ -65,6 +73,7 @@ Generated from environment analysis and architectural rules for this specific ma
   - ✅ **Security**: Proper file permissions and .gitignore configuration
 
 - [x] **Comprehensive Vault Documentation Created** ✅ **COMPLETE**
+
   ```bash
   # Complete documentation suite created
   docs/vault-setup/VAULT-SETUP-GUIDE.md      # Main guide with decision matrix
@@ -72,6 +81,7 @@ Generated from environment analysis and architectural rules for this specific ma
   docs/vault-setup/LOCAL-VAULT-SETUP.md      # Local development vault setup
   docs/vault-setup/OPENSHIFT-VAULT-SETUP.md  # Enterprise OpenShift vault setup
   ```
+
   - ✅ **HCP Integration**: Enhanced script supports HCP API calls
   - ✅ **Local Vault Support**: Docker and binary installation options
   - ✅ **OpenShift Integration**: Enterprise Kubernetes vault deployment
@@ -82,12 +92,14 @@ Generated from environment analysis and architectural rules for this specific ma
   - ✅ **Migration Paths**: HCP ↔ Local ↔ OpenShift vault migration procedures
 
 - [x] **System Analysis and Inventory Configuration** ✅ **COMPLETE**
+
   ```bash
   # System detected: RHEL 9.6 (Plow) on cloud/virtualized environment
   # Hostname: ocp4-disconnected-helper
   # Network: Private network (10.240.64.x)
   # Optimal inventory: rhel9-equinix
   ```
+
   - ✅ **INVENTORY Updated**: Changed from `localhost` to `rhel9-equinix`
   - ✅ **System Compatibility**: RHEL 9-specific configuration optimized
   - ✅ **Network Configuration**: Cloud/virtualized environment support
@@ -97,12 +109,14 @@ Generated from environment analysis and architectural rules for this specific ma
   **Since you have HCP access, follow the HCP setup path:**
 
   **Required from you:**
+
   1. **HCP Credentials**: Client ID, Client Secret, Org ID, Project ID
-  2. **RHEL Subscription**: Username/password for .env file
-  3. **Service Tokens**: Red Hat offline token, OpenShift pull secret (optional)
-  4. **AWS Credentials**: For Route53 management (optional)
+  1. **RHEL Subscription**: Username/password for .env file
+  1. **Service Tokens**: Red Hat offline token, OpenShift pull secret (optional)
+  1. **AWS Credentials**: For Route53 management (optional)
 
   **Quick Start Steps:**
+
   ```bash
   # 1. Follow HCP setup guide
   cat docs/vault-setup/HCP-VAULT-SETUP.md
@@ -117,6 +131,7 @@ Generated from environment analysis and architectural rules for this specific ma
   ```
 
   **Alternative Options:**
+
   ```bash
   # For local testing/development (Podman-optimized for RHEL 9)
   cat docs/vault-setup/LOCAL-VAULT-SETUP.md
@@ -127,6 +142,7 @@ Generated from environment analysis and architectural rules for this specific ma
   ```
 
 - [ ] **Monitor Setup Progress**
+
   - Watch for any package installation failures
   - Verify firewall configuration
   - Check LVM storage setup
@@ -135,7 +151,9 @@ Generated from environment analysis and architectural rules for this specific ma
 ## �🚨 Critical Security Tasks (Priority 2)
 
 ### Vault Security Implementation (Automated by rhel9-linux-hypervisor.sh)
+
 - [ ] **Verify Ansible Vault Setup**
+
   - Check if vault.yml files exist in inventories
   - Validate vault password configuration
   - Test vault encryption/decryption functionality
@@ -143,144 +161,166 @@ Generated from environment analysis and architectural rules for this specific ma
   - **Note**: Automated by `configure_ansible_vault()` function
 
 - [ ] **Container Security Hardening**
+
   - Review Podman installation (included in RHEL 9 packages)
   - Implement container security best practices
   - Validate container runtime security settings
   - **Rule**: `container-security-rule` (Critical)
 
 - [ ] **Credential Audit**
+
   - Scan for any plain-text credentials in configuration files
   - Ensure all sensitive data is properly encrypted
   - Validate access controls for vault files
 
----
+______________________________________________________________________
 
 ## ⚙️ Post-Setup Validation Tasks (Priority 3)
 
 ### RHEL 9 Environment Validation (After rhel9-linux-hypervisor.sh)
+
 - [ ] **Operating System Validation**
+
   - ✅ **OS Detected**: RHEL 9.6 (Perfect compatibility)
   - Verify all RHEL 9 packages installed correctly
   - Check system requirements and dependencies
   - **Rule**: `machine-setup-rule` (Warning)
 
 - [ ] **Dependency Validation**
+
   - Verify Python dependencies: `pip3 list | grep -E "(fire|netifaces|psutil|requests)"`
   - Check Node.js dependencies: `npm list --depth=0`
   - Validate RHEL 9 system packages installed by script
   - **Rule**: `dependency-validation-rule` (Warning)
 
 - [ ] **Container Runtime Validation**
+
   - Verify Podman installation: `podman --version`
   - Test ansible-navigator: `ansible-navigator --version`
   - Validate execution environment images
   - **Rule**: `container-execution-rule` (Error)
 
----
+______________________________________________________________________
 
 ## 📁 Configuration Management Tasks (Priority 3)
 
 ### Inventory Configuration
+
 - [ ] **Environment-Specific Setup**
+
   - Create or validate inventory for this machine
   - Configure group_vars for local environment
   - Set up environment-specific variables
   - **Rule**: `inventory-separation-rule` (Error)
 
 - [ ] **Dynamic Configuration**
+
   - Run `load-variables.py` to detect system configuration
   - Validate network interface detection
   - Configure storage and disk settings
   - Test configuration file generation
 
 - [ ] **Multi-Cloud Inventory Validation**
+
   - Review existing inventory structures
   - Validate environment isolation
   - Test inventory switching mechanisms
   - **Rule**: `environment-specific-rule` (Error)
 
----
+______________________________________________________________________
 
 ## 🔧 Development Environment Tasks (Priority 4)
 
 ### Build and Automation
+
 - [ ] **Makefile Validation**
+
   - Test Makefile targets for container building
   - Validate build automation processes
   - Check image building and management
 
 - [ ] **Ansible Navigator Setup**
+
   - Configure ansible-navigator for local development
   - Test playbook execution in containers
   - Validate inventory integration
 
 - [ ] **Development Workflow**
+
   - Set up local development environment
   - Configure debugging and testing tools
   - Validate code quality checks
 
----
+______________________________________________________________________
 
 ## 🧪 Testing and Validation Tasks (Priority 5)
 
 ### Rule Compliance Testing
+
 - [ ] **Security Rule Validation**
+
   - Test vault encryption functionality
   - Validate container security configurations
   - Check credential management compliance
 
 - [ ] **Configuration Rule Testing**
+
   - Validate inventory separation
   - Test environment-specific configurations
   - Check dynamic configuration generation
 
 - [ ] **Setup Rule Verification**
+
   - Test machine setup detection
   - Validate dependency management
   - Check container execution compliance
 
----
+______________________________________________________________________
 
 ## � RHEL 9 Hypervisor Script Functions
 
 The `rhel9-linux-hypervisor.sh` script includes 21 automated functions:
 
 ### Core Setup Functions (Executed in Order)
+
 1. **check_root()** - Validates root privileges
-2. **handle_hashicorp_vault()** - Optional HashiCorp Vault setup
-3. **install_packages()** - RHEL 9 optimized package installation
-4. **configure_firewalld()** - Firewall configuration
-5. **configure_lvm_storage()** - LVM storage setup
-6. **clone_repository()** - Clone to `/opt/qubinode_navigator`
-7. **configure_ansible_navigator()** - Ansible Navigator setup
-8. **configure_ansible_vault()** - Vault security configuration
-9. **generate_inventory()** - Inventory file generation
-10. **configure_navigator()** - Navigator configuration
-11. **configure_ssh()** - SSH key setup
-12. **deploy_kvmhost()** - KVM hypervisor deployment
-13. **configure_bash_aliases()** - Shell aliases setup
-14. **setup_kcli_base()** - Kcli VM management setup
+1. **handle_hashicorp_vault()** - Optional HashiCorp Vault setup
+1. **install_packages()** - RHEL 9 optimized package installation
+1. **configure_firewalld()** - Firewall configuration
+1. **configure_lvm_storage()** - LVM storage setup
+1. **clone_repository()** - Clone to `/opt/qubinode_navigator`
+1. **configure_ansible_navigator()** - Ansible Navigator setup
+1. **configure_ansible_vault()** - Vault security configuration
+1. **generate_inventory()** - Inventory file generation
+1. **configure_navigator()** - Navigator configuration
+1. **configure_ssh()** - SSH key setup
+1. **deploy_kvmhost()** - KVM hypervisor deployment
+1. **configure_bash_aliases()** - Shell aliases setup
+1. **setup_kcli_base()** - Kcli VM management setup
 
 ### Optional Integration Functions
+
 15. **configure_route53()** - AWS Route53 DNS (if enabled)
-16. **configure_cockpit_ssl()** - Cockpit web interface with SSL
-17. **configure_onedev()** - OneDev Git server (if CICD_ENVIRONMENT=onedev)
-18. **configure_gitlab()** - GitLab integration (if CICD_ENVIRONMENT=gitlab)
-19. **configure_github()** - GitHub integration (if CICD_ENVIRONMENT=github)
-20. **configure_ollama()** - Ollama AI workload (if OLLAMA_WORKLOAD=true)
+01. **configure_cockpit_ssl()** - Cockpit web interface with SSL
+01. **configure_onedev()** - OneDev Git server (if CICD_ENVIRONMENT=onedev)
+01. **configure_gitlab()** - GitLab integration (if CICD_ENVIRONMENT=gitlab)
+01. **configure_github()** - GitHub integration (if CICD_ENVIRONMENT=github)
+01. **configure_ollama()** - Ollama AI workload (if OLLAMA_WORKLOAD=true)
 
 ### Key RHEL 9 Packages Installed
+
 - **Core**: `bzip2-devel libffi-devel wget vim podman ncurses-devel`
 - **Development**: `sqlite-devel firewalld make gcc git unzip sshpass`
 - **System**: `lvm2 python3 python3-pip java-11-openjdk-devel`
 - **Automation**: `ansible-core perl-Digest-SHA`
 - **Additional**: `yq` (YAML processor), `ansible-navigator`
 
----
+______________________________________________________________________
 
 ## �📊 Machine-Specific Checks
 
 ### RHEL 9.6 Environment Status
+
 ```bash
 # Current environment (already detected):
 # OS: Red Hat Enterprise Linux 9.6 (Plow)
@@ -307,6 +347,7 @@ podman run --rm hello-world
 ```
 
 ### Environment Variables (Set by rhel9-linux-hypervisor.sh)
+
 ```bash
 # Environment variables automatically configured:
 export INVENTORY="localhost"
@@ -316,6 +357,7 @@ export KVM_VERSION="0.8.0"  # Set by rhel9-linux-hypervisor.sh
 ```
 
 ### File Permissions Check
+
 ```bash
 # Verify file permissions
 ls -la /home/vpcuser/qubinode_navigator/setup.sh
@@ -323,21 +365,23 @@ ls -la /home/vpcuser/qubinode_navigator/load-variables.py
 ls -la /home/vpcuser/qubinode_navigator/inventories/
 ```
 
----
+______________________________________________________________________
 
 ## 🎯 RHEL 9 Quick Start Checklist
 
 **Optimized for RHEL 9.6 Environment**
 
 ### Phase 1: Pre-Setup Validation
-1. **[ ] Prerequisites Check**
+
+1. **\[ \] Prerequisites Check**
    - Verify root/sudo access: `sudo -l`
    - Check RHEL subscription: `sudo subscription-manager status`
    - Validate internet connectivity: `ping -c 3 google.com`
    - Check disk space: `df -h` (>20GB recommended for hypervisor)
 
 ### Phase 2: RHEL 9 Hypervisor Setup
-2. **[ ] Execute RHEL 9 Specific Setup**
+
+2. **\[ \] Execute RHEL 9 Specific Setup**
    ```bash
    cd /home/vpcuser/qubinode_navigator
    chmod +x rhel9-linux-hypervisor.sh
@@ -351,7 +395,9 @@ ls -la /home/vpcuser/qubinode_navigator/inventories/
    - KVM hypervisor deployment
 
 ### Phase 3: Post-Setup Validation
-3. **[ ] Verify Installation**
+
+3. **\[ \] Verify Installation**
+
    ```bash
    # Check Ansible Navigator
    ansible-navigator --version
@@ -363,7 +409,8 @@ ls -la /home/vpcuser/qubinode_navigator/inventories/
    ansible-navigator inventory --list -m stdout
    ```
 
-4. **[ ] Security Validation**
+1. **\[ \] Security Validation**
+
    ```bash
    # Verify vault setup (automated by script)
    ls -la /opt/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml
@@ -372,13 +419,14 @@ ls -la /home/vpcuser/qubinode_navigator/inventories/
    ls -la ~/.vault_password
    ```
 
----
+______________________________________________________________________
 
 ## 📈 Progress Tracking
 
 ### Completion Status
+
 - **Critical Security**: 0/3 tasks complete (0%)
-- **Environment Setup**: 0/3 tasks complete (0%)  
+- **Environment Setup**: 0/3 tasks complete (0%)
 - **Configuration**: 0/3 tasks complete (0%)
 - **Development**: 0/3 tasks complete (0%)
 - **Testing**: 0/3 tasks complete (0%)
@@ -386,13 +434,14 @@ ls -la /home/vpcuser/qubinode_navigator/inventories/
 **Overall Progress**: 0/15 tasks complete (0%)
 
 ### Next Actions
-1. Start with **Critical Security Tasks** - highest priority
-2. Complete **Environment Setup** - foundation for everything else
-3. Configure **Machine-Specific Settings** - adapt to local environment
-4. Validate **Rule Compliance** - ensure architectural standards
-5. Set up **Development Workflow** - enable productive development
 
----
+1. Start with **Critical Security Tasks** - highest priority
+1. Complete **Environment Setup** - foundation for everything else
+1. Configure **Machine-Specific Settings** - adapt to local environment
+1. Validate **Rule Compliance** - ensure architectural standards
+1. Set up **Development Workflow** - enable productive development
+
+______________________________________________________________________
 
 ## 🔗 Related Documentation
 
@@ -405,6 +454,7 @@ ls -la /home/vpcuser/qubinode_navigator/inventories/
 ## ✅ **Research Validation Complete**
 
 ### Architecture Confirmed
+
 - [x] **End-to-End Workflow** - 5-phase deployment process validated
 - [x] **KVM Platform** - Complete virtualization stack confirmed (113 packages)
 - [x] **Multi-Cloud Support** - Localhost, Hetzner, Equinix environments validated
@@ -413,12 +463,14 @@ ls -la /home/vpcuser/qubinode_navigator/inventories/
 - [x] **CI/CD Integration** - GitLab, GitHub, OneDev support confirmed
 
 ### Expected Outcomes Documented
+
 - [x] **Complete KVM Hypervisor** - libvirt, QEMU, LVM storage
 - [x] **Management Tools** - Kcli, Cockpit, AnsibleSafe
 - [x] **Security Hardening** - Automated SSH progression, firewall config
 - [x] **Operational Readiness** - Health validation, backup management
 
 ### Research Documentation
+
 - **Comprehensive Analysis**: `/docs/research/comprehensive-research-questions.md`
 - **Executive Summary**: `/docs/research/research-findings-summary.md`
 - **ADR Validation**: All architectural decisions confirmed as implemented

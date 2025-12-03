@@ -5,7 +5,7 @@
   vars:
     airflow_mcp_port: 8889
     airflow_api_key: "{{ lookup('env', 'AIRFLOW_MCP_API_KEY') | default('65efb281f1ea9dc8498ec563f7bf42af4f8bf8a6b7bb542141902ce462cdb98a') }}"
-  
+
   tasks:
     - name: Discover Airflow MCP Server Capabilities
       tosin2013.mcp_audit.mcp_server_info:
@@ -81,24 +81,24 @@
       ansible.builtin.copy:
         content: |
           # Airflow MCP Server Test Report
-          
+
           **Date:** {{ ansible_date_time.iso8601 }}
           **Server:** {{ airflow_server_info.server_info.server_name }}
           **Total Tools:** {{ airflow_server_info.server_info.available_tools }}
-          
+
           ## Tools Tested
-          
+
           1. **list_dags**: {{ 'PASS' if list_dags_test.test_passed else 'FAIL' }}
              - Execution Time: {{ list_dags_test.execution_time }}s
-          
+
           2. **list_vms**: {{ 'PASS' if list_vms_test.test_passed else 'FAIL' }}
              - Execution Time: {{ list_vms_test.execution_time }}s
-          
+
           3. **get_dag_info**: {{ 'PASS' if dag_info_test.test_passed | default(false) else 'SKIP/FAIL' }}
              - Note: May fail if no example DAG exists
-          
+
           ## Summary
-          
+
           - Core Tests Passed: {{ [list_dags_test.test_passed, list_vms_test.test_passed] | select('equalto', true) | list | length }}/2
         dest: "/root/qubinode_navigator/tests/mcp/airflow_test_report.md"
       tags: [report]

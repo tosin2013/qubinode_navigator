@@ -1,8 +1,6 @@
----
-title: Architecture Overview
-parent: Explanation
-nav_order: 1
----
+______________________________________________________________________
+
+## title: Architecture Overview parent: Explanation nav_order: 1
 
 # Architecture Overview
 
@@ -13,8 +11,8 @@ This document explains the architectural concepts and design philosophy behind Q
 Qubinode Navigator is built around three core architectural principles:
 
 1. **Container-First Execution** - All automation runs in standardized container environments
-2. **Modular Plugin Framework** - Extensible architecture supporting multiple platforms and clouds
-3. **AI-Enhanced Operations** - Intelligent assistance for deployment and troubleshooting
+1. **Modular Plugin Framework** - Extensible architecture supporting multiple platforms and clouds
+1. **AI-Enhanced Operations** - Intelligent assistance for deployment and troubleshooting
 
 Understanding these principles helps explain why the system is structured the way it is and how different components work together.
 
@@ -42,6 +40,7 @@ The plugin architecture allows Qubinode Navigator to support multiple:
 - **Deployment scenarios** (development, staging, production)
 
 Each plugin is self-contained with its own:
+
 - Configuration templates
 - Validation rules
 - Deployment workflows
@@ -56,9 +55,9 @@ See [ADR-0028: Modular Plugin Framework](../adrs/adr-0028-modular-plugin-framewo
 Security in Qubinode Navigator follows a layered approach:
 
 1. **Credential encryption** - Ansible Vault for at-rest encryption
-2. **Secret management** - Optional HashiCorp Vault integration for centralized secrets
-3. **SSH hardening** - Progressive key-based authentication with role-based access
-4. **Container isolation** - Execution environments prevent lateral movement
+1. **Secret management** - Optional HashiCorp Vault integration for centralized secrets
+1. **SSH hardening** - Progressive key-based authentication with role-based access
+1. **Container isolation** - Execution environments prevent lateral movement
 
 This progressive model allows starting with basic security (Ansible Vault) and adding layers (HashiCorp Vault, advanced SSH) as needs evolve.
 
@@ -69,12 +68,14 @@ See [ADR-0004: Security Architecture](../adrs/adr-0004-security-architecture-ans
 ### Why Container-First?
 
 **Traditional approach problems:**
+
 - Different Python versions across systems
 - Missing or conflicting Ansible collections
 - Varied system library versions
 - Manual dependency management
 
 **Container-first benefits:**
+
 - Single source of truth (container image)
 - Automated dependency management
 - Tested, versioned environments
@@ -85,12 +86,14 @@ The cost is requiring Podman/Docker, but this is standard infrastructure today.
 ### Why Plugin Architecture?
 
 **Monolithic approach problems:**
+
 - OS-specific logic scattered through codebase
 - Difficult to test individual platforms
 - Cloud provider changes require core modifications
 - New platform support is high-risk
 
 **Plugin approach benefits:**
+
 - Clear separation of concerns
 - Independent plugin testing
 - New platforms don't affect existing ones
@@ -101,12 +104,14 @@ The cost is slightly more complex project structure, but this pays dividends at 
 ### Why Apache Airflow Integration?
 
 **Script-based deployment problems:**
+
 - No workflow visibility
 - Difficult to restart failed steps
 - No scheduling or orchestration
 - Manual tracking of deployments
 
 **Airflow benefits:**
+
 - Visual DAG representation
 - Automatic retry logic
 - Scheduling and triggers
@@ -121,31 +126,34 @@ See [ADR-0036: Airflow Integration](../adrs/adr-0036-apache-airflow-workflow-orc
 
 ### Infrastructure Automation Approaches
 
-| Approach | Pros | Cons | Best For |
-|----------|------|------|----------|
-| **Container-First (Our Approach)** | Reproducible, isolated, consistent | Container overhead, requires Podman/Docker | Multi-platform, multi-cloud deployments |
-| **Direct Ansible Execution** | Simple, fast startup, no containers | Environment drift, dependency conflicts | Single-platform, controlled environments |
-| **Terraform + Ansible** | Infrastructure as code, state management | Complex toolchain, learning curve | Cloud-native, stateful infrastructure |
-| **Chef/Puppet** | Mature, enterprise support, agent-based | Heavy agent, older paradigms | Large fleets, ongoing configuration management |
+| Approach                           | Pros                                     | Cons                                       | Best For                                       |
+| ---------------------------------- | ---------------------------------------- | ------------------------------------------ | ---------------------------------------------- |
+| **Container-First (Our Approach)** | Reproducible, isolated, consistent       | Container overhead, requires Podman/Docker | Multi-platform, multi-cloud deployments        |
+| **Direct Ansible Execution**       | Simple, fast startup, no containers      | Environment drift, dependency conflicts    | Single-platform, controlled environments       |
+| **Terraform + Ansible**            | Infrastructure as code, state management | Complex toolchain, learning curve          | Cloud-native, stateful infrastructure          |
+| **Chef/Puppet**                    | Mature, enterprise support, agent-based  | Heavy agent, older paradigms               | Large fleets, ongoing configuration management |
 
 ### Secret Management Approaches
 
-| Approach | Pros | Cons | Best For |
-|----------|------|------|----------|
-| **Ansible Vault (Default)** | Built-in, simple, file-based | Manual key distribution, no audit logs | Small teams, simple deployments |
-| **HashiCorp Vault (Optional)** | Centralized, audited, dynamic secrets | Additional infrastructure, complexity | Enterprise, compliance-driven environments |
-| **Cloud KMS** | Cloud-native, managed service | Vendor lock-in, cost | Cloud-only deployments |
+| Approach                       | Pros                                  | Cons                                   | Best For                                   |
+| ------------------------------ | ------------------------------------- | -------------------------------------- | ------------------------------------------ |
+| **Ansible Vault (Default)**    | Built-in, simple, file-based          | Manual key distribution, no audit logs | Small teams, simple deployments            |
+| **HashiCorp Vault (Optional)** | Centralized, audited, dynamic secrets | Additional infrastructure, complexity  | Enterprise, compliance-driven environments |
+| **Cloud KMS**                  | Cloud-native, managed service         | Vendor lock-in, cost                   | Cloud-only deployments                     |
 
 ## Further Reading
 
 ### Tutorials
+
 - [Getting Started](../tutorials/getting-started.md) - Basic deployment walkthrough
 - [Airflow Integration](../tutorials/airflow-getting-started.md) - Orchestrated deployments
 
 ### How-To Guides
+
 - [Deploy to Production](../how-to/deploy-to-production.md) - Production best practices
 
 ### Architecture Decision Records
+
 - [ADR-0001: Container-First Execution](../adrs/adr-0001-container-first-execution-model-with-ansible-navigator.md)
 - [ADR-0028: Modular Plugin Framework](../adrs/adr-0028-modular-plugin-framework-for-extensibility.md)
 - [ADR-0036: Airflow Integration](../adrs/adr-0036-apache-airflow-workflow-orchestration-integration.md)

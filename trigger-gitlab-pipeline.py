@@ -48,6 +48,7 @@ import requests
 import json
 import fire
 
+
 # Pipeline Trigger Engine - The "Remote Deployment Initiator"
 def trigger_pipeline(project_id: str, token: str, ref: str, **kwargs):
     """
@@ -68,23 +69,20 @@ def trigger_pipeline(project_id: str, token: str, ref: str, **kwargs):
     ⚠️  SIDE EFFECTS: Triggers remote CI/CD pipeline, may initiate infrastructure deployments
     """
     # 🔧 CONFIGURATION CONSTANTS FOR LLMs:
-    GITLAB_HOST = 'https://gitlab.tosins-cloudlabs.com'  # GitLab instance URL
+    GITLAB_HOST = "https://gitlab.tosins-cloudlabs.com"  # GitLab instance URL
 
     # Build the API endpoint URL
     url = f"{GITLAB_HOST}/api/v4/projects/{project_id}/pipeline"
 
     # Create the request headers with the private token
-    headers = {
-        'Content-Type': 'application/json',
-        'PRIVATE-TOKEN': token
-    }
+    headers = {"Content-Type": "application/json", "PRIVATE-TOKEN": token}
 
     # Create the request data with the ref and variables
     # Convert all kwargs to uppercase GitLab variables
     variables = [{"key": k.upper(), "value": v} for k, v in kwargs.items()]
     data = {
-        'ref': ref,
-        'variables': variables,
+        "ref": ref,
+        "variables": variables,
     }
 
     # Send the request to trigger the pipeline
@@ -97,5 +95,6 @@ def trigger_pipeline(project_id: str, token: str, ref: str, **kwargs):
     else:
         print(f"Failed to trigger pipeline: {response.text}")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     fire.Fire(trigger_pipeline)

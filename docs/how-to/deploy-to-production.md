@@ -1,12 +1,11 @@
----
-title: Deploy To Production
-parent: How to
-nav_order: 1
----
+______________________________________________________________________
+
+## title: Deploy To Production parent: How to nav_order: 1
 
 # Deploy To Production
 
 > **Documentation status**
+>
 > - Validation: `IN PROGRESS` – This how-to summarizes the current recommended path for production deployments.
 > - Last reviewed: 2025-11-21
 > - Community: If you run this end to end, please update this page via [Contributing to docs](./contribute.md).
@@ -33,7 +32,7 @@ This guide is for taking a **tested Qubinode Navigator deployment** into a produ
 ## Step 1 – Prepare the host
 
 1. Follow the **Clean Install Guide** to bring the host to a known-good baseline.
-2. Verify:
+1. Verify:
    - KVM / virtualization is enabled and working.
    - Network interfaces and storage layout match the chosen deployment guide.
 
@@ -75,9 +74,9 @@ If you want production-style workflow orchestration and chat-driven operations:
 Then:
 
 1. Enable Airflow via the documented environment variables.
-2. Deploy the Airflow sidecar and example DAGs.
-3. Integrate with the AI Assistant for chat-based workflow management.
-4. To deploy the MCP services (Airflow MCP server + AI Assistant) for MCP clients (e.g. Claude Desktop), run:
+1. Deploy the Airflow sidecar and example DAGs.
+1. Integrate with the AI Assistant for chat-based workflow management.
+1. To deploy the MCP services (Airflow MCP server + AI Assistant) for MCP clients (e.g. Claude Desktop), run:
 
 ```bash
 cd /root/qubinode_navigator
@@ -117,6 +116,7 @@ echo "Verify success"
 ## Troubleshooting
 
 If you encounter issues:
+
 - Check condition 1
 - Verify setting 2
 

@@ -1,12 +1,13 @@
----
-nav_exclude: true
----
+______________________________________________________________________
+
+## nav_exclude: true
 
 # Apache Airflow Integration for Qubinode Navigator
 
 This document provides a quick overview of the Apache Airflow integration with the Qubinode Navigator AI Assistant.
 
 > **Documentation status**
+>
 > - Validation: `IN PROGRESS` – Airflow integration is under active development and may evolve.
 > - Last reviewed: 2025-11-21
 > - Community: If you deploy this successfully or find gaps, please help improve this guide via [Contributing to docs](./how-to/contribute.md).
@@ -111,7 +112,7 @@ class QubinodeDeployOperator(BaseOperator):
         super().__init__(**kwargs)
         self.target_host = target_host
         self.deployment_type = deployment_type
-    
+
     def execute(self, context):
         # Your deployment logic here
         return f"Deployed to {self.target_host}"
@@ -137,11 +138,11 @@ AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgr
 
 ## 📈 Resource Requirements
 
-| Component | CPU | Memory | Storage |
-|-----------|-----|--------|---------|
-| Airflow Webserver | 1 core | 1GB | - |
-| Airflow Scheduler | 1 core | 1GB | - |
-| PostgreSQL | 0.5 core | 512MB | 10GB |
+| Component                | CPU           | Memory    | Storage  |
+| ------------------------ | ------------- | --------- | -------- |
+| Airflow Webserver        | 1 core        | 1GB       | -        |
+| Airflow Scheduler        | 1 core        | 1GB       | -        |
+| PostgreSQL               | 0.5 core      | 512MB     | 10GB     |
 | **Total (when enabled)** | **2.5 cores** | **2.5GB** | **10GB** |
 
 ## 🔒 Security Considerations
@@ -201,36 +202,41 @@ docker-compose up -d
 
 ## 🎯 Success Metrics
 
-| Metric | Target |
-|--------|--------|
-| Adoption Rate | 30% within 3 months |
-| Workflow Success Rate | >95% |
-| UI Response Time | <2 seconds |
+| Metric                 | Target              |
+| ---------------------- | ------------------- |
+| Adoption Rate          | 30% within 3 months |
+| Workflow Success Rate  | >95%                |
+| UI Response Time       | \<2 seconds         |
 | Custom Plugins Created | 10+ within 6 months |
 
 ## 🗺️ Roadmap
 
 ### Phase 1: Core Integration (Weeks 1-2) ✅
+
 - [x] ADR documentation
 - [x] Installation guide
 - [x] Docker Compose configuration
 
 ### Phase 2: Plugin Framework (Weeks 3-4)
+
 - [ ] Qubinode custom operators
 - [ ] AWS/GCP/Azure provider configs
 - [ ] Plugin validation framework
 
 ### Phase 3: Example DAGs (Week 5)
+
 - [ ] Qubinode deployment DAG
 - [ ] Multi-cloud provisioning DAGs
 - [ ] Monitoring DAGs
 
 ### Phase 4: Security & Monitoring (Week 6)
+
 - [ ] Authentication and RBAC
 - [ ] Plugin sandboxing
 - [ ] Metrics collection
 
 ### Phase 5: Testing & Documentation (Weeks 7-8)
+
 - [ ] Integration testing
 - [ ] Performance optimization
 - [ ] Video tutorials
@@ -240,10 +246,10 @@ docker-compose up -d
 We welcome contributions! Areas for contribution:
 
 1. **Custom Plugins**: Create plugins for specific cloud providers or tools
-2. **Example DAGs**: Share workflow patterns and best practices
-3. **Documentation**: Improve guides and tutorials
-4. **Testing**: Add integration and performance tests
-5. **Bug Fixes**: Report and fix issues
+1. **Example DAGs**: Share workflow patterns and best practices
+1. **Documentation**: Improve guides and tutorials
+1. **Testing**: Add integration and performance tests
+1. **Bug Fixes**: Report and fix issues
 
 ## 📞 Support
 
@@ -255,8 +261,8 @@ We welcome contributions! Areas for contribution:
 
 This integration follows the same license as Qubinode Navigator. Apache Airflow is licensed under Apache License 2.0.
 
----
+______________________________________________________________________
 
-**Status**: Proposed (ADR-0036)  
-**Last Updated**: 2025-11-15  
+**Status**: Proposed (ADR-0036)
+**Last Updated**: 2025-11-15
 **Maintainers**: Platform Team, DevOps Team

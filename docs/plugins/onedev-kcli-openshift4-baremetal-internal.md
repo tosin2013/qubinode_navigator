@@ -1,16 +1,13 @@
----
-layout: default
-title:  "Legacy: OneDev kcli-openshift4-baremetal (Internal)"
-parent: Plugins
-nav_order: 3
----
+______________________________________________________________________
+
+## layout: default title:  "Legacy: OneDev kcli-openshift4-baremetal (Internal)" parent: Plugins nav_order: 3
 
 This repository provides a plan which deploys a vm where:
 
-* openshift-baremetal-install is downloaded with the specific version and tag specified (and renamed openshift-install)
-* stop the nodes to deploy through redfish
-* launch the install against a set of baremetal nodes. Virtual ctlplanes and workers can also be deployed
-* OpenShift is deployed using the ipi method
+- openshift-baremetal-install is downloaded with the specific version and tag specified (and renamed openshift-install)
+- stop the nodes to deploy through redfish
+- launch the install against a set of baremetal nodes. Virtual ctlplanes and workers can also be deployed
+- OpenShift is deployed using the ipi method
 
 > **Status:** Legacy integration
 >
@@ -19,19 +16,21 @@ This repository provides a plan which deploys a vm where:
 > - Airflow overview: [AIRFLOW-INTEGRATION.md](../AIRFLOW-INTEGRATION.md)
 > - DAG workflows: [airflow-dag-deployment-workflows.md](../airflow-dag-deployment-workflows.md)
 
-
 # Prerequisites
-* [OneDev - Kcli Pipelines](../plugins/onedev-kcli-pipelines.md)  - is configured and running.  
+
+- [OneDev - Kcli Pipelines](../plugins/onedev-kcli-pipelines.md)  - is configured and running.
 
 **ssh into  baremetl server and run the following**
+
 ```
 $ sudo kcli download image rhel8
 $ sudo kcli download image rhel9
 ```
-  
+
 Reference Git Repo: [https://github.com/karmab/kcli-openshift4-baremetal](https://github.com/karmab/kcli-openshift4-baremetal)
 
 ## Configure pipelines
+
 Git Repo: [https://github.com/tosin2013/kcli-pipelines.git](https://github.com/tosin2013/kcli-pipelines.git)
 
 *Click on `import`*
@@ -45,7 +44,8 @@ Git Repo: [https://github.com/tosin2013/kcli-pipelines.git](https://github.com/t
 
 ![20240320093959](https://i.imgur.com/pVvwaTR.png)
 
-# Start Job 
+# Start Job
+
 **Click .onedev-buildspec.yml**
 ![20240429154854](https://i.imgur.com/ca9lFEk.png)
 
@@ -58,13 +58,14 @@ Git Repo: [https://github.com/tosin2013/kcli-pipelines.git](https://github.com/t
 
 ![20240415113845](https://i.imgur.com/N0DXbE3.png)
 
-
 **SSH into the bastion node to get the kubeconfig**
+
 ```
 ssh admin@baremetalhost.com
 ```
 
 **ssh into jump host**
+
 ```
 sudo kcli list vms
 sudo kcli ssh lab-installer
@@ -76,22 +77,23 @@ install-config.yaml  ocp             scripts
 [root@lab-installer ~]# cat ocp/.openshift_install.log
 ```
 
-
 ![20240324151019](https://i.imgur.com/ASoWhOt.png)
 
-## Option Deploy OpenShift Workloads 
+## Option Deploy OpenShift Workloads
+
 **OpenShift Virtulization**
 *Ensure you are using Openshift version 4.15 for menu option `equinix-cnv-virtualization`*
+
 ```
 git clone https://github.com/tosin2013/sno-quickstarts.git
 cd sno-quickstarts/gitops
 
 
 # To deploy storage and tag infra nodes
-./configure-redhat-labs.sh --configure-infra-nodes --configure-storage 
+./configure-redhat-labs.sh --configure-infra-nodes --configure-storage
 
 # To deploy workloads
-./configure-redhat-labs.sh 
+./configure-redhat-labs.sh
 1) Exit				   8) ./aap-instance
 2) ./middleware-ocpv		   9) ./acm-gitops-deployment
 3) ./vmware-odf-deployment	  10) ./equinix-developer-env
@@ -102,7 +104,9 @@ cd sno-quickstarts/gitops
 ```
 
 ## Check the status of the deployment in ArgoCD
+
 *NOTE: You may have to set the default stroage based on deployment Type*
+
 ```
 # oc patch storageclass ocs-storagecluster-cephfs -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
 # Recommened for Openshift Virtualization

@@ -16,34 +16,36 @@ Schedule: Every 6 hours (or manual trigger)
 from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.bash import BashOperator
-from airflow.operators.python import PythonOperator
 from airflow.models.param import Param
-import json
 
 default_args = {
-    'owner': 'qubinode',
-    'depends_on_past': False,
-    'start_date': datetime(2025, 1, 1),
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 1,
-    'retry_delay': timedelta(minutes=2),
+    "owner": "qubinode",
+    "depends_on_past": False,
+    "start_date": datetime(2025, 1, 1),
+    "email_on_failure": False,
+    "email_on_retry": False,
+    "retries": 1,
+    "retry_delay": timedelta(minutes=2),
 }
 
 dag = DAG(
-    'infrastructure_health_check',
+    "infrastructure_health_check",
     default_args=default_args,
-    description='Validate all Qubinode infrastructure components',
-    schedule='0 */6 * * *',  # Every 6 hours
+    description="Validate all Qubinode infrastructure components",
+    schedule="0 */6 * * *",  # Every 6 hours
     catchup=False,
-    tags=['qubinode', 'health', 'monitoring', 'infrastructure'],
+    tags=["qubinode", "health", "monitoring", "infrastructure"],
     params={
-        'check_freeipa': Param(True, type='boolean', description='Check FreeIPA'),
-        'check_stepca': Param(True, type='boolean', description='Check Step-CA'),
-        'check_vyos': Param(True, type='boolean', description='Check VyOS router'),
-        'check_vault': Param(True, type='boolean', description='Check Vault'),
-        'check_certificates': Param(True, type='boolean', description='Check certificate expiry'),
-        'cert_warn_days': Param(14, type='integer', description='Warn if cert expires within N days'),
+        "check_freeipa": Param(True, type="boolean", description="Check FreeIPA"),
+        "check_stepca": Param(True, type="boolean", description="Check Step-CA"),
+        "check_vyos": Param(True, type="boolean", description="Check VyOS router"),
+        "check_vault": Param(True, type="boolean", description="Check Vault"),
+        "check_certificates": Param(
+            True, type="boolean", description="Check certificate expiry"
+        ),
+        "cert_warn_days": Param(
+            14, type="integer", description="Warn if cert expires within N days"
+        ),
     },
     doc_md="""
     # Infrastructure Health Check DAG
@@ -72,8 +74,8 @@ dag = DAG(
 
 # Task: Check host resources
 check_host_resources = BashOperator(
-    task_id='check_host_resources',
-    bash_command='''
+    task_id="check_host_resources",
+    bash_command="""
     echo "========================================"
     echo "Host Resource Check"
     echo "========================================"
@@ -124,15 +126,15 @@ check_host_resources = BashOperator(
     fi
 
     exit $ERRORS
-    ''',
+    """,
     dag=dag,
 )
 
 
 # Task: Check FreeIPA
 check_freeipa = BashOperator(
-    task_id='check_freeipa',
-    bash_command='''
+    task_id="check_freeipa",
+    bash_command="""
     echo "========================================"
     echo "FreeIPA Health Check"
     echo "========================================"
@@ -209,15 +211,15 @@ check_freeipa = BashOperator(
     fi
 
     exit $ERRORS
-    ''',
+    """,
     dag=dag,
 )
 
 
 # Task: Check Step-CA
 check_stepca = BashOperator(
-    task_id='check_stepca',
-    bash_command='''
+    task_id="check_stepca",
+    bash_command="""
     echo "========================================"
     echo "Step-CA Health Check"
     echo "========================================"
@@ -273,15 +275,15 @@ check_stepca = BashOperator(
     fi
 
     exit $ERRORS
-    ''',
+    """,
     dag=dag,
 )
 
 
 # Task: Check VyOS Router
 check_vyos = BashOperator(
-    task_id='check_vyos',
-    bash_command='''
+    task_id="check_vyos",
+    bash_command="""
     echo "========================================"
     echo "VyOS Router Health Check"
     echo "========================================"
@@ -354,15 +356,15 @@ check_vyos = BashOperator(
     fi
 
     exit $ERRORS
-    ''',
+    """,
     dag=dag,
 )
 
 
 # Task: Check Vault
 check_vault = BashOperator(
-    task_id='check_vault',
-    bash_command='''
+    task_id="check_vault",
+    bash_command="""
     echo "========================================"
     echo "Vault Health Check"
     echo "========================================"
@@ -420,15 +422,15 @@ check_vault = BashOperator(
     fi
 
     exit $ERRORS
-    ''',
+    """,
     dag=dag,
 )
 
 
 # Task: Check certificates
 check_certificates = BashOperator(
-    task_id='check_certificates',
-    bash_command='''
+    task_id="check_certificates",
+    bash_command="""
     echo "========================================"
     echo "Certificate Expiry Check"
     echo "========================================"
@@ -489,15 +491,15 @@ check_certificates = BashOperator(
         exit 1
     fi
     exit 0
-    ''',
+    """,
     dag=dag,
 )
 
 
 # Task: Generate health report
 generate_report = BashOperator(
-    task_id='generate_report',
-    bash_command='''
+    task_id="generate_report",
+    bash_command="""
     echo "========================================"
     echo "Infrastructure Health Report"
     echo "========================================"
@@ -519,11 +521,18 @@ generate_report = BashOperator(
     echo "========================================"
     echo "Health check complete"
     echo "========================================"
-    ''',
-    trigger_rule='all_done',
+    """,
+    trigger_rule="all_done",
     dag=dag,
 )
 
 
 # Define task dependencies (all checks run in parallel, then report)
-[check_host_resources, check_freeipa, check_stepca, check_vyos, check_vault, check_certificates] >> generate_report
+[
+    check_host_resources,
+    check_freeipa,
+    check_stepca,
+    check_vyos,
+    check_vault,
+    check_certificates,
+] >> generate_report

@@ -1,7 +1,7 @@
-#!/bin/bash 
+#!/bin/bash
 set -xe
 if [ -z $1 ];
-then 
+then
   echo "Please pass user to be created."
   echo "USAGE: $@ username"
   exit 1

@@ -6,11 +6,11 @@ Ansible role for unified certificate management supporting multiple Certificate 
 
 ## Supported CAs
 
-| CA | Use Case | Trust |
-|----|----------|-------|
-| **Step-CA** | Internal/disconnected environments | Private |
-| **Vault PKI** | Dynamic short-lived certificates | Private |
-| **Let's Encrypt** | Public-facing services | Public (trusted) |
+| CA                | Use Case                           | Trust            |
+| ----------------- | ---------------------------------- | ---------------- |
+| **Step-CA**       | Internal/disconnected environments | Private          |
+| **Vault PKI**     | Dynamic short-lived certificates   | Private          |
+| **Let's Encrypt** | Public-facing services             | Public (trusted) |
 
 ## Requirements
 
@@ -186,15 +186,15 @@ cert_renewal_days: 30
 
 ## Supported Services
 
-| Service | Certificate Location | Auto-Reload |
-|---------|---------------------|-------------|
-| nginx | /etc/nginx/ssl/ | Yes |
-| haproxy | /etc/haproxy/certs/combined.pem | Yes |
-| httpd | /etc/pki/tls/ | Yes |
-| harbor | /data/cert/ | Yes |
-| postgresql | $PGDATA/ | Yes |
-| registry | /etc/docker/certs.d/<hostname>/ | No |
-| generic | /etc/qubinode/certs/<hostname>/ | No |
+| Service    | Certificate Location            | Auto-Reload |
+| ---------- | ------------------------------- | ----------- |
+| nginx      | /etc/nginx/ssl/                 | Yes         |
+| haproxy    | /etc/haproxy/certs/combined.pem | Yes         |
+| httpd      | /etc/pki/tls/                   | Yes         |
+| harbor     | /data/cert/                     | Yes         |
+| postgresql | $PGDATA/                        | Yes         |
+| registry   | /etc/docker/certs.d/<hostname>/ | No          |
+| generic    | /etc/qubinode/certs/<hostname>/ | No          |
 
 ## Directory Structure
 

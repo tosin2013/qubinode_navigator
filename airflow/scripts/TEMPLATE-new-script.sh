@@ -108,7 +108,7 @@ echo ""
 # ============================================
 # HOW TO USE THIS TEMPLATE
 # ============================================
-# 
+#
 # 1. Copy this file:
 #    cp TEMPLATE-new-script.sh my-custom-test.sh
 #

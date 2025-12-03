@@ -1,25 +1,25 @@
----
-layout: default
-title: ADR-0005 KVM/Libvirt Virtualization
-parent: Infrastructure & Deployment
-grand_parent: Architectural Decision Records
-nav_order: 5
----
+______________________________________________________________________
+
+## layout: default title: ADR-0005 KVM/Libvirt Virtualization parent: Infrastructure & Deployment grand_parent: Architectural Decision Records nav_order: 5
 
 # ADR-0005: KVM/Libvirt Virtualization Platform Choice
 
 ## Status
+
 Accepted
 
 ## Context
+
 Qubinode Navigator required a virtualization platform to create and manage virtual machines for development, testing, and production workloads across different environments. The platform needed to support multiple operating systems (RHEL 8/9, Rocky Linux, Fedora), provide good performance on bare-metal and cloud instances, integrate well with Ansible automation, and offer enterprise-grade features for storage, networking, and resource management. The solution needed to be cost-effective, well-supported, and suitable for both single-node and distributed deployments.
 
 ## Decision
+
 Adopt KVM (Kernel-based Virtual Machine) with libvirt as the primary virtualization platform, enhanced with kcli for simplified VM lifecycle management. KVM provides hardware-accelerated virtualization on Linux systems, libvirt offers a consistent API for VM management, and kcli provides user-friendly tooling for common virtualization tasks.
 
 ## Consequences
 
 ### Positive Consequences
+
 - Excellent performance through hardware-accelerated virtualization
 - Native Linux integration with minimal overhead
 - Strong ecosystem support and enterprise adoption
@@ -29,7 +29,8 @@ Adopt KVM (Kernel-based Virtual Machine) with libvirt as the primary virtualizat
 - Supports live migration and advanced VM features
 - Active development and long-term support from Red Hat/community
 
-### Negative Consequences  
+### Negative Consequences
+
 - Linux-only solution, limiting cross-platform compatibility
 - Steeper learning curve compared to desktop virtualization solutions
 - Requires hardware virtualization support (Intel VT-x/AMD-V)
@@ -40,11 +41,11 @@ Adopt KVM (Kernel-based Virtual Machine) with libvirt as the primary virtualizat
 ## Alternatives Considered
 
 1. **VMware vSphere/ESXi** - Rejected due to licensing costs and vendor lock-in
-2. **Proxmox VE** - Good option but adds additional management layer complexity
-3. **Docker/Podman containers** - Insufficient for full OS virtualization requirements
-4. **OpenStack** - Too complex and resource-intensive for the project's needs
-5. **Xen Hypervisor** - Less integrated with Red Hat ecosystem
-6. **VirtualBox** - Not suitable for production/server environments
+1. **Proxmox VE** - Good option but adds additional management layer complexity
+1. **Docker/Podman containers** - Insufficient for full OS virtualization requirements
+1. **OpenStack** - Too complex and resource-intensive for the project's needs
+1. **Xen Hypervisor** - Less integrated with Red Hat ecosystem
+1. **VirtualBox** - Not suitable for production/server environments
 
 ## Evidence Supporting This Decision
 
@@ -58,6 +59,7 @@ Adopt KVM (Kernel-based Virtual Machine) with libvirt as the primary virtualizat
 ## Implementation Details
 
 ### KVM Host Setup
+
 ```bash
 # From setup.sh - KVM host deployment
 function deploy_kvmhost() {
@@ -70,6 +72,7 @@ function deploy_kvmhost() {
 ```
 
 ### Storage Configuration
+
 ```python
 # From load-variables.py - Dynamic storage setup
 inventory['create_libvirt_storage'] = True
@@ -78,6 +81,7 @@ inventory['kvm_host_libvirt_extra_disk'] = disks
 ```
 
 ### Networking Setup
+
 ```python
 # Network bridge configuration
 inventory['configure_bridge'] = configure_bridge
@@ -86,6 +90,7 @@ inventory['kvm_host_ip'] = ip
 ```
 
 ### Kcli Integration
+
 ```bash
 # From setup.sh - Kcli setup for VM management
 function setup_kcli_base() {
@@ -97,6 +102,7 @@ function setup_kcli_base() {
 ```
 
 ### Key Features Utilized
+
 - **Hardware Acceleration**: Native KVM support for Intel VT-x/AMD-V
 - **Storage Management**: LVM-based storage pools with libvirt integration
 - **Network Management**: Bridge networking for VM connectivity
@@ -105,6 +111,7 @@ function setup_kcli_base() {
 - **Live Migration**: VM mobility between hosts (when configured)
 
 ### Integration Points
+
 - **Ansible Automation**: Playbooks for KVM host setup and VM management
 - **Storage Integration**: LVM and filesystem-based storage pools
 - **Network Integration**: Bridge networking with host network interfaces
@@ -112,12 +119,14 @@ function setup_kcli_base() {
 - **Backup**: VM snapshot and backup automation
 
 ### Performance Optimizations
+
 - Hardware virtualization acceleration enabled
 - Optimized storage configurations with LVM
 - Network bridge setup for minimal overhead
 - CPU and memory tuning for virtualization workloads
 
 ### Security Considerations
+
 - Isolated VM environments with proper resource limits
 - Network segmentation through bridge configurations
 - Storage encryption support where required
@@ -133,15 +142,18 @@ function setup_kcli_base() {
 - **Flexibility**: Supports various guest operating systems and configurations
 
 ## Related Decisions
+
 - ADR-0001: Container-First Execution Model with Ansible Navigator
 - ADR-0002: Multi-Cloud Inventory Strategy with Environment-Specific Configurations
 - ADR-0003: Dynamic Configuration Management with Python
 - ADR-0004: Security Architecture with Ansible Vault and AnsibleSafe
 
 ## Date
+
 2025-01-09
 
 ## Stakeholders
+
 - Infrastructure Team
 - DevOps Team
 - System Administrators

@@ -1,10 +1,10 @@
 #!/bin/bash
-"""
-Pre-commit Security Check Script
-
-Validates that no sensitive content is being committed to the repository.
-Can be used as a git pre-commit hook or run manually before commits.
-"""
+# =============================================================================
+# Pre-commit Security Check Script
+#
+# Validates that no sensitive content is being committed to the repository.
+# Can be used as a git pre-commit hook or run manually before commits.
+# =============================================================================
 
 set -euo pipefail
 
@@ -34,9 +34,9 @@ log_error() {
 # Check for sensitive file patterns
 check_sensitive_files() {
     log_info "Checking for sensitive files..."
-    
+
     local sensitive_files=()
-    
+
     # Check staged files for sensitive patterns
     while IFS= read -r -d '' file; do
         if [[ "$file" =~ \.(key|pem|crt|p12|pfx)$ ]] || \
@@ -45,7 +45,7 @@ check_sensitive_files() {
             sensitive_files+=("$file")
         fi
     done < <(git diff --cached --name-only -z 2>/dev/null || true)
-    
+
     if [ ${#sensitive_files[@]} -gt 0 ]; then
         log_error "Sensitive files detected in commit:"
         for file in "${sensitive_files[@]}"; do
@@ -53,7 +53,7 @@ check_sensitive_files() {
         done
         return 1
     fi
-    
+
     log_success "No sensitive files detected"
     return 0
 }
@@ -61,7 +61,7 @@ check_sensitive_files() {
 # Check for sensitive content patterns
 check_sensitive_content() {
     log_info "Checking for sensitive content patterns..."
-    
+
     local sensitive_patterns=(
         "password\s*[:=]\s*['\"][a-zA-Z0-9!@#$%^&*]{8,}['\"]"
         "secret\s*[:=]\s*['\"][a-zA-Z0-9!@#$%^&*]{16,}['\"]"
@@ -72,9 +72,9 @@ check_sensitive_content() {
         "AKIA[0-9A-Z]{16}"  # AWS Access Key
         "ghp_[0-9a-zA-Z]{36}"  # GitHub Personal Access Token
     )
-    
+
     local found_sensitive=false
-    
+
     # Check staged files for sensitive content (excluding test files and test data)
     for pattern in "${sensitive_patterns[@]}"; do
         if git diff --cached | grep -v "test_" | grep -v "/tests/" | grep -v "f\.write" | grep -v "example" | grep -E -i "$pattern" >/dev/null 2>&1; then
@@ -82,13 +82,13 @@ check_sensitive_content() {
             found_sensitive=true
         fi
     done
-    
+
     if [ "$found_sensitive" = true ]; then
         log_error "Sensitive content patterns detected in staged changes"
         log_info "Please review the changes and remove any sensitive information"
         return 1
     fi
-    
+
     log_success "No sensitive content patterns detected"
     return 0
 }
@@ -96,30 +96,31 @@ check_sensitive_content() {
 # Check for large files that might contain models or data
 check_large_files() {
     log_info "Checking for large files..."
-    
+
     local large_files=()
     local max_size=$((10 * 1024 * 1024))  # 10MB
-    
+
     while IFS= read -r -d '' file; do
         if [ -f "$file" ]; then
-            local file_size=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null || echo 0)
+            local file_size
+            file_size=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null || echo 0)
             if [ "$file_size" -gt "$max_size" ]; then
-                large_files+=("$file ($(numfmt --to=iec $file_size))")
+                large_files+=("$file ($(numfmt --to=iec "$file_size"))")
             fi
         fi
     done < <(git diff --cached --name-only -z 2>/dev/null || true)
-    
+
     if [ ${#large_files[@]} -gt 0 ]; then
         log_warning "Large files detected in commit:"
         for file in "${large_files[@]}"; do
             echo "  - $file"
         done
         log_info "Consider using Git LFS for large files or excluding them"
-        
+
         # Don't fail for large files, just warn
         return 0
     fi
-    
+
     log_success "No large files detected"
     return 0
 }
@@ -127,7 +128,7 @@ check_large_files() {
 # Validate .gitignore coverage
 validate_gitignore() {
     log_info "Validating .gitignore coverage..."
-    
+
     local required_patterns=(
         "*.key"
         "*.pem"
@@ -139,15 +140,15 @@ validate_gitignore() {
         "ai-assistant/models/*.gguf"
         "ai-assistant/data/rag-docs/*.json"
     )
-    
+
     local missing_patterns=()
-    
+
     for pattern in "${required_patterns[@]}"; do
         if ! grep -q "^${pattern}$" .gitignore 2>/dev/null; then
             missing_patterns+=("$pattern")
         fi
     done
-    
+
     if [ ${#missing_patterns[@]} -gt 0 ]; then
         log_warning "Missing .gitignore patterns:"
         for pattern in "${missing_patterns[@]}"; do
@@ -157,22 +158,22 @@ validate_gitignore() {
     else
         log_success ".gitignore coverage looks good"
     fi
-    
+
     return 0
 }
 
 # Main execution
 main() {
     log_info "Running pre-commit security checks..."
-    
+
     local exit_code=0
-    
+
     # Run all checks
     check_sensitive_files || exit_code=1
     check_sensitive_content || exit_code=1
     check_large_files || exit_code=1
     validate_gitignore || exit_code=1
-    
+
     if [ $exit_code -eq 0 ]; then
         log_success "All security checks passed!"
         log_info "Safe to commit"
@@ -180,7 +181,7 @@ main() {
         log_error "Security checks failed!"
         log_info "Please fix the issues above before committing"
     fi
-    
+
     return $exit_code
 }
 

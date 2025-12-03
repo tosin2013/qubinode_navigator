@@ -62,12 +62,12 @@ INTERVAL=10
 while [ $ELAPSED -lt $MAX_WAIT ]; do
     STATE=$(virsh -c qemu:///system domstate "$VM_NAME" 2>/dev/null || echo "unknown")
     echo "[$ELAPSED/${MAX_WAIT}s] VM State: $STATE"
-    
+
     if [ "$STATE" = "running" ]; then
         echo "✅ VM is running!"
         break
     fi
-    
+
     sleep $INTERVAL
     ELAPSED=$((ELAPSED + INTERVAL))
 done

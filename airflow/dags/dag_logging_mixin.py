@@ -13,7 +13,7 @@ class DAGLoggingMixin:
     Mixin to add enhanced logging to all DAG tasks
     Automatically logs task start, end, parameters, and results
     """
-    
+
     @staticmethod
     def setup_task_logging(task_id: str, **kwargs) -> logging.Logger:
         """
@@ -21,7 +21,7 @@ class DAGLoggingMixin:
         """
         logger = logging.getLogger(f"airflow.task.{task_id}")
         logger.setLevel(logging.INFO)
-        
+
         # Log task context
         logger.info("=" * 80)
         logger.info(f"🚀 Starting Task: {task_id}")
@@ -29,16 +29,16 @@ class DAGLoggingMixin:
         logger.info(f"🔄 Try Number: {kwargs.get('try_number', 1)}")
         logger.info(f"📋 DAG ID: {kwargs.get('dag', {}).get('dag_id', 'N/A')}")
         logger.info("=" * 80)
-        
+
         return logger
-    
+
     @staticmethod
     def log_parameters(logger: logging.Logger, params: Dict[str, Any]):
         """Log task parameters"""
         logger.info("📝 Task Parameters:")
         for key, value in params.items():
             logger.info(f"   • {key}: {value}")
-    
+
     @staticmethod
     def log_result(logger: logging.Logger, result: Any, task_id: str):
         """Log task result"""
@@ -47,7 +47,7 @@ class DAGLoggingMixin:
         logger.info(f"📊 Result: {result}")
         logger.info(f"⏱️  Completed At: {datetime.now().isoformat()}")
         logger.info("=" * 80)
-    
+
     @staticmethod
     def log_error(logger: logging.Logger, error: Exception, task_id: str):
         """Log task error with context"""
@@ -75,14 +75,14 @@ def create_logging_callback(**kwargs):
             on_execute_callback=create_logging_callback
         )
     """
-    task_instance = kwargs.get('task_instance')
+    task_instance = kwargs.get("task_instance")
     logger = logging.getLogger(f"airflow.task.{task_instance.task_id}")
-    
+
     logger.info("📋 Task Context:")
     logger.info(f"   • DAG: {task_instance.dag_id}")
     logger.info(f"   • Task: {task_instance.task_id}")
     logger.info(f"   • Execution Date: {task_instance.execution_date}")
     logger.info(f"   • Try: {task_instance.try_number}")
     logger.info(f"   • State: {task_instance.state}")
-    
+
     return logger

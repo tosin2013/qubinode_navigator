@@ -1,6 +1,6 @@
 # Qubinode Navigator - Apache Airflow Integration
 
-Phase 6 Goal 2: Workflow Orchestration Integration  
+Phase 6 Goal 2: Workflow Orchestration Integration
 Based on: **ADR-0036** (Airflow Integration), **ADR-0037** (Git-Based DAG Management)
 
 ## 🎯 Overview
@@ -21,6 +21,7 @@ This directory contains the Apache Airflow integration for Qubinode Navigator, e
 ### 1. Enable Airflow
 
 Edit `airflow/config/airflow.env`:
+
 ```bash
 ENABLE_AIRFLOW=true
 ```
@@ -28,12 +29,14 @@ ENABLE_AIRFLOW=true
 ### 2. Start Airflow Services
 
 **Using Podman** (RHEL ecosystem - recommended):
+
 ```bash
 cd /root/qubinode_navigator/airflow
 podman-compose up -d
 ```
 
 **Using Docker** (if available):
+
 ```bash
 cd /root/qubinode_navigator/airflow
 docker-compose up -d
@@ -50,10 +53,10 @@ docker-compose up -d
 ### 4. Run Example DAG
 
 1. Navigate to Airflow UI
-2. Find "example_kcli_vm_provisioning" DAG
-3. Enable the DAG (toggle switch)
-4. Click the play button to trigger manually
-5. Monitor execution in Graph or Tree view
+1. Find "example_kcli_vm_provisioning" DAG
+1. Enable the DAG (toggle switch)
+1. Click the play button to trigger manually
+1. Monitor execution in Graph or Tree view
 
 ## 📁 Directory Structure
 
@@ -157,9 +160,9 @@ analysis = ai_hook.analyze_workflow_results(workflow_results)
 ## 📝 Creating Custom DAGs
 
 1. Create a new Python file in `airflow/dags/`
-2. Define your workflow using Airflow operators
-3. Use Qubinode custom operators for infrastructure tasks
-4. Airflow will auto-discover and load your DAG
+1. Define your workflow using Airflow operators
+1. Use Qubinode custom operators for infrastructure tasks
+1. Airflow will auto-discover and load your DAG
 
 Example template:
 
@@ -206,6 +209,7 @@ create_vm = KcliVMCreateOperator(
 ### Enable Git-Sync
 
 Edit `airflow/config/airflow.env`:
+
 ```bash
 GIT_SYNC_ENABLED=true
 GIT_SYNC_REPO=https://github.com/yourorg/airflow-dags
@@ -228,11 +232,11 @@ Qubinode Navigator includes OpenLineage integration for DAG lineage tracking.
 
 ### Access Lineage Services
 
-| Service | URL | Description |
-|---------|-----|-------------|
-| Marquez API | http://localhost:5001 | Lineage data API |
+| Service        | URL                   | Description             |
+| -------------- | --------------------- | ----------------------- |
+| Marquez API    | http://localhost:5001 | Lineage data API        |
 | Marquez Web UI | http://localhost:3000 | Visual lineage explorer |
-| Airflow UI | http://localhost:8888 | DAG management |
+| Airflow UI     | http://localhost:8888 | DAG management          |
 
 ### What You Can Do with Lineage
 
@@ -260,6 +264,7 @@ get_dag_lineage("freeipa_deployment")
 ### Metrics
 
 Airflow exposes metrics at:
+
 - http://localhost:8888/metrics
 
 ## 🛠️ Makefile Commands
@@ -306,21 +311,22 @@ podman-compose run airflow-cli airflow tasks test my_custom_workflow create_vm 2
 
 ### Common Issues
 
-**Issue**: Airflow UI not accessible  
+**Issue**: Airflow UI not accessible
 **Solution**: Check if containers are running: `docker-compose ps`
 
-**Issue**: DAG not appearing  
+**Issue**: DAG not appearing
 **Solution**: Check logs: `docker-compose logs airflow-scheduler`
 
-**Issue**: kcli commands failing  
+**Issue**: kcli commands failing
 **Solution**: Verify kcli is accessible from Airflow container
 
-**Issue**: AI Assistant connection failed  
+**Issue**: AI Assistant connection failed
 **Solution**: Verify AI Assistant is running on localhost:8000
 
 ### Logs
 
 View logs for debugging:
+
 ```bash
 # All services
 docker-compose logs
@@ -346,11 +352,12 @@ docker-compose logs -f
 To add custom operators or DAGs:
 
 1. For operators: Add to `airflow/plugins/qubinode/operators.py`
-2. For sensors: Add to `airflow/plugins/qubinode/sensors.py`
-3. For hooks: Add to `airflow/plugins/qubinode/hooks.py`
-4. For DAGs: Add Python file to `airflow/dags/`
+1. For sensors: Add to `airflow/plugins/qubinode/sensors.py`
+1. For hooks: Add to `airflow/plugins/qubinode/hooks.py`
+1. For DAGs: Add Python file to `airflow/dags/`
 
 Submit contributions via pull request with:
+
 - Comprehensive docstrings
 - Example usage in DAG
 - Test coverage
@@ -359,12 +366,13 @@ Submit contributions via pull request with:
 ## 📞 Support
 
 For issues or questions:
+
 - Check Airflow logs
 - Review DAG documentation
 - Consult AI Assistant for guidance
 - Open GitHub issue for bugs
 
----
+______________________________________________________________________
 
-**Phase 6 Goal 2 Status**: ✅ Core Integration Complete  
+**Phase 6 Goal 2 Status**: ✅ Core Integration Complete
 **Next Steps**: Create community DAG marketplace, implement advanced features

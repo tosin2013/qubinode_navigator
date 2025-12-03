@@ -1,8 +1,8 @@
 # VyOS Router Deployment
 
-**Status:** Production Ready  
-**Category:** Network Infrastructure  
-**Priority:** Required (After FreeIPA)  
+**Status:** Production Ready
+**Category:** Network Infrastructure
+**Priority:** Required (After FreeIPA)
 **ADRs:** ADR-0039, ADR-0041, ADR-0043
 
 ## Overview
@@ -19,13 +19,13 @@ VyOS provides network segmentation, routing, NAT, and DHCP services for the Qubi
 
 ## Prerequisites
 
-| Requirement | Details |
-|-------------|---------|
-| **FreeIPA** | Deployed and running (for DNS) |
-| **Hypervisor** | KVM/libvirt configured |
-| **Airflow** | Running with host network mode (ADR-0043) |
-| **VyOS ISO** | Downloaded (DAG provides instructions) |
-| **Resources** | 4GB RAM, 2 vCPUs, 20GB disk |
+| Requirement    | Details                                   |
+| -------------- | ----------------------------------------- |
+| **FreeIPA**    | Deployed and running (for DNS)            |
+| **Hypervisor** | KVM/libvirt configured                    |
+| **Airflow**    | Running with host network mode (ADR-0043) |
+| **VyOS ISO**   | Downloaded (DAG provides instructions)    |
+| **Resources**  | 4GB RAM, 2 vCPUs, 20GB disk               |
 
 ## Network Architecture
 
@@ -55,13 +55,13 @@ VyOS provides network segmentation, routing, NAT, and DHCP services for the Qubi
 
 ### Network Definitions
 
-| Network | Name | Purpose | Subnet (Example) |
-|---------|------|---------|------------------|
-| 1924 | Lab | Development/Testing | 192.168.49.0/24 |
-| 1925 | Disco | Disconnected/Air-gapped | 192.168.50.0/24 |
-| 1926 | Reserved | Future use | 192.168.51.0/24 |
-| 1927 | Metal | Bare metal provisioning | 192.168.52.0/24 |
-| 1928 | Provisioning | PXE/DHCP boot | 192.168.53.0/24 |
+| Network | Name         | Purpose                 | Subnet (Example) |
+| ------- | ------------ | ----------------------- | ---------------- |
+| 1924    | Lab          | Development/Testing     | 192.168.49.0/24  |
+| 1925    | Disco        | Disconnected/Air-gapped | 192.168.50.0/24  |
+| 1926    | Reserved     | Future use              | 192.168.51.0/24  |
+| 1927    | Metal        | Bare metal provisioning | 192.168.52.0/24  |
+| 1928    | Provisioning | PXE/DHCP boot           | 192.168.53.0/24  |
 
 ## Deployment Methods
 
@@ -72,15 +72,15 @@ The VyOS DAG creates the libvirt networks and provides VM creation instructions.
 #### Via Airflow UI
 
 1. Navigate to **DAGs** → `vyos_router_deployment`
-2. Click **Trigger DAG w/ config**
-3. Configure parameters:
+1. Click **Trigger DAG w/ config**
+1. Configure parameters:
    ```json
    {
      "action": "create",
      "vyos_version": "2025.11.24-0021-rolling"
    }
    ```
-4. Click **Trigger**
+1. Click **Trigger**
 
 #### Via CLI
 
@@ -169,13 +169,13 @@ reboot
 
 ## DAG Parameters
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `action` | `create` | Action: `create` or `destroy` |
-| `vyos_version` | `2025.11.24-0021-rolling` | VyOS version to deploy |
-| `vyos_channel` | `stable` | Channel: `stable`, `lts`, or `rolling` |
-| `configure_router` | `true` | Run configuration script |
-| `add_host_routes` | `true` | Add routes to host |
+| Parameter          | Default                   | Description                            |
+| ------------------ | ------------------------- | -------------------------------------- |
+| `action`           | `create`                  | Action: `create` or `destroy`          |
+| `vyos_version`     | `2025.11.24-0021-rolling` | VyOS version to deploy                 |
+| `vyos_channel`     | `stable`                  | Channel: `stable`, `lts`, or `rolling` |
+| `configure_router` | `true`                    | Run configuration script               |
+| `add_host_routes`  | `true`                    | Add routes to host                     |
 
 ## DAG Workflow
 
@@ -495,6 +495,6 @@ podman exec airflow_airflow-scheduler_1 \
   --conf '{"action": "destroy"}'
 ```
 
----
+______________________________________________________________________
 
 **Deploy FreeIPA first, then VyOS Router for complete network infrastructure!**

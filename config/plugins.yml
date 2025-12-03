@@ -6,7 +6,7 @@ global:
   plugin_directories:
     - plugins
   execution_timeout: 3600
-  
+
 plugins:
   enabled:
     - RHEL9Plugin
@@ -14,7 +14,7 @@ plugins:
     - VaultIntegrationPlugin
     - AIAssistantPlugin
     - LogAnalysisPlugin
-    
+
   # RHEL 9 Plugin Configuration
   RHEL9Plugin:
     packages:
@@ -38,7 +38,7 @@ plugins:
       - ansible-core
       - perl-Digest-SHA
     create_lab_user: true
-    
+
   # RHEL 10/CentOS Stream 10 Plugin Configuration
   RHEL10Plugin:
     packages:
@@ -64,7 +64,7 @@ plugins:
     create_lab_user: true
     python_version: "3.12"
     architecture: "x86_64-v3"
-    
+
   # CentOS Stream 10 Plugin Configuration (Compatibility Mode)
   CentOSStream10Plugin:
     packages:
@@ -89,7 +89,7 @@ plugins:
       - perl-Digest-SHA
     create_lab_user: true
     compatibility_mode: true
-    
+
   # Rocky Linux Plugin Configuration
   RockyLinuxPlugin:
     packages:
@@ -114,7 +114,7 @@ plugins:
       - perl-Digest-SHA
     create_lab_user: true
     enable_ssh_password_auth: true
-    
+
   # RHEL 8 Plugin Configuration
   RHEL8Plugin:
     packages:
@@ -140,7 +140,7 @@ plugins:
       - subscription-manager
     create_lab_user: true
     manage_subscription: false  # Set to true if you have RHEL credentials
-    
+
   # Hetzner Cloud Plugin Configuration
   HetznerPlugin:
     hetzner_tools:
@@ -151,7 +151,7 @@ plugins:
       - jq
       - cloud-init
       - cloud-utils
-      
+
   # Vault Integration Plugin Configuration
   VaultIntegrationPlugin:
     vault_packages:
@@ -161,7 +161,7 @@ plugins:
     vault_url: "http://localhost:8200"
     vault_token_file: "~/.vault_token"
     env_file: ".env"
-    
+
   # Equinix Metal Plugin Configuration
   EquinixPlugin:
     equinix_tools:
@@ -173,7 +173,7 @@ plugins:
       - dmidecode
       - lshw
       - pciutils
-      
+
   # Red Hat Product Demo System Plugin Configuration
   RedHatDemoPlugin:
     demo_packages:
@@ -192,7 +192,7 @@ plugins:
       - KVM_VERSION
       - CICD_ENVIORNMENT
       - DOMAIN
-      
+
   # Hetzner Deployment Plugin Configuration
   HetznerDeploymentPlugin:
     configure_script_url: "https://gist.githubusercontent.com/tosin2013/385054f345ff7129df6167631156fa2a/raw/b67866c8d0ec220c393ea83d2c7056f33c472e65/configure-sudo-user.sh"
@@ -202,7 +202,7 @@ plugins:
       - git
       - vim
       - openssh-clients
-  
+
   # AI Assistant Plugin Configuration
   AIAssistantPlugin:
     ai_service_url: "http://localhost:8080"

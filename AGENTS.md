@@ -2,25 +2,27 @@
 
 > **Purpose**: This file provides comprehensive context and instructions for AI coding agents (Claude Code, Cursor, GitHub Copilot, etc.) to effectively work with the Qubinode Navigator infrastructure automation platform.
 
----
+______________________________________________________________________
 
 ## Quick Context
 
 **What is Qubinode Navigator?**
 An infrastructure automation platform for deploying OpenShift, VMs, and supporting services on KVM hypervisors. It combines:
+
 - **Airflow** for workflow orchestration (DAGs)
 - **AI Assistant** (llama.cpp + IBM Granite) for intelligent automation
 - **MCP Servers** for LLM tool integration
 - **Plugin Architecture** for extensible deployments
 
 **Primary Use Cases:**
-1. Deploy OpenShift clusters (SNO, Compact, Standard)
-2. Provision VMs with kcli
-3. Deploy supporting infrastructure (FreeIPA, Step-CA, VyOS, Keycloak)
-4. Automate certificate and DNS management
-5. Enable AI-assisted infrastructure operations
 
----
+1. Deploy OpenShift clusters (SNO, Compact, Standard)
+1. Provision VMs with kcli
+1. Deploy supporting infrastructure (FreeIPA, Step-CA, VyOS, Keycloak)
+1. Automate certificate and DNS management
+1. Enable AI-assisted infrastructure operations
+
+______________________________________________________________________
 
 ## Environment Detection
 
@@ -44,14 +46,15 @@ curl -s localhost:8889/health         # MCP Server running
 ```
 
 **Expected Environments:**
-| Environment | Indicators | Key Paths |
-|-------------|------------|-----------|
-| **Development Host** | Has `.env`, libvirtd running | `/root/qubinode_navigator/` |
-| **Remote/SSH** | No local `.env`, SSH connection | Clone repo first |
-| **Container** | Running inside Airflow container | `/opt/airflow/`, SSH to host for kcli |
-| **CI/CD** | GitHub Actions context vars | Use test fixtures |
 
----
+| Environment          | Indicators                       | Key Paths                             |
+| -------------------- | -------------------------------- | ------------------------------------- |
+| **Development Host** | Has `.env`, libvirtd running     | `/root/qubinode_navigator/`           |
+| **Remote/SSH**       | No local `.env`, SSH connection  | Clone repo first                      |
+| **Container**        | Running inside Airflow container | `/opt/airflow/`, SSH to host for kcli |
+| **CI/CD**            | GitHub Actions context vars      | Use test fixtures                     |
+
+______________________________________________________________________
 
 ## Project Structure
 
@@ -106,11 +109,12 @@ qubinode_navigator/
     └── settings.local.json   # Permissions
 ```
 
----
+______________________________________________________________________
 
 ## Installation & Deployment
 
 ### Prerequisites Check
+
 Before any deployment, run pre-flight validation:
 
 ```bash
@@ -122,12 +126,14 @@ This checks: CPU virtualization, podman, libvirtd, disk space, network.
 ### Deployment Options
 
 **Option 1: Full Stack (Recommended)**
+
 ```bash
 # Creates: Airflow + PostgreSQL + MCP Server + Marquez Lineage + AI Assistant + Nginx
 ./deploy-qubinode-with-airflow.sh
 ```
 
 **Option 2: Airflow via Makefile**
+
 ```bash
 cd airflow
 make install    # Full installation (prereqs + build + start)
@@ -135,12 +141,14 @@ make uninstall  # Stop and remove containers/volumes
 ```
 
 **Option 3: Airflow Manual**
+
 ```bash
 cd airflow
 ./deploy-airflow.sh
 ```
 
 **Option 4: AI Assistant Only**
+
 ```bash
 cd ai-assistant
 ./scripts/build.sh
@@ -148,6 +156,7 @@ podman run -d --name qubinode-ai -p 8080:8080 localhost/qubinode-ai-assistant:la
 ```
 
 ### Post-Deployment Verification
+
 ```bash
 # Check all services
 curl -s localhost:8888/health    # Airflow
@@ -158,53 +167,59 @@ kcli list vm                     # KVM/libvirt
 ```
 
 ### Services (All Enabled by Default)
-| Service | Port | URL |
-|---------|------|-----|
-| Airflow UI | 8888 | http://localhost:8888 |
-| MCP Server | 8889 | http://localhost:8889 |
-| Marquez API | 5001 | http://localhost:5001 |
-| Marquez Web | 3000 | http://localhost:3000 |
+
+| Service      | Port | URL                   |
+| ------------ | ---- | --------------------- |
+| Airflow UI   | 8888 | http://localhost:8888 |
+| MCP Server   | 8889 | http://localhost:8889 |
+| Marquez API  | 5001 | http://localhost:5001 |
+| Marquez Web  | 3000 | http://localhost:3000 |
 | AI Assistant | 8080 | http://localhost:8080 |
 
----
+______________________________________________________________________
 
 ## MCP Tools Reference
 
 ### Airflow MCP Server (Port 8889)
 
 **DAG Management:**
-| Tool | Purpose | Example |
-|------|---------|---------|
-| `list_dags()` | List all DAGs | Returns dag_id, schedule, tags |
-| `get_dag_info(dag_id)` | DAG details | `get_dag_info("freeipa_deployment")` |
-| `trigger_dag(dag_id, conf)` | Execute DAG | `trigger_dag("ocp_agent_deployment", {"cluster_type": "sno"})` |
+
+| Tool                        | Purpose       | Example                                                        |
+| --------------------------- | ------------- | -------------------------------------------------------------- |
+| `list_dags()`               | List all DAGs | Returns dag_id, schedule, tags                                 |
+| `get_dag_info(dag_id)`      | DAG details   | `get_dag_info("freeipa_deployment")`                           |
+| `trigger_dag(dag_id, conf)` | Execute DAG   | `trigger_dag("ocp_agent_deployment", {"cluster_type": "sno"})` |
 
 **VM Operations:**
-| Tool | Purpose | Example |
-|------|---------|---------|
-| `preflight_vm_creation()` | Validate before create | Checks image, memory, libvirt |
-| `list_vms()` | List all VMs | Via virsh/kcli |
-| `get_vm_info(name)` | VM details | Memory, CPU, state |
-| `create_vm(name, image, ...)` | Create VM | Uses kcli |
-| `delete_vm(name)` | Delete VM | Cleanup with confirmation |
+
+| Tool                          | Purpose                | Example                       |
+| ----------------------------- | ---------------------- | ----------------------------- |
+| `preflight_vm_creation()`     | Validate before create | Checks image, memory, libvirt |
+| `list_vms()`                  | List all VMs           | Via virsh/kcli                |
+| `get_vm_info(name)`           | VM details             | Memory, CPU, state            |
+| `create_vm(name, image, ...)` | Create VM              | Uses kcli                     |
+| `delete_vm(name)`             | Delete VM              | Cleanup with confirmation     |
 
 **RAG & Intelligence:**
-| Tool | Purpose | Example |
-|------|---------|---------|
+
+| Tool                           | Purpose             | Example                     |
+| ------------------------------ | ------------------- | --------------------------- |
 | `search_similar_errors(error)` | Find similar issues | Pattern matching in history |
-| `manage_rag_documents(op)` | Document lifecycle | ingest, query, delete |
+| `manage_rag_documents(op)`     | Document lifecycle  | ingest, query, delete       |
 
 ### AI Assistant MCP Server (Port 8081)
-| Tool | Purpose |
-|------|---------|
-| `ask_qubinode(question)` | Learning tool with docs + AI |
-| `query_documents(query)` | RAG search |
-| `chat_with_context(message)` | Context-aware chat |
-| `get_project_status()` | Project health metrics |
+
+| Tool                         | Purpose                      |
+| ---------------------------- | ---------------------------- |
+| `ask_qubinode(question)`     | Learning tool with docs + AI |
+| `query_documents(query)`     | RAG search                   |
+| `chat_with_context(message)` | Context-aware chat           |
+| `get_project_status()`       | Project health metrics       |
 
 ### Using MCP Tools
 
 **From Claude Desktop:**
+
 ```json
 // claude_desktop_config.json
 {
@@ -218,6 +233,7 @@ kcli list vm                     # KVM/libvirt
 ```
 
 **Direct HTTP:**
+
 ```bash
 # List available tools
 curl http://localhost:8889/tools
@@ -228,11 +244,12 @@ curl -X POST http://localhost:8889/call \
   -d '{"tool": "list_vms", "arguments": {}}'
 ```
 
----
+______________________________________________________________________
 
 ## DAG Patterns & Best Practices
 
 ### Standard DAG Structure (ADR-0045)
+
 ```python
 from datetime import datetime, timedelta
 from airflow import DAG
@@ -268,6 +285,7 @@ task = BashOperator(
 ```
 
 ### SSH Execution Pattern (ADR-0046)
+
 Run commands on host from Airflow container. Use the helper functions in `dag_helpers.py`:
 
 ```python
@@ -287,6 +305,7 @@ bash_command = get_kcli_command("info vm freeipa")
 ```
 
 Or manually:
+
 ```python
 bash_command="""
 ssh -o StrictHostKeyChecking=no root@localhost \
@@ -295,25 +314,28 @@ ssh -o StrictHostKeyChecking=no root@localhost \
 ```
 
 ### Log Prefixes
-| Prefix | Meaning |
-|--------|---------|
-| `[OK]` | Success |
-| `[ERROR]` | Failure |
-| `[WARN]` | Warning |
-| `[INFO]` | Informational |
-| `[SKIP]` | Skipped |
+
+| Prefix    | Meaning       |
+| --------- | ------------- |
+| `[OK]`    | Success       |
+| `[ERROR]` | Failure       |
+| `[WARN]`  | Warning       |
+| `[INFO]`  | Informational |
+| `[SKIP]`  | Skipped       |
 
 ### Common Mistakes to Avoid
-1. **Unicode in bash**: Use `[OK]` not `✅`
-2. **String concatenation**: Use f-strings or environment vars, not `''' + var + '''`
-3. **Missing PATH**: Add `export PATH="/home/airflow/.local/bin:$PATH"` for kcli
-4. **Direct ansible execution**: Use SSH to host, not container ansible
 
----
+1. **Unicode in bash**: Use `[OK]` not `✅`
+1. **String concatenation**: Use f-strings or environment vars, not `''' + var + '''`
+1. **Missing PATH**: Add `export PATH="/home/airflow/.local/bin:$PATH"` for kcli
+1. **Direct ansible execution**: Use SSH to host, not container ansible
+
+______________________________________________________________________
 
 ## Component Deployment Workflows
 
 ### Deploy OpenShift (SNO)
+
 ```bash
 # Via Airflow UI
 1. Navigate to: http://localhost:8888
@@ -326,6 +348,7 @@ trigger_dag("ocp_agent_deployment", {"cluster_type": "sno"})
 ```
 
 ### Deploy FreeIPA
+
 ```bash
 # Prerequisites: DNS delegation, RHEL VM
 trigger_dag("freeipa_deployment", {
@@ -336,6 +359,7 @@ trigger_dag("freeipa_deployment", {
 ```
 
 ### Create VM
+
 ```bash
 # Pre-flight first
 preflight_vm_creation()
@@ -357,6 +381,7 @@ trigger_dag("example_kcli_vm_provisioning", {
 ```
 
 ### Deploy Certificate Authority
+
 ```bash
 # Step-CA for internal PKI
 trigger_dag("stepca_deployment", {
@@ -364,7 +389,7 @@ trigger_dag("stepca_deployment", {
 })
 ```
 
----
+______________________________________________________________________
 
 ## Airflow Makefile Commands
 
@@ -402,25 +427,28 @@ make init-prereqs  # Initialize vault.yml, clone repos, setup SSH
 make init-db       # Initialize Airflow database
 ```
 
----
+______________________________________________________________________
 
 ## Lineage & DAG Visualization
 
 OpenLineage/Marquez is enabled by default for DAG lineage tracking.
 
 ### Access Lineage
-| Service | URL | Purpose |
-|---------|-----|---------|
+
+| Service     | URL                   | Purpose                 |
+| ----------- | --------------------- | ----------------------- |
 | Marquez Web | http://localhost:3000 | Visual lineage explorer |
-| Marquez API | http://localhost:5001 | Lineage data API |
+| Marquez API | http://localhost:5001 | Lineage data API        |
 
 ### Use Cases
+
 - **Visualize DAG dependencies** - See complete task graphs
 - **Track data flow** - Understand inputs/outputs between tasks
 - **Analyze failure impact** - See what tasks are affected by failures
 - **Debug dependencies** - Identify missing or incorrect task dependencies
 
 ### Query Lineage
+
 ```bash
 # Via MCP
 get_dag_lineage("freeipa_deployment")
@@ -429,11 +457,12 @@ get_dag_lineage("freeipa_deployment")
 curl http://localhost:5001/api/v1/namespaces/qubinode/jobs
 ```
 
----
+______________________________________________________________________
 
 ## Debugging & Troubleshooting
 
 ### Service Health Checks
+
 ```bash
 # All services status
 cd /root/qubinode_navigator/airflow
@@ -448,6 +477,7 @@ podman logs qubinode-ai-assistant         # AI service
 ### Common Issues
 
 **DAG not appearing or showing stale version:**
+
 ```bash
 # Clear DAG cache and force reload
 cd airflow
@@ -467,6 +497,7 @@ python3 -c "from airflow.models import DagBag; db = DagBag('airflow/dags'); prin
 ```
 
 **VM operations failing:**
+
 ```bash
 # Verify kcli on host
 kcli list vm
@@ -480,6 +511,7 @@ podman exec -it airflow-scheduler ssh root@localhost "echo OK"
 ```
 
 **MCP not responding:**
+
 ```bash
 # Check if enabled
 grep MCP_ENABLED airflow/.env.mcp
@@ -491,11 +523,12 @@ cd airflow && ./start-mcp-services.sh
 curl http://localhost:8889/health
 ```
 
----
+______________________________________________________________________
 
 ## Memory & Context Management
 
 ### Reference Context Files
+
 When working on this project, reference these files for context:
 
 ```markdown
@@ -506,18 +539,20 @@ When working on this project, reference these files for context:
 ```
 
 ### ADR Directory Quick Reference
+
 Key ADRs for understanding architecture:
 
-| ADR | Topic |
-|-----|-------|
-| ADR-0001 | Core architecture decisions |
-| ADR-0036 | Airflow integration architecture |
-| ADR-0045 | DAG development standards |
-| ADR-0046 | Validation pipeline & host execution |
-| ADR-0047 | kcli-pipelines integration |
+| ADR      | Topic                                 |
+| -------- | ------------------------------------- |
+| ADR-0001 | Core architecture decisions           |
+| ADR-0036 | Airflow integration architecture      |
+| ADR-0045 | DAG development standards             |
+| ADR-0046 | Validation pipeline & host execution  |
+| ADR-0047 | kcli-pipelines integration            |
 | ADR-0055 | Zero-friction infrastructure services |
 
 ### Generate Rules File
+
 For agents that support rules files, generate one based on this project:
 
 ```bash
@@ -553,17 +588,19 @@ cat > .cursorrules << 'EOF'
 EOF
 ```
 
----
+______________________________________________________________________
 
 ## Security Considerations
 
 ### Sensitive Files (Never Commit)
+
 - `.env` - Contains credentials
 - `config/vault.yml` - Vault tokens
 - `*.pem`, `*.key` - Certificates/keys
 - `pull-secret.json` - OpenShift pull secrets
 
 ### Credential Management
+
 ```bash
 # Use HashiCorp Vault when available
 export USE_HASHICORP_VAULT=true
@@ -574,53 +611,61 @@ chmod 600 .env
 ```
 
 ### SSH Keys
+
 The deployment script auto-configures SSH for container→host communication:
+
 ```bash
 # Keys are created at: ~/.ssh/id_rsa
 # Auto-added to: ~/.ssh/authorized_keys
 # Used by: Airflow container for host commands
 ```
 
----
+______________________________________________________________________
 
 ## Extending the Project
 
 ### Adding a New DAG
+
 1. Create `airflow/dags/my_new_dag.py`
-2. Follow ADR-0045 template
-3. Test with: `python3 -c "import ast; ast.parse(...)"`
-4. Verify: `airflow dags test my_new_dag 2025-01-01`
+1. Follow ADR-0045 template
+1. Test with: `python3 -c "import ast; ast.parse(...)"`
+1. Verify: `airflow dags test my_new_dag 2025-01-01`
 
 ### Adding a Plugin
+
 1. Create plugin class in `plugins/` directory
-2. Register in `config/plugins.yml`
-3. Define dependencies and configuration
-4. Implement `check_state()`, `get_desired_state()`, `apply_changes()`
+1. Register in `config/plugins.yml`
+1. Define dependencies and configuration
+1. Implement `check_state()`, `get_desired_state()`, `apply_changes()`
 
 ### Adding MCP Tools
-1. Edit `airflow/scripts/mcp_server_fastmcp.py`
-2. Add function with `@mcp.tool()` decorator
-3. Define input schema with Pydantic
-4. Restart MCP service
 
----
+1. Edit `airflow/scripts/mcp_server_fastmcp.py`
+1. Add function with `@mcp.tool()` decorator
+1. Define input schema with Pydantic
+1. Restart MCP service
+
+______________________________________________________________________
 
 ## CI/CD Integration
 
 ### GitHub Actions
+
 The project includes workflows for:
+
 - Documentation deployment (Jekyll → GitHub Pages)
 - MCP server CI validation
 - DAG syntax checking
 - Container image builds
 
 ### PR Guidelines
-1. Reference related ADRs
-2. Include test results
-3. Update AGENTS.md if adding new capabilities
-4. Ensure Jekyll build passes for docs changes
 
----
+1. Reference related ADRs
+1. Include test results
+1. Update AGENTS.md if adding new capabilities
+1. Ensure Jekyll build passes for docs changes
+
+______________________________________________________________________
 
 ## Support & Resources
 
@@ -630,7 +675,7 @@ The project includes workflows for:
 - **Issues**: https://github.com/Qubinode/qubinode_navigator/issues
 - **MCP Context**: `.mcp-server-context.md` (auto-updated)
 
----
+______________________________________________________________________
 
 ## Agent Session Checklist
 
@@ -644,7 +689,7 @@ When starting a new session:
 - [ ] Follow ADR-0045 for any DAG modifications
 - [ ] Test changes before committing
 
----
+______________________________________________________________________
 
 *Last updated: 2025-12-02*
 *Version: 2.0 - Added MCP/Lineage by default, Makefile commands, SSH helpers*

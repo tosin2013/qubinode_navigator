@@ -29,9 +29,6 @@ import logging
 import subprocess
 import tempfile
 from typing import Dict, Any, List, Optional
-from datetime import datetime
-from pathlib import Path
-import json
 
 logger = logging.getLogger(__name__)
 
@@ -53,12 +50,7 @@ class DeveloperAgent:
     5. Logs troubleshooting attempts
     """
 
-    def __init__(
-        self,
-        rag_store=None,
-        llm_router=None,
-        model: str = "developer"
-    ):
+    def __init__(self, rag_store=None, llm_router=None, model: str = "developer"):
         """
         Initialize the Developer Agent.
 
@@ -79,6 +71,7 @@ class DeveloperAgent:
         if self.rag_store is None:
             try:
                 from qubinode.rag_store import get_rag_store
+
                 self.rag_store = get_rag_store()
             except Exception as e:
                 logger.warning(f"Could not load RAG store: {e}")
@@ -89,6 +82,7 @@ class DeveloperAgent:
         if self.llm_router is None:
             try:
                 from qubinode.llm_router import get_router
+
                 self.llm_router = get_router()
             except Exception as e:
                 logger.warning(f"Could not load LLM router: {e}")
@@ -99,9 +93,7 @@ class DeveloperAgent:
         if self._aider_available is None:
             try:
                 result = subprocess.run(
-                    ["aider", "--version"],
-                    capture_output=True,
-                    timeout=5
+                    ["aider", "--version"], capture_output=True, timeout=5
                 )
                 self._aider_available = result.returncode == 0
             except Exception:
@@ -109,10 +101,7 @@ class DeveloperAgent:
         return self._aider_available and AIDER_ENABLED
 
     async def execute_task(
-        self,
-        task: str,
-        rag_context: Dict[str, Any],
-        session_id: str
+        self, task: str, rag_context: Dict[str, Any], session_id: str
     ) -> Dict[str, Any]:
         """
         Execute a development task with RAG augmentation.
@@ -147,7 +136,7 @@ class DeveloperAgent:
                 task=task,
                 solution=f"Attempted: {task_type}",
                 result="failed",
-                error=str(e)
+                error=str(e),
             )
             return {"success": False, "output": "", "error": str(e)}
 
@@ -165,10 +154,7 @@ class DeveloperAgent:
             return "general"
 
     async def _create_dag(
-        self,
-        task: str,
-        rag_context: Dict[str, Any],
-        session_id: str
+        self, task: str, rag_context: Dict[str, Any], session_id: str
     ) -> Dict[str, Any]:
         """Create a new DAG based on task and RAG context."""
         logger.info("Creating new DAG...")
@@ -189,10 +175,10 @@ class DeveloperAgent:
                 model=self.model,
                 messages=[
                     {"role": "system", "content": self._get_dag_system_prompt()},
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": prompt},
                 ],
                 temperature=0.3,  # Lower for more consistent code
-                max_tokens=4000
+                max_tokens=4000,
             )
 
             code = response.get("content", "")
@@ -208,20 +194,20 @@ class DeveloperAgent:
                     session_id=session_id,
                     task=task,
                     solution=f"Generated DAG code ({len(code)} chars)",
-                    result="success"
+                    result="success",
                 )
                 return {
                     "success": True,
                     "output": code,
                     "type": "dag",
-                    "validation": validation
+                    "validation": validation,
                 }
             else:
                 return {
                     "success": False,
                     "output": code,
                     "error": validation["error"],
-                    "validation": validation
+                    "validation": validation,
                 }
 
         except Exception as e:
@@ -248,7 +234,7 @@ Output only the Python code, no explanations.
         self,
         task: str,
         dag_examples: List[Dict[str, Any]],
-        adr_guidance: List[Dict[str, Any]]
+        adr_guidance: List[Dict[str, Any]],
     ) -> str:
         """Build the prompt for DAG generation."""
         prompt = f"Task: {task}\n\n"
@@ -268,17 +254,23 @@ Output only the Python code, no explanations.
         prompt += "\nGenerate a complete, production-ready DAG that follows the project patterns."
         return prompt
 
-    def _extract_dag_examples(self, rag_context: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _extract_dag_examples(
+        self, rag_context: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
         """Extract DAG examples from RAG context."""
         return [
-            doc for doc in rag_context.get("documents", [])
+            doc
+            for doc in rag_context.get("documents", [])
             if doc.get("doc_type") == "dag"
         ]
 
-    def _extract_adr_guidance(self, rag_context: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _extract_adr_guidance(
+        self, rag_context: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
         """Extract ADR guidance from RAG context."""
         return [
-            doc for doc in rag_context.get("documents", [])
+            doc
+            for doc in rag_context.get("documents", [])
             if doc.get("doc_type") == "adr"
         ]
 
@@ -308,27 +300,22 @@ Output only the Python code, no explanations.
                 "has_dag_import": "from airflow" in code,
                 "has_dag_definition": "DAG(" in code or "dag=" in code.lower(),
                 "has_tasks": "task" in code.lower() or "operator" in code.lower(),
-                "has_dependencies": ">>" in code or "<<" in code or "set_downstream" in code
+                "has_dependencies": ">>" in code
+                or "<<" in code
+                or "set_downstream" in code,
             }
 
             all_passed = all(checks.values())
             return {
                 "valid": all_passed,
                 "checks": checks,
-                "error": None if all_passed else "Missing required DAG components"
+                "error": None if all_passed else "Missing required DAG components",
             }
         except SyntaxError as e:
-            return {
-                "valid": False,
-                "checks": {},
-                "error": f"Syntax error: {e}"
-            }
+            return {"valid": False, "checks": {}, "error": f"Syntax error: {e}"}
 
     async def _modify_code(
-        self,
-        task: str,
-        rag_context: Dict[str, Any],
-        session_id: str
+        self, task: str, rag_context: Dict[str, Any], session_id: str
     ) -> Dict[str, Any]:
         """Modify existing code using Aider or direct LLM."""
         logger.info("Modifying existing code...")
@@ -341,10 +328,7 @@ Output only the Python code, no explanations.
         return await self._modify_with_llm(task, rag_context, session_id)
 
     async def _modify_with_aider(
-        self,
-        task: str,
-        rag_context: Dict[str, Any],
-        session_id: str
+        self, task: str, rag_context: Dict[str, Any], session_id: str
     ) -> Dict[str, Any]:
         """Use Aider for code modifications."""
         logger.info("Using Aider for code modification...")
@@ -354,21 +338,18 @@ Output only the Python code, no explanations.
 
         try:
             # Run Aider in non-interactive mode
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".txt", delete=False
+            ) as f:
                 f.write(f"{context_str}\n\nTask: {task}")
                 prompt_file = f.name
 
             result = subprocess.run(
-                [
-                    "aider",
-                    "--yes",
-                    "--no-auto-commits",
-                    "--message-file", prompt_file
-                ],
+                ["aider", "--yes", "--no-auto-commits", "--message-file", prompt_file],
                 capture_output=True,
                 text=True,
                 timeout=300,  # 5 minute timeout
-                cwd=DAGS_PATH
+                cwd=DAGS_PATH,
             )
 
             os.unlink(prompt_file)
@@ -380,14 +361,10 @@ Output only the Python code, no explanations.
                 session_id=session_id,
                 task=task,
                 solution=f"Aider modification: {output[:500]}",
-                result="success" if success else "failed"
+                result="success" if success else "failed",
             )
 
-            return {
-                "success": success,
-                "output": output,
-                "method": "aider"
-            }
+            return {"success": success, "output": output, "method": "aider"}
 
         except subprocess.TimeoutExpired:
             return {"success": False, "output": "", "error": "Aider timed out"}
@@ -396,10 +373,7 @@ Output only the Python code, no explanations.
             return {"success": False, "output": "", "error": str(e)}
 
     async def _modify_with_llm(
-        self,
-        task: str,
-        rag_context: Dict[str, Any],
-        session_id: str
+        self, task: str, rag_context: Dict[str, Any], session_id: str
     ) -> Dict[str, Any]:
         """Use LLM for code modifications."""
         router = self._get_llm_router()
@@ -418,20 +392,19 @@ Provide the modified code with clear comments explaining changes.
             response = await router.complete(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "You are a code modification assistant. Output only the modified code."},
-                    {"role": "user", "content": prompt}
+                    {
+                        "role": "system",
+                        "content": "You are a code modification assistant. Output only the modified code.",
+                    },
+                    {"role": "user", "content": prompt},
                 ],
                 temperature=0.3,
-                max_tokens=4000
+                max_tokens=4000,
             )
 
             code = self._extract_code_from_response(response.get("content", ""))
 
-            return {
-                "success": True,
-                "output": code,
-                "method": "llm"
-            }
+            return {"success": True, "output": code, "method": "llm"}
         except Exception as e:
             return {"success": False, "output": "", "error": str(e)}
 
@@ -457,10 +430,7 @@ Provide the modified code with clear comments explaining changes.
         return "\n\n---\n\n".join(context_parts)
 
     async def _troubleshoot(
-        self,
-        task: str,
-        rag_context: Dict[str, Any],
-        session_id: str
+        self, task: str, rag_context: Dict[str, Any], session_id: str
     ) -> Dict[str, Any]:
         """Handle troubleshooting tasks."""
         logger.info("Troubleshooting...")
@@ -473,19 +443,19 @@ Provide the modified code with clear comments explaining changes.
             best_match = similar_solutions[0]
             return {
                 "success": True,
-                "output": self._format_troubleshooting_suggestion(best_match, similar_solutions),
+                "output": self._format_troubleshooting_suggestion(
+                    best_match, similar_solutions
+                ),
                 "type": "troubleshooting",
                 "from_history": True,
-                "confidence": best_match.get("similarity", 0)
+                "confidence": best_match.get("similarity", 0),
             }
 
         # No history, use LLM to troubleshoot
         return await self._troubleshoot_with_llm(task, rag_context, session_id)
 
     def _format_troubleshooting_suggestion(
-        self,
-        best_match: Dict[str, Any],
-        all_matches: List[Dict[str, Any]]
+        self, best_match: Dict[str, Any], all_matches: List[Dict[str, Any]]
     ) -> str:
         """Format troubleshooting suggestion from history."""
         output = "## Found Similar Issue in History\n\n"
@@ -502,10 +472,7 @@ Provide the modified code with clear comments explaining changes.
         return output
 
     async def _troubleshoot_with_llm(
-        self,
-        task: str,
-        rag_context: Dict[str, Any],
-        session_id: str
+        self, task: str, rag_context: Dict[str, Any], session_id: str
     ) -> Dict[str, Any]:
         """Use LLM to troubleshoot when no history is available."""
         router = self._get_llm_router()
@@ -532,27 +499,27 @@ Provide:
             response = await router.complete(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "You are an expert troubleshooter for Airflow and infrastructure automation."},
-                    {"role": "user", "content": prompt}
+                    {
+                        "role": "system",
+                        "content": "You are an expert troubleshooter for Airflow and infrastructure automation.",
+                    },
+                    {"role": "user", "content": prompt},
                 ],
                 temperature=0.5,
-                max_tokens=2000
+                max_tokens=2000,
             )
 
             return {
                 "success": True,
                 "output": response.get("content", ""),
                 "type": "troubleshooting",
-                "from_history": False
+                "from_history": False,
             }
         except Exception as e:
             return {"success": False, "output": "", "error": str(e)}
 
     async def _generate_code(
-        self,
-        task: str,
-        rag_context: Dict[str, Any],
-        session_id: str
+        self, task: str, rag_context: Dict[str, Any], session_id: str
     ) -> Dict[str, Any]:
         """Generate general code based on task."""
         router = self._get_llm_router()
@@ -579,20 +546,19 @@ Requirements:
             response = await router.complete(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "You are an expert Python developer."},
-                    {"role": "user", "content": prompt}
+                    {
+                        "role": "system",
+                        "content": "You are an expert Python developer.",
+                    },
+                    {"role": "user", "content": prompt},
                 ],
                 temperature=0.3,
-                max_tokens=4000
+                max_tokens=4000,
             )
 
             code = self._extract_code_from_response(response.get("content", ""))
 
-            return {
-                "success": True,
-                "output": code,
-                "type": "code"
-            }
+            return {"success": True, "output": code, "type": "code"}
         except Exception as e:
             return {"success": False, "output": "", "error": str(e)}
 
@@ -601,7 +567,7 @@ Requirements:
         task: str,
         provider_name: str,
         rag_context: Dict[str, Any],
-        session_id: str
+        session_id: str,
     ) -> Dict[str, Any]:
         """Execute task using a specific Airflow provider."""
         logger.info(f"Executing with provider: {provider_name}")
@@ -628,10 +594,10 @@ Generate code that:
                 model=self.model,
                 messages=[
                     {"role": "system", "content": self._get_dag_system_prompt()},
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": prompt},
                 ],
                 temperature=0.3,
-                max_tokens=3000
+                max_tokens=3000,
             )
 
             code = self._extract_code_from_response(response.get("content", ""))
@@ -640,21 +606,15 @@ Generate code that:
                 session_id=session_id,
                 task=task,
                 solution=f"Used provider {provider_name}",
-                result="success"
+                result="success",
             )
 
-            return {
-                "success": True,
-                "output": code,
-                "provider": provider_name
-            }
+            return {"success": True, "output": code, "provider": provider_name}
         except Exception as e:
             return {"success": False, "output": "", "error": str(e)}
 
     async def execute_with_override(
-        self,
-        override: str,
-        session_id: str
+        self, override: str, session_id: str
     ) -> Dict[str, Any]:
         """Execute an override instruction from Calling LLM."""
         logger.info(f"Executing override: {override[:100]}...")
@@ -668,11 +628,14 @@ Generate code that:
             response = await router.complete(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "Execute the following instruction exactly as specified."},
-                    {"role": "user", "content": override}
+                    {
+                        "role": "system",
+                        "content": "Execute the following instruction exactly as specified.",
+                    },
+                    {"role": "user", "content": override},
                 ],
                 temperature=0.3,
-                max_tokens=4000
+                max_tokens=4000,
             )
 
             output = response.get("content", "")
@@ -681,14 +644,10 @@ Generate code that:
                 session_id=session_id,
                 task=f"Override: {override[:100]}",
                 solution=output[:500],
-                result="success"
+                result="success",
             )
 
-            return {
-                "success": True,
-                "output": output,
-                "override": True
-            }
+            return {"success": True, "output": output, "override": True}
         except Exception as e:
             return {"success": False, "output": "", "error": str(e)}
 
@@ -698,7 +657,7 @@ Generate code that:
         task: str,
         solution: str,
         result: str,
-        error: Optional[str] = None
+        error: Optional[str] = None,
     ) -> None:
         """Log troubleshooting attempt for learning."""
         rag = self._get_rag_store()
@@ -710,7 +669,7 @@ Generate code that:
                     attempted_solution=solution,
                     result=result,
                     error_message=error,
-                    agent="developer"
+                    agent="developer",
                 )
             except Exception as e:
                 logger.warning(f"Failed to log troubleshooting: {e}")

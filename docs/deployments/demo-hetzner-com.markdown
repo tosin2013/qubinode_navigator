@@ -1,25 +1,25 @@
----
-layout: default
-title:   "Deploying on Hetzner"
-parent: Deployment Documentation
-nav_order: 2
----
+______________________________________________________________________
+
+## layout: default title:   "Deploying on Hetzner" parent: Deployment Documentation nav_order: 2
 
 Deploy to [Hetzner](https://www.hetzner.com/) using the following steps.
 
 > **Documentation status**
+>
 > - Validation: `IN PROGRESS` – Steps have been tested in past environments but may require updates for newer releases.
 > - Last reviewed: 2025-11-21
 > - Community: If you successfully deploy using this guide or encounter issues, please help refine it via [Contributing to docs](../how-to/contribute.md).
-**Tested on**
-* Rocky Linux 9
+>   **Tested on**
+
+- Rocky Linux 9
 
 **Activate Rocky linux**
-![alt text](<Screenshot from 2024-03-20 15-09-38-new.png>)
+![alt text](Screenshot%20from%202024-03-20%2015-09-38-new.png)
 
 **SSH into Hetzner baremetal server**
 
-## Create lab-user 
+## Create lab-user
+
 ```bash
 curl -OL https://gist.githubusercontent.com/tosin2013/385054f345ff7129df6167631156fa2a/raw/b67866c8d0ec220c393ea83d2c7056f33c472e65/configure-sudo-user.sh
 chmod +x configure-sudo-user.sh
@@ -27,20 +27,21 @@ chmod +x configure-sudo-user.sh
 ```
 
 ## SSH into the lab-user
+
 ```bash
 sudo su - lab-user
 ```
 
-
 **Configure SSH**
+
 ```
 IP_ADDRESS=$(hostname -I | awk '{print $1}')
 ssh-keygen -f ~/.ssh/id_rsa -t rsa -N ''
 ssh-copy-id lab-user@${IP_ADDRESS}
 ```
 
-**create /tmp/config.yml as lab-user**   
-`you can uae ansiblesafe to generate the content of this file` - [link](https://github.com/tosin2013/ansiblesafe)   
+**create /tmp/config.yml as lab-user**
+`you can uae ansiblesafe to generate the content of this file` - [link](https://github.com/tosin2013/ansiblesafe)
 [Ansible Vault Secrets Documentation](https://dev.to/tosin2013/ansible-vault-secrets-documentation-3g1a)
 
 ```bash
@@ -61,6 +62,7 @@ aws_secret_key: secretkey # optional used for aws credentials and route53
 ```
 
 **Add the following to .bashrc as lab-user when using /tmp/config.yml file**
+
 ```bash
 $ SSH_PASSWORD=DontForgetToChangeMe # Use the password of the lab-user
 $ cat >notouch.env<<EOF
@@ -85,6 +87,7 @@ $ vi notouch.env
 
 **Recommned Option: Setting Up Variables in HashiCorp Cloud Platform (HCP) Vault Secrets**
 [Setting Up Variables in HashiCorp Cloud Platform (HCP) Vault Secrets](https://github.com/tosin2013/ansiblesafe/blob/main/docs/hashicorp_cloud_secret_setup.md)
+
 ```bash
 $ SSH_PASSWORD=DontForgetToChangeMe # Use the password of the lab-user
 $ DOMAIN=example-server.com
@@ -120,8 +123,9 @@ $ vi notouch.env
 ```
 
 ## Run the following commands as lab-user
+
 ```bash
-sudo dnf install -y tmux curl git vim 
+sudo dnf install -y tmux curl git vim
 git clone https://github.com/gpakosz/.tmux.git
 ln -s -f .tmux/.tmux.conf
 cp .tmux/.tmux.conf.local .
@@ -131,8 +135,8 @@ tmux new-session -s rocky-linux-hetzner
 source notouch.env && sudo -E  ./rocky-linux-hetzner.sh
 ```
 
-
 **ssh into vm and run the following**
+
 ```
 $ sudo kcli download image rhel8
 $ sudo kcli download image rhel9
@@ -143,22 +147,24 @@ When the prompt below comes up follow the link and look for the corresponding rh
 right click on the link and copy the link address
 ![20230607131930](https://i.imgur.com/83Gar1k.png)
 
+## To Access the Baremetal Node
 
-## To Access the Baremetal Node 
 **Option 1: Access the VM via the console**
 
 Login to the VM using ssh or cockpit console. The endpoint will be `https://SERVER_ADDRESS:9090` and the username and password are the same as the lab-user password you set in the config.yml file.
 ![20240531101946](https://i.imgur.com/YuPbVpO.png)
 
 **Option 2: Access the Server GUI**
+
 ```
 IP_ADDRESS=192.168.1.100
 xfreerdp /v:${IP_ADDRESS}:3389 /u:remoteuser
 ```
+
 You may also use Remmina or any other RDP client to access the server.
 
 ![alt text](image.png)
-![alt text](<Screenshot from 2024-03-20 18-06-28.png>)
+![alt text](Screenshot%20from%202024-03-20%2018-06-28.png)
 
 ## Next Steps: Orchestrate with Apache Airflow
 

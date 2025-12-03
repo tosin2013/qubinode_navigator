@@ -143,25 +143,25 @@ echo "✅ Bundle install successful!"
 EOF
 
     chmod +x /tmp/bundle-test.sh
-    
+
     # Run the test
     podman run --rm -it \
         -v "$(pwd)/docs:/workspace/docs:z" \
         -v "/tmp/bundle-test.sh:/test.sh:z" \
         ubuntu:22.04 \
         bash /test.sh
-    
+
     local exit_code=$?
-    
+
     # Clean up
     rm -f /tmp/bundle-test.sh
-    
+
     if [[ $exit_code -eq 0 ]]; then
         log_success "Bundle install test passed!"
     else
         log_error "Bundle install test failed with exit code: $exit_code"
     fi
-    
+
     return $exit_code
 }
 
@@ -265,7 +265,7 @@ EOF
 # Main function
 main() {
     local command="${1:-full}"
-    
+
     case "$command" in
         "full")
             test_bundle_install

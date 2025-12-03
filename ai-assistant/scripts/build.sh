@@ -48,19 +48,19 @@ log_error() {
 # Check prerequisites
 check_prerequisites() {
     log_info "Checking prerequisites..."
-    
+
     # Check if podman is available
     if ! command -v podman &> /dev/null; then
         log_error "Podman is not installed or not in PATH"
         exit 1
     fi
-    
+
     # Check if we're in the right directory
     if [[ ! -f "Dockerfile" ]]; then
         log_error "Dockerfile not found. Please run this script from the ai-assistant directory."
         exit 1
     fi
-    
+
     log_success "Prerequisites check passed"
 }
 
@@ -69,7 +69,7 @@ build_container() {
     log_info "Building Qubinode AI Assistant container..."
     log_info "Version: $CONTAINER_VERSION"
     log_info "Build metadata: $BUILD_VERSION"
-    
+
     # Generate all container tags
     local tags=()
     if [[ -f "$VERSION_MANAGER" ]]; then
@@ -82,7 +82,7 @@ build_container() {
         tags+=("--tag" "${REGISTRY}/${CONTAINER_NAME}:${CONTAINER_VERSION}")
         tags+=("--tag" "${REGISTRY}/${CONTAINER_NAME}:$(date +%Y%m%d)")
     fi
-    
+
     # Build with podman
     if podman build \
         "${tags[@]}" \
@@ -107,7 +107,7 @@ build_container() {
 # Test the container
 test_container() {
     log_info "Testing container..."
-    
+
     # Run a quick test to ensure the container starts
     if podman run --rm \
         --name "${CONTAINER_NAME}-test" \
@@ -126,13 +126,13 @@ show_info() {
     echo "  Version: ${CONTAINER_VERSION}"
     echo "  Build Version: ${BUILD_VERSION}"
     echo "  Registry: ${REGISTRY}"
-    
+
     # Show image size for main version tag
     local main_tag="${REGISTRY}/${CONTAINER_NAME}:${CONTAINER_VERSION}"
     if podman images "$main_tag" --format "table {{.Repository}}:{{.Tag}} {{.Size}}" | tail -n +2; then
         log_success "Container ready for use"
     fi
-    
+
     # Show all tags for this image
     log_info "Available tags:"
     podman images "${REGISTRY}/${CONTAINER_NAME}" --format "  {{.Repository}}:{{.Tag}} ({{.Size}})"
@@ -141,14 +141,14 @@ show_info() {
 # Main execution
 main() {
     log_info "Starting Qubinode AI Assistant container build..."
-    
+
     check_prerequisites
     build_container
     test_container
     show_info
-    
+
     log_success "Build process completed!"
-    
+
     echo ""
     log_info "Next steps:"
     echo "  1. Run the container: podman run -d -p 8080:8080 ${REGISTRY}/${CONTAINER_NAME}:${CONTAINER_VERSION}"

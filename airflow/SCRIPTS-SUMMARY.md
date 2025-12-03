@@ -3,23 +3,27 @@
 ## ✅ Scripts Tested Successfully
 
 ### Test 1: List VMs Script
+
 ```bash
 $ ./scripts/test-kcli-list-vms.sh
 ```
 
 **Result:** ✅ **PASSED**
+
 - All 3 methods work (virsh, kcli, container)
 - Summary shows: 0 VMs, 0 running
 - Provides DAG code example
 - **Time to execute:** ~2 seconds
 
 ### Test 2: Script Creation
+
 ```bash
 $ cp TEMPLATE-new-script.sh test-vm-info-demo.sh
 $ chmod +x test-vm-info-demo.sh
 ```
 
 **Result:** ✅ **PASSED**
+
 - Template copied successfully
 - Made executable in 1 command
 - Ready to customize
@@ -69,7 +73,7 @@ chmod +x test-my-feature.sh
 # Step 2: Edit 3 sections (built-in comments guide you)
 vim test-my-feature.sh
 # - Configuration (lines 8-15)
-# - Test logic (lines 40-79)  
+# - Test logic (lines 40-79)
 # - DAG example (lines 87-96)
 
 # Step 3: Test it
@@ -83,6 +87,7 @@ vim test-my-feature.sh
 ### Answer: **AI Learns Through 4 Channels**
 
 #### Channel 1: File Content (Automatic)
+
 ```
 When you reference a script file, AI reads it:
 User: "Look at scripts/test-kcli-create-vm.sh"
@@ -90,6 +95,7 @@ AI: [reads file] "This script tests VM creation with kcli..."
 ```
 
 #### Channel 2: Documentation (Indexed)
+
 ```
 Scripts are documented in:
 - scripts/README.md          ← Main index
@@ -99,6 +105,7 @@ Scripts are documented in:
 ```
 
 #### Channel 3: Conversations (Contextual)
+
 ```
 When you discuss scripts with AI:
 User: "I created test-vm-snapshot.sh"
@@ -106,6 +113,7 @@ AI: [remembers in session] "I see you're testing snapshots..."
 ```
 
 #### Channel 4: Script Headers (Self-Documenting)
+
 ```bash
 #!/bin/bash
 # Script: test-vm-snapshot.sh
@@ -115,6 +123,7 @@ AI: [remembers in session] "I see you're testing snapshots..."
 ```
 
 AI reads these headers and understands:
+
 - What the script does
 - How to use it
 - Related DAG operators
@@ -154,6 +163,7 @@ AI reads these headers and understands:
 ### Making Scripts Highly Discoverable
 
 **Minimum (Script works, AI learns on-demand):**
+
 ```bash
 #!/bin/bash
 # test-my-thing.sh
@@ -161,6 +171,7 @@ echo "Testing..."
 ```
 
 **Recommended (AI can recommend proactively):**
+
 ```bash
 #!/bin/bash
 # Script: test-vm-network-attach.sh
@@ -171,7 +182,7 @@ echo "Testing..."
 #
 # What it tests:
 #   1. VM exists
-#   2. Network exists  
+#   2. Network exists
 #   3. Attach network to VM
 #   4. Verify attachment
 #
@@ -185,6 +196,7 @@ echo "Testing..."
 ```
 
 **Best (AI has complete context):**
+
 ```bash
 # 1. Well-documented script (as above)
 # 2. Entry in scripts/README.md
@@ -197,26 +209,30 @@ echo "Testing..."
 ### Example 1: User Asks About Testing
 
 **User Question:**
+
 ```
 "How do I test VM creation before adding it to my DAG?"
 ```
 
 **AI Response (RAG-aware):**
-```markdown
+
+````markdown
 Use the test script:
 
 ```bash
 ./scripts/test-kcli-create-vm.sh myvm centos10stream 2048 2 10
-```
+````
 
 This script will:
+
 1. Check if image exists
-2. Show exact kcli command
-3. Create the VM
-4. Verify creation
-5. Show DAG code example
+1. Show exact kcli command
+1. Create the VM
+1. Verify creation
+1. Show DAG code example
 
 If successful, add to your DAG:
+
 ```python
 KcliVMCreateOperator(
     vm_name='myvm',
@@ -230,17 +246,20 @@ KcliVMCreateOperator(
 ### Example 2: User Creates Custom Script
 
 **User Action:**
+
 ```bash
 cp TEMPLATE-new-script.sh test-vm-backup.sh
 # ... edits script ...
 ```
 
 **User tells AI:**
+
 ```
 "I created test-vm-backup.sh that backs up VM disks"
 ```
 
 **AI learns:**
+
 ```
 ✅ Script name: test-vm-backup.sh
 ✅ Purpose: VM disk backup
@@ -249,6 +268,7 @@ cp TEMPLATE-new-script.sh test-vm-backup.sh
 ```
 
 **AI can now say:**
+
 ```markdown
 For VM backups, you can:
 1. Test with your script: `./scripts/test-vm-backup.sh`
@@ -259,29 +279,34 @@ For VM backups, you can:
 ### Example 3: Proactive Recommendations
 
 **User Question:**
+
 ```
 "My VM creation DAG is failing"
 ```
 
 **AI Response (knows about scripts):**
-```markdown
+
+````markdown
 Before debugging the DAG, let's test the command directly:
 
 ```bash
 ./scripts/test-kcli-create-vm.sh <your_vm_name> <your_image> <memory> <cpus> <disk>
-```
+````
 
 This will show the exact error message. Common issues:
+
 - Image name incorrect (use `virsh vol-list default` to check)
 - Wrong kcli syntax (script shows correct format)
 - Resource constraints
 
 Once the script succeeds, update your DAG with the working values.
+
 ```
 
 ## 📈 RAG Learning Timeline
 
 ```
+
 Time    Event                           RAG Awareness
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 T+0s    Script created                 ⭐ Basic (file exists)
@@ -289,7 +314,8 @@ T+1m    Header documented              ⭐⭐ Good (understands purpose)
 T+2m    Added to README.md             ⭐⭐⭐ Better (can recommend)
 T+5m    Companion doc created          ⭐⭐⭐⭐ Excellent (full context)
 T+10m   Discussed with AI              ⭐⭐⭐⭐⭐ Perfect (personalized)
-```
+
+````
 
 ## 🎓 Best Practices for Maximum RAG Awareness
 
@@ -299,9 +325,10 @@ T+10m   Discussed with AI              ⭐⭐⭐⭐⭐ Perfect (personalized)
    ```bash
    test-vm-snapshot-create.sh  # ✅ Clear
    script1.sh                  # ❌ Unclear
-   ```
+````
 
 2. **Add documentation headers**
+
    ```bash
    # Script: test-feature.sh
    # Purpose: Tests X
@@ -309,17 +336,20 @@ T+10m   Discussed with AI              ⭐⭐⭐⭐⭐ Perfect (personalized)
    # Equivalent: XOperator()
    ```
 
-3. **Update README.md**
+1. **Update README.md**
+
    ```markdown
    | test-feature.sh | Tests X | Before XOperator |
    ```
 
-4. **Create companion docs for complex scripts**
+1. **Create companion docs for complex scripts**
+
    ```bash
    test-vm-cluster.sh → VM-CLUSTER-TESTING.md
    ```
 
-5. **Discuss with AI**
+1. **Discuss with AI**
+
    ```
    "I created test-X.sh that does Y"
    AI: "Great! I'll remember that for..."
@@ -328,45 +358,49 @@ T+10m   Discussed with AI              ⭐⭐⭐⭐⭐ Perfect (personalized)
 ### DON'T ❌
 
 1. **Skip documentation**
+
    ```bash
    #!/bin/bash
    # Script with no docs
    ```
 
-2. **Use cryptic names**
+1. **Use cryptic names**
+
    ```bash
    tmp.sh, x.sh, test1.sh
    ```
 
-3. **Forget to update README**
+1. **Forget to update README**
+
    ```
    Script exists but not in README = low discoverability
    ```
 
-4. **Assume AI knows without context**
+1. **Assume AI knows without context**
+
    ```
    AI needs documentation to be helpful!
    ```
 
 ## 📊 Summary Table
 
-| Question | Answer | Details |
-|----------|--------|---------|
-| **How easy to add scripts?** | ⭐⭐⭐⭐⭐ VERY EASY | 3-5 minutes, copy/edit/test |
-| **Skill level required?** | Beginner | Basic bash, copy/paste |
-| **Will RAG know about scripts?** | ✅ YES | Through 4 channels |
-| **How to maximize awareness?** | Document it | Headers + README + docs + chat |
-| **Can AI recommend scripts?** | ✅ YES | If well-documented |
-| **Learning curve?** | ⭐ Minimal | Template guides you |
-| **Time to create script?** | 3-5 min | Copy, edit 3 sections, test |
-| **Time for AI to learn?** | Instant | Reads on-demand or from docs |
+| Question                         | Answer               | Details                        |
+| -------------------------------- | -------------------- | ------------------------------ |
+| **How easy to add scripts?**     | ⭐⭐⭐⭐⭐ VERY EASY | 3-5 minutes, copy/edit/test    |
+| **Skill level required?**        | Beginner             | Basic bash, copy/paste         |
+| **Will RAG know about scripts?** | ✅ YES               | Through 4 channels             |
+| **How to maximize awareness?**   | Document it          | Headers + README + docs + chat |
+| **Can AI recommend scripts?**    | ✅ YES               | If well-documented             |
+| **Learning curve?**              | ⭐ Minimal           | Template guides you            |
+| **Time to create script?**       | 3-5 min              | Copy, edit 3 sections, test    |
+| **Time for AI to learn?**        | Instant              | Reads on-demand or from docs   |
 
 ## 🎯 Quick Decision Matrix
 
 ```
 Need to test kcli command?
     │
-    ├─→ Exists in scripts/? 
+    ├─→ Exists in scripts/?
     │   ├─→ YES: Use existing script
     │   └─→ NO: ↓
     │
@@ -415,11 +449,11 @@ vim test-my-first-script.sh  # Edit it
 - **AI Assistant**: http://localhost:8888/ai-assistant
 - **Quick Reference**: `QUICK-REFERENCE.md`
 
----
+______________________________________________________________________
 
-**Scripts tested: ✅**  
-**Easy to add: ✅ (3-5 minutes)**  
-**RAG aware: ✅ (4 awareness channels)**  
-**Ready to use: ✅**  
+**Scripts tested: ✅**
+**Easy to add: ✅ (3-5 minutes)**
+**RAG aware: ✅ (4 awareness channels)**
+**Ready to use: ✅**
 
 🎉 **Start creating your own test scripts now!**

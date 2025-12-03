@@ -1,10 +1,6 @@
----
-layout: default
-title: Security & Operations
-parent: Architectural Decision Records
-nav_order: 2
-has_children: true
----
+______________________________________________________________________
+
+## layout: default title: Security & Operations parent: Architectural Decision Records nav_order: 2 has_children: true
 
 # Security & Operations ADRs
 

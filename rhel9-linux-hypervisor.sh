@@ -647,7 +647,7 @@ generate_inventory() {
 
 # This function configures SSH by generating an SSH key pair if it does not already exist
 # and copying the public key to the local machine's authorized keys.
-# 
+#
 # Steps:
 # 1. Logs the start of the SSH configuration process.
 # 2. Checks if the SSH private key file (~/.ssh/id_rsa) exists.
@@ -698,7 +698,7 @@ configure_firewalld() {
 #              It initializes the SSH agent, adds the SSH key, navigates to the specified directory,
 #              and runs the Ansible playbook to set up the KVM host.
 #              If the deployment fails, it logs an error message and exits with a status code of 1.
-# 
+#
 # Steps:
 # 1. Log the start of the KVM host deployment.
 # 2. Initialize the SSH agent.
@@ -867,9 +867,9 @@ configure_ollama() {
 
 
 
-# 
+#
 # This script sets up a RHEL 9 Linux hypervisor environment. The main function performs the following tasks:
-# 
+#
 # 1. check_root: Ensures the script is run as root.
 # 2. handle_hashicorp_vault: Manages HashiCorp Vault setup.
 # 3. hcp_cloud_vault: Configures HashiCorp Cloud Vault if USE_HASHICORP_CLOUD is set to "true".

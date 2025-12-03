@@ -1,9 +1,6 @@
----
-title: How to
-description: Task-oriented guides for specific goals
-nav_order: 3
-has_children: true
----
+______________________________________________________________________
+
+## title: How to description: Task-oriented guides for specific goals nav_order: 3 has_children: true
 
 # How to
 
@@ -13,8 +10,8 @@ Task-oriented guides for specific goals
 
 This section contains how-to documentation following the Diataxis framework.
 
-
 **How-To Guides** are task-oriented and help users accomplish specific goals:
+
 - Solve specific problems
 - Assume some knowledge and experience
 - Provide a series of steps

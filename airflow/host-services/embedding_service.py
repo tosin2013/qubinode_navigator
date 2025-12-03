@@ -14,7 +14,7 @@ Port: 8891
 
 import os
 import logging
-from typing import List, Optional
+from typing import List
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
@@ -23,14 +23,13 @@ import uvicorn
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
 # Model configuration
-MODEL_NAME = os.environ.get('EMBEDDING_MODEL', 'all-MiniLM-L6-v2')
-MODEL_CACHE_DIR = os.environ.get('TRANSFORMERS_CACHE', '/opt/qubinode/models')
+MODEL_NAME = os.environ.get("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
+MODEL_CACHE_DIR = os.environ.get("TRANSFORMERS_CACHE", "/opt/qubinode/models")
 
 # Global model instance
 model = None
@@ -38,12 +37,14 @@ model = None
 
 class EmbedRequest(BaseModel):
     """Request model for embedding generation."""
+
     texts: List[str]
     normalize: bool = True
 
 
 class EmbedResponse(BaseModel):
     """Response model for embedding generation."""
+
     embeddings: List[List[float]]
     model: str
     dimensions: int
@@ -51,6 +52,7 @@ class EmbedResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     """Response model for health check."""
+
     status: str
     model: str
     dimensions: int
@@ -67,8 +69,8 @@ async def lifespan(app: FastAPI):
         from sentence_transformers import SentenceTransformer
 
         # Set cache directory
-        os.environ['TRANSFORMERS_CACHE'] = MODEL_CACHE_DIR
-        os.environ['HF_HOME'] = MODEL_CACHE_DIR
+        os.environ["TRANSFORMERS_CACHE"] = MODEL_CACHE_DIR
+        os.environ["HF_HOME"] = MODEL_CACHE_DIR
 
         # Load model (will use GPU if available via CUDA)
         model = SentenceTransformer(MODEL_NAME, cache_folder=MODEL_CACHE_DIR)
@@ -94,7 +96,7 @@ app = FastAPI(
     title="Qubinode Embedding Service",
     description="Vector embedding service for RAG (ADR-0050)",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 
@@ -126,13 +128,13 @@ async def embed(request: EmbedRequest):
         embeddings = model.encode(
             request.texts,
             normalize_embeddings=request.normalize,
-            show_progress_bar=False
+            show_progress_bar=False,
         )
 
         return EmbedResponse(
             embeddings=embeddings.tolist(),
             model=MODEL_NAME,
-            dimensions=model.get_sentence_embedding_dimension()
+            dimensions=model.get_sentence_embedding_dimension(),
         )
 
     except Exception as e:
@@ -152,7 +154,7 @@ async def health():
         status="healthy",
         model=MODEL_NAME,
         dimensions=model.get_sentence_embedding_dimension(),
-        device=str(model.device)
+        device=str(model.device),
     )
 
 
@@ -165,20 +167,15 @@ async def root():
         "model": MODEL_NAME,
         "endpoints": {
             "embed": "POST /embed - Generate embeddings",
-            "health": "GET /health - Health check"
-        }
+            "health": "GET /health - Health check",
+        },
     }
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get('EMBEDDING_SERVICE_PORT', 8891))
-    host = os.environ.get('EMBEDDING_SERVICE_HOST', '0.0.0.0')
+    port = int(os.environ.get("EMBEDDING_SERVICE_PORT", 8891))
+    host = os.environ.get("EMBEDDING_SERVICE_HOST", "0.0.0.0")
 
     logger.info(f"Starting embedding service on {host}:{port}")
 
-    uvicorn.run(
-        app,
-        host=host,
-        port=port,
-        log_level="info"
-    )
+    uvicorn.run(app, host=host, port=port, log_level="info")

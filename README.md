@@ -8,22 +8,6 @@
 └─░───┘
 ```
 
-[license]: ./LICENSE
-[badge-license]: https://img.shields.io/github/license/gitleaks/gitleaks.svg
-[go-docs-badge]: https://pkg.go.dev/badge/github.com/gitleaks/gitleaks/v8?status
-[go-docs]: https://pkg.go.dev/github.com/zricethezav/gitleaks/v8
-[badge-build]: https://github.com/gitleaks/gitleaks/actions/workflows/test.yml/badge.svg
-[build]: https://github.com/gitleaks/gitleaks/actions/workflows/test.yml
-[go-report-card-badge]: https://goreportcard.com/badge/github.com/gitleaks/gitleaks/v8
-[go-report-card]: https://goreportcard.com/report/github.com/gitleaks/gitleaks/v8
-[dockerhub]: https://hub.docker.com/r/zricethezav/gitleaks
-[dockerhub-badge]: https://img.shields.io/docker/pulls/zricethezav/gitleaks.svg
-[gitleaks-action]: https://github.com/gitleaks/gitleaks-action
-[gitleaks-badge]: https://img.shields.io/badge/protected%20by-gitleaks-blue
-[gitleaks-playground-badge]: https://img.shields.io/badge/gitleaks%20-playground-blue
-[gitleaks-playground]: https://gitleaks.io/playground
-
-
 [![GitHub Action Test][badge-build]][build]
 [![Docker Hub][dockerhub-badge]][dockerhub]
 [![Gitleaks Playground][gitleaks-playground-badge]][gitleaks-playground]
@@ -110,7 +94,8 @@ jobs:
 ### Pre-Commit
 
 1. Install pre-commit from https://pre-commit.com/#install
-2. Create a `.pre-commit-config.yaml` file at the root of your repository with the following content:
+
+1. Create a `.pre-commit-config.yaml` file at the root of your repository with the following content:
 
    ```
    repos:
@@ -122,9 +107,11 @@ jobs:
 
    for a [native execution of gitleaks](https://github.com/gitleaks/gitleaks/releases) or use the [`gitleaks-docker` pre-commit ID](https://github.com/gitleaks/gitleaks/blob/master/.pre-commit-hooks.yaml) for executing gitleaks using the [official Docker images](#docker)
 
-3. Auto-update the config to the latest repos' versions by executing `pre-commit autoupdate`
-4. Install with `pre-commit install`
-5. Now you're all set!
+1. Auto-update the config to the latest repos' versions by executing `pre-commit autoupdate`
+
+1. Install with `pre-commit install`
+
+1. Now you're all set!
 
 ```
 ➜ git commit -m "this commit contains a secret"
@@ -240,23 +227,23 @@ your `.git/hooks/` directory.
 The order of precedence is:
 
 1. `--config/-c` option:
-      ```bash
-      gitleaks git --config /home/dev/customgitleaks.toml .
-      ```
-2. Environment variable `GITLEAKS_CONFIG` with the file path:
-      ```bash
-      export GITLEAKS_CONFIG="/home/dev/customgitleaks.toml"
-      gitleaks git .
-      ```
-3. Environment variable `GITLEAKS_CONFIG_TOML` with the file content:
-      ```bash
-      export GITLEAKS_CONFIG_TOML=`cat customgitleaks.toml`
-      gitleaks git .
-      ```
-4. A `.gitleaks.toml` file within the target path:
-      ```bash
-      gitleaks git .
-      ```
+   ```bash
+   gitleaks git --config /home/dev/customgitleaks.toml .
+   ```
+1. Environment variable `GITLEAKS_CONFIG` with the file path:
+   ```bash
+   export GITLEAKS_CONFIG="/home/dev/customgitleaks.toml"
+   gitleaks git .
+   ```
+1. Environment variable `GITLEAKS_CONFIG_TOML` with the file content:
+   ```bash
+   export GITLEAKS_CONFIG_TOML=`cat customgitleaks.toml`
+   gitleaks git .
+   ```
+1. A `.gitleaks.toml` file within the target path:
+   ```bash
+   gitleaks git .
+   ```
 
 If none of the four options are used, then gitleaks will use the default config.
 
@@ -421,6 +408,7 @@ Refer to the default [gitleaks config](https://github.com/gitleaks/gitleaks/blob
 ### Additional Configuration
 
 #### Composite Rules (Multi-part or `required` Rules)
+
 In v8.28.0 Gitleaks introduced composite rules, which are made up of a single "primary" rule and one or more auxiliary or `required` rules. To create a composite rule, add a `[[rules.required]]` table to the primary rule specifying an `id` and optionally `withinLines` and/or `withinColumns` proximity constraints. A fragment is a chunk of content that Gitleaks processes at once (typically a file, part of a file, or git diff), and proximity matching instructs the primary rule to only report a finding if the auxiliary `required` rules also find matches within the specified area of the fragment.
 
 **Proximity matching:** Using the `withinLines` and `withinColumns` fields instructs the primary rule to only report a finding if the auxiliary `required` rules also find matches within the specified proximity. You can set:
@@ -598,6 +586,7 @@ Gitleaks has built-in support for several report formats: [`json`](https://githu
 If none of these formats fit your need, you can create your own report format with a [Go `text/template` .tmpl file](https://www.digitalocean.com/community/tutorials/how-to-use-templates-in-go#step-4-writing-a-template) and the `--report-template` flag. The template can use [extended functionality from the `Masterminds/sprig` template library](https://masterminds.github.io/sprig/).
 
 For example, the following template provides a custom JSON output:
+
 ```gotemplate
 # jsonextra.tmpl
 [{{ $lastFinding := (sub (len . ) 1) }}
@@ -628,6 +617,7 @@ For example, the following template provides a custom JSON output:
 ```
 
 Usage:
+
 ```sh
 $ gitleaks dir ~/leaky-repo/ --report-path "report.json" --report-format template --report-template testdata/report/jsonextra.tmpl
 ```
@@ -641,7 +631,6 @@ $ gitleaks dir ~/leaky-repo/ --report-path "report.json" --report-format templat
 	  </a>
 </p>
 
-
 ## Exit Codes
 
 You can always set the exit code when leaks are encountered with the --exit-code flag. Default exit codes below:
@@ -653,3 +642,18 @@ You can always set the exit code when leaks are encountered with the --exit-code
 ```
 
 ### Join the Discord! [![Discord](https://img.shields.io/discord/1102689410522284044.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/8Hzbrnkr7E)
+
+[badge-build]: https://github.com/gitleaks/gitleaks/actions/workflows/test.yml/badge.svg
+[badge-license]: https://img.shields.io/github/license/gitleaks/gitleaks.svg
+[build]: https://github.com/gitleaks/gitleaks/actions/workflows/test.yml
+[dockerhub]: https://hub.docker.com/r/zricethezav/gitleaks
+[dockerhub-badge]: https://img.shields.io/docker/pulls/zricethezav/gitleaks.svg
+[gitleaks-action]: https://github.com/gitleaks/gitleaks-action
+[gitleaks-badge]: https://img.shields.io/badge/protected%20by-gitleaks-blue
+[gitleaks-playground]: https://gitleaks.io/playground
+[gitleaks-playground-badge]: https://img.shields.io/badge/gitleaks%20-playground-blue
+[go-docs]: https://pkg.go.dev/github.com/zricethezav/gitleaks/v8
+[go-docs-badge]: https://pkg.go.dev/badge/github.com/gitleaks/gitleaks/v8?status
+[go-report-card]: https://goreportcard.com/report/github.com/gitleaks/gitleaks/v8
+[go-report-card-badge]: https://goreportcard.com/badge/github.com/gitleaks/gitleaks/v8
+[license]: ./LICENSE

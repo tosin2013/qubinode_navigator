@@ -17,29 +17,29 @@ command_exists() {
 # Install Gitleaks
 install_gitleaks() {
     echo "📦 Installing Gitleaks..."
-    
+
     if command_exists gitleaks; then
         echo "✅ Gitleaks already installed: $(gitleaks version)"
         return 0
     fi
-    
+
     # Detect OS and architecture
     OS=$(uname -s | tr '[:upper:]' '[:lower:]')
     ARCH=$(uname -m)
-    
+
     case $ARCH in
         x86_64) ARCH="x64" ;;
         aarch64|arm64) ARCH="arm64" ;;
         *) echo "❌ Unsupported architecture: $ARCH"; exit 1 ;;
     esac
-    
+
     # Download latest Gitleaks
     GITLEAKS_VERSION="8.18.0"
     GITLEAKS_URL="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_${OS}_${ARCH}.tar.gz"
-    
+
     echo "📥 Downloading Gitleaks v${GITLEAKS_VERSION}..."
     curl -sSL "$GITLEAKS_URL" | tar -xz -C /tmp
-    
+
     # Install to /usr/local/bin (requires sudo) or ~/.local/bin
     if [[ $EUID -eq 0 ]] || sudo -n true 2>/dev/null; then
         sudo mv /tmp/gitleaks /usr/local/bin/
@@ -55,26 +55,26 @@ install_gitleaks() {
 # Install BFG Repo-Cleaner
 install_bfg() {
     echo "📦 Installing BFG Repo-Cleaner..."
-    
+
     if command_exists bfg; then
         echo "✅ BFG already installed"
         return 0
     fi
-    
+
     # Check for Java
     if ! command_exists java; then
         echo "❌ Java is required for BFG Repo-Cleaner"
         echo "   Install Java: sudo apt-get install openjdk-11-jre-headless"
         exit 1
     fi
-    
+
     # Download BFG
     BFG_VERSION="1.14.0"
     BFG_URL="https://repo1.maven.org/maven2/com/madgag/bfg/${BFG_VERSION}/bfg-${BFG_VERSION}.jar"
-    
+
     echo "📥 Downloading BFG Repo-Cleaner v${BFG_VERSION}..."
     curl -sSL "$BFG_URL" -o /tmp/bfg.jar
-    
+
     # Install BFG
     if [[ $EUID -eq 0 ]] || sudo -n true 2>/dev/null; then
         sudo mv /tmp/bfg.jar /usr/local/bin/bfg.jar
@@ -99,12 +99,12 @@ EOF
 # Install pre-commit
 install_precommit() {
     echo "📦 Installing pre-commit..."
-    
+
     if command_exists pre-commit; then
         echo "✅ pre-commit already installed: $(pre-commit --version)"
         return 0
     fi
-    
+
     if command_exists pip3; then
         pip3 install --user pre-commit
         echo "✅ pre-commit installed via pip3"
@@ -120,22 +120,22 @@ install_precommit() {
 # Create backup directory
 create_backup_structure() {
     echo "📁 Creating backup directory structure..."
-    
+
     BACKUP_DIR="$PROJECT_ROOT/.security-backups"
     mkdir -p "$BACKUP_DIR"/{git-bundles,file-backups,scan-results}
-    
+
     echo "✅ Backup structure created at $BACKUP_DIR"
 }
 
 # Main installation
 main() {
     echo "🚀 Starting DevSecOps tools installation..."
-    
+
     install_gitleaks
     install_bfg
     install_precommit
     create_backup_structure
-    
+
     echo ""
     echo "🎉 Installation complete!"
     echo ""

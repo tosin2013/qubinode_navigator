@@ -5,7 +5,7 @@
   vars:
     ai_mcp_port: 8081
     ai_api_key: "{{ lookup('env', 'MCP_API_KEY') | default('74008c5dde3fca81946c7a5c019ee1e64aef85dbe7a08c2ea9a709bdcfae1e0f') }}"
-  
+
   tasks:
     - name: Discover AI Assistant MCP Server Capabilities
       tosin2013.mcp_audit.mcp_server_info:
@@ -95,24 +95,24 @@
       ansible.builtin.copy:
         content: |
           # AI Assistant MCP Server Test Report
-          
+
           **Date:** {{ ansible_date_time.iso8601 }}
           **Server:** {{ ai_server_info.server_info.server_name }}
           **Protocol:** {{ ai_server_info.server_info.protocol_version }}
-          
+
           ## Tools Tested
-          
+
           1. **query_documents**: {{ 'PASS' if query_test.test_passed else 'FAIL' }}
              - Execution Time: {{ query_test.execution_time }}s
-          
+
           2. **chat_with_context**: {{ 'PASS' if chat_test.test_passed else 'FAIL' }}
              - Execution Time: {{ chat_test.execution_time }}s
-          
+
           3. **get_project_status**: {{ 'PASS' if status_test.test_passed else 'FAIL' }}
              - Execution Time: {{ status_test.execution_time }}s
-          
+
           ## Summary
-          
+
           - Total Tools: 3
           - Passed: {{ [query_test.test_passed, chat_test.test_passed, status_test.test_passed] | select('equalto', true) | list | length }}
           - Failed: {{ [query_test.test_passed, chat_test.test_passed, status_test.test_passed] | select('equalto', false) | list | length }}

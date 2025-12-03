@@ -1,9 +1,9 @@
 # ADR-0047: kcli-pipelines as DAG Source Repository
 
-**Status:** Proposed  
-**Date:** 2025-11-27  
-**Authors:** Qubinode Team  
-**Supersedes:** None  
+**Status:** Proposed
+**Date:** 2025-11-27
+**Authors:** Qubinode Team
+**Supersedes:** None
 **Related:** ADR-0039, ADR-0040, ADR-0045, ADR-0046
 
 ## Context
@@ -11,11 +11,12 @@
 Currently, Airflow DAGs contain embedded bash scripts that duplicate logic already present in kcli-pipelines deployment scripts. This creates:
 
 1. **Code duplication** - Same deployment logic in two places
-2. **Maintenance burden** - Updates needed in both DAG and deploy.sh
-3. **Inconsistency** - DAG and CLI deployments may behave differently
-4. **Harder contributions** - Users must understand both Airflow and bash
+1. **Maintenance burden** - Updates needed in both DAG and deploy.sh
+1. **Inconsistency** - DAG and CLI deployments may behave differently
+1. **Harder contributions** - Users must understand both Airflow and bash
 
 The kcli-pipelines repository already contains well-tested deployment scripts for:
+
 - VyOS Router (`vyos-router/deploy.sh`)
 - FreeIPA (`freeipa/deploy.sh` via freeipa-workshop-deployer)
 - OpenShift (`ocp4-ai-svc-universal/`)
@@ -57,11 +58,11 @@ deploy_task = BashOperator(
     task_id='deploy_component',
     bash_command='''
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
-    
+
     # Set environment variables for the script
     export ACTION="{{ params.action }}"
     export VYOS_VERSION="{{ params.vyos_version }}"
-    
+
     # Execute kcli-pipelines script on host via SSH (ADR-0046)
     ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
         "cd /opt/kcli-pipelines/vyos-router && \
@@ -98,23 +99,23 @@ kcli-pipelines/
 ### Contribution Workflow
 
 1. **User creates deployment script** in kcli-pipelines
-2. **User creates DAG** that calls the script
-3. **DAG follows qubinode-navigator standards** (ADR-0045)
-4. **PR submitted** to kcli-pipelines
-5. **DAG validated** using `validate-dag.sh`
-6. **Merged** and available to all users
+1. **User creates DAG** that calls the script
+1. **DAG follows qubinode-navigator standards** (ADR-0045)
+1. **PR submitted** to kcli-pipelines
+1. **DAG validated** using `validate-dag.sh`
+1. **Merged** and available to all users
 
 ### Standards for kcli-pipelines Scripts
 
 Scripts in kcli-pipelines must:
 
 1. **Support ACTION variable** - `create`, `delete`, `status`
-2. **Use environment variables** for configuration
-3. **Source default.env** if available
-4. **Print clear status messages** with `[OK]`, `[ERROR]`, `[WARN]` prefixes
-5. **Exit with proper codes** - 0 for success, non-zero for failure
-6. **Document manual steps** clearly when required
-7. **Be idempotent** - safe to run multiple times
+1. **Use environment variables** for configuration
+1. **Source default.env** if available
+1. **Print clear status messages** with `[OK]`, `[ERROR]`, `[WARN]` prefixes
+1. **Exit with proper codes** - 0 for success, non-zero for failure
+1. **Document manual steps** clearly when required
+1. **Be idempotent** - safe to run multiple times
 
 Example script structure:
 
@@ -165,8 +166,8 @@ esac
 DAGs are stored in `kcli-pipelines/dags/` and distributed to Airflow via:
 
 1. **Volume mount** - `/opt/kcli-pipelines/dags` mounted to Airflow
-2. **Git sync** - Airflow pulls from kcli-pipelines repo
-3. **Manual copy** - `deploy-qubinode-with-airflow.sh` copies DAGs
+1. **Git sync** - Airflow pulls from kcli-pipelines repo
+1. **Manual copy** - `deploy-qubinode-with-airflow.sh` copies DAGs
 
 ## Consequences
 
@@ -194,15 +195,18 @@ DAGs are stored in `kcli-pipelines/dags/` and distributed to Airflow via:
 ## Migration Plan
 
 1. **Phase 1**: Update existing DAGs to call kcli-pipelines scripts
+
    - VyOS router DAG → calls `vyos-router/deploy.sh`
    - FreeIPA DAG → calls freeipa-workshop-deployer scripts
 
-2. **Phase 2**: Document contribution guidelines
+1. **Phase 2**: Document contribution guidelines
+
    - Script standards
    - DAG template
    - Testing requirements
 
-3. **Phase 3**: Add validation
+1. **Phase 3**: Add validation
+
    - Script linting
    - DAG validation in CI/CD
    - Integration tests
@@ -216,10 +220,10 @@ create_vyos_vm = BashOperator(
     task_id='create_vyos_vm',
     bash_command='''
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
-    
+
     ACTION="create"
     VYOS_VERSION="{{ params.vyos_version }}"
-    
+
     # Execute kcli-pipelines script on host via SSH
     ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
         "export ACTION=$ACTION && \
@@ -274,9 +278,9 @@ deploy = BashOperator(
     task_id='deploy',
     bash_command=f'''
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
-    
+
     ACTION="{{{{ params.action }}}}"
-    
+
     ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
         "export ACTION=$ACTION && \
          cd {KCLI_PIPELINES_DIR}/{COMPONENT_DIR} && \
@@ -286,7 +290,7 @@ deploy = BashOperator(
 )
 ```
 
----
+______________________________________________________________________
 
 ## Related ADRs
 

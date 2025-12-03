@@ -1,20 +1,19 @@
----
-layout: default
-title: ADR-0023 Enhanced Configuration
-parent: Configuration & Automation
-grand_parent: Architectural Decision Records
-nav_order: 0023
----
+______________________________________________________________________
+
+## layout: default title: ADR-0023 Enhanced Configuration parent: Configuration & Automation grand_parent: Architectural Decision Records nav_order: 0023
 
 # ADR-0023: Enhanced Configuration Management with Template Support and HashiCorp Vault Integration
 
 ## Status
+
 Accepted
 
 ## Context
+
 The Qubinode Navigator project needed a more flexible and secure configuration management system to replace manual /tmp/config.yml creation. The existing load-variables.py script was functional but lacked template support and modern vault integration capabilities. With HashiCorp moving towards dedicated vault solutions and the need for environment-specific configurations, an enhanced system was required.
 
 Key challenges identified:
+
 - Manual creation of /tmp/config.yml was error-prone and inconsistent
 - No template system for environment-specific configurations
 - Limited HashiCorp Vault integration despite existing CI/CD usage
@@ -22,16 +21,18 @@ Key challenges identified:
 - Need for smooth migration path to modern secret management
 
 ## Decision
+
 Implement enhanced-load-variables.py with Jinja2 template support and HashiCorp Vault integration while maintaining full backward compatibility with existing workflows. The solution includes:
 
 1. **Template-based configuration generation** using Jinja2
-2. **HashiCorp Vault client integration** using hvac library  
-3. **Dynamic vault updates** following HashiCorp migration patterns
-4. **Secure file handling** with proper permissions (600)
-5. **Variable priority hierarchy**: env vars → vault → interactive → defaults
-6. **Environment-specific templates** for different deployment scenarios
+1. **HashiCorp Vault client integration** using hvac library
+1. **Dynamic vault updates** following HashiCorp migration patterns
+1. **Secure file handling** with proper permissions (600)
+1. **Variable priority hierarchy**: env vars → vault → interactive → defaults
+1. **Environment-specific templates** for different deployment scenarios
 
 ### Implementation Details
+
 - Enhanced script: `enhanced-load-variables.py`
 - Template directory: `templates/` with Jinja2 templates
 - Dependencies: jinja2, hvac (HashiCorp Vault client)
@@ -39,6 +40,7 @@ Implement enhanced-load-variables.py with Jinja2 template support and HashiCorp 
 - Security: Secure temporary file creation and cleanup
 
 ### Usage Examples
+
 ```bash
 # Basic template generation
 python3 enhanced-load-variables.py --generate-config --template default.yml.j2
@@ -55,6 +57,7 @@ python3 enhanced-load-variables.py --generate-config --template hetzner.yml.j2
 ## Consequences
 
 ### Positive
+
 - **Consistency**: Template-based approach ensures reproducible configurations across environments
 - **Security**: Enhanced file permissions, secure handling, and vault integration
 - **Flexibility**: Environment-specific templates and conditional logic
@@ -62,13 +65,15 @@ python3 enhanced-load-variables.py --generate-config --template hetzner.yml.j2
 - **Backward Compatibility**: Existing workflows continue to work unchanged
 - **Scalability**: Easy to add new environments and configuration options
 
-### Negative  
+### Negative
+
 - **Dependencies**: Introduces new Python dependencies (jinja2, hvac)
 - **Complexity**: Additional setup required for vault integration
 - **Learning Curve**: Template syntax and vault concepts for team members
 - **Maintenance**: Template files require ongoing maintenance
 
 ### Risks
+
 - **Vault Availability**: Dependency on external vault service availability
 - **Authentication**: Need for proper vault token management and rotation
 - **Template Maintenance**: Risk of template drift between environments
@@ -77,9 +82,9 @@ python3 enhanced-load-variables.py --generate-config --template hetzner.yml.j2
 ## Alternatives Considered
 
 1. **Continue with existing load-variables.py**: Rejected due to lack of flexibility and vault integration
-2. **Create completely new system**: Rejected due to backward compatibility concerns
-3. **Environment variables only**: Rejected due to lack of template support and security concerns
-4. **Vault integration without templates**: Rejected due to configuration consistency needs
+1. **Create completely new system**: Rejected due to backward compatibility concerns
+1. **Environment variables only**: Rejected due to lack of template support and security concerns
+1. **Vault integration without templates**: Rejected due to configuration consistency needs
 
 ## Evidence Supporting Decision
 
@@ -103,11 +108,13 @@ python3 enhanced-load-variables.py --generate-config --template hetzner.yml.j2
 - [ ] Create comprehensive documentation and examples
 
 ## Related ADRs
+
 - ADR-0003: Dynamic Configuration Management with Python
 - ADR-0004: Security Architecture with Ansible Vault
 - ADR-0011: Comprehensive Platform Validation
 
 ## References
+
 - HashiCorp Vault Secrets Migration Documentation
 - Enhanced load-variables.py implementation
 - Template system architecture in templates/ directory

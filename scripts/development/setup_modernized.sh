@@ -45,7 +45,7 @@ fi
 # Enhanced OS Detection Engine - The "Modern System Scanner"
 function get_os_version() {
     echo "🔍 Detecting operating system..."
-    
+
     if cat /etc/redhat-release 2>/dev/null | grep -q "Red Hat Enterprise Linux release 10"; then
         export BASE_OS="RHEL10"
         export PLUGIN_SELECTION="RHEL10Plugin"
@@ -76,7 +76,7 @@ function get_os_version() {
         echo "🔧 Consider contributing a plugin for your OS"
         exit 1
     fi
-    
+
     echo "✅ Detected: ${BASE_OS}"
     echo "🔌 Selected Plugin: ${PLUGIN_SELECTION}"
 }
@@ -84,9 +84,9 @@ function get_os_version() {
 # Cloud Provider Detection - The "Environment Intelligence"
 function detect_cloud_provider() {
     echo "🌐 Detecting cloud provider..."
-    
+
     export CLOUD_PLUGINS=""
-    
+
     # Detect Hetzner Cloud
     if curl -s --max-time 3 "http://169.254.169.254/hetzner/v1/metadata" >/dev/null 2>&1; then
         export CLOUD_PROVIDER="HETZNER"
@@ -117,7 +117,7 @@ function detect_cloud_provider() {
 # Plugin Framework Setup - The "Modern Infrastructure Initializer"
 function setup_plugin_framework() {
     echo "🔧 Setting up plugin framework..."
-    
+
     # Ensure we're in the right directory
     if [ ! -d "/root/qubinode_navigator" ]; then
         echo "📥 Cloning Qubinode Navigator..."
@@ -128,7 +128,7 @@ function setup_plugin_framework() {
         cd /root/qubinode_navigator
         git pull origin main
     fi
-    
+
     # Install Python dependencies for plugin framework
     echo "🐍 Installing Python dependencies..."
     if command -v dnf >/dev/null 2>&1; then
@@ -136,36 +136,36 @@ function setup_plugin_framework() {
     elif command -v yum >/dev/null 2>&1; then
         yum install -y python3 python3-pip python3-pyyaml
     fi
-    
+
     # Install plugin framework dependencies
     pip3 install pyyaml requests hvac python-dotenv
-    
+
     echo "✅ Plugin framework ready"
 }
 
 # Plugin Selection Intelligence - The "Smart Orchestrator"
 function select_plugins() {
     echo "🧠 Selecting appropriate plugins..."
-    
+
     export SELECTED_PLUGINS="${PLUGIN_SELECTION}"
-    
+
     # Add cloud plugins if detected
     if [ -n "$CLOUD_PLUGINS" ]; then
         export SELECTED_PLUGINS="${SELECTED_PLUGINS} ${CLOUD_PLUGINS}"
     fi
-    
+
     # Add service plugins based on configuration
     if [ -f "/tmp/config.yml" ] && grep -q "vault\|VAULT" /tmp/config.yml 2>/dev/null; then
         export SELECTED_PLUGINS="${SELECTED_PLUGINS} VaultIntegrationPlugin"
     fi
-    
+
     echo "🔌 Selected Plugins: ${SELECTED_PLUGINS}"
 }
 
 # Plugin Execution - The "Orchestrated Deployment"
 function execute_plugins() {
     echo "🚀 Executing plugin-based deployment..."
-    
+
     # Update plugin configuration to enable selected plugins
     python3 -c "
 import yaml
@@ -175,24 +175,24 @@ config_file = 'config/plugins.yml'
 try:
     with open(config_file, 'r') as f:
         config = yaml.safe_load(f)
-    
+
     # Update enabled plugins
     plugins = '${SELECTED_PLUGINS}'.split()
     config['plugins']['enabled'] = plugins
-    
+
     with open(config_file, 'w') as f:
         yaml.dump(config, f, default_flow_style=False, indent=2)
-    
+
     print(f'✅ Updated plugin configuration: {plugins}')
 except Exception as e:
     print(f'❌ Failed to update plugin configuration: {e}')
     sys.exit(1)
 "
-    
+
     # Execute plugins using the CLI
     echo "🔄 Running plugin orchestration..."
     python3 qubinode_cli.py execute
-    
+
     if [ $? -eq 0 ]; then
         echo "✅ Plugin execution completed successfully"
     else
@@ -225,7 +225,7 @@ function provide_next_steps() {
     echo ""
     echo "🎯 Next Steps"
     echo "============="
-    
+
     case $CLOUD_PROVIDER in
         "HETZNER_DEMO")
             echo "🔧 Hetzner Deployment Detected:"
@@ -247,7 +247,7 @@ function provide_next_steps() {
             echo "   3. Continue with Ansible playbook execution"
             ;;
     esac
-    
+
     echo ""
     echo "📚 For more information:"
     echo "   • Plugin Status: python3 qubinode_cli.py status"
@@ -259,24 +259,24 @@ function provide_next_steps() {
 function main() {
     echo "🚀 Qubinode Navigator Setup (Plugin Framework v${PLUGIN_FRAMEWORK_VERSION})"
     echo "========================================================================="
-    
+
     # Phase 1: Detection
     get_os_version
     detect_cloud_provider
-    
+
     # Phase 2: Setup
     setup_plugin_framework
-    
+
     # Phase 3: Intelligence
     select_plugins
-    
+
     # Phase 4: Execution
     execute_plugins
-    
+
     # Phase 5: Guidance
     provide_compatibility_info
     provide_next_steps
-    
+
     echo ""
     echo "🎉 Qubinode Navigator setup completed successfully!"
     echo "🔌 Plugin framework is ready for deployment"

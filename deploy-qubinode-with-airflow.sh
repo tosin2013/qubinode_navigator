@@ -77,16 +77,16 @@ VAULT_FILE="$SCRIPT_DIR/inventories/${INVENTORY}/group_vars/control/vault.yml"
 if [[ ! -f "$VAULT_FILE" ]]; then
     echo -e "${YELLOW}Warning: vault.yml not found at $VAULT_FILE${NC}"
     echo -e "${CYAN}Creating vault.yml with default credentials...${NC}"
-    
+
     # Ensure directory exists
     mkdir -p "$SCRIPT_DIR/inventories/${INVENTORY}/group_vars/control"
-    
+
     # Get password from notouch.env or use default
     if [[ -f "$SCRIPT_DIR/notouch.env" ]]; then
         source "$SCRIPT_DIR/notouch.env"
     fi
     VAULT_PASSWORD="${SSH_PASSWORD:-COmp123\$%}"
-    
+
     # Create vault file
     cat > "$VAULT_FILE" << VAULTEOF
 ---
@@ -105,7 +105,7 @@ rhsm_password: ""
 # OpenShift Pull Secret (optional)
 openshift_pull_secret: ""
 VAULTEOF
-    
+
     # Encrypt if vault password file exists
     if [[ -f "$HOME/.vault_password" ]]; then
         ansible-vault encrypt "$VAULT_FILE" --vault-password-file "$HOME/.vault_password" --encrypt-vault-id default 2>/dev/null || \
@@ -222,12 +222,12 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        
+
         # WebSocket support for live updates
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
-        
+
         # Timeouts
         proxy_connect_timeout 300s;
         proxy_send_timeout 300s;
@@ -241,7 +241,7 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        
+
         proxy_connect_timeout 300s;
         proxy_send_timeout 300s;
         proxy_read_timeout 300s;

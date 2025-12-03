@@ -1,9 +1,11 @@
 # ADR-0053: Dynamic Secrets for Apache Airflow Tasks
 
 ## Status
+
 Accepted
 
 ## Date
+
 2025-12-01
 
 ## Context
@@ -11,17 +13,19 @@ Accepted
 Airflow DAGs in Qubinode Navigator perform operations that require credentials:
 
 1. **Database Operations**: PostgreSQL, Redis connections for data pipelines
-2. **Cloud Deployments**: AWS, GCP, Azure credentials for VM provisioning
-3. **SSH Access**: Keys for connecting to deployed VMs
-4. **API Access**: External service API keys
+1. **Cloud Deployments**: AWS, GCP, Azure credentials for VM provisioning
+1. **SSH Access**: Keys for connecting to deployed VMs
+1. **API Access**: External service API keys
 
 Currently, these credentials are:
+
 - Stored as static Airflow connections/variables
 - Long-lived (months or years)
 - Manually rotated (if at all)
 - Shared across all DAGs regardless of need
 
 This creates security risks:
+
 - **Blast Radius**: Compromised credential exposes all resources it can access
 - **Stale Credentials**: Unused credentials remain active indefinitely
 - **Over-Provisioning**: DAGs have access to more than they need
@@ -430,32 +434,35 @@ with DAG(
 
 ### Mitigations
 
-| Concern | Mitigation |
-|---------|------------|
-| Latency | Connection pooling; credential caching within task |
-| Vault availability | HA Vault cluster; retry with exponential backoff |
-| Complexity | Wrapper operators; sensible defaults |
-| Lease expiry | Auto-renewal; graceful handling of revocation |
+| Concern            | Mitigation                                         |
+| ------------------ | -------------------------------------------------- |
+| Latency            | Connection pooling; credential caching within task |
+| Vault availability | HA Vault cluster; retry with exponential backoff   |
+| Complexity         | Wrapper operators; sensible defaults               |
+| Lease expiry       | Auto-renewal; graceful handling of revocation      |
 
 ## Implementation Plan
 
 ### Phase 1: Database Dynamic Secrets
+
 1. Configure PostgreSQL secrets engine
-2. Create Airflow-specific roles
-3. Implement VaultDatabaseCredsOperator
-4. Test with example DAG
+1. Create Airflow-specific roles
+1. Implement VaultDatabaseCredsOperator
+1. Test with example DAG
 
 ### Phase 2: Cloud Provider Secrets
+
 1. Configure AWS secrets engine
-2. Create deployment roles with least privilege
-3. Implement VaultAWSCredsOperator
-4. Update existing deployment DAGs
+1. Create deployment roles with least privilege
+1. Implement VaultAWSCredsOperator
+1. Update existing deployment DAGs
 
 ### Phase 3: SSH Certificate Authority
+
 1. Configure SSH secrets engine as CA
-2. Deploy CA public key to VMs
-3. Implement VaultSSHSignOperator
-4. Update VM access workflows
+1. Deploy CA public key to VMs
+1. Implement VaultSSHSignOperator
+1. Update VM access workflows
 
 ## References
 

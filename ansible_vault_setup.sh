@@ -35,7 +35,7 @@ if [[ ! -f "$VPF_PATH" ]]; then
     echo "Done. Please source your 'source ~/.bashrc' file to load the ANSIBLE_VAULT_PASSWORD_FILE environment variable."
     echo "Done."
     exit 0
-fi 
+fi
 
 if [[ -f "$VPF_PATH" ]]; then
     echo "The .vault_password file already exists. Skipping password setup."
@@ -59,6 +59,3 @@ if [[ -f ".vault_password" ]]; then
     echo "Done. Please source your 'source ~/.bashrc' file to load the ANSIBLE_VAULT_PASSWORD_FILE environment variable."
     echo "Done."
 fi
-
-
-

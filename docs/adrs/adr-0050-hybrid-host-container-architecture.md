@@ -1,14 +1,11 @@
----
-layout: default
-title: ADR-0050 Hybrid Host-Container Architecture
-parent: Architecture & Design
-grand_parent: Architectural Decision Records
-nav_order: 0050
----
+______________________________________________________________________
+
+## layout: default title: ADR-0050 Hybrid Host-Container Architecture parent: Architecture & Design grand_parent: Architectural Decision Records nav_order: 0050
 
 # ADR-0050: Hybrid Host-Container Architecture for Resource Optimization
 
 ## Status
+
 Proposed (2025-12-01)
 
 ## Context
@@ -17,31 +14,32 @@ Proposed (2025-12-01)
 
 ADR-0049 introduced a multi-agent LLM architecture with several heavy dependencies:
 
-| Component | Size Impact | Reason |
-|-----------|-------------|--------|
-| sentence-transformers | ~1.5GB | PyTorch + model weights |
-| litellm + aider-chat | ~500MB+ | LLM routing + code agent |
-| libvirt-dev, gcc, python3-dev | ~300MB | Build dependencies |
+| Component                     | Size Impact | Reason                   |
+| ----------------------------- | ----------- | ------------------------ |
+| sentence-transformers         | ~1.5GB      | PyTorch + model weights  |
+| litellm + aider-chat          | ~500MB+     | LLM routing + code agent |
+| libvirt-dev, gcc, python3-dev | ~300MB      | Build dependencies       |
 
 The resulting Airflow container image is **~10.5GB**, which causes:
 
 1. **Long build times** (~10-15 minutes)
-2. **High memory usage** when container starts
-3. **Slow deployment** when pulling/pushing images
-4. **Resource contention** with actual workloads
+1. **High memory usage** when container starts
+1. **Slow deployment** when pulling/pushing images
+1. **Resource contention** with actual workloads
 
 ### Scheduler Memory Issues
 
 Research into Airflow scheduler crashes revealed several issues affecting RHEL-based systems:
 
 1. **Known memory leaks** in Airflow 2.10.x ([Issue #50708](https://github.com/apache/airflow/issues/50708))
-2. **nofile ulimit issue** on RHEL/Rocky causing memory explosion ([Discussion #29731](https://github.com/apache/airflow/discussions/29731))
-3. **DAG parsing overhead** - complex DAGs parsed frequently consume memory
-4. **Top-level code execution** - imports outside tasks run on every parse
+1. **nofile ulimit issue** on RHEL/Rocky causing memory explosion ([Discussion #29731](https://github.com/apache/airflow/discussions/29731))
+1. **DAG parsing overhead** - complex DAGs parsed frequently consume memory
+1. **Top-level code execution** - imports outside tasks run on every parse
 
 ### Current Architecture (ADR-0049)
 
 All components run in containers:
+
 ```
 ┌─────────────────────────────────────────────────┐
 │  Container: qubinode-airflow (10.5GB)           │
@@ -56,9 +54,9 @@ All components run in containers:
 ### Why This Doesn't Work for Qubinode
 
 1. **Hypervisor host has limited resources** - VMs need the memory, not containers
-2. **kcli needs direct libvirt access** - socket mounting is fragile
-3. **Embedding models benefit from GPU** - containers can't easily access host GPU
-4. **Ollama/Granite already runs on host** - duplicating in container is wasteful
+1. **kcli needs direct libvirt access** - socket mounting is fragile
+1. **Embedding models benefit from GPU** - containers can't easily access host GPU
+1. **Ollama/Granite already runs on host** - duplicating in container is wasteful
 
 ## Decision
 
@@ -123,29 +121,29 @@ Implement a **hybrid architecture** where heavy AI/ML components run on the host
 
 ### Component Placement Decision Matrix
 
-| Component | Container | Host | Reason |
-|-----------|:---------:|:----:|--------|
-| PostgreSQL + PgVector | ✅ | | Easy to manage, isolated data |
-| Airflow Scheduler | ✅ | | Containerized orchestration |
-| Airflow Webserver | ✅ | | Web UI isolation |
-| MCP Server | ✅ | | Lightweight, needs Airflow access |
-| Marquez | ✅ | | Lineage storage, optional |
-| **Embedding Service** | | ✅ | Heavy (PyTorch), GPU access |
-| **LiteLLM Proxy** | | ✅ | Connects to host Ollama |
-| **Aider** | | ✅ | Needs git/filesystem access |
-| **kcli** | | ✅ | Direct libvirt access |
-| **Ollama** | | ✅ | Already running on host |
+| Component             | Container | Host | Reason                            |
+| --------------------- | :-------: | :--: | --------------------------------- |
+| PostgreSQL + PgVector |    ✅     |      | Easy to manage, isolated data     |
+| Airflow Scheduler     |    ✅     |      | Containerized orchestration       |
+| Airflow Webserver     |    ✅     |      | Web UI isolation                  |
+| MCP Server            |    ✅     |      | Lightweight, needs Airflow access |
+| Marquez               |    ✅     |      | Lineage storage, optional         |
+| **Embedding Service** |           |  ✅  | Heavy (PyTorch), GPU access       |
+| **LiteLLM Proxy**     |           |  ✅  | Connects to host Ollama           |
+| **Aider**             |           |  ✅  | Needs git/filesystem access       |
+| **kcli**              |           |  ✅  | Direct libvirt access             |
+| **Ollama**            |           |  ✅  | Already running on host           |
 
 ### Memory Budget
 
 **Total host memory assumption: 32GB**
 
-| Component | Memory Limit | Notes |
-|-----------|-------------|-------|
-| **Host VMs** | ~20GB | Primary workload |
-| **Host Services** | ~4GB | Embedding (2GB), LiteLLM (512MB), Ollama (1.5GB) |
-| **Containers** | ~6GB | Postgres (1GB), Scheduler (2GB), Web (1GB), MCP (512MB), Marquez (1.25GB) |
-| **OS/Buffer** | ~2GB | System overhead |
+| Component         | Memory Limit | Notes                                                                     |
+| ----------------- | ------------ | ------------------------------------------------------------------------- |
+| **Host VMs**      | ~20GB        | Primary workload                                                          |
+| **Host Services** | ~4GB         | Embedding (2GB), LiteLLM (512MB), Ollama (1.5GB)                          |
+| **Containers**    | ~6GB         | Postgres (1GB), Scheduler (2GB), Web (1GB), MCP (512MB), Marquez (1.25GB) |
+| **OS/Buffer**     | ~2GB         | System overhead                                                           |
 
 ### Container Resource Limits
 
@@ -227,6 +225,7 @@ if __name__ == "__main__":
 ```
 
 Systemd service:
+
 ```ini
 # /etc/systemd/system/qubinode-embedding.service
 [Unit]
@@ -276,6 +275,7 @@ litellm_settings:
 ```
 
 Systemd service:
+
 ```ini
 # /etc/systemd/system/qubinode-litellm.service
 [Unit]
@@ -399,44 +399,47 @@ fi
 ### Positive
 
 1. **Smaller container images** - ~2-3GB vs 10.5GB
-2. **Faster deployments** - Less to pull/push
-3. **Better resource utilization** - Host services share memory efficiently
-4. **GPU access** - Embedding service can use host GPU if available
-5. **Stable scheduler** - Memory limits and ulimits prevent crashes
-6. **Simpler kcli integration** - No socket mounting needed
-7. **Reusable services** - Embedding/LiteLLM can serve multiple tools
+1. **Faster deployments** - Less to pull/push
+1. **Better resource utilization** - Host services share memory efficiently
+1. **GPU access** - Embedding service can use host GPU if available
+1. **Stable scheduler** - Memory limits and ulimits prevent crashes
+1. **Simpler kcli integration** - No socket mounting needed
+1. **Reusable services** - Embedding/LiteLLM can serve multiple tools
 
 ### Negative
 
 1. **More components to manage** - Host services + containers
-2. **Service dependencies** - Containers depend on host services
-3. **Deployment complexity** - deploy-qubinode.sh must install host services
-4. **Network assumptions** - Relies on localhost connectivity
+1. **Service dependencies** - Containers depend on host services
+1. **Deployment complexity** - deploy-qubinode.sh must install host services
+1. **Network assumptions** - Relies on localhost connectivity
 
 ### Mitigations
 
-| Risk | Mitigation |
-|------|------------|
-| Service discovery | All services use well-known localhost ports |
-| Service health | Systemd auto-restart + health endpoints |
-| Deployment order | deploy-qubinode.sh installs host services first |
-| Configuration drift | All config in version-controlled files |
+| Risk                | Mitigation                                      |
+| ------------------- | ----------------------------------------------- |
+| Service discovery   | All services use well-known localhost ports     |
+| Service health      | Systemd auto-restart + health endpoints         |
+| Deployment order    | deploy-qubinode.sh installs host services first |
+| Configuration drift | All config in version-controlled files          |
 
 ## Implementation Phases
 
 ### Phase 1: Container Optimization (This ADR)
+
 - ✅ Add memory limits to docker-compose.yml
 - ✅ Add ulimits for RHEL compatibility
 - ✅ Add scheduler optimization settings
 - [ ] Create slim Dockerfile
 
 ### Phase 2: Host Services
+
 - [ ] Create embedding service script
 - [ ] Create LiteLLM config
 - [ ] Create systemd unit files
 - [ ] Update deploy-qubinode.sh
 
 ### Phase 3: Integration
+
 - [ ] Update Airflow plugins to use host services
 - [ ] Update MCP tools to use LiteLLM proxy
 - [ ] Test end-to-end workflow
