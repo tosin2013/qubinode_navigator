@@ -7,6 +7,8 @@ on:
       - "MCP Server CI/CD"
       - "Airflow DAG CI/CD"
       - "Deploy Documentation to GitHub Pages"
+      - "Pre-commit"
+      - "Airflow Validation"
     types:
       - completed
 
