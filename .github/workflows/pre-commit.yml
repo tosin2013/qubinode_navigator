@@ -101,7 +101,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install apache-airflow==2.10.4
-          pip install apache-airflow-providers-postgres
+          pip install 'apache-airflow-providers-postgres<6.0.0'
           pip install pylint pylint-airflow airflint
           pip install pyyaml
 
@@ -163,11 +163,11 @@ jobs:
 
           cd airflow
 
-          # Initialize Airflow DB (use python -m to ensure correct path)
-          python -m airflow db init 2>/dev/null || python -m airflow db migrate 2>/dev/null
+          # Initialize Airflow DB
+          airflow db init 2>/dev/null || airflow db migrate 2>/dev/null
 
           # List DAGs and check for import errors
-          python -m airflow dags list 2>&1 | tee dag_list.txt
+          airflow dags list 2>&1 | tee dag_list.txt
 
           if grep -iE "error|exception" dag_list.txt | grep -v "No data found"; then
             echo "[ERROR] DAG import errors detected"
