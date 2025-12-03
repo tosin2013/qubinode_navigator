@@ -86,7 +86,7 @@ jobs:
           export AIRFLOW_HOME=$(pwd)
           export AIRFLOW__CORE__DAGS_FOLDER=$(pwd)/dags
           export AIRFLOW__CORE__LOAD_EXAMPLES=false
-          export AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=sqlite:///airflow.db
+          export AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=sqlite:///$(pwd)/airflow.db
 
           # Initialize minimal Airflow DB
           airflow db init
