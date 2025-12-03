@@ -19,7 +19,11 @@ RUN pip install --no-cache-dir \
     pgvector>=0.2.0 \
     psycopg2-binary>=2.9.0 \
     # Pydantic for data validation
-    pydantic>=2.0.0
+    pydantic>=2.0.0 \
+    # YAML parsing for dag_factory registry support
+    pyyaml>=6.0.0 \
+    # Graphviz for DAG visualization (optional but recommended)
+    graphviz>=0.20.0
 
 # ADR-0049 Phase 4: OpenLineage integration for data/code lineage
 RUN pip install --no-cache-dir \
