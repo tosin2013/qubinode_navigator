@@ -18,8 +18,6 @@ from datetime import datetime, timedelta
 from airflow.models import Variable
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator, PythonOperator
-from airflow.sensors.base import BaseSensorOperator
-from airflow.utils.decorators import apply_defaults
 
 from airflow import DAG
 

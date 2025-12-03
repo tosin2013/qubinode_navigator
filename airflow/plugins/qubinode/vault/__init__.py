@@ -35,7 +35,7 @@ __all__ = [
 def __getattr__(name):
     """Lazy load vault components."""
     if name in __all__:
-        from qubinode.vault import operators
+        from . import operators
 
         return getattr(operators, name)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
