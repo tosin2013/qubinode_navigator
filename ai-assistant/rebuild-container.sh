@@ -1,37 +1,68 @@
 #!/bin/bash
-# Rebuild AI Assistant container with llama.cpp fix
-# This script rebuilds the container to fix the missing llama.cpp server issue
+# Rebuild AI Assistant container with llama.cpp and Marquez integration
+# This script rebuilds the container and provides proper run commands
 
 set -e
 
-echo "🔧 Rebuilding AI Assistant container with llama.cpp fix..."
+echo "============================================================"
+echo "Rebuilding AI Assistant Container"
+echo "============================================================"
 
 # Navigate to AI Assistant directory
 cd "$(dirname "$0")"
 
+# Detect container runtime (podman or docker)
+if command -v podman &>/dev/null; then
+    CONTAINER_CMD="podman"
+elif command -v docker &>/dev/null; then
+    CONTAINER_CMD="docker"
+else
+    echo "[ERROR] No container runtime found (podman or docker)"
+    exit 1
+fi
+echo "[INFO] Using container runtime: $CONTAINER_CMD"
+
 # Stop any running containers
-echo "📦 Stopping existing AI Assistant containers..."
-docker stop qubinode-ai-assistant 2>/dev/null || true
-docker rm qubinode-ai-assistant 2>/dev/null || true
+echo "[INFO] Stopping existing AI Assistant containers..."
+$CONTAINER_CMD stop qubinode-ai-assistant 2>/dev/null || true
+$CONTAINER_CMD rm qubinode-ai-assistant 2>/dev/null || true
 
 # Remove old image to force rebuild
-echo "🗑️  Removing old container image..."
-docker rmi qubinode-ai-assistant:latest 2>/dev/null || true
+echo "[INFO] Removing old container image..."
+$CONTAINER_CMD rmi qubinode-ai-assistant:latest 2>/dev/null || true
 
 # Build new container
-echo "🏗️  Building new container with llama.cpp fix..."
-docker build -t qubinode-ai-assistant:latest .
+echo "[INFO] Building new container..."
+$CONTAINER_CMD build -t qubinode-ai-assistant:latest .
 
 # Verify the build was successful
 if [ $? -eq 0 ]; then
-    echo "✅ Container rebuilt successfully!"
     echo ""
-    echo "🚀 To start the AI Assistant:"
-    echo "   docker run -d --name qubinode-ai-assistant -p 8080:8080 qubinode-ai-assistant:latest"
+    echo "[OK] Container rebuilt successfully!"
     echo ""
-    echo "📋 To check logs:"
-    echo "   docker logs -f qubinode-ai-assistant"
+
+    # Get host IP for Marquez connection
+    HOST_IP=$(ip route get 1 2>/dev/null | awk '{print $7; exit}' || echo "host.containers.internal")
+
+    echo "============================================================"
+    echo "To start the AI Assistant with Marquez/OpenLineage support:"
+    echo "============================================================"
+    echo ""
+    echo "$CONTAINER_CMD run -d \\"
+    echo "  --name qubinode-ai-assistant \\"
+    echo "  -p 8080:8080 \\"
+    echo "  -e MARQUEZ_API_URL=\"http://${HOST_IP}:5001\" \\"
+    echo "  -e OPENLINEAGE_NAMESPACE=\"qubinode\" \\"
+    echo "  qubinode-ai-assistant:latest"
+    echo ""
+    echo "============================================================"
+    echo "Without Marquez (standalone mode):"
+    echo "============================================================"
+    echo ""
+    echo "$CONTAINER_CMD run -d --name qubinode-ai-assistant -p 8080:8080 qubinode-ai-assistant:latest"
+    echo ""
+    echo "[INFO] To check logs: $CONTAINER_CMD logs -f qubinode-ai-assistant"
 else
-    echo "❌ Container build failed!"
+    echo "[ERROR] Container build failed!"
     exit 1
 fi

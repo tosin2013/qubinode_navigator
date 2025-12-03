@@ -25,17 +25,61 @@ logger = logging.getLogger(__name__)
 class MarquezContextService:
     """Service for querying Marquez lineage data to enrich AI context."""
 
+    # Common host addresses to try when MARQUEZ_API_URL is not set
+    # Order: explicit env var > host.containers.internal (podman/docker) > localhost
+    DEFAULT_HOSTS = [
+        "host.containers.internal",  # Podman/Docker host access
+        "host.docker.internal",      # Docker Desktop host access
+        "172.17.0.1",                # Default Docker bridge gateway
+        "localhost",                 # Local development
+    ]
+
     def __init__(self, marquez_url: str = None):
-        self.marquez_url = marquez_url or os.getenv("MARQUEZ_API_URL", "http://localhost:5001")
+        self.marquez_url = marquez_url or os.getenv("MARQUEZ_API_URL")
         self.namespace = os.getenv("OPENLINEAGE_NAMESPACE", "qubinode")
         self.client = httpx.AsyncClient(timeout=10.0)
         self._cache = {}
         self._cache_ttl = 60  # Cache for 60 seconds
+        self._discovered_url = None
+
+    async def _discover_marquez_url(self) -> Optional[str]:
+        """Try to discover Marquez URL by testing multiple host options."""
+        if self._discovered_url:
+            return self._discovered_url
+
+        # If URL is explicitly set, use it
+        if self.marquez_url:
+            return self.marquez_url
+
+        # Try each host in order
+        for host in self.DEFAULT_HOSTS:
+            test_url = f"http://{host}:5001"
+            try:
+                response = await self.client.get(
+                    f"{test_url}/api/v1/namespaces",
+                    timeout=3.0
+                )
+                if response.status_code == 200:
+                    logger.info(f"Discovered Marquez at {test_url}")
+                    self._discovered_url = test_url
+                    self.marquez_url = test_url
+                    return test_url
+            except Exception:
+                logger.debug(f"Marquez not available at {test_url}")
+                continue
+
+        logger.warning("Could not discover Marquez URL - tried all default hosts")
+        return None
 
     async def is_available(self) -> bool:
         """Check if Marquez is available."""
         try:
-            response = await self.client.get(f"{self.marquez_url}/api/v1/namespaces")
+            # Try to discover URL if not set
+            url = await self._discover_marquez_url()
+            if not url:
+                return False
+
+            response = await self.client.get(f"{url}/api/v1/namespaces")
             return response.status_code == 200
         except Exception as e:
             logger.debug(f"Marquez not available: {e}")
