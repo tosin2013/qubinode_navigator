@@ -4,29 +4,41 @@ Embeds AI Assistant chat interface directly into Airflow webserver
 Based on: ADR-0036 (Chat Interface Integration)
 """
 
-from airflow.plugins_manager import AirflowPlugin
-from flask import Blueprint, jsonify, request, render_template_string
-from flask_appbuilder import BaseView, expose
-from airflow.www.app import csrf
-import requests
+import json
 import logging
 import subprocess
-import json
-from qubinode.dag_diagnostics import format_diagnostic_report, DIAGNOSTIC_COMMANDS
+
+import requests
+from airflow.plugins_manager import AirflowPlugin
+from airflow.www.app import csrf
+from flask import Blueprint, jsonify, render_template_string, request
+from flask_appbuilder import BaseView, expose
+from qubinode.dag_diagnostics import DIAGNOSTIC_COMMANDS, format_diagnostic_report
 
 logger = logging.getLogger(__name__)
 
 # AI Assistant API configuration
 # Using container name for communication within the same Podman network
-AI_ASSISTANT_URL = "http://qubinode-ai-assistant:8080"  # Container name on airflow_default network
+AI_ASSISTANT_URL = (
+    "http://qubinode-ai-assistant:8080"  # Container name on airflow_default network
+)
 
 # Safe commands that can be executed (read-only operations)
 SAFE_COMMANDS = {
     "airflow": ["dags", "list", "tasks", "pools", "connections"],
     "kcli": ["list", "info"],
-    "virsh": ["list", "dominfo", "net-list", "pool-list", "nodeinfo", "version", "capabilities"],
-    "system": ["ls", "cat", "grep", "find", "df", "free", "uptime", "date"]
+    "virsh": [
+        "list",
+        "dominfo",
+        "net-list",
+        "pool-list",
+        "nodeinfo",
+        "version",
+        "capabilities",
+    ],
+    "system": ["ls", "cat", "grep", "find", "df", "free", "uptime", "date"],
 }
+
 
 def execute_safe_command(command_parts):
     """
@@ -35,23 +47,25 @@ def execute_safe_command(command_parts):
     """
     if not command_parts or len(command_parts) == 0:
         return {"error": "No command provided", "returncode": 1}
-    
+
     base_cmd = command_parts[0]
-    
+
     # Security check: only allow whitelisted commands
     allowed = False
     for cmd_category, allowed_cmds in SAFE_COMMANDS.items():
-        if base_cmd in allowed_cmds or any(base_cmd.startswith(ac) for ac in allowed_cmds):
+        if base_cmd in allowed_cmds or any(
+            base_cmd.startswith(ac) for ac in allowed_cmds
+        ):
             allowed = True
             break
-    
+
     if not allowed:
         return {
             "error": f"Command '{base_cmd}' not allowed. Only read-only commands are permitted.",
             "returncode": 1,
-            "allowed_commands": SAFE_COMMANDS
+            "allowed_commands": SAFE_COMMANDS,
         }
-    
+
     try:
         # Execute as current user (airflow user in container, not root)
         result = subprocess.run(
@@ -59,14 +73,14 @@ def execute_safe_command(command_parts):
             capture_output=True,
             text=True,
             timeout=30,
-            shell=False  # Prevent shell injection
+            shell=False,  # Prevent shell injection
         )
-        
+
         return {
             "stdout": result.stdout,
             "stderr": result.stderr,
             "returncode": result.returncode,
-            "success": result.returncode == 0
+            "success": result.returncode == 0,
         }
     except subprocess.TimeoutExpired:
         return {"error": "Command timed out after 30 seconds", "returncode": 124}
@@ -78,14 +92,14 @@ class AIAssistantChatView(BaseView):
     """
     Custom view that provides AI Assistant chat interface in Airflow UI
     """
-    
+
     default_view = "chat"
     route_base = "/ai-assistant"
-    
+
     @expose("/")
     def chat(self):
         """Render the AI Assistant chat interface"""
-        
+
         chat_html = """
         <!DOCTYPE html>
         <html>
@@ -451,9 +465,9 @@ class AIAssistantChatView(BaseView):
         </body>
         </html>
         """
-        
+
         return render_template_string(chat_html)
-    
+
     @expose("/logs/<dag_id>/<task_id>/<run_id>")
     def view_logs(self, dag_id, task_id, run_id):
         """Quick log viewer for task logs"""
@@ -464,11 +478,11 @@ class AIAssistantChatView(BaseView):
                 capture_output=True,
                 text=True,
                 timeout=30,
-                cwd="/opt/airflow"
+                cwd="/opt/airflow",
             )
-            
+
             logs = result.stdout if result.returncode == 0 else result.stderr
-            
+
             html = f"""
             <!DOCTYPE html>
             <html>
@@ -531,12 +545,12 @@ class AIAssistantChatView(BaseView):
             </body>
             </html>
             """
-            
+
             return html
-            
+
         except Exception as e:
             return f"<html><body><h1>Error</h1><pre>{str(e)}</pre></body></html>"
-    
+
     @expose("/api/chat", methods=["POST"])
     @csrf.exempt  # Exempt from CSRF protection for API endpoint
     def chat_api(self):
@@ -545,10 +559,10 @@ class AIAssistantChatView(BaseView):
             data = request.get_json()
             message = data.get("message", "")
             context = data.get("context", {})
-            
+
             if not message:
                 return jsonify({"error": "Message is required"}), 400
-            
+
             # Add comprehensive Airflow and system context
             context["airflow_integration"] = True
             context["environment"] = {
@@ -556,7 +570,7 @@ class AIAssistantChatView(BaseView):
                 "deployment": "Qubinode Navigator - Podman containerized",
                 "hypervisor": "KVM/libvirt (qemu:///system)",
                 "container_runtime": "Podman",
-                "network": "airflow_default (shared with AI Assistant)"
+                "network": "airflow_default (shared with AI Assistant)",
             }
             context["tools_available"] = {
                 "kcli": {
@@ -567,13 +581,13 @@ class AIAssistantChatView(BaseView):
                         "Manage VM lifecycle (start, stop, delete)",
                         "List VMs and images",
                         "SSH into VMs",
-                        "Use profiles for templated deployments"
+                        "Use profiles for templated deployments",
                     ],
                     "example_commands": [
                         "kcli list vm",
                         "kcli create vm myvm --image centos-stream-10",
-                        "kcli delete vm myvm"
-                    ]
+                        "kcli delete vm myvm",
+                    ],
                 },
                 "virsh": {
                     "version": "libvirt 9.0.0 / QEMU 10.1.0",
@@ -584,92 +598,99 @@ class AIAssistantChatView(BaseView):
                         "Network management (virsh net-list)",
                         "Storage pool management (virsh pool-list)",
                         "Snapshot management",
-                        "XML configuration editing"
+                        "XML configuration editing",
                     ],
                     "example_commands": [
                         "virsh list --all",
                         "virsh dominfo <vm>",
                         "virsh net-list --all",
-                        "virsh nodeinfo"
-                    ]
+                        "virsh nodeinfo",
+                    ],
                 },
                 "airflow": {
                     "version": "2.10.4",
                     "description": "Workflow orchestration platform",
                     "ui_url": "http://localhost:8888",
-                    "credentials": "admin/admin"
-                }
+                    "credentials": "admin/admin",
+                },
             }
             context["available_operators"] = {
                 "kcli_operators": [
                     {
                         "name": "KcliVMCreateOperator",
                         "description": "Create VMs using kcli with optional AI assistance",
-                        "parameters": ["vm_name", "image", "memory", "cpus", "profile", "ai_assisted"]
+                        "parameters": [
+                            "vm_name",
+                            "image",
+                            "memory",
+                            "cpus",
+                            "profile",
+                            "ai_assisted",
+                        ],
                     },
                     {
                         "name": "KcliVMDeleteOperator",
                         "description": "Delete VMs using kcli",
-                        "parameters": ["vm_name", "force"]
+                        "parameters": ["vm_name", "force"],
                     },
                     {
                         "name": "KcliVMListOperator",
                         "description": "List all VMs managed by kcli",
-                        "parameters": []
-                    }
+                        "parameters": [],
+                    },
                 ],
                 "virsh_operators": [
                     {
                         "name": "VirshCommandOperator",
                         "description": "Run any virsh command",
-                        "parameters": ["command (list of args)"]
+                        "parameters": ["command (list of args)"],
                     },
                     {
                         "name": "VirshVMStartOperator",
                         "description": "Start a VM using virsh",
-                        "parameters": ["vm_name"]
+                        "parameters": ["vm_name"],
                     },
                     {
                         "name": "VirshVMStopOperator",
                         "description": "Stop a VM (graceful or force)",
-                        "parameters": ["vm_name", "force"]
+                        "parameters": ["vm_name", "force"],
                     },
                     {
                         "name": "VirshVMInfoOperator",
                         "description": "Get detailed VM information",
-                        "parameters": ["vm_name"]
+                        "parameters": ["vm_name"],
                     },
                     {
                         "name": "VirshNetworkListOperator",
                         "description": "List libvirt networks",
-                        "parameters": ["show_inactive"]
-                    }
+                        "parameters": ["show_inactive"],
+                    },
                 ],
                 "sensors": [
                     {
                         "name": "KcliVMStatusSensor",
                         "description": "Wait for VM to reach specific status",
-                        "parameters": ["vm_name", "expected_status", "timeout"]
+                        "parameters": ["vm_name", "expected_status", "timeout"],
                     }
-                ]
+                ],
             }
             context["example_dags"] = [
                 {
                     "name": "example_kcli_vm_provisioning",
                     "description": "Full VM lifecycle: create, validate, cleanup",
-                    "path": "/opt/airflow/dags/example_kcli_vm_provisioning.py"
+                    "path": "/opt/airflow/dags/example_kcli_vm_provisioning.py",
                 },
                 {
                     "name": "example_kcli_virsh_combined",
                     "description": "Demonstrates using both kcli and virsh operators",
-                    "path": "/opt/airflow/dags/example_kcli_virsh_combined.py"
-                }
+                    "path": "/opt/airflow/dags/example_kcli_virsh_combined.py",
+                },
             ]
             context["documentation"] = {
                 "main_readme": "/opt/airflow/README.md",
                 "tools_reference": "/opt/airflow/TOOLS-AVAILABLE.md",
                 "troubleshooting": "/opt/airflow/TROUBLESHOOTING.md",
-                "architecture": "/opt/airflow/ARCHITECTURE.md"
+                "architecture": "/opt/airflow/ARCHITECTURE.md",
             }
             context["command_execution"] = {
                 "enabled": True,
@@ -682,9 +703,9 @@ class AIAssistantChatView(BaseView):
                     "virsh list --all",
                     "virsh nodeinfo",
                     "df -h",
-                    "free -h"
+                    "free -h",
                 ],
-                "note": "When providing command suggestions, use markdown code blocks with syntax highlighting. Commands will be executed as airflow user (non-root) for security."
+                "note": "When providing command suggestions, use markdown code blocks with syntax highlighting. Commands will be executed as airflow user (non-root) for security.",
             }
             context["response_format"] = {
                 "format": "markdown",
@@ -696,9 +717,9 @@ class AIAssistantChatView(BaseView):
                     "1. Numbered lists",
                     "| Tables | With | Columns |",
                     "> Blockquotes",
-                    "[Links](url)"
+                    "[Links](url)",
                 ],
-                "recommendation": "Use code blocks for commands, tables for structured data, and lists for step-by-step instructions"
+                "recommendation": "Use code blocks for commands, tables for structured data, and lists for step-by-step instructions",
             }
             context["diagnostics"] = {
                 "available": True,
@@ -707,7 +728,7 @@ class AIAssistantChatView(BaseView):
                     "enabled": True,
                     "url_format": "/ai-assistant/logs/<dag_id>/<task_id>/<run_id>",
                     "description": "Direct log viewer for easy access to task logs",
-                    "note": "When providing log help, include the direct URL for the user to click"
+                    "note": "When providing log help, include the direct URL for the user to click",
                 },
                 "commands": DIAGNOSTIC_COMMANDS,
                 "capabilities": [
@@ -717,22 +738,22 @@ class AIAssistantChatView(BaseView):
                     "Test task execution: airflow tasks test <dag_id> <task_id> <date>",
                     "Check DAG state: airflow dags state <dag_id>",
                     "List DAG runs: airflow dags list-runs --dag-id <dag_id>",
-                    "Quick log access: /ai-assistant/logs/<dag_id>/<task_id>/<run_id>"
+                    "Quick log access: /ai-assistant/logs/<dag_id>/<task_id>/<run_id>",
                 ],
                 "troubleshooting_tips": [
                     "Always check import errors first - they prevent DAGs from loading",
                     "Use 'airflow tasks test' to debug individual tasks without running the full DAG",
                     "Check scheduler logs for system-level issues",
                     "Verify task dependencies with 'airflow tasks failed-deps'",
-                    "When debugging failed tasks, provide direct log viewer links for easy access"
+                    "When debugging failed tasks, provide direct log viewer links for easy access",
                 ],
                 "logging_features": [
                     "All Qubinode DAGs include enhanced logging by default",
                     "Task start/end timestamps logged automatically",
                     "Parameters and results logged for debugging",
                     "Errors logged with full context and traceback",
-                    "Use DAGLoggingMixin for consistent logging across custom DAGs"
-                ]
+                    "Use DAGLoggingMixin for consistent logging across custom DAGs",
+                ],
             }
             context["datasets"] = {
                 "airflow_version": "2.10.4",
@@ -742,7 +763,7 @@ class AIAssistantChatView(BaseView):
                     "Data-aware scheduling: DAGs trigger when datasets are updated",
                     "Dataset producers and consumers",
                     "Cross-DAG dependencies based on data",
-                    "Dataset versioning and lineage tracking"
+                    "Dataset versioning and lineage tracking",
                 ],
                 "example_usage": """
 from airflow.datasets import Dataset
@@ -762,40 +783,56 @@ with DAG(..., schedule=[my_dataset]) as consumer_dag:
                     "VM provisioning completion as dataset (triggers deployment DAGs)",
                     "kcli image download completion as dataset",
                     "Libvirt storage pool changes as dataset events",
-                    "Configuration file updates as dataset triggers"
+                    "Configuration file updates as dataset triggers",
                 ],
-                "note": "Not yet implemented in Qubinode operators, but can be added for data-driven workflows"
+                "note": "Not yet implemented in Qubinode operators, but can be added for data-driven workflows",
             }
-            context["user_intent"] = "User is accessing AI Assistant from Airflow UI for help with workflow orchestration, VM provisioning, or troubleshooting"
-            
+            context["user_intent"] = (
+                "User is accessing AI Assistant from Airflow UI for help with workflow orchestration, VM provisioning, or troubleshooting"
+            )
+
             # Connect to AI Assistant on the same Podman network
             # AI Assistant can take 30-60 seconds to respond due to LLM processing
             response = requests.post(
                 f"{AI_ASSISTANT_URL}/chat",
                 json={"message": message, "context": context},
-                timeout=90  # Extended timeout for LLM inference
+                timeout=90,  # Extended timeout for LLM inference
             )
-            
+
             response.raise_for_status()
             ai_response = response.json()
-            
-            return jsonify({
-                "response": ai_response.get("response", "I'm not sure how to help with that."),
-                "status": "success"
-            })
-            
+
+            return jsonify(
+                {
+                    "response": ai_response.get(
+                        "response", "I'm not sure how to help with that."
+                    ),
+                    "status": "success",
+                }
+            )
+
         except requests.RequestException as e:
             logger.error(f"AI Assistant API error: {e}")
-            return jsonify({
-                "response": f"I'm having trouble connecting to the AI Assistant service. Please ensure it's running.\n\nError: {str(e)}",
-                "status": "error"
-            }), 500
+            return (
+                jsonify(
+                    {
+                        "response": f"I'm having trouble connecting to the AI Assistant service. Please ensure it's running.\n\nError: {str(e)}",
+                        "status": "error",
+                    }
+                ),
+                500,
+            )
         except Exception as e:
             logger.error(f"Chat API error: {e}")
-            return jsonify({
-                "response": f"An unexpected error occurred: {str(e)}",
-                "status": "error"
-            }), 500
+            return (
+                jsonify(
+                    {
+                        "response": f"An unexpected error occurred: {str(e)}",
+                        "status": "error",
+                    }
+                ),
+                500,
+            )
 
 
 # Create Flask Blueprint for the chat view
@@ -811,12 +848,9 @@ class AIAssistantChatPlugin(AirflowPlugin):
     """
     Airflow plugin that adds AI Assistant chat interface to the UI
     """
+
     name = "ai_assistant_chat"
     flask_blueprints = [ai_chat_blueprint]
     appbuilder_views = [
-        {
-            "name": "AI Assistant",
-            "category": "Qubinode",
-            "view": AIAssistantChatView()
-        }
+        {"name": "AI Assistant", "category": "Qubinode", "view": AIAssistantChatView()}
     ]

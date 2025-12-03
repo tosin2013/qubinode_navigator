@@ -9,85 +9,87 @@ This DAG shows:
 """
 
 from datetime import datetime, timedelta
-from airflow import DAG
+
 from airflow.operators.bash import BashOperator
 from qubinode.operators import KcliVMCreateOperator, KcliVMListOperator
 from qubinode.virsh_operators import (
     VirshCommandOperator,
-    VirshVMInfoOperator,
     VirshNetworkListOperator,
-    VirshVMStartOperator
+    VirshVMInfoOperator,
+    VirshVMStartOperator,
 )
 
+from airflow import DAG
+
 default_args = {
-    'owner': 'qubinode',
-    'depends_on_past': False,
-    'start_date': datetime(2025, 11, 19),
-    'email_on_failure': False,
-    'retries': 1,
-    'retry_delay': timedelta(minutes=5),
+    "owner": "qubinode",
+    "depends_on_past": False,
+    "start_date": datetime(2025, 11, 19),
+    "email_on_failure": False,
+    "retries": 1,
+    "retry_delay": timedelta(minutes=5),
 }
 
 dag = DAG(
-    'example_kcli_virsh_combined',
+    "example_kcli_virsh_combined",
     default_args=default_args,
-    description='Demonstrates using both kcli and virsh operators',
+    description="Demonstrates using both kcli and virsh operators",
     schedule_interval=None,
     catchup=False,
-    tags=['qubinode', 'kcli', 'virsh', 'example'],
+    tags=["qubinode", "kcli", "virsh", "example"],
 )
 
 # Task 1: List libvirt networks using virsh
 list_networks = VirshNetworkListOperator(
-    task_id='list_libvirt_networks',
+    task_id="list_libvirt_networks",
     show_inactive=True,
     dag=dag,
 )
 
 # Task 2: List existing VMs using kcli
 list_vms_kcli = KcliVMListOperator(
-    task_id='list_vms_kcli',
+    task_id="list_vms_kcli",
     dag=dag,
 )
 
 # Task 3: List VMs using virsh
 list_vms_virsh = VirshCommandOperator(
-    task_id='list_vms_virsh',
-    command=['list', '--all'],
+    task_id="list_vms_virsh",
+    command=["list", "--all"],
     dag=dag,
 )
 
 # Task 4: Get hypervisor info using virsh
 get_hypervisor_info = VirshCommandOperator(
-    task_id='get_hypervisor_info',
-    command=['nodeinfo'],
+    task_id="get_hypervisor_info",
+    command=["nodeinfo"],
     dag=dag,
 )
 
 # Task 5: Get libvirt version
 get_libvirt_version = VirshCommandOperator(
-    task_id='get_libvirt_version',
-    command=['version'],
+    task_id="get_libvirt_version",
+    command=["version"],
     dag=dag,
 )
 
 # Task 6: List storage pools
 list_storage_pools = VirshCommandOperator(
-    task_id='list_storage_pools',
-    command=['pool-list', '--all'],
+    task_id="list_storage_pools",
+    command=["pool-list", "--all"],
     dag=dag,
 )
 
 # Task 7: Get pool info for default pool
 get_pool_info = VirshCommandOperator(
-    task_id='get_default_pool_info',
-    command=['pool-info', 'default'],
+    task_id="get_default_pool_info",
+    command=["pool-info", "default"],
     dag=dag,
 )
 
 # Task 8: Summary report
 summary_report = BashOperator(
-    task_id='generate_summary',
+    task_id="generate_summary",
     bash_command="""
     echo "================================================"
     echo "Qubinode Infrastructure Summary"
@@ -107,7 +109,13 @@ summary_report = BashOperator(
 
 # Define task dependencies
 # First: Get system info in parallel
-[list_networks, list_vms_kcli, list_vms_virsh, get_hypervisor_info, get_libvirt_version] >> list_storage_pools
+[
+    list_networks,
+    list_vms_kcli,
+    list_vms_virsh,
+    get_hypervisor_info,
+    get_libvirt_version,
+] >> list_storage_pools
 
 # Then: Get detailed pool info
 list_storage_pools >> get_pool_info

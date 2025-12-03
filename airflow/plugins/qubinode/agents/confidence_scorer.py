@@ -25,8 +25,8 @@ Usage:
 """
 
 import logging
-from typing import Dict, Any, Optional, List
 from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ConfidenceWeights:
     """Configurable weights for confidence scoring."""
+
     rag_similarity: float = 0.40
     rag_coverage: float = 0.30
     provider_availability: float = 0.20
@@ -42,10 +43,10 @@ class ConfidenceWeights:
     def validate(self) -> bool:
         """Validate that weights sum to 1.0."""
         total = (
-            self.rag_similarity +
-            self.rag_coverage +
-            self.provider_availability +
-            self.historical_success
+            self.rag_similarity
+            + self.rag_coverage
+            + self.provider_availability
+            + self.historical_success
         )
         return abs(total - 1.0) < 0.001
 
@@ -53,6 +54,7 @@ class ConfidenceWeights:
 @dataclass
 class ConfidenceBreakdown:
     """Detailed breakdown of confidence score components."""
+
     total: float
     rag_similarity_score: float
     rag_coverage_score: float
@@ -68,25 +70,28 @@ class ConfidenceBreakdown:
                 "rag_similarity": {
                     "score": self.rag_similarity_score,
                     "weight": self.weights.rag_similarity,
-                    "contribution": self.rag_similarity_score * self.weights.rag_similarity
+                    "contribution": self.rag_similarity_score
+                    * self.weights.rag_similarity,
                 },
                 "rag_coverage": {
                     "score": self.rag_coverage_score,
                     "weight": self.weights.rag_coverage,
-                    "contribution": self.rag_coverage_score * self.weights.rag_coverage
+                    "contribution": self.rag_coverage_score * self.weights.rag_coverage,
                 },
                 "provider_availability": {
                     "score": self.provider_score,
                     "weight": self.weights.provider_availability,
-                    "contribution": self.provider_score * self.weights.provider_availability
+                    "contribution": self.provider_score
+                    * self.weights.provider_availability,
                 },
                 "historical_success": {
                     "score": self.historical_score,
                     "weight": self.weights.historical_success,
-                    "contribution": self.historical_score * self.weights.historical_success
-                }
+                    "contribution": self.historical_score
+                    * self.weights.historical_success,
+                },
             },
-            "raw_inputs": self.raw_inputs
+            "raw_inputs": self.raw_inputs,
         }
 
 
@@ -127,7 +132,7 @@ class ConfidenceScorer:
         rag_hit_count: int = 0,
         provider_exists: bool = False,
         troubleshooting_hits: int = 0,
-        successful_troubleshooting: int = 0
+        successful_troubleshooting: int = 0,
     ) -> float:
         """
         Compute confidence score for a task.
@@ -147,7 +152,7 @@ class ConfidenceScorer:
             rag_hit_count=rag_hit_count,
             provider_exists=provider_exists,
             troubleshooting_hits=troubleshooting_hits,
-            successful_troubleshooting=successful_troubleshooting
+            successful_troubleshooting=successful_troubleshooting,
         )
         return breakdown.total
 
@@ -157,7 +162,7 @@ class ConfidenceScorer:
         rag_hit_count: int = 0,
         provider_exists: bool = False,
         troubleshooting_hits: int = 0,
-        successful_troubleshooting: int = 0
+        successful_troubleshooting: int = 0,
     ) -> ConfidenceBreakdown:
         """
         Compute confidence score with detailed breakdown.
@@ -189,10 +194,10 @@ class ConfidenceScorer:
 
         # Compute weighted total
         total = (
-            rag_similarity_score * self.weights.rag_similarity +
-            rag_coverage_score * self.weights.rag_coverage +
-            provider_score * self.weights.provider_availability +
-            historical_score * self.weights.historical_success
+            rag_similarity_score * self.weights.rag_similarity
+            + rag_coverage_score * self.weights.rag_coverage
+            + provider_score * self.weights.provider_availability
+            + historical_score * self.weights.historical_success
         )
 
         return ConfidenceBreakdown(
@@ -207,8 +212,8 @@ class ConfidenceScorer:
                 "rag_hit_count": rag_hit_count,
                 "provider_exists": provider_exists,
                 "troubleshooting_hits": troubleshooting_hits,
-                "successful_troubleshooting": successful_troubleshooting
-            }
+                "successful_troubleshooting": successful_troubleshooting,
+            },
         )
 
     def get_recommendation(self, confidence: float) -> Dict[str, Any]:
@@ -226,34 +231,32 @@ class ConfidenceScorer:
                 "action": "execute",
                 "level": "high",
                 "message": "High confidence - safe to auto-execute",
-                "requires_approval": False
+                "requires_approval": False,
             }
         elif confidence >= self.THRESHOLD_MEDIUM:
             return {
                 "action": "execute_with_logging",
                 "level": "medium",
                 "message": "Medium confidence - execute with enhanced logging",
-                "requires_approval": False
+                "requires_approval": False,
             }
         elif confidence >= self.THRESHOLD_LOW:
             return {
                 "action": "request_approval",
                 "level": "low-medium",
                 "message": "Low-medium confidence - request user approval",
-                "requires_approval": True
+                "requires_approval": True,
             }
         else:
             return {
                 "action": "escalate",
                 "level": "low",
                 "message": "Low confidence - escalate to Calling LLM for guidance",
-                "requires_approval": True
+                "requires_approval": True,
             }
 
     def compute_from_rag_context(
-        self,
-        rag_context: Dict[str, Any],
-        provider_exists: bool = False
+        self, rag_context: Dict[str, Any], provider_exists: bool = False
     ) -> ConfidenceBreakdown:
         """
         Compute confidence from RAG context dictionary.
@@ -276,24 +279,17 @@ class ConfidenceScorer:
                 max_similarity = similarity
 
         # Count successful troubleshooting
-        successful = sum(
-            1 for ts in troubleshooting
-            if ts.get("result") == "success"
-        )
+        successful = sum(1 for ts in troubleshooting if ts.get("result") == "success")
 
         return self.compute_with_breakdown(
             rag_similarity=max_similarity,
             rag_hit_count=len(documents),
             provider_exists=provider_exists,
             troubleshooting_hits=len(troubleshooting),
-            successful_troubleshooting=successful
+            successful_troubleshooting=successful,
         )
 
-    def adjust_for_task_complexity(
-        self,
-        base_confidence: float,
-        task: str
-    ) -> float:
+    def adjust_for_task_complexity(self, base_confidence: float, task: str) -> float:
         """
         Adjust confidence based on task complexity.
 
@@ -303,7 +299,7 @@ class ConfidenceScorer:
         complexity_keywords = {
             "high": ["migrate", "upgrade", "refactor", "rewrite", "redesign"],
             "medium": ["create", "implement", "modify", "update", "add"],
-            "low": ["fix", "debug", "check", "test", "verify"]
+            "low": ["fix", "debug", "check", "test", "verify"],
         }
 
         task_lower = task.lower()
@@ -317,9 +313,9 @@ class ConfidenceScorer:
 
         # Apply complexity adjustment
         adjustments = {
-            "high": -0.15,   # High complexity reduces confidence
-            "medium": 0.0,   # No adjustment
-            "low": 0.10      # Low complexity increases confidence
+            "high": -0.15,  # High complexity reduces confidence
+            "medium": 0.0,  # No adjustment
+            "low": 0.10,  # Low complexity increases confidence
         }
 
         adjusted = base_confidence + adjustments.get(complexity, 0.0)
@@ -331,7 +327,7 @@ def compute_confidence_score(
     rag_similarity: float,
     rag_hit_count: int,
     provider_exists: bool,
-    similar_dag_exists: bool
+    similar_dag_exists: bool,
 ) -> float:
     """
     Compute confidence score compatible with database function.
@@ -349,10 +345,10 @@ def compute_confidence_score(
         Confidence score (0-1)
     """
     return (
-        0.4 * (rag_similarity or 0) +
-        0.3 * min((rag_hit_count or 0) / 5.0, 1.0) +
-        0.2 * (1.0 if provider_exists else 0.0) +
-        0.1 * (1.0 if similar_dag_exists else 0.0)
+        0.4 * (rag_similarity or 0)
+        + 0.3 * min((rag_hit_count or 0) / 5.0, 1.0)
+        + 0.2 * (1.0 if provider_exists else 0.0)
+        + 0.1 * (1.0 if similar_dag_exists else 0.0)
     )
 
 
@@ -361,5 +357,5 @@ __all__ = [
     "ConfidenceScorer",
     "ConfidenceWeights",
     "ConfidenceBreakdown",
-    "compute_confidence_score"
+    "compute_confidence_score",
 ]

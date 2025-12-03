@@ -5,10 +5,12 @@ Tests FastMCP servers using the MCP Python SDK
 """
 
 import asyncio
+from contextlib import AsyncExitStack
+
 import httpx
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
-from contextlib import AsyncExitStack
+
 
 async def test_airflow_mcp():
     """Test Airflow MCP server at http://localhost:8889"""

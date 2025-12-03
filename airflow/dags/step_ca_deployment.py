@@ -14,39 +14,41 @@ Calls: /opt/kcli-pipelines/step-ca-server/ scripts
 """
 
 from datetime import datetime, timedelta
-from airflow import DAG
+
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator
 
+from airflow import DAG
+
 # Configuration
-KCLI_PIPELINES_DIR = '/opt/kcli-pipelines'
-STEP_CA_DIR = f'{KCLI_PIPELINES_DIR}/step-ca-server'
+KCLI_PIPELINES_DIR = "/opt/kcli-pipelines"
+STEP_CA_DIR = f"{KCLI_PIPELINES_DIR}/step-ca-server"
 
 default_args = {
-    'owner': 'qubinode',
-    'depends_on_past': False,
-    'start_date': datetime(2025, 1, 1),
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 2,
-    'retry_delay': timedelta(minutes=3),
+    "owner": "qubinode",
+    "depends_on_past": False,
+    "start_date": datetime(2025, 1, 1),
+    "email_on_failure": False,
+    "email_on_retry": False,
+    "retries": 2,
+    "retry_delay": timedelta(minutes=3),
 }
 
 dag = DAG(
-    'step_ca_deployment',
+    "step_ca_deployment",
     default_args=default_args,
-    description='Deploy Step-CA certificate authority for disconnected installs',
+    description="Deploy Step-CA certificate authority for disconnected installs",
     schedule=None,
     catchup=False,
-    tags=['qubinode', 'kcli-pipelines', 'step-ca', 'certificates', 'disconnected'],
+    tags=["qubinode", "kcli-pipelines", "step-ca", "certificates", "disconnected"],
     params={
-        'action': 'create',  # create, delete, status
-        'domain': 'example.com',  # Domain for certificates
-        'vm_name': 'step-ca-server',  # VM name
-        'community_version': 'false',  # Use community packages
-        'target_server': 'localhost',  # Target server
-        'network': 'default',  # Network to deploy on (default, isolated1, isolated2, etc.)
-        'static_ip': '',  # Optional static IP (e.g., 192.168.50.10)
+        "action": "create",  # create, delete, status
+        "domain": "example.com",  # Domain for certificates
+        "vm_name": "step-ca-server",  # VM name
+        "community_version": "false",  # Use community packages
+        "target_server": "localhost",  # Target server
+        "network": "default",  # Network to deploy on (default, isolated1, isolated2, etc.)
+        "static_ip": "",  # Optional static IP (e.g., 192.168.50.10)
     },
     doc_md="""
     # Step-CA Certificate Authority Deployment
@@ -103,25 +105,25 @@ dag = DAG(
 
 def decide_action(**context):
     """Branch based on action parameter"""
-    action = context['params'].get('action', 'create')
-    if action == 'delete':
-        return 'delete_step_ca'
-    elif action == 'status':
-        return 'check_status'
-    return 'validate_environment'
+    action = context["params"].get("action", "create")
+    if action == "delete":
+        return "delete_step_ca"
+    elif action == "status":
+        return "check_status"
+    return "validate_environment"
 
 
 # Task: Decide action
 decide_action_task = BranchPythonOperator(
-    task_id='decide_action',
+    task_id="decide_action",
     python_callable=decide_action,
     dag=dag,
 )
 
 # Task: Validate environment
 validate_environment = BashOperator(
-    task_id='validate_environment',
-    bash_command='''
+    task_id="validate_environment",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Validating Step-CA Deployment Environment"
@@ -162,14 +164,14 @@ validate_environment = BashOperator(
     
     echo ""
     echo "[OK] Environment validation complete"
-    ''',
+    """,
     dag=dag,
 )
 
 # Task: Configure kcli profile
 configure_profile = BashOperator(
-    task_id='configure_kcli_profile',
-    bash_command='''
+    task_id="configure_kcli_profile",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Configuring Step-CA kcli Profile"
@@ -197,15 +199,15 @@ configure_profile = BashOperator(
          bash step-ca-server/configure-kcli-profile.sh"
     
     echo "[OK] Profile configuration complete"
-    ''',
+    """,
     execution_timeout=timedelta(minutes=5),
     dag=dag,
 )
 
 # Task: Create Step-CA VM
 create_step_ca = BashOperator(
-    task_id='create_step_ca_vm',
-    bash_command='''
+    task_id="create_step_ca_vm",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Creating Step-CA Server VM"
@@ -245,15 +247,15 @@ create_step_ca = BashOperator(
         echo "[ERROR] Step-CA VM was not created"
         exit 1
     fi
-    ''',
+    """,
     execution_timeout=timedelta(minutes=20),
     dag=dag,
 )
 
 # Task: Wait for Step-CA VM
 wait_for_vm = BashOperator(
-    task_id='wait_for_step_ca_vm',
-    bash_command='''
+    task_id="wait_for_step_ca_vm",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Waiting for Step-CA VM"
@@ -288,15 +290,15 @@ wait_for_vm = BashOperator(
     
     echo "[ERROR] Timeout waiting for Step-CA VM"
     exit 1
-    ''',
+    """,
     execution_timeout=timedelta(minutes=15),
     dag=dag,
 )
 
 # Task: Configure Step-CA
 configure_step_ca = BashOperator(
-    task_id='configure_step_ca',
-    bash_command='''
+    task_id="configure_step_ca",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Configuring Step-CA Server"
@@ -349,15 +351,15 @@ configure_step_ca = BashOperator(
         echo "[WARN] Step-CA may need additional configuration"
         echo "SSH to the VM: ssh cloud-user@$IP"
     fi
-    ''',
+    """,
     execution_timeout=timedelta(minutes=10),
     dag=dag,
 )
 
 # Task: Register CA with system
 register_ca = BashOperator(
-    task_id='register_ca',
-    bash_command='''
+    task_id="register_ca",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Registering Step-CA with System"
@@ -400,15 +402,15 @@ register_ca = BashOperator(
     echo "To bootstrap other clients:"
     echo "  step ca bootstrap --ca-url https://$IP:443 --fingerprint $FINGERPRINT --install"
     echo "========================================"
-    ''',
+    """,
     execution_timeout=timedelta(minutes=5),
     dag=dag,
 )
 
 # Task: Validate deployment
 validate_deployment = BashOperator(
-    task_id='validate_deployment',
-    bash_command='''
+    task_id="validate_deployment",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Validating Step-CA Deployment"
@@ -452,14 +454,14 @@ validate_deployment = BashOperator(
     echo ""
     echo "To generate certificates:"
     echo "  step ca certificate <hostname> <cert.pem> <key.pem>"
-    ''',
+    """,
     dag=dag,
 )
 
 # Task: Delete Step-CA
 delete_step_ca = BashOperator(
-    task_id='delete_step_ca',
-    bash_command='''
+    task_id="delete_step_ca",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Deleting Step-CA Server"
@@ -480,15 +482,15 @@ delete_step_ca = BashOperator(
          ./deploy-vm.sh"
     
     echo "[OK] Step-CA server deleted"
-    ''',
+    """,
     execution_timeout=timedelta(minutes=10),
     dag=dag,
 )
 
 # Task: Check status
 check_status = BashOperator(
-    task_id='check_status',
-    bash_command='''
+    task_id="check_status",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Step-CA Status"
@@ -510,7 +512,7 @@ check_status = BashOperator(
         ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
             "curl -sk https://$IP:443/health 2>/dev/null" || echo "Health check failed"
     fi
-    ''',
+    """,
     dag=dag,
 )
 

@@ -13,43 +13,45 @@ Note: This DAG uses only Python operators (no SSH/kcli needed)
 """
 
 from datetime import datetime, timedelta
-from airflow import DAG
-from airflow.operators.python import PythonOperator
+
 from airflow.operators.bash import BashOperator
+from airflow.operators.python import PythonOperator
+
+from airflow import DAG
 
 # Default arguments
 default_args = {
-    'owner': 'qubinode',
-    'depends_on_past': False,
-    'start_date': datetime(2025, 1, 1),
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 0,
-    'retry_delay': timedelta(minutes=1),
+    "owner": "qubinode",
+    "depends_on_past": False,
+    "start_date": datetime(2025, 1, 1),
+    "email_on_failure": False,
+    "email_on_retry": False,
+    "retries": 0,
+    "retry_delay": timedelta(minutes=1),
 }
 
 # DAG definition
 dag = DAG(
-    'smoke_test_dag',
+    "smoke_test_dag",
     default_args=default_args,
-    description='Smoke test DAG for CI validation of Airflow + OpenLineage',
+    description="Smoke test DAG for CI validation of Airflow + OpenLineage",
     schedule=None,  # Manual trigger only
     catchup=False,
-    tags=['smoke-test', 'ci', 'openlineage'],
+    tags=["smoke-test", "ci", "openlineage"],
     params={
-        'should_fail': False,  # Set to True to test failure path
-        'test_name': 'default',
+        "should_fail": False,  # Set to True to test failure path
+        "test_name": "default",
     },
 )
 
 
 def start_test(**context):
     """Initialize smoke test and emit start event."""
-    test_name = context['params'].get('test_name', 'default')
+    test_name = context["params"].get("test_name", "default")
     print(f"[INFO] Starting smoke test: {test_name}")
     print(f"[INFO] Run ID: {context['run_id']}")
     print(f"[INFO] Execution date: {context['execution_date']}")
-    return {'test_name': test_name, 'status': 'started'}
+    return {"test_name": test_name, "status": "started"}
 
 
 def process_data(**context):
@@ -58,15 +60,15 @@ def process_data(**context):
 
     # Simulate input/output datasets for OpenLineage
     input_data = {
-        'source': 'smoke_test_input',
-        'records': 100,
-        'timestamp': str(datetime.now()),
+        "source": "smoke_test_input",
+        "records": 100,
+        "timestamp": str(datetime.now()),
     }
 
     output_data = {
-        'destination': 'smoke_test_output',
-        'records_processed': 100,
-        'timestamp': str(datetime.now()),
+        "destination": "smoke_test_output",
+        "records_processed": 100,
+        "timestamp": str(datetime.now()),
     }
 
     print(f"[INFO] Processing data...")
@@ -74,7 +76,7 @@ def process_data(**context):
     print(f"[INFO] Output: {json.dumps(output_data)}")
 
     # Check if we should simulate failure
-    should_fail = context['params'].get('should_fail', False)
+    should_fail = context["params"].get("should_fail", False)
     if should_fail:
         print("[ERROR] Simulated failure triggered by should_fail=True")
         raise ValueError("Simulated failure for testing error handling")
@@ -85,15 +87,15 @@ def process_data(**context):
 
 def validate_results(**context):
     """Validate results and emit completion event."""
-    ti = context['ti']
-    process_result = ti.xcom_pull(task_ids='process_data')
+    ti = context["ti"]
+    process_result = ti.xcom_pull(task_ids="process_data")
 
     print(f"[INFO] Validating results...")
     print(f"[INFO] Process result: {process_result}")
 
-    if process_result and process_result.get('records_processed', 0) > 0:
+    if process_result and process_result.get("records_processed", 0) > 0:
         print("[OK] Validation passed")
-        return {'status': 'success', 'records': process_result['records_processed']}
+        return {"status": "success", "records": process_result["records_processed"]}
     else:
         print("[ERROR] Validation failed - no records processed")
         raise ValueError("Validation failed")
@@ -103,31 +105,31 @@ def cleanup(**context):
     """Cleanup and emit final event."""
     print("[INFO] Running cleanup...")
     print("[OK] Smoke test completed successfully")
-    return {'status': 'completed'}
+    return {"status": "completed"}
 
 
 # Task definitions
 start = PythonOperator(
-    task_id='start_test',
+    task_id="start_test",
     python_callable=start_test,
     dag=dag,
 )
 
 process = PythonOperator(
-    task_id='process_data',
+    task_id="process_data",
     python_callable=process_data,
     dag=dag,
 )
 
 validate = PythonOperator(
-    task_id='validate_results',
+    task_id="validate_results",
     python_callable=validate_results,
     dag=dag,
 )
 
 # Simple bash task to test BashOperator integration
 echo_status = BashOperator(
-    task_id='echo_status',
+    task_id="echo_status",
     bash_command="""
     echo "========================================"
     echo "Smoke Test Status"
@@ -140,7 +142,7 @@ echo_status = BashOperator(
 )
 
 finish = PythonOperator(
-    task_id='cleanup',
+    task_id="cleanup",
     python_callable=cleanup,
     dag=dag,
 )

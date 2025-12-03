@@ -15,34 +15,42 @@ Designed to run on qubinode_navigator's Airflow instance.
 """
 
 from datetime import datetime, timedelta
-from airflow import DAG
+
 from airflow.operators.bash import BashOperator
 from airflow.utils.trigger_rule import TriggerRule
 
+from airflow import DAG
+
 # Default arguments for all tasks
 default_args = {
-    'owner': 'ocp4-disconnected-helper',
-    'depends_on_past': False,
-    'start_date': datetime(2025, 11, 26),
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 1,
-    'retry_delay': timedelta(minutes=5),
+    "owner": "ocp4-disconnected-helper",
+    "depends_on_past": False,
+    "start_date": datetime(2025, 11, 26),
+    "email_on_failure": False,
+    "email_on_retry": False,
+    "retries": 1,
+    "retry_delay": timedelta(minutes=5),
 }
 
 # Define the DAG
 dag = DAG(
-    'ocp_incremental_update',
+    "ocp_incremental_update",
     default_args=default_args,
-    description='Incremental OCP cluster update workflow for disconnected environments',
+    description="Incremental OCP cluster update workflow for disconnected environments",
     schedule_interval=None,  # Manual trigger only
     catchup=False,
-    tags=['ocp4-disconnected-helper', 'openshift', 'update', 'lifecycle', 'disconnected'],
+    tags=[
+        "ocp4-disconnected-helper",
+        "openshift",
+        "update",
+        "lifecycle",
+        "disconnected",
+    ],
     params={
-        'current_version': '4.20.0',
-        'target_version': '4.20.1',
-        'kubeconfig_path': '/root/.kube/config',
-        'skip_validation': 'false',
+        "current_version": "4.20.0",
+        "target_version": "4.20.1",
+        "kubeconfig_path": "/root/.kube/config",
+        "skip_validation": "false",
     },
     doc_md=__doc__,
 )
@@ -51,8 +59,8 @@ dag = DAG(
 # Task 1: Pre-Update Validation
 # ============================================================================
 pre_update_validation = BashOperator(
-    task_id='pre_update_validation',
-    bash_command='''
+    task_id="pre_update_validation",
+    bash_command="""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "🔍 TASK 1: Pre-Update Validation"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -128,7 +136,7 @@ pre_update_validation = BashOperator(
     else
         echo "✅ Pre-update validation PASSED"
     fi
-    ''',
+    """,
     dag=dag,
 )
 
@@ -136,8 +144,8 @@ pre_update_validation = BashOperator(
 # Task 2: Download Incremental Images
 # ============================================================================
 download_incremental = BashOperator(
-    task_id='download_incremental',
-    bash_command='''
+    task_id="download_incremental",
+    bash_command="""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "⬇️  TASK 2: Downloading Incremental Images"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -166,7 +174,7 @@ download_incremental = BashOperator(
     fi
     
     echo "✅ Incremental download complete"
-    ''',
+    """,
     execution_timeout=timedelta(hours=2),
     dag=dag,
 )
@@ -175,8 +183,8 @@ download_incremental = BashOperator(
 # Task 3: Push to Registry
 # ============================================================================
 push_to_registry = BashOperator(
-    task_id='push_to_registry',
-    bash_command='''
+    task_id="push_to_registry",
+    bash_command="""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "⬆️  TASK 3: Pushing Images to Registry"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -194,7 +202,7 @@ push_to_registry = BashOperator(
     fi
     
     echo "✅ Push to registry complete"
-    ''',
+    """,
     execution_timeout=timedelta(hours=1),
     dag=dag,
 )
@@ -203,8 +211,8 @@ push_to_registry = BashOperator(
 # Task 4: Apply ICSP/IDMS Manifests
 # ============================================================================
 apply_manifests = BashOperator(
-    task_id='apply_manifests',
-    bash_command='''
+    task_id="apply_manifests",
+    bash_command="""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "📄 TASK 4: Applying ICSP/IDMS Manifests"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -254,7 +262,7 @@ apply_manifests = BashOperator(
     oc get mcp
     
     echo "✅ Manifests applied"
-    ''',
+    """,
     dag=dag,
 )
 
@@ -262,8 +270,8 @@ apply_manifests = BashOperator(
 # Task 5: Trigger Cluster Update
 # ============================================================================
 trigger_update = BashOperator(
-    task_id='trigger_update',
-    bash_command='''
+    task_id="trigger_update",
+    bash_command="""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "🚀 TASK 5: Triggering Cluster Update"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -298,7 +306,7 @@ trigger_update = BashOperator(
     echo ""
     echo "✅ Update triggered"
     echo "Monitor progress with: oc get clusterversion"
-    ''',
+    """,
     dag=dag,
 )
 
@@ -306,8 +314,8 @@ trigger_update = BashOperator(
 # Task 6: Monitor Update Progress
 # ============================================================================
 monitor_update = BashOperator(
-    task_id='monitor_update',
-    bash_command='''
+    task_id="monitor_update",
+    bash_command="""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "📊 TASK 6: Monitoring Update Progress"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -352,7 +360,7 @@ monitor_update = BashOperator(
     echo "The update may still be in progress. Check manually with:"
     echo "  oc get clusterversion"
     echo "  oc get co"
-    ''',
+    """,
     execution_timeout=timedelta(hours=3),
     dag=dag,
 )
@@ -361,8 +369,8 @@ monitor_update = BashOperator(
 # Task 7: Update Summary
 # ============================================================================
 update_summary = BashOperator(
-    task_id='update_summary',
-    bash_command='''
+    task_id="update_summary",
+    bash_command="""
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "📋 UPDATE SUMMARY"
@@ -392,7 +400,7 @@ update_summary = BashOperator(
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "✅ OCP Incremental Update DAG completed!"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    ''',
+    """,
     trigger_rule=TriggerRule.ALL_DONE,
     dag=dag,
 )
@@ -400,7 +408,15 @@ update_summary = BashOperator(
 # ============================================================================
 # Task Dependencies
 # ============================================================================
-pre_update_validation >> download_incremental >> push_to_registry >> apply_manifests >> trigger_update >> monitor_update >> update_summary
+(
+    pre_update_validation
+    >> download_incremental
+    >> push_to_registry
+    >> apply_manifests
+    >> trigger_update
+    >> monitor_update
+    >> update_summary
+)
 
 # ============================================================================
 # DAG Documentation

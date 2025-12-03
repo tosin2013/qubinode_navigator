@@ -13,56 +13,58 @@ Follows the kcli-pipelines and freeipa-workshop-deployer patterns.
 """
 
 from datetime import datetime, timedelta
-from airflow import DAG
+
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator
 
+from airflow import DAG
+
 # Default arguments
 default_args = {
-    'owner': 'qubinode',
-    'depends_on_past': False,
-    'start_date': datetime(2025, 11, 27),
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 1,
-    'retry_delay': timedelta(minutes=3),
+    "owner": "qubinode",
+    "depends_on_past": False,
+    "start_date": datetime(2025, 11, 27),
+    "email_on_failure": False,
+    "email_on_retry": False,
+    "retries": 1,
+    "retry_delay": timedelta(minutes=3),
 }
 
 # DAG definition
 dag = DAG(
-    'freeipa_deployment',
+    "freeipa_deployment",
     default_args=default_args,
-    description='Deploy FreeIPA Identity Management Server via kcli and Ansible',
+    description="Deploy FreeIPA Identity Management Server via kcli and Ansible",
     schedule=None,  # Manual trigger only
     catchup=False,
-    tags=['qubinode', 'freeipa', 'identity', 'infrastructure', 'kcli-pipelines'],
+    tags=["qubinode", "freeipa", "identity", "infrastructure", "kcli-pipelines"],
     params={
-        'action': 'create',  # create or destroy
-        'community_version': 'true',  # true for CentOS, false for RHEL
-        'os_version': '9',  # 8 or 9
-        'domain': 'example.com',
-        'idm_hostname': 'idm',
-        'dns_forwarder': '8.8.8.8',
-        'run_ansible_install': 'true',  # Run Ansible to install FreeIPA
+        "action": "create",  # create or destroy
+        "community_version": "true",  # true for CentOS, false for RHEL
+        "os_version": "9",  # 8 or 9
+        "domain": "example.com",
+        "idm_hostname": "idm",
+        "dns_forwarder": "8.8.8.8",
+        "run_ansible_install": "true",  # Run Ansible to install FreeIPA
     },
 )
 
 # Paths - using host paths since we run with host network (ADR-0043)
-FREEIPA_DEPLOYER = '/opt/freeipa-workshop-deployer'
-QUBINODE_NAV = '/opt/qubinode_navigator'
+FREEIPA_DEPLOYER = "/opt/freeipa-workshop-deployer"
+QUBINODE_NAV = "/opt/qubinode_navigator"
 
 
 def decide_action(**context):
     """Branch based on action parameter (create or destroy)."""
-    action = context['params'].get('action', 'create')
-    if action == 'destroy':
-        return 'destroy_freeipa'
-    return 'validate_environment'
+    action = context["params"].get("action", "create")
+    if action == "destroy":
+        return "destroy_freeipa"
+    return "validate_environment"
 
 
 # Task: Decide action
 decide_action_task = BranchPythonOperator(
-    task_id='decide_action',
+    task_id="decide_action",
     python_callable=decide_action,
     dag=dag,
 )
@@ -73,7 +75,7 @@ decide_action_task = BranchPythonOperator(
 
 # Task: Validate environment
 validate_environment = BashOperator(
-    task_id='validate_environment',
+    task_id="validate_environment",
     bash_command="""
     echo "========================================"
     echo "Validating FreeIPA Deployment Environment"
@@ -134,7 +136,7 @@ validate_environment = BashOperator(
 
 # Task: Create FreeIPA VM
 create_freeipa_vm = BashOperator(
-    task_id='create_freeipa_vm',
+    task_id="create_freeipa_vm",
     bash_command="""
     echo "========================================"
     echo "Creating FreeIPA VM"
@@ -191,7 +193,7 @@ create_freeipa_vm = BashOperator(
 
 # Task: Wait for VM and get IP
 wait_for_vm = BashOperator(
-    task_id='wait_for_vm',
+    task_id="wait_for_vm",
     bash_command="""
     echo "========================================"
     echo "Waiting for FreeIPA VM to be Ready"
@@ -252,7 +254,7 @@ wait_for_vm = BashOperator(
 # Task: Prepare Ansible Inventory
 # ADR-0046: Run all host-dependent commands via SSH
 prepare_ansible = BashOperator(
-    task_id='prepare_ansible',
+    task_id="prepare_ansible",
     bash_command="""
     echo "========================================"
     echo "Preparing Ansible for FreeIPA Installation"
@@ -337,7 +339,7 @@ INVENTORY_EOF
 # Task: Install FreeIPA via Ansible
 # ADR-0046: Use SSH to run Ansible on host to avoid version conflicts
 install_freeipa = BashOperator(
-    task_id='install_freeipa',
+    task_id="install_freeipa",
     bash_command="""
     echo "========================================"
     echo "Installing FreeIPA via Ansible"
@@ -407,7 +409,7 @@ install_freeipa = BashOperator(
 # Task: Validate FreeIPA Installation
 # ADR-0046: Run kcli on host via SSH
 validate_freeipa = BashOperator(
-    task_id='validate_freeipa',
+    task_id="validate_freeipa",
     bash_command="""
     echo "========================================"
     echo "Validating FreeIPA Installation"
@@ -456,7 +458,7 @@ validate_freeipa = BashOperator(
 # =============================================================================
 
 destroy_freeipa = BashOperator(
-    task_id='destroy_freeipa',
+    task_id="destroy_freeipa",
     bash_command="""
     echo "========================================"
     echo "Destroying FreeIPA VM"
@@ -497,7 +499,15 @@ destroy_freeipa = BashOperator(
 # =============================================================================
 
 # Create workflow
-decide_action_task >> validate_environment >> create_freeipa_vm >> wait_for_vm >> prepare_ansible >> install_freeipa >> validate_freeipa
+(
+    decide_action_task
+    >> validate_environment
+    >> create_freeipa_vm
+    >> wait_for_vm
+    >> prepare_ansible
+    >> install_freeipa
+    >> validate_freeipa
+)
 
 # Destroy workflow
 decide_action_task >> destroy_freeipa

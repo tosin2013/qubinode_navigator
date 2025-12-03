@@ -17,8 +17,8 @@ Usage:
     )
 """
 
-from typing import Optional, Dict, Any, List
 import logging
+from typing import Any, Dict, List, Optional
 
 from airflow.models import BaseOperator
 from airflow.utils.context import Context
@@ -42,16 +42,16 @@ class VaultDynamicSecretsOperator(BaseOperator):
     :param store_lease_id: Whether to store lease_id in XCom for later revocation
     """
 
-    template_fields = ('vault_path', 'output_key')
-    ui_color = '#7B68EE'  # Medium slate blue
+    template_fields = ("vault_path", "output_key")
+    ui_color = "#7B68EE"  # Medium slate blue
 
     def __init__(
         self,
-        vault_conn_id: str = 'vault_default',
-        vault_path: str = '',
-        output_key: str = 'credentials',
+        vault_conn_id: str = "vault_default",
+        vault_path: str = "",
+        output_key: str = "credentials",
         store_lease_id: bool = True,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.vault_conn_id = vault_conn_id
@@ -80,9 +80,9 @@ class VaultDynamicSecretsOperator(BaseOperator):
             raise ValueError(f"No secret found at {self.vault_path}")
 
         # Extract credentials and lease info
-        credentials = response.get('data', response)
-        lease_id = response.get('lease_id')
-        lease_duration = response.get('lease_duration')
+        credentials = response.get("data", response)
+        lease_id = response.get("lease_id")
+        lease_duration = response.get("lease_duration")
 
         self.log.info(
             f"Obtained dynamic credentials, "
@@ -92,19 +92,17 @@ class VaultDynamicSecretsOperator(BaseOperator):
 
         # Store lease_id for cleanup
         if lease_id and self.store_lease_id:
-            context['ti'].xcom_push(
-                key=f'{self.output_key}_lease_id',
-                value=lease_id
-            )
+            context["ti"].xcom_push(key=f"{self.output_key}_lease_id", value=lease_id)
 
         # Push credentials to XCom
-        context['ti'].xcom_push(key=self.output_key, value=credentials)
+        context["ti"].xcom_push(key=self.output_key, value=credentials)
 
         return credentials
 
     def get_vault_hook(self):
         """Get VaultHook instance."""
         from airflow.providers.hashicorp.hooks.vault import VaultHook
+
         return VaultHook(vault_conn_id=self.vault_conn_id)
 
 
@@ -130,17 +128,12 @@ class VaultDatabaseCredsOperator(VaultDynamicSecretsOperator):
         conn = psycopg2.connect(user=creds['username'], password=creds['password'], ...)
     """
 
-    template_fields = ('db_role', 'mount_point', 'output_key')
+    template_fields = ("db_role", "mount_point", "output_key")
 
-    def __init__(
-        self,
-        db_role: str,
-        mount_point: str = 'database',
-        **kwargs
-    ):
+    def __init__(self, db_role: str, mount_point: str = "database", **kwargs):
         self.db_role = db_role
         self.mount_point = mount_point
-        vault_path = f'{mount_point}/creds/{db_role}'
+        vault_path = f"{mount_point}/creds/{db_role}"
         super().__init__(vault_path=vault_path, **kwargs)
 
 
@@ -168,15 +161,15 @@ class VaultAWSCredsOperator(VaultDynamicSecretsOperator):
         # Credentials contain: access_key, secret_key, security_token (for STS)
     """
 
-    template_fields = ('aws_role', 'mount_point', 'ttl', 'output_key')
+    template_fields = ("aws_role", "mount_point", "ttl", "output_key")
 
     def __init__(
         self,
         aws_role: str,
-        mount_point: str = 'aws',
-        credential_type: str = 'creds',
+        mount_point: str = "aws",
+        credential_type: str = "creds",
         ttl: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         self.aws_role = aws_role
         self.mount_point = mount_point
@@ -184,10 +177,10 @@ class VaultAWSCredsOperator(VaultDynamicSecretsOperator):
         self.ttl = ttl
 
         # Build path based on credential type
-        if credential_type == 'sts':
-            vault_path = f'{mount_point}/sts/{aws_role}'
+        if credential_type == "sts":
+            vault_path = f"{mount_point}/sts/{aws_role}"
         else:
-            vault_path = f'{mount_point}/creds/{aws_role}'
+            vault_path = f"{mount_point}/creds/{aws_role}"
 
         super().__init__(vault_path=vault_path, **kwargs)
 
@@ -200,13 +193,11 @@ class VaultAWSCredsOperator(VaultDynamicSecretsOperator):
         self.log.info(f"Requesting AWS credentials for role {self.aws_role}")
 
         # For STS, we may need to pass TTL
-        if self.ttl and self.credential_type == 'sts':
+        if self.ttl and self.credential_type == "sts":
             # Use the underlying hvac client for more control
             client = hook.get_conn()
             response = client.secrets.aws.generate_credentials(
-                name=self.aws_role,
-                ttl=self.ttl,
-                mount_point=self.mount_point
+                name=self.aws_role, ttl=self.ttl, mount_point=self.mount_point
             )
         else:
             response = hook.get_secret(secret_path=self.vault_path)
@@ -214,9 +205,9 @@ class VaultAWSCredsOperator(VaultDynamicSecretsOperator):
         if not response:
             raise ValueError(f"Failed to get AWS credentials for role {self.aws_role}")
 
-        credentials = response.get('data', response)
-        lease_id = response.get('lease_id')
-        lease_duration = response.get('lease_duration')
+        credentials = response.get("data", response)
+        lease_id = response.get("lease_id")
+        lease_duration = response.get("lease_duration")
 
         self.log.info(
             f"Obtained AWS credentials, type={self.credential_type}, "
@@ -224,12 +215,9 @@ class VaultAWSCredsOperator(VaultDynamicSecretsOperator):
         )
 
         if lease_id and self.store_lease_id:
-            context['ti'].xcom_push(
-                key=f'{self.output_key}_lease_id',
-                value=lease_id
-            )
+            context["ti"].xcom_push(key=f"{self.output_key}_lease_id", value=lease_id)
 
-        context['ti'].xcom_push(key=self.output_key, value=credentials)
+        context["ti"].xcom_push(key=self.output_key, value=credentials)
 
         return credentials
 
@@ -260,27 +248,33 @@ class VaultSSHSignOperator(BaseOperator):
         )
     """
 
-    template_fields = ('public_key', 'vault_role', 'valid_principals', 'ttl', 'output_key')
-    ui_color = '#7B68EE'
+    template_fields = (
+        "public_key",
+        "vault_role",
+        "valid_principals",
+        "ttl",
+        "output_key",
+    )
+    ui_color = "#7B68EE"
 
     def __init__(
         self,
         public_key: str,
-        vault_role: str = 'default',
-        valid_principals: str = '',
-        ttl: str = '30m',
+        vault_role: str = "default",
+        valid_principals: str = "",
+        ttl: str = "30m",
         extensions: Optional[Dict[str, str]] = None,
-        vault_conn_id: str = 'vault_default',
-        mount_point: str = 'ssh',
-        output_key: str = 'signed_key',
-        **kwargs
+        vault_conn_id: str = "vault_default",
+        mount_point: str = "ssh",
+        output_key: str = "signed_key",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.public_key = public_key
         self.vault_role = vault_role
         self.valid_principals = valid_principals
         self.ttl = ttl
-        self.extensions = extensions or {'permit-pty': ''}
+        self.extensions = extensions or {"permit-pty": ""}
         self.vault_conn_id = vault_conn_id
         self.mount_point = mount_point
         self.output_key = output_key
@@ -306,14 +300,14 @@ class VaultSSHSignOperator(BaseOperator):
             valid_principals=self.valid_principals,
             ttl=self.ttl,
             extensions=self.extensions,
-            mount_point=self.mount_point
+            mount_point=self.mount_point,
         )
 
-        signed_key = response['data']['signed_key']
+        signed_key = response["data"]["signed_key"]
 
         self.log.info(f"SSH key signed successfully")
 
-        context['ti'].xcom_push(key=self.output_key, value=signed_key)
+        context["ti"].xcom_push(key=self.output_key, value=signed_key)
 
         return signed_key
 
@@ -337,15 +331,15 @@ class VaultLeaseRevokeOperator(BaseOperator):
         )
     """
 
-    template_fields = ('lease_ids',)
-    ui_color = '#DC143C'  # Crimson
+    template_fields = ("lease_ids",)
+    ui_color = "#DC143C"  # Crimson
 
     def __init__(
         self,
         lease_ids: Optional[List[str]] = None,
         lease_id_xcom_keys: Optional[List[str]] = None,
-        vault_conn_id: str = 'vault_default',
-        **kwargs
+        vault_conn_id: str = "vault_default",
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.lease_ids = lease_ids or []
@@ -369,15 +363,11 @@ class VaultLeaseRevokeOperator(BaseOperator):
         all_lease_ids = list(self.lease_ids)
 
         for xcom_key in self.lease_id_xcom_keys:
-            lease_id = context['ti'].xcom_pull(key=xcom_key)
+            lease_id = context["ti"].xcom_pull(key=xcom_key)
             if lease_id:
                 all_lease_ids.append(lease_id)
 
-        results = {
-            'revoked': [],
-            'failed': [],
-            'not_found': []
-        }
+        results = {"revoked": [], "failed": [], "not_found": []}
 
         for lease_id in all_lease_ids:
             if not lease_id:
@@ -386,14 +376,16 @@ class VaultLeaseRevokeOperator(BaseOperator):
             try:
                 self.log.info(f"Revoking lease: {lease_id[:20]}...")
                 client.sys.revoke_lease(lease_id=lease_id)
-                results['revoked'].append(lease_id)
+                results["revoked"].append(lease_id)
             except Exception as e:
-                if 'invalid lease' in str(e).lower():
-                    self.log.warning(f"Lease not found (may have expired): {lease_id[:20]}...")
-                    results['not_found'].append(lease_id)
+                if "invalid lease" in str(e).lower():
+                    self.log.warning(
+                        f"Lease not found (may have expired): {lease_id[:20]}..."
+                    )
+                    results["not_found"].append(lease_id)
                 else:
                     self.log.error(f"Failed to revoke lease {lease_id[:20]}...: {e}")
-                    results['failed'].append(lease_id)
+                    results["failed"].append(lease_id)
 
         self.log.info(
             f"Lease cleanup complete: "

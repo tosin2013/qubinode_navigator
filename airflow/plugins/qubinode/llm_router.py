@@ -15,22 +15,24 @@ Usage:
     )
 """
 
-import os
-import logging
 import asyncio
-from typing import List, Dict, Any, Optional, Union
+import logging
+import os
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
+
 import yaml
 
 logger = logging.getLogger(__name__)
 
 # Configuration
 LITELLM_CONFIG_PATH = os.getenv(
-    "LITELLM_CONFIG_PATH",
-    str(Path(__file__).parent / "litellm_config.yaml")
+    "LITELLM_CONFIG_PATH", str(Path(__file__).parent / "litellm_config.yaml")
 )
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-ENVIRONMENT = os.getenv("QUBINODE_ENVIRONMENT", "disconnected")  # disconnected, connected, development
+ENVIRONMENT = os.getenv(
+    "QUBINODE_ENVIRONMENT", "disconnected"
+)  # disconnected, connected, development
 
 # Lazy-loaded router instance
 _router: Optional["LLMRouter"] = None
@@ -67,20 +69,26 @@ class LLMRouter:
         """Load configuration from YAML file."""
         try:
             if os.path.exists(self.config_path):
-                with open(self.config_path, 'r') as f:
+                with open(self.config_path, "r") as f:
                     self.config = yaml.safe_load(f)
 
                 # Load model aliases
                 self.model_aliases = self.config.get("model_aliases", {})
 
                 # Load environment-specific models
-                env_config = self.config.get("environments", {}).get(self.environment, {})
+                env_config = self.config.get("environments", {}).get(
+                    self.environment, {}
+                )
                 self.available_models = env_config.get("allowed_models", [])
                 self.default_model = env_config.get("default_model", "granite-instruct")
 
-                logger.info(f"LLM Router config loaded: {len(self.available_models)} models for {self.environment}")
+                logger.info(
+                    f"LLM Router config loaded: {len(self.available_models)} models for {self.environment}"
+                )
             else:
-                logger.warning(f"Config file not found: {self.config_path}, using defaults")
+                logger.warning(
+                    f"Config file not found: {self.config_path}, using defaults"
+                )
                 self._set_defaults()
         except Exception as e:
             logger.error(f"Failed to load config: {e}")
@@ -92,9 +100,14 @@ class LLMRouter:
             "manager": "granite-instruct",
             "manager_fallback": "llama3",
             "developer": "granite-code",
-            "developer_fallback": "codellama"
+            "developer_fallback": "codellama",
         }
-        self.available_models = ["granite-code", "granite-instruct", "llama3", "codellama"]
+        self.available_models = [
+            "granite-code",
+            "granite-instruct",
+            "llama3",
+            "codellama",
+        ]
         self.default_model = "granite-instruct"
 
     def _get_litellm(self):
@@ -102,6 +115,7 @@ class LLMRouter:
         if self._litellm is None:
             try:
                 import litellm
+
                 self._litellm = litellm
 
                 # Configure LiteLLM
@@ -135,7 +149,9 @@ class LLMRouter:
             return model_or_alias
 
         # Fallback to default
-        logger.warning(f"Model '{model_or_alias}' not found, using default: {self.default_model}")
+        logger.warning(
+            f"Model '{model_or_alias}' not found, using default: {self.default_model}"
+        )
         return self.default_model
 
     def get_model_config(self, model_name: str) -> Dict[str, Any]:
@@ -171,6 +187,7 @@ class LLMRouter:
             # For Ollama models, check the API
             if "ollama" in litellm_params.get("model", ""):
                 import httpx
+
                 base_url = litellm_params.get("api_base", OLLAMA_BASE_URL)
                 async with httpx.AsyncClient(timeout=5.0) as client:
                     response = await client.get(f"{base_url}/api/tags")
@@ -187,7 +204,7 @@ class LLMRouter:
         temperature: float = 0.7,
         max_tokens: Optional[int] = None,
         stream: bool = False,
-        **kwargs
+        **kwargs,
     ) -> Dict[str, Any]:
         """
         Send completion request to the specified model.
@@ -218,7 +235,7 @@ class LLMRouter:
             "model": model_string,
             "messages": messages,
             "temperature": temperature,
-            **kwargs
+            **kwargs,
         }
 
         if max_tokens:
@@ -245,9 +262,9 @@ class LLMRouter:
                     "usage": {
                         "prompt_tokens": response.usage.prompt_tokens,
                         "completion_tokens": response.usage.completion_tokens,
-                        "total_tokens": response.usage.total_tokens
+                        "total_tokens": response.usage.total_tokens,
                     },
-                    "finish_reason": response.choices[0].finish_reason
+                    "finish_reason": response.choices[0].finish_reason,
                 }
         except Exception as e:
             logger.error(f"Completion failed for {resolved_model}: {e}")
@@ -263,7 +280,7 @@ class LLMRouter:
                     temperature=temperature,
                     max_tokens=max_tokens,
                     stream=stream,
-                    **kwargs
+                    **kwargs,
                 )
             raise
 
@@ -273,7 +290,7 @@ class LLMRouter:
         messages: List[Dict[str, str]],
         functions: List[Dict[str, Any]],
         function_call: Optional[Union[str, Dict]] = "auto",
-        **kwargs
+        **kwargs,
     ) -> Dict[str, Any]:
         """
         Send completion request with function calling.
@@ -308,7 +325,7 @@ class LLMRouter:
             "messages": messages,
             "functions": functions,
             "function_call": function_call,
-            **kwargs
+            **kwargs,
         }
 
         if "api_base" in litellm_params:
@@ -321,13 +338,13 @@ class LLMRouter:
             result = {
                 "content": message.content,
                 "model": resolved_model,
-                "finish_reason": response.choices[0].finish_reason
+                "finish_reason": response.choices[0].finish_reason,
             }
 
             if hasattr(message, "function_call") and message.function_call:
                 result["function_call"] = {
                     "name": message.function_call.name,
-                    "arguments": message.function_call.arguments
+                    "arguments": message.function_call.arguments,
                 }
 
             return result
@@ -346,12 +363,16 @@ class LLMRouter:
         for model_name in self.available_models:
             config = self.get_model_config(model_name)
             model_info = config.get("model_info", {})
-            models.append({
-                "name": model_name,
-                "description": model_info.get("description", ""),
-                "context_window": model_info.get("context_window", 0),
-                "supports_function_calling": model_info.get("supports_function_calling", False)
-            })
+            models.append(
+                {
+                    "name": model_name,
+                    "description": model_info.get("description", ""),
+                    "context_window": model_info.get("context_window", 0),
+                    "supports_function_calling": model_info.get(
+                        "supports_function_calling", False
+                    ),
+                }
+            )
         return models
 
 
@@ -364,9 +385,7 @@ def get_router() -> LLMRouter:
 
 
 async def complete(
-    model: str,
-    messages: List[Dict[str, str]],
-    **kwargs
+    model: str, messages: List[Dict[str, str]], **kwargs
 ) -> Dict[str, Any]:
     """
     Convenience function to complete using the default router.

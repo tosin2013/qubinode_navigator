@@ -13,38 +13,40 @@ Requires: Step-CA server deployed via step_ca_deployment DAG
 """
 
 from datetime import datetime, timedelta
-from airflow import DAG
+
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator
 
+from airflow import DAG
+
 default_args = {
-    'owner': 'qubinode',
-    'depends_on_past': False,
-    'start_date': datetime(2025, 1, 1),
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 1,
-    'retry_delay': timedelta(minutes=2),
+    "owner": "qubinode",
+    "depends_on_past": False,
+    "start_date": datetime(2025, 1, 1),
+    "email_on_failure": False,
+    "email_on_retry": False,
+    "retries": 1,
+    "retry_delay": timedelta(minutes=2),
 }
 
 dag = DAG(
-    'step_ca_operations',
+    "step_ca_operations",
     default_args=default_args,
-    description='Certificate operations using Step-CA (request, renew, revoke)',
+    description="Certificate operations using Step-CA (request, renew, revoke)",
     schedule=None,
     catchup=False,
-    tags=['qubinode', 'kcli-pipelines', 'step-ca', 'certificates', 'utility'],
+    tags=["qubinode", "kcli-pipelines", "step-ca", "certificates", "utility"],
     params={
-        'operation': 'get_ca_info',  # get_ca_info, request_certificate, renew_certificate, revoke_certificate, bootstrap_client
-        'ca_url': 'https://step-ca-server.example.com:443',
-        'common_name': '',  # e.g., myservice.example.com
-        'san_list': '',  # comma-separated SANs, e.g., "myservice,192.168.1.100"
-        'duration': '720h',  # Certificate duration (default 30 days)
-        'output_path': '/tmp/certs',  # Where to save certificates
-        'cert_path': '',  # Path to existing cert (for renew/revoke)
-        'key_path': '',  # Path to existing key (for renew)
-        'target_host': '',  # Host to bootstrap or copy certs to
-        'provisioner': 'acme',  # Provisioner to use (acme, admin)
+        "operation": "get_ca_info",  # get_ca_info, request_certificate, renew_certificate, revoke_certificate, bootstrap_client
+        "ca_url": "https://step-ca-server.example.com:443",
+        "common_name": "",  # e.g., myservice.example.com
+        "san_list": "",  # comma-separated SANs, e.g., "myservice,192.168.1.100"
+        "duration": "720h",  # Certificate duration (default 30 days)
+        "output_path": "/tmp/certs",  # Where to save certificates
+        "cert_path": "",  # Path to existing cert (for renew/revoke)
+        "key_path": "",  # Path to existing key (for renew)
+        "target_host": "",  # Host to bootstrap or copy certs to
+        "provisioner": "acme",  # Provisioner to use (acme, admin)
     },
     doc_md="""
     # Step-CA Certificate Operations
@@ -111,23 +113,23 @@ dag = DAG(
 
 def decide_operation(**context):
     """Branch based on operation parameter"""
-    operation = context['params'].get('operation', 'get_ca_info')
+    operation = context["params"].get("operation", "get_ca_info")
     valid_operations = [
-        'get_ca_info',
-        'request_certificate', 
-        'renew_certificate',
-        'revoke_certificate',
-        'bootstrap_client'
+        "get_ca_info",
+        "request_certificate",
+        "renew_certificate",
+        "revoke_certificate",
+        "bootstrap_client",
     ]
     if operation in valid_operations:
         return operation
-    return 'get_ca_info'
+    return "get_ca_info"
 
 
 # Task: Ensure step CLI is installed on host
 ensure_step_cli = BashOperator(
-    task_id='ensure_step_cli',
-    bash_command='''
+    task_id="ensure_step_cli",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Ensuring step CLI is installed on host"
@@ -152,21 +154,21 @@ ensure_step_cli = BashOperator(
             exit 1
         fi
     fi
-    ''',
+    """,
     dag=dag,
 )
 
 # Task: Decide operation
 decide_operation_task = BranchPythonOperator(
-    task_id='decide_operation',
+    task_id="decide_operation",
     python_callable=decide_operation,
     dag=dag,
 )
 
 # Task: Get CA Info
 get_ca_info = BashOperator(
-    task_id='get_ca_info',
-    bash_command='''
+    task_id="get_ca_info",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Step-CA Information"
@@ -205,14 +207,14 @@ get_ca_info = BashOperator(
     echo "========================================"
     echo "CA URL: ${CA_URL}"
     echo "========================================"
-    ''',
+    """,
     dag=dag,
 )
 
 # Task: Request Certificate
 request_certificate = BashOperator(
-    task_id='request_certificate',
-    bash_command='''
+    task_id="request_certificate",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Certificate Request Instructions"
@@ -269,15 +271,15 @@ request_certificate = BashOperator(
     echo "  Certificate: ${OUTPUT_PATH}/${COMMON_NAME}.crt"
     echo "  Private Key: ${OUTPUT_PATH}/${COMMON_NAME}.key"
     echo "========================================"
-    ''',
+    """,
     execution_timeout=timedelta(minutes=2),
     dag=dag,
 )
 
 # Task: Renew Certificate
 renew_certificate = BashOperator(
-    task_id='renew_certificate',
-    bash_command='''
+    task_id="renew_certificate",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Certificate Renewal Instructions"
@@ -307,15 +309,15 @@ renew_certificate = BashOperator(
     echo "step ca renew --force ${CERT_PATH} ${KEY_PATH}"
     echo ""
     echo "========================================"
-    ''',
+    """,
     execution_timeout=timedelta(minutes=2),
     dag=dag,
 )
 
 # Task: Revoke Certificate
 revoke_certificate = BashOperator(
-    task_id='revoke_certificate',
-    bash_command='''
+    task_id="revoke_certificate",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Certificate Revocation Instructions"
@@ -348,15 +350,15 @@ revoke_certificate = BashOperator(
     echo ""
     echo "WARNING: Certificate revocation is permanent!"
     echo "========================================"
-    ''',
+    """,
     execution_timeout=timedelta(minutes=2),
     dag=dag,
 )
 
 # Task: Bootstrap Client
 bootstrap_client = BashOperator(
-    task_id='bootstrap_client',
-    bash_command='''
+    task_id="bootstrap_client",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Client Bootstrap Instructions"
@@ -414,11 +416,21 @@ bootstrap_client = BashOperator(
     echo "After bootstrapping, you can request certificates with:"
     echo "  step ca certificate <hostname> cert.crt key.key"
     echo "========================================"
-    ''',
+    """,
     execution_timeout=timedelta(minutes=2),
     dag=dag,
 )
 
 # Define task dependencies
 # First ensure step CLI is installed, then decide operation, then run the selected operation
-ensure_step_cli >> decide_operation_task >> [get_ca_info, request_certificate, renew_certificate, revoke_certificate, bootstrap_client]
+(
+    ensure_step_cli
+    >> decide_operation_task
+    >> [
+        get_ca_info,
+        request_certificate,
+        renew_certificate,
+        revoke_certificate,
+        bootstrap_client,
+    ]
+)

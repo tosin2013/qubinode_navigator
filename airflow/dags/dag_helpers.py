@@ -12,38 +12,39 @@ These helpers implement CI/CD-style patterns:
 - Clear error messages pointing to specific files
 """
 
-import os
 import json
+import os
 import subprocess
 from datetime import datetime
-from typing import Optional, Dict, List, Any
+from typing import Any, Dict, List, Optional
 
 # =============================================================================
 # Error Reporting Helpers
 # =============================================================================
+
 
 def format_config_error(
     config_file: str,
     field: str,
     error_msg: str,
     suggested_fix: Optional[str] = None,
-    related_dag: Optional[str] = None
+    related_dag: Optional[str] = None,
 ) -> str:
     """
     Format a configuration error with actionable information.
-    
+
     Args:
         config_file: Full path to the config file with the error
         field: The field/key that has the issue
         error_msg: Description of what's wrong
         suggested_fix: Optional command or steps to fix
         related_dag: Optional DAG that can fix this issue
-    
+
     Returns:
         Formatted error message string
     """
     separator = "=" * 60
-    
+
     message = f"""
 {separator}
 CONFIGURATION ERROR
@@ -54,19 +55,19 @@ Field: {field}
 Error: {error_msg}
 
 """
-    
+
     if suggested_fix:
         message += f"""To fix manually:
 {suggested_fix}
 
 """
-    
+
     if related_dag:
         message += f"""Or run this DAG to fix automatically:
   airflow dags trigger {related_dag}
 
 """
-    
+
     message += f"""After fixing, retrigger this DAG to continue.
 {separator}
 """
@@ -78,13 +79,13 @@ def format_validation_error(
     expected: str,
     actual: str,
     config_file: Optional[str] = None,
-    fix_command: Optional[str] = None
+    fix_command: Optional[str] = None,
 ) -> str:
     """
     Format a validation error with expected vs actual values.
     """
     separator = "-" * 60
-    
+
     message = f"""
 {separator}
 VALIDATION FAILED: {check_name}
@@ -92,27 +93,25 @@ VALIDATION FAILED: {check_name}
 Expected: {expected}
 Actual:   {actual}
 """
-    
+
     if config_file:
         message += f"Config:   {config_file}\n"
-    
+
     if fix_command:
         message += f"\nTo fix:\n  {fix_command}\n"
-    
+
     message += separator + "\n"
     return message
 
 
 def format_success_report(
-    operation: str,
-    details: Dict[str, Any],
-    next_steps: Optional[List[str]] = None
+    operation: str, details: Dict[str, Any], next_steps: Optional[List[str]] = None
 ) -> str:
     """
     Format a success report with details and next steps.
     """
     separator = "=" * 60
-    
+
     message = f"""
 {separator}
 SUCCESS: {operation}
@@ -121,15 +120,15 @@ Timestamp: {datetime.now().isoformat()}
 
 Details:
 """
-    
+
     for key, value in details.items():
         message += f"  {key}: {value}\n"
-    
+
     if next_steps:
         message += "\nNext Steps:\n"
         for i, step in enumerate(next_steps, 1):
             message += f"  {i}. {step}\n"
-    
+
     message += separator + "\n"
     return message
 
@@ -138,18 +137,19 @@ Details:
 # VM Cleanup Helpers (Bash Commands)
 # =============================================================================
 
+
 def get_vm_cleanup_command(vm_name: str, force: bool = True) -> str:
     """
     Generate bash command to cleanup a VM completely.
-    
+
     Args:
         vm_name: Name of the VM to cleanup
         force: If True, force destroy even if running
-    
+
     Returns:
         Bash command string for VM cleanup
     """
-    return f'''
+    return f"""
     VM_NAME="{vm_name}"
     echo "========================================"
     echo "Cleaning up VM: $VM_NAME"
@@ -173,15 +173,17 @@ def get_vm_cleanup_command(vm_name: str, force: bool = True) -> str:
     
     echo "VM cleanup complete: $VM_NAME"
     echo "Safe to retrigger DAG"
-    '''
+    """
 
 
-def get_cleanup_on_failure_task_command(vm_name_param: str = "{{ params.vm_name }}") -> str:
+def get_cleanup_on_failure_task_command(
+    vm_name_param: str = "{{ params.vm_name }}",
+) -> str:
     """
     Generate bash command for cleanup-on-failure task.
     Uses Jinja template for VM name parameter.
     """
-    return f'''
+    return f"""
     set +e  # Don't exit on error during cleanup
     
     VM_NAME="{vm_name_param}"
@@ -218,12 +220,13 @@ def get_cleanup_on_failure_task_command(vm_name_param: str = "{{ params.vm_name 
     echo "Cleanup complete - review error above"
     echo "Fix the configuration and retrigger DAG"
     echo "========================================"
-    '''
+    """
 
 
 # =============================================================================
 # Credential Management Helpers (Bash Commands)
 # =============================================================================
+
 
 def get_credential_setup_command(
     registry_host: str,
@@ -231,15 +234,15 @@ def get_credential_setup_command(
     username_var: str = "quay_username",
     password_var: str = "quay_password",
     pull_secret_path: str = "/root/pull-secret.json",
-    output_path: str = "/tmp/merged-pull-secret.json"
+    output_path: str = "/tmp/merged-pull-secret.json",
 ) -> str:
     """
     Generate bash command to setup registry credentials.
     Fetches from Airflow Variables and merges with pull-secret.
     """
     registry = f"{registry_host}:{registry_port}"
-    
-    return f'''
+
+    return f"""
     set -euo pipefail
     
     echo "========================================"
@@ -302,24 +305,23 @@ def get_credential_setup_command(
     
     echo ""
     echo "Credential setup complete"
-    '''
+    """
 
 
 # =============================================================================
 # Validation Helpers (Bash Commands)
 # =============================================================================
 
+
 def get_registry_validation_command(
-    registry_host: str,
-    registry_port: str = "8443",
-    min_cert_days: int = 7
+    registry_host: str, registry_port: str = "8443", min_cert_days: int = 7
 ) -> str:
     """
     Generate bash command to validate registry health and certificate.
     """
     registry = f"{registry_host}:{registry_port}"
-    
-    return f'''
+
+    return f"""
     set -euo pipefail
     
     echo "========================================"
@@ -381,18 +383,16 @@ def get_registry_validation_command(
     else
         echo "VALIDATION PASSED"
     fi
-    '''
+    """
 
 
 def get_dns_validation_command(
-    cluster_name: str,
-    base_domain: str,
-    expected_ip: Optional[str] = None
+    cluster_name: str, base_domain: str, expected_ip: Optional[str] = None
 ) -> str:
     """
     Generate bash command to validate DNS entries for OpenShift cluster.
     """
-    return f'''
+    return f"""
     set -euo pipefail
     
     echo "========================================"
@@ -459,17 +459,14 @@ def get_dns_validation_command(
     else
         echo "DNS VALIDATION PASSED"
     fi
-    '''
+    """
 
 
-def get_config_validation_command(
-    cluster_yml_path: str,
-    nodes_yml_path: str
-) -> str:
+def get_config_validation_command(cluster_yml_path: str, nodes_yml_path: str) -> str:
     """
     Generate bash command to validate cluster.yml and nodes.yml syntax.
     """
-    return f'''
+    return f"""
     set -euo pipefail
     
     echo "========================================"
@@ -562,24 +559,23 @@ def get_config_validation_command(
     else
         echo "CONFIG VALIDATION PASSED"
     fi
-    '''
+    """
 
 
 # =============================================================================
 # Image Validation Helpers
 # =============================================================================
 
+
 def get_image_validation_command(
-    registry_host: str,
-    registry_port: str = "8443",
-    ocp_version: str = "4.19"
+    registry_host: str, registry_port: str = "8443", ocp_version: str = "4.19"
 ) -> str:
     """
     Generate bash command to validate OCP images exist in registry.
     """
     registry = f"{registry_host}:{registry_port}"
-    
-    return f'''
+
+    return f"""
     set -euo pipefail
     
     echo "========================================"
@@ -641,12 +637,13 @@ def get_image_validation_command(
     else
         echo "IMAGE VALIDATION PASSED"
     fi
-    '''
+    """
 
 
 # =============================================================================
 # Airflow Task Generators
 # =============================================================================
+
 
 def create_cleanup_on_failure_task(dag, vm_name_param: str = "{{ params.vm_name }}"):
     """
@@ -662,7 +659,7 @@ def create_cleanup_on_failure_task(dag, vm_name_param: str = "{{ params.vm_name 
     from airflow.utils.trigger_rule import TriggerRule
 
     return BashOperator(
-        task_id='cleanup_on_failure',
+        task_id="cleanup_on_failure",
         bash_command=get_cleanup_on_failure_task_command(vm_name_param),
         trigger_rule=TriggerRule.ONE_FAILED,
         dag=dag,
@@ -673,6 +670,7 @@ def create_cleanup_on_failure_task(dag, vm_name_param: str = "{{ params.vm_name 
 # SSH Execution Helpers (ADR-0046 Compliance)
 # =============================================================================
 # Issue #4 Fix: Provide standardized SSH execution patterns for host commands
+
 
 def ssh_to_host_command(cmd: str, host: str = "localhost", user: str = "root") -> str:
     """
@@ -703,12 +701,12 @@ def ssh_to_host_command(cmd: str, host: str = "localhost", user: str = "root") -
         # Or with variables (use double quotes in command):
         bash_command = ssh_to_host_command(f'kcli create vm -i centos10stream {vm_name}')
     """
-    return f'''ssh -o StrictHostKeyChecking=no \\
+    return f"""ssh -o StrictHostKeyChecking=no \\
     -o UserKnownHostsFile=/dev/null \\
     -o LogLevel=ERROR \\
     {user}@{host} \\
     '{cmd}'
-    '''
+    """
 
 
 def ssh_to_host_script(script: str, host: str = "localhost", user: str = "root") -> str:
@@ -743,13 +741,13 @@ def ssh_to_host_script(script: str, host: str = "localhost", user: str = "root")
         '''
         bash_command = ssh_to_host_script(script)
     """
-    return f'''ssh -o StrictHostKeyChecking=no \\
+    return f"""ssh -o StrictHostKeyChecking=no \\
     -o UserKnownHostsFile=/dev/null \\
     -o LogLevel=ERROR \\
     {user}@{host} << 'REMOTE_SCRIPT'
 {script}
 REMOTE_SCRIPT
-    '''
+    """
 
 
 def get_kcli_command(cmd: str, via_ssh: bool = True) -> str:
@@ -776,8 +774,8 @@ def get_kcli_command(cmd: str, via_ssh: bool = True) -> str:
             dag=dag,
         )
     """
-    full_cmd = f'''export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
-kcli {cmd}'''
+    full_cmd = f"""export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
+kcli {cmd}"""
 
     if via_ssh:
         return ssh_to_host_script(full_cmd)
@@ -789,7 +787,7 @@ def get_ansible_playbook_command(
     inventory: str = "/opt/qubinode_navigator/inventories/localhost",
     extra_vars: Optional[Dict[str, str]] = None,
     vault_password_file: str = "/root/.vault_password",
-    via_ssh: bool = True
+    via_ssh: bool = True,
 ) -> str:
     """
     Generate an ansible-playbook command with proper configuration.
@@ -831,4 +829,3 @@ def get_ansible_playbook_command(
     if via_ssh:
         return ssh_to_host_script(full_cmd)
     return full_cmd
-

@@ -28,18 +28,20 @@ Usage:
     )
 """
 
-import re
 import os
+import re
 from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
 
-from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator
 from airflow.utils.trigger_rule import TriggerRule
 
+from airflow import DAG
+
 try:
     import yaml
+
     YAML_AVAILABLE = True
 except ImportError:
     YAML_AVAILABLE = False
@@ -51,37 +53,38 @@ except ImportError:
 
 # Qubinode standard defaults (ADR-0045 compliant)
 QUBINODE_DEFAULTS = {
-    'owner': 'qubinode',
-    'depends_on_past': False,
-    'start_date': datetime(2025, 1, 1),
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 2,
-    'retry_delay': timedelta(minutes=3),
+    "owner": "qubinode",
+    "depends_on_past": False,
+    "start_date": datetime(2025, 1, 1),
+    "email_on_failure": False,
+    "email_on_retry": False,
+    "retries": 2,
+    "retry_delay": timedelta(minutes=3),
 }
 
 # Valid categories for DAG classification
 VALID_CATEGORIES = [
-    'compute',      # VMs, containers, clusters
-    'network',      # Routers, firewalls, load balancers
-    'identity',     # Authentication, authorization, directory services
-    'storage',      # Persistent storage, backups
-    'security',     # PKI, secrets management, scanning
-    'monitoring',   # Logging, metrics, alerting
+    "compute",  # VMs, containers, clusters
+    "network",  # Routers, firewalls, load balancers
+    "identity",  # Authentication, authorization, directory services
+    "storage",  # Persistent storage, backups
+    "security",  # PKI, secrets management, scanning
+    "monitoring",  # Logging, metrics, alerting
 ]
 
 # Validation patterns
-NAMING_PATTERN = r'^[a-z][a-z0-9_]*$'  # snake_case only
-REQUIRED_FIELDS = ['component', 'description', 'script_path', 'tags', 'category']
+NAMING_PATTERN = r"^[a-z][a-z0-9_]*$"  # snake_case only
+REQUIRED_FIELDS = ["component", "description", "script_path", "tags", "category"]
 
 # Default registry path
-DEFAULT_REGISTRY_PATH = '/opt/kcli-pipelines/dags/registry.yaml'
-ALT_REGISTRY_PATH = '/root/qubinode_navigator/airflow/dags/registry.yaml'
+DEFAULT_REGISTRY_PATH = "/opt/kcli-pipelines/dags/registry.yaml"
+ALT_REGISTRY_PATH = "/root/qubinode_navigator/airflow/dags/registry.yaml"
 
 
 # =============================================================================
 # Validation Functions
 # =============================================================================
+
 
 def validate_registry_entry(config: Dict[str, Any]) -> List[str]:
     """
@@ -101,22 +104,24 @@ def validate_registry_entry(config: Dict[str, Any]) -> List[str]:
             errors.append(f"Missing required field: {field}")
 
     # Component naming convention (ADR-0045 compliance)
-    component = config.get('component', '')
+    component = config.get("component", "")
     if component and not re.match(NAMING_PATTERN, component):
         errors.append(f"Component name must be snake_case: '{component}'")
 
     # Script path validation
-    script_path = config.get('script_path', '')
-    if script_path and not script_path.startswith('/opt/'):
+    script_path = config.get("script_path", "")
+    if script_path and not script_path.startswith("/opt/"):
         errors.append(f"Script path should be in /opt/: '{script_path}'")
 
     # Category validation
-    category = config.get('category', '')
+    category = config.get("category", "")
     if category and category not in VALID_CATEGORIES:
-        errors.append(f"Invalid category '{category}'. Must be one of: {VALID_CATEGORIES}")
+        errors.append(
+            f"Invalid category '{category}'. Must be one of: {VALID_CATEGORIES}"
+        )
 
     # Tags validation
-    tags = config.get('tags', [])
+    tags = config.get("tags", [])
     if not isinstance(tags, list):
         errors.append("Tags must be a list")
     elif len(tags) == 0:
@@ -133,6 +138,7 @@ def validate_component_name(name: str) -> bool:
 # =============================================================================
 # Core Factory Function
 # =============================================================================
+
 
 def create_deployment_dag(
     component: str,
@@ -178,13 +184,15 @@ def create_deployment_dag(
         )
     """
     # Validate inputs
-    errors = validate_registry_entry({
-        'component': component,
-        'description': description,
-        'script_path': script_path,
-        'tags': tags,
-        'category': category,
-    })
+    errors = validate_registry_entry(
+        {
+            "component": component,
+            "description": description,
+            "script_path": script_path,
+            "tags": tags,
+            "category": category,
+        }
+    )
     if errors:
         raise ValueError(f"Invalid DAG configuration: {errors}")
 
@@ -197,12 +205,12 @@ def create_deployment_dag(
         dag_default_args.update(default_args_override)
 
     # Build params with action default
-    dag_params = {'action': 'create'}
+    dag_params = {"action": "create"}
     if params:
         dag_params.update(params)
 
     # Build unique tags list
-    all_tags = ['qubinode', component, category]
+    all_tags = ["qubinode", component, category]
     for tag in tags:
         if tag not in all_tags:
             all_tags.append(tag)
@@ -231,22 +239,22 @@ def create_deployment_dag(
     # Create branching task for action
     def decide_action(**context):
         """Branch based on action parameter."""
-        action = context['params'].get('action', 'create')
-        if action in ('delete', 'destroy'):
-            return f'destroy_{component}'
-        elif action == 'status':
-            return f'status_{component}'
-        return 'validate_environment'
+        action = context["params"].get("action", "create")
+        if action in ("delete", "destroy"):
+            return f"destroy_{component}"
+        elif action == "status":
+            return f"status_{component}"
+        return "validate_environment"
 
     decide_action_task = BranchPythonOperator(
-        task_id='decide_action',
+        task_id="decide_action",
         python_callable=decide_action,
         dag=dag,
     )
 
     # Task: Environment validation (always included)
     validate_env = BashOperator(
-        task_id='validate_environment',
+        task_id="validate_environment",
         bash_command=_generate_validation_script(
             component=component,
             script_path=script_path,
@@ -257,41 +265,41 @@ def create_deployment_dag(
 
     # Task: Deploy using SSH execution pattern (ADR-0046)
     deploy = BashOperator(
-        task_id=f'deploy_{component}',
+        task_id=f"deploy_{component}",
         bash_command=_generate_deploy_script(
             component=component,
             script_path=script_path,
-            action='create',
+            action="create",
         ),
         dag=dag,
     )
 
     # Task: Destroy
     destroy = BashOperator(
-        task_id=f'destroy_{component}',
+        task_id=f"destroy_{component}",
         bash_command=_generate_deploy_script(
             component=component,
             script_path=script_path,
-            action='delete',
+            action="delete",
         ),
         dag=dag,
     )
 
     # Task: Status check
     status = BashOperator(
-        task_id=f'status_{component}',
+        task_id=f"status_{component}",
         bash_command=_generate_deploy_script(
             component=component,
             script_path=script_path,
-            action='status',
+            action="status",
         ),
         dag=dag,
     )
 
     # Task: Cleanup on failure
     cleanup_on_failure = BashOperator(
-        task_id='cleanup_on_failure',
-        bash_command=f'''
+        task_id="cleanup_on_failure",
+        bash_command=f"""
         echo "========================================"
         echo "[WARN] Deployment failed - running cleanup"
         echo "========================================"
@@ -301,7 +309,7 @@ def create_deployment_dag(
             "export ACTION=delete && cd {script_path} && ./deploy.sh" 2>/dev/null || true
 
         echo "[INFO] Cleanup attempted"
-        ''',
+        """,
         dag=dag,
         trigger_rule=TriggerRule.ONE_FAILED,
     )
@@ -317,15 +325,16 @@ def create_deployment_dag(
 # Helper Functions for Script Generation
 # =============================================================================
 
+
 def _generate_validation_script(
     component: str,
     script_path: str,
     custom_validation: Optional[str] = None,
 ) -> str:
     """Generate the validation bash script."""
-    custom_block = custom_validation or ''
+    custom_block = custom_validation or ""
 
-    return f'''
+    return f"""
     echo "========================================"
     echo "Validating environment for {component}"
     echo "========================================"
@@ -373,7 +382,7 @@ def _generate_validation_script(
 
     echo ""
     echo "[OK] Environment validation complete"
-    '''
+    """
 
 
 def _generate_deploy_script(
@@ -384,7 +393,7 @@ def _generate_deploy_script(
     """Generate the deployment bash script using SSH execution pattern."""
     action_display = action.upper()
 
-    return f'''
+    return f"""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
 
     echo "========================================"
@@ -411,7 +420,7 @@ def _generate_deploy_script(
         exit $EXIT_CODE
     fi
     echo "========================================"
-    '''
+    """
 
 
 def _generate_dag_documentation(
@@ -423,12 +432,12 @@ def _generate_dag_documentation(
 ) -> str:
     """Generate markdown documentation for the DAG."""
     # Format params as YAML-like string
-    params_str = '\n'.join(f"  {k}: {v}" for k, v in params.items())
+    params_str = "\n".join(f"  {k}: {v}" for k, v in params.items())
 
     # Format volume mounts
-    mounts_str = ''
+    mounts_str = ""
     if volume_mounts:
-        mounts_str = '\n'.join(f"- `{m}`" for m in volume_mounts)
+        mounts_str = "\n".join(f"- `{m}`" for m in volume_mounts)
     else:
         mounts_str = "None required"
 
@@ -471,6 +480,7 @@ airflow dags trigger {component}_deployment --conf '{{"action": "status"}}'
 # Registry Loading Functions
 # =============================================================================
 
+
 def load_registry_dags(
     registry_path: Optional[str] = None,
 ) -> Dict[str, DAG]:
@@ -511,8 +521,8 @@ def load_registry_dags(
         return {}
 
     dags = {}
-    for dag_config in registry.get('dags', []):
-        component = dag_config.get('component', 'unknown')
+    for dag_config in registry.get("dags", []):
+        component = dag_config.get("component", "unknown")
 
         # Validate configuration
         errors = validate_registry_entry(dag_config)
@@ -536,6 +546,7 @@ def load_registry_dags(
 # Helper Functions for Complex DAGs
 # =============================================================================
 
+
 def add_stage(
     dag: DAG,
     stage_name: str,
@@ -557,11 +568,11 @@ def add_stage(
     # Use dag description to infer component or use provided path
     if not script_path:
         # Try to extract from dag description or use default
-        script_path = '/opt/kcli-pipelines'
+        script_path = "/opt/kcli-pipelines"
 
     return BashOperator(
         task_id=stage_name,
-        bash_command=f'''
+        bash_command=f"""
         export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
 
         echo "========================================"
@@ -572,7 +583,7 @@ def add_stage(
             "cd {script_path} && ./{script_name}"
 
         echo "[OK] Stage {stage_name} complete"
-        ''',
+        """,
         dag=dag,
     )
 
@@ -602,7 +613,7 @@ def add_manual_step(
     # Single task that shows instructions and waits
     manual_task = BashOperator(
         task_id=task_id,
-        bash_command=f'''
+        bash_command=f"""
         echo "========================================"
         echo "MANUAL STEP REQUIRED"
         echo "========================================"
@@ -630,7 +641,7 @@ def add_manual_step(
 
         echo "[OK] Approval received"
         rm -f "{approval_file}"
-        ''',
+        """,
         dag=dag,
     )
 
@@ -655,14 +666,15 @@ def add_conditional_branch(
     Returns:
         BranchPythonOperator task
     """
+
     def choose_branch(**context):
-        param_value = context['params'].get(param_name)
+        param_value = context["params"].get(param_name)
         if param_value in branches:
             return branches[param_value]
         return default_branch or list(branches.values())[0]
 
     return BranchPythonOperator(
-        task_id=f'branch_on_{param_name}',
+        task_id=f"branch_on_{param_name}",
         python_callable=choose_branch,
         dag=dag,
     )
@@ -672,15 +684,15 @@ def add_conditional_branch(
 # Module Information
 # =============================================================================
 
-__version__ = '1.0.0'
-__author__ = 'Qubinode Team'
+__version__ = "1.0.0"
+__author__ = "Qubinode Team"
 __all__ = [
-    'create_deployment_dag',
-    'load_registry_dags',
-    'validate_registry_entry',
-    'add_stage',
-    'add_manual_step',
-    'add_conditional_branch',
-    'VALID_CATEGORIES',
-    'QUBINODE_DEFAULTS',
+    "create_deployment_dag",
+    "load_registry_dags",
+    "validate_registry_entry",
+    "add_stage",
+    "add_manual_step",
+    "add_conditional_branch",
+    "VALID_CATEGORIES",
+    "QUBINODE_DEFAULTS",
 ]

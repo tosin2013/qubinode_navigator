@@ -16,41 +16,43 @@ Calls: /opt/kcli-pipelines/harbor/deploy.sh
 """
 
 from datetime import datetime, timedelta
-from airflow import DAG
+
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator
 
+from airflow import DAG
+
 # Configuration
-KCLI_PIPELINES_DIR = '/opt/kcli-pipelines'
-HARBOR_DIR = f'{KCLI_PIPELINES_DIR}/harbor'
+KCLI_PIPELINES_DIR = "/opt/kcli-pipelines"
+HARBOR_DIR = f"{KCLI_PIPELINES_DIR}/harbor"
 
 default_args = {
-    'owner': 'qubinode',
-    'depends_on_past': False,
-    'start_date': datetime(2025, 1, 1),
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 2,
-    'retry_delay': timedelta(minutes=5),
+    "owner": "qubinode",
+    "depends_on_past": False,
+    "start_date": datetime(2025, 1, 1),
+    "email_on_failure": False,
+    "email_on_retry": False,
+    "retries": 2,
+    "retry_delay": timedelta(minutes=5),
 }
 
 dag = DAG(
-    'harbor_deployment',
+    "harbor_deployment",
     default_args=default_args,
-    description='Deploy Harbor enterprise container registry',
+    description="Deploy Harbor enterprise container registry",
     schedule=None,
     catchup=False,
-    tags=['qubinode', 'kcli-pipelines', 'harbor', 'registry', 'enterprise'],
+    tags=["qubinode", "kcli-pipelines", "harbor", "registry", "enterprise"],
     params={
-        'action': 'create',  # create, delete, status, health
-        'vm_name': 'harbor',  # VM name
-        'harbor_version': 'v2.10.1',  # Harbor version
-        'cert_mode': 'step-ca',  # step-ca or letsencrypt
-        'domain': 'example.com',  # Domain for certificates
-        'target_server': 'localhost',  # Target server
-        'network': 'qubinet',  # Network to deploy on
-        'step_ca_vm': 'step-ca-server',  # Step-CA server VM name (for step-ca mode)
-        'email': '',  # Email for Let's Encrypt (for letsencrypt mode)
+        "action": "create",  # create, delete, status, health
+        "vm_name": "harbor",  # VM name
+        "harbor_version": "v2.10.1",  # Harbor version
+        "cert_mode": "step-ca",  # step-ca or letsencrypt
+        "domain": "example.com",  # Domain for certificates
+        "target_server": "localhost",  # Target server
+        "network": "qubinet",  # Network to deploy on
+        "step_ca_vm": "step-ca-server",  # Step-CA server VM name (for step-ca mode)
+        "email": "",  # Email for Let's Encrypt (for letsencrypt mode)
     },
     doc_md="""
     # Harbor Registry Deployment DAG
@@ -157,19 +159,19 @@ dag = DAG(
 
 def decide_action(**context):
     """Branch based on action parameter"""
-    action = context['params'].get('action', 'create')
-    if action == 'delete':
-        return 'delete_harbor'
-    elif action == 'status':
-        return 'check_status'
-    elif action == 'health':
-        return 'health_check'
-    return 'check_prerequisites'
+    action = context["params"].get("action", "create")
+    if action == "delete":
+        return "delete_harbor"
+    elif action == "status":
+        return "check_status"
+    elif action == "health":
+        return "health_check"
+    return "check_prerequisites"
 
 
 # Task: Decide action
 decide_action_task = BranchPythonOperator(
-    task_id='decide_action',
+    task_id="decide_action",
     python_callable=decide_action,
     dag=dag,
 )
@@ -177,8 +179,8 @@ decide_action_task = BranchPythonOperator(
 
 # Task: Check prerequisites (Step-CA or Let's Encrypt)
 check_prerequisites = BashOperator(
-    task_id='check_prerequisites',
-    bash_command='''
+    task_id="check_prerequisites",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Checking Harbor Prerequisites"
@@ -247,15 +249,15 @@ check_prerequisites = BashOperator(
     
     echo ""
     echo "[OK] Prerequisites check complete"
-    ''',
+    """,
     dag=dag,
 )
 
 
 # Task: Validate environment
 validate_environment = BashOperator(
-    task_id='validate_environment',
-    bash_command='''
+    task_id="validate_environment",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Validating Harbor Environment"
@@ -298,15 +300,15 @@ validate_environment = BashOperator(
     
     echo ""
     echo "[OK] Environment validation complete"
-    ''',
+    """,
     dag=dag,
 )
 
 
 # Task: Create Harbor VM
 create_harbor = BashOperator(
-    task_id='create_harbor_vm',
-    bash_command='''
+    task_id="create_harbor_vm",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Creating Harbor VM"
@@ -371,7 +373,7 @@ create_harbor = BashOperator(
     
     echo ""
     echo "[OK] Harbor deployment initiated"
-    ''',
+    """,
     execution_timeout=timedelta(minutes=45),
     dag=dag,
 )
@@ -379,8 +381,8 @@ create_harbor = BashOperator(
 
 # Task: Wait for Harbor VM
 wait_for_harbor = BashOperator(
-    task_id='wait_for_harbor_vm',
-    bash_command='''
+    task_id="wait_for_harbor_vm",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Waiting for Harbor VM"
@@ -414,7 +416,7 @@ wait_for_harbor = BashOperator(
     done
     
     echo "[WARN] Timeout waiting for Harbor VM - may still be provisioning"
-    ''',
+    """,
     execution_timeout=timedelta(minutes=20),
     dag=dag,
 )
@@ -422,8 +424,8 @@ wait_for_harbor = BashOperator(
 
 # Task: Validate Harbor is healthy
 validate_harbor_health = BashOperator(
-    task_id='validate_harbor_health',
-    bash_command='''
+    task_id="validate_harbor_health",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Validating Harbor Health"
@@ -469,7 +471,7 @@ validate_harbor_health = BashOperator(
     echo "[WARN] Harbor health check timed out"
     echo "Harbor may still be initializing. Check manually:"
     echo "  curl -k https://$IP/api/v2.0/health"
-    ''',
+    """,
     execution_timeout=timedelta(minutes=20),
     dag=dag,
 )
@@ -477,8 +479,8 @@ validate_harbor_health = BashOperator(
 
 # Task: Complete deployment
 deployment_complete = BashOperator(
-    task_id='deployment_complete',
-    bash_command='''
+    task_id="deployment_complete",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Harbor Deployment Complete"
@@ -511,15 +513,15 @@ deployment_complete = BashOperator(
     echo "========================================"
     echo "Harbor is ready"
     echo "========================================"
-    ''',
+    """,
     dag=dag,
 )
 
 
 # Task: Health check (standalone)
 health_check = BashOperator(
-    task_id='health_check',
-    bash_command='''
+    task_id="health_check",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Harbor Health Check"
@@ -553,15 +555,15 @@ health_check = BashOperator(
         echo "Response: $HEALTH"
         exit 1
     fi
-    ''',
+    """,
     dag=dag,
 )
 
 
 # Task: Delete Harbor
 delete_harbor = BashOperator(
-    task_id='delete_harbor',
-    bash_command='''
+    task_id="delete_harbor",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Deleting Harbor"
@@ -580,7 +582,7 @@ delete_harbor = BashOperator(
         echo "[WARN] VM may not exist"
     
     echo "[OK] Harbor deleted"
-    ''',
+    """,
     execution_timeout=timedelta(minutes=10),
     dag=dag,
 )
@@ -588,8 +590,8 @@ delete_harbor = BashOperator(
 
 # Task: Check status
 check_status = BashOperator(
-    task_id='check_status',
-    bash_command='''
+    task_id="check_status",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Harbor Status"
@@ -611,7 +613,7 @@ check_status = BashOperator(
         ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
             "curl -sk https://$IP/api/v2.0/health 2>/dev/null" || echo "Health check failed"
     fi
-    ''',
+    """,
     dag=dag,
 )
 
@@ -625,4 +627,3 @@ create_harbor >> wait_for_harbor >> validate_harbor_health >> deployment_complet
 decide_action_task >> delete_harbor
 decide_action_task >> check_status
 decide_action_task >> health_check
-

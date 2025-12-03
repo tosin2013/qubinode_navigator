@@ -34,19 +34,19 @@ Usage:
     )
 """
 
-import os
 import logging
+import os
 import uuid
-from typing import List, Optional, Dict, Any, Tuple
-from datetime import datetime
 from contextlib import contextmanager
+from datetime import datetime
+from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
 # Database configuration
 DATABASE_URL = os.getenv(
     "AIRFLOW__DATABASE__SQL_ALCHEMY_CONN",
-    "postgresql+psycopg2://airflow:airflow@localhost/airflow"
+    "postgresql+psycopg2://airflow:airflow@localhost/airflow",
 )
 
 # Convert SQLAlchemy URL to psycopg2 format if needed
@@ -67,6 +67,7 @@ def _get_psycopg2():
         import psycopg2
         import psycopg2.pool
         from psycopg2.extras import RealDictCursor, execute_values
+
         _psycopg2 = psycopg2
     return _psycopg2
 
@@ -77,9 +78,7 @@ def _get_connection_pool():
     if _connection_pool is None:
         psycopg2 = _get_psycopg2()
         _connection_pool = psycopg2.pool.ThreadedConnectionPool(
-            minconn=1,
-            maxconn=10,
-            dsn=PSYCOPG2_URL
+            minconn=1, maxconn=10, dsn=PSYCOPG2_URL
         )
         logger.info("Database connection pool created")
     return _connection_pool
@@ -106,6 +105,7 @@ class RAGStore:
         """
         if embedding_service is None:
             from qubinode.embedding_service import get_embedding_service
+
             embedding_service = get_embedding_service()
 
         self.embedding_service = embedding_service
@@ -143,7 +143,7 @@ class RAGStore:
         source_url: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
         chunk_size: int = 500,
-        chunk_overlap: int = 50
+        chunk_overlap: int = 50,
     ) -> List[str]:
         """
         Ingest a document into the RAG store.
@@ -186,23 +186,28 @@ class RAGStore:
                 for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
                     doc_id = str(uuid.uuid4())
 
-                    cur.execute("""
+                    cur.execute(
+                        """
                         INSERT INTO rag_documents
                         (id, content, content_hash, embedding, doc_type, source_path,
                          source_url, metadata, chunk_index, parent_doc_id)
                         VALUES (%s, %s, %s, %s::vector, %s, %s, %s, %s, %s, %s)
-                    """, (
-                        doc_id,
-                        chunk,
-                        content_hash if i == 0 else None,  # Only first chunk gets hash
-                        embedding,
-                        doc_type,
-                        source_path,
-                        source_url,
-                        metadata or {},
-                        i,
-                        parent_id
-                    ))
+                    """,
+                        (
+                            doc_id,
+                            chunk,
+                            (
+                                content_hash if i == 0 else None
+                            ),  # Only first chunk gets hash
+                            embedding,
+                            doc_type,
+                            source_path,
+                            source_url,
+                            metadata or {},
+                            i,
+                            parent_id,
+                        ),
+                    )
                     doc_ids.append(doc_id)
 
         logger.info(f"Ingested {len(doc_ids)} document chunks")
@@ -214,7 +219,7 @@ class RAGStore:
             with conn.cursor() as cur:
                 cur.execute(
                     "SELECT 1 FROM rag_documents WHERE content_hash = %s LIMIT 1",
-                    (content_hash,)
+                    (content_hash,),
                 )
                 return cur.fetchone() is not None
 
@@ -223,7 +228,7 @@ class RAGStore:
         query: str,
         doc_types: Optional[List[str]] = None,
         limit: int = 5,
-        threshold: float = 0.7
+        threshold: float = 0.7,
     ) -> List[Dict[str, Any]]:
         """
         Search for documents similar to query.
@@ -243,7 +248,8 @@ class RAGStore:
         with self.get_connection() as conn:
             with conn.cursor() as cur:
                 if doc_types:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         SELECT id, content, doc_type, source_path, metadata,
                                1 - (embedding <=> %s::vector) as similarity
                         FROM rag_documents
@@ -251,38 +257,55 @@ class RAGStore:
                           AND 1 - (embedding <=> %s::vector) > %s
                         ORDER BY embedding <=> %s::vector
                         LIMIT %s
-                    """, (query_embedding, doc_types, query_embedding, threshold, query_embedding, limit))
+                    """,
+                        (
+                            query_embedding,
+                            doc_types,
+                            query_embedding,
+                            threshold,
+                            query_embedding,
+                            limit,
+                        ),
+                    )
                 else:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         SELECT id, content, doc_type, source_path, metadata,
                                1 - (embedding <=> %s::vector) as similarity
                         FROM rag_documents
                         WHERE 1 - (embedding <=> %s::vector) > %s
                         ORDER BY embedding <=> %s::vector
                         LIMIT %s
-                    """, (query_embedding, query_embedding, threshold, query_embedding, limit))
+                    """,
+                        (
+                            query_embedding,
+                            query_embedding,
+                            threshold,
+                            query_embedding,
+                            limit,
+                        ),
+                    )
 
                 rows = cur.fetchall()
 
         results = []
         for row in rows:
-            results.append({
-                "id": str(row[0]),
-                "content": row[1],
-                "doc_type": row[2],
-                "source_path": row[3],
-                "metadata": row[4],
-                "similarity": float(row[5])
-            })
+            results.append(
+                {
+                    "id": str(row[0]),
+                    "content": row[1],
+                    "doc_type": row[2],
+                    "source_path": row[3],
+                    "metadata": row[4],
+                    "similarity": float(row[5]),
+                }
+            )
 
         logger.info(f"Found {len(results)} documents matching query")
         return results
 
     def list_documents(
-        self,
-        doc_type: Optional[str] = None,
-        limit: int = 100,
-        offset: int = 0
+        self, doc_type: Optional[str] = None, limit: int = 100, offset: int = 0
     ) -> List[Dict[str, Any]]:
         """
         List documents in the store.
@@ -298,23 +321,29 @@ class RAGStore:
         with self.get_connection() as conn:
             with conn.cursor() as cur:
                 if doc_type:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         SELECT id, doc_type, source_path, metadata, created_at,
                                LENGTH(content) as content_length
                         FROM rag_documents
                         WHERE doc_type = %s AND chunk_index = 0
                         ORDER BY created_at DESC
                         LIMIT %s OFFSET %s
-                    """, (doc_type, limit, offset))
+                    """,
+                        (doc_type, limit, offset),
+                    )
                 else:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         SELECT id, doc_type, source_path, metadata, created_at,
                                LENGTH(content) as content_length
                         FROM rag_documents
                         WHERE chunk_index = 0
                         ORDER BY created_at DESC
                         LIMIT %s OFFSET %s
-                    """, (limit, offset))
+                    """,
+                        (limit, offset),
+                    )
 
                 rows = cur.fetchall()
 
@@ -325,7 +354,7 @@ class RAGStore:
                 "source_path": row[2],
                 "metadata": row[3],
                 "created_at": row[4].isoformat() if row[4] else None,
-                "content_length": row[5]
+                "content_length": row[5],
             }
             for row in rows
         ]
@@ -344,15 +373,11 @@ class RAGStore:
             with conn.cursor() as cur:
                 # Delete chunks if this is a parent
                 cur.execute(
-                    "DELETE FROM rag_documents WHERE parent_doc_id = %s",
-                    (doc_id,)
+                    "DELETE FROM rag_documents WHERE parent_doc_id = %s", (doc_id,)
                 )
 
                 # Delete the document itself
-                cur.execute(
-                    "DELETE FROM rag_documents WHERE id = %s",
-                    (doc_id,)
-                )
+                cur.execute("DELETE FROM rag_documents WHERE id = %s", (doc_id,))
                 return cur.rowcount > 0
 
     # =========================================================================
@@ -373,7 +398,7 @@ class RAGStore:
         override_by: Optional[str] = None,
         override_reason: Optional[str] = None,
         dag_id: Optional[str] = None,
-        component: Optional[str] = None
+        component: Optional[str] = None,
     ) -> str:
         """
         Log a troubleshooting attempt for future learning.
@@ -407,23 +432,38 @@ class RAGStore:
                 # Get next sequence number for session
                 cur.execute(
                     "SELECT COALESCE(MAX(sequence_num), 0) + 1 FROM troubleshooting_attempts WHERE session_id = %s",
-                    (session_id,)
+                    (session_id,),
                 )
                 sequence_num = cur.fetchone()[0]
 
-                cur.execute("""
+                cur.execute(
+                    """
                     INSERT INTO troubleshooting_attempts
                     (id, session_id, sequence_num, task_description, error_message,
                      error_category, attempted_solution, result, result_details,
                      embedding, confidence_score, agent, override_by, override_reason,
                      dag_id, component)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s::vector, %s, %s, %s, %s, %s, %s)
-                """, (
-                    attempt_id, session_id, sequence_num, task_description,
-                    error_message, error_category, attempted_solution, result,
-                    result_details, embedding, confidence_score, agent,
-                    override_by, override_reason, dag_id, component
-                ))
+                """,
+                    (
+                        attempt_id,
+                        session_id,
+                        sequence_num,
+                        task_description,
+                        error_message,
+                        error_category,
+                        attempted_solution,
+                        result,
+                        result_details,
+                        embedding,
+                        confidence_score,
+                        agent,
+                        override_by,
+                        override_reason,
+                        dag_id,
+                        component,
+                    ),
+                )
 
         logger.info(f"Logged troubleshooting attempt: {attempt_id} (result: {result})")
         return attempt_id
@@ -433,7 +473,7 @@ class RAGStore:
         error_description: str,
         only_successful: bool = False,
         limit: int = 5,
-        threshold: float = 0.6
+        threshold: float = 0.6,
     ) -> List[Dict[str, Any]]:
         """
         Search for similar past errors and their solutions.
@@ -452,7 +492,8 @@ class RAGStore:
         with self.get_connection() as conn:
             with conn.cursor() as cur:
                 if only_successful:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         SELECT id, error_message, attempted_solution, result,
                                component, dag_id, confidence_score,
                                1 - (embedding <=> %s::vector) as similarity
@@ -461,9 +502,12 @@ class RAGStore:
                           AND 1 - (embedding <=> %s::vector) > %s
                         ORDER BY embedding <=> %s::vector
                         LIMIT %s
-                    """, (embedding, embedding, threshold, embedding, limit))
+                    """,
+                        (embedding, embedding, threshold, embedding, limit),
+                    )
                 else:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         SELECT id, error_message, attempted_solution, result,
                                component, dag_id, confidence_score,
                                1 - (embedding <=> %s::vector) as similarity
@@ -471,7 +515,9 @@ class RAGStore:
                         WHERE 1 - (embedding <=> %s::vector) > %s
                         ORDER BY embedding <=> %s::vector
                         LIMIT %s
-                    """, (embedding, embedding, threshold, embedding, limit))
+                    """,
+                        (embedding, embedding, threshold, embedding, limit),
+                    )
 
                 rows = cur.fetchall()
 
@@ -484,7 +530,7 @@ class RAGStore:
                 "component": row[4],
                 "dag_id": row[5],
                 "confidence_score": row[6],
-                "similarity": float(row[7])
+                "similarity": float(row[7]),
             }
             for row in rows
         ]
@@ -501,14 +547,17 @@ class RAGStore:
         """
         with self.get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT id, sequence_num, task_description, error_message,
                            attempted_solution, result, result_details,
                            confidence_score, agent, override_by, created_at
                     FROM troubleshooting_attempts
                     WHERE session_id = %s
                     ORDER BY sequence_num
-                """, (session_id,))
+                """,
+                    (session_id,),
+                )
 
                 rows = cur.fetchall()
 
@@ -524,7 +573,7 @@ class RAGStore:
                 "confidence_score": row[7],
                 "agent": row[8],
                 "override_by": row[9],
-                "created_at": row[10].isoformat() if row[10] else None
+                "created_at": row[10].isoformat() if row[10] else None,
             }
             for row in rows
         ]
@@ -544,7 +593,7 @@ class RAGStore:
         rag_hits: Optional[int] = None,
         rag_max_similarity: Optional[float] = None,
         session_id: Optional[str] = None,
-        parent_decision_id: Optional[str] = None
+        parent_decision_id: Optional[str] = None,
     ) -> str:
         """
         Log an agent decision for auditing.
@@ -570,26 +619,36 @@ class RAGStore:
 
         with self.get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     INSERT INTO agent_decisions
                     (id, agent, decision_type, context, decision, reasoning,
                      confidence, rag_hits, rag_max_similarity, session_id,
                      parent_decision_id)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """, (
-                    decision_id, agent, decision_type, json.dumps(context),
-                    decision, reasoning, confidence, rag_hits,
-                    rag_max_similarity, session_id, parent_decision_id
-                ))
+                """,
+                    (
+                        decision_id,
+                        agent,
+                        decision_type,
+                        json.dumps(context),
+                        decision,
+                        reasoning,
+                        confidence,
+                        rag_hits,
+                        rag_max_similarity,
+                        session_id,
+                        parent_decision_id,
+                    ),
+                )
 
-        logger.info(f"Logged {agent} decision: {decision_type} (confidence: {confidence})")
+        logger.info(
+            f"Logged {agent} decision: {decision_type} (confidence: {confidence})"
+        )
         return decision_id
 
     def update_decision_outcome(
-        self,
-        decision_id: str,
-        outcome: str,
-        outcome_details: Optional[str] = None
+        self, decision_id: str, outcome: str, outcome_details: Optional[str] = None
     ) -> bool:
         """
         Update the outcome of a decision.
@@ -604,11 +663,14 @@ class RAGStore:
         """
         with self.get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     UPDATE agent_decisions
                     SET outcome = %s, outcome_details = %s, completed_at = NOW()
                     WHERE id = %s
-                """, (outcome, outcome_details, decision_id))
+                """,
+                    (outcome, outcome_details, decision_id),
+                )
                 return cur.rowcount > 0
 
     # =========================================================================
@@ -627,13 +689,16 @@ class RAGStore:
         """
         with self.get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT provider_name, package_name, description,
                            documentation_url, operators, hooks, sensors
                     FROM airflow_providers
                     WHERE provider_name ILIKE %s
                        OR package_name ILIKE %s
-                """, (f'%{provider_name}%', f'%{provider_name}%'))
+                """,
+                    (f"%{provider_name}%", f"%{provider_name}%"),
+                )
 
                 row = cur.fetchone()
 
@@ -645,7 +710,7 @@ class RAGStore:
                 "documentation_url": row[3],
                 "operators": row[4],
                 "hooks": row[5],
-                "sensors": row[6]
+                "sensors": row[6],
             }
         return None
 
@@ -658,34 +723,40 @@ class RAGStore:
         with self.get_connection() as conn:
             with conn.cursor() as cur:
                 # Document counts by type
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT doc_type, COUNT(*) as count
                     FROM rag_documents
                     WHERE chunk_index = 0
                     GROUP BY doc_type
-                """)
+                """
+                )
                 doc_counts = {row[0]: row[1] for row in cur.fetchall()}
 
                 # Troubleshooting stats
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT result, COUNT(*) as count
                     FROM troubleshooting_attempts
                     GROUP BY result
-                """)
+                """
+                )
                 troubleshooting_counts = {row[0]: row[1] for row in cur.fetchall()}
 
                 # Decision stats
-                cur.execute("""
+                cur.execute(
+                    """
                     SELECT agent, COUNT(*) as count
                     FROM agent_decisions
                     GROUP BY agent
-                """)
+                """
+                )
                 decision_counts = {row[0]: row[1] for row in cur.fetchall()}
 
         return {
             "documents": doc_counts,
             "troubleshooting": troubleshooting_counts,
-            "decisions": decision_counts
+            "decisions": decision_counts,
         }
 
 

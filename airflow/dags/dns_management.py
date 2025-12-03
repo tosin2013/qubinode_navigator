@@ -12,49 +12,64 @@ Requires FreeIPA to be deployed and accessible.
 """
 
 from datetime import datetime, timedelta
-from airflow import DAG
+
+from airflow.models.param import Param
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator, PythonOperator
-from airflow.models.param import Param
+
+from airflow import DAG
 
 default_args = {
-    'owner': 'qubinode',
-    'depends_on_past': False,
-    'start_date': datetime(2025, 1, 1),
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 1,
-    'retry_delay': timedelta(minutes=2),
+    "owner": "qubinode",
+    "depends_on_past": False,
+    "start_date": datetime(2025, 1, 1),
+    "email_on_failure": False,
+    "email_on_retry": False,
+    "retries": 1,
+    "retry_delay": timedelta(minutes=2),
 }
 
 dag = DAG(
-    'dns_management',
+    "dns_management",
     default_args=default_args,
-    description='Unified DNS management via FreeIPA (ADR-0055)',
+    description="Unified DNS management via FreeIPA (ADR-0055)",
     schedule=None,
     catchup=False,
-    tags=['qubinode', 'dns', 'freeipa', 'infrastructure', 'adr-0055'],
+    tags=["qubinode", "dns", "freeipa", "infrastructure", "adr-0055"],
     params={
-        'operation': Param(
-            'add',
-            type='string',
-            enum=['add', 'remove', 'add-cname', 'add-srv', 'list', 'check', 'bulk-add', 'sync-inventory'],
-            description='DNS operation to perform'
+        "operation": Param(
+            "add",
+            type="string",
+            enum=[
+                "add",
+                "remove",
+                "add-cname",
+                "add-srv",
+                "list",
+                "check",
+                "bulk-add",
+                "sync-inventory",
+            ],
+            description="DNS operation to perform",
         ),
-        'hostname': Param('', type='string', description='Hostname for DNS record'),
-        'ip_address': Param('', type='string', description='IP address for A record'),
-        'create_ptr': Param(True, type='boolean', description='Create reverse PTR record'),
-        'ttl': Param(3600, type='integer', description='DNS TTL in seconds'),
-        'domain': Param('example.com', type='string', description='DNS domain'),
-        'cname_target': Param('', type='string', description='Target for CNAME record'),
-        'srv_service': Param('', type='string', description='SRV service name (e.g., _ldap._tcp)'),
-        'srv_port': Param(0, type='integer', description='SRV port number'),
-        'srv_priority': Param(10, type='integer', description='SRV priority'),
-        'srv_weight': Param(100, type='integer', description='SRV weight'),
-        'bulk_records': Param(
-            '',
-            type='string',
-            description='Bulk records as JSON: [{"hostname": "...", "ip": "..."}]'
+        "hostname": Param("", type="string", description="Hostname for DNS record"),
+        "ip_address": Param("", type="string", description="IP address for A record"),
+        "create_ptr": Param(
+            True, type="boolean", description="Create reverse PTR record"
+        ),
+        "ttl": Param(3600, type="integer", description="DNS TTL in seconds"),
+        "domain": Param("example.com", type="string", description="DNS domain"),
+        "cname_target": Param("", type="string", description="Target for CNAME record"),
+        "srv_service": Param(
+            "", type="string", description="SRV service name (e.g., _ldap._tcp)"
+        ),
+        "srv_port": Param(0, type="integer", description="SRV port number"),
+        "srv_priority": Param(10, type="integer", description="SRV priority"),
+        "srv_weight": Param(100, type="integer", description="SRV weight"),
+        "bulk_records": Param(
+            "",
+            type="string",
+            description='Bulk records as JSON: [{"hostname": "...", "ip": "..."}]',
         ),
     },
     doc_md="""
@@ -115,23 +130,23 @@ dag = DAG(
 
 def decide_operation(**context):
     """Branch based on operation parameter."""
-    operation = context['params'].get('operation', 'add')
+    operation = context["params"].get("operation", "add")
     operation_map = {
-        'add': 'add_dns_record',
-        'remove': 'remove_dns_record',
-        'add-cname': 'add_cname_record',
-        'add-srv': 'add_srv_record',
-        'list': 'list_dns_records',
-        'check': 'check_dns_record',
-        'bulk-add': 'bulk_add_records',
-        'sync-inventory': 'sync_inventory',
+        "add": "add_dns_record",
+        "remove": "remove_dns_record",
+        "add-cname": "add_cname_record",
+        "add-srv": "add_srv_record",
+        "list": "list_dns_records",
+        "check": "check_dns_record",
+        "bulk-add": "bulk_add_records",
+        "sync-inventory": "sync_inventory",
     }
-    return operation_map.get(operation, 'add_dns_record')
+    return operation_map.get(operation, "add_dns_record")
 
 
 # Task: Decide operation
 decide_operation_task = BranchPythonOperator(
-    task_id='decide_operation',
+    task_id="decide_operation",
     python_callable=decide_operation,
     dag=dag,
 )
@@ -140,7 +155,7 @@ decide_operation_task = BranchPythonOperator(
 # Task: Validate FreeIPA
 # Issue #4 Fix: Use SSH to execute kcli commands on host (ADR-0046)
 validate_freeipa = BashOperator(
-    task_id='validate_freeipa',
+    task_id="validate_freeipa",
     bash_command="""
     echo "========================================"
     echo "Validating FreeIPA Environment"
@@ -189,7 +204,7 @@ validate_freeipa = BashOperator(
 
 # Task: Add DNS Record
 add_dns_record = BashOperator(
-    task_id='add_dns_record',
+    task_id="add_dns_record",
     bash_command="""
     echo "========================================"
     echo "Adding DNS Record"
@@ -273,14 +288,14 @@ add_dns_record = BashOperator(
     echo "Hostname: $FQDN"
     echo "IP: $IP"
     """,
-    trigger_rule='none_failed_min_one_success',
+    trigger_rule="none_failed_min_one_success",
     dag=dag,
 )
 
 
 # Task: Remove DNS Record
 remove_dns_record = BashOperator(
-    task_id='remove_dns_record',
+    task_id="remove_dns_record",
     bash_command="""
     echo "========================================"
     echo "Removing DNS Record"
@@ -336,14 +351,14 @@ remove_dns_record = BashOperator(
     echo ""
     echo "[OK] DNS record removed: $FQDN"
     """,
-    trigger_rule='none_failed_min_one_success',
+    trigger_rule="none_failed_min_one_success",
     dag=dag,
 )
 
 
 # Task: Add CNAME Record
 add_cname_record = BashOperator(
-    task_id='add_cname_record',
+    task_id="add_cname_record",
     bash_command="""
     echo "========================================"
     echo "Adding CNAME Record"
@@ -388,14 +403,14 @@ add_cname_record = BashOperator(
     echo ""
     echo "[OK] CNAME record added: $FQDN -> $TARGET_FQDN"
     """,
-    trigger_rule='none_failed_min_one_success',
+    trigger_rule="none_failed_min_one_success",
     dag=dag,
 )
 
 
 # Task: Add SRV Record
 add_srv_record = BashOperator(
-    task_id='add_srv_record',
+    task_id="add_srv_record",
     bash_command="""
     echo "========================================"
     echo "Adding SRV Record"
@@ -437,14 +452,14 @@ add_srv_record = BashOperator(
     echo ""
     echo "[OK] SRV record added"
     """,
-    trigger_rule='none_failed_min_one_success',
+    trigger_rule="none_failed_min_one_success",
     dag=dag,
 )
 
 
 # Task: List DNS Records
 list_dns_records = BashOperator(
-    task_id='list_dns_records',
+    task_id="list_dns_records",
     bash_command="""
     echo "========================================"
     echo "Listing DNS Records"
@@ -463,14 +478,14 @@ list_dns_records = BashOperator(
         exit 1
     }
     """,
-    trigger_rule='none_failed_min_one_success',
+    trigger_rule="none_failed_min_one_success",
     dag=dag,
 )
 
 
 # Task: Check DNS Record
 check_dns_record = BashOperator(
-    task_id='check_dns_record',
+    task_id="check_dns_record",
     bash_command="""
     echo "========================================"
     echo "Checking DNS Record"
@@ -512,14 +527,14 @@ check_dns_record = BashOperator(
     SSH_CMD="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR root@localhost"
     $SSH_CMD "ipa dnsrecord-show '$RECORD_ZONE' '$RECORD_NAME'" 2>/dev/null || echo "  Not found in FreeIPA"
     """,
-    trigger_rule='none_failed_min_one_success',
+    trigger_rule="none_failed_min_one_success",
     dag=dag,
 )
 
 
 # Task: Bulk Add Records
 bulk_add_records = BashOperator(
-    task_id='bulk_add_records',
+    task_id="bulk_add_records",
     bash_command="""
     echo "========================================"
     echo "Bulk Adding DNS Records"
@@ -570,14 +585,14 @@ bulk_add_records = BashOperator(
     echo ""
     echo "[OK] Bulk DNS addition complete"
     """,
-    trigger_rule='none_failed_min_one_success',
+    trigger_rule="none_failed_min_one_success",
     dag=dag,
 )
 
 
 # Task: Sync from Certificate Inventory
 sync_inventory = BashOperator(
-    task_id='sync_inventory',
+    task_id="sync_inventory",
     bash_command="""
     echo "========================================"
     echo "Syncing DNS from Certificate Inventory"
@@ -624,7 +639,7 @@ sync_inventory = BashOperator(
     echo ""
     echo "[OK] Inventory sync complete"
     """,
-    trigger_rule='none_failed_min_one_success',
+    trigger_rule="none_failed_min_one_success",
     dag=dag,
 )
 

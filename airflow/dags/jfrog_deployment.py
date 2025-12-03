@@ -15,41 +15,43 @@ Calls: /opt/kcli-pipelines/jfrog/deploy.sh
 """
 
 from datetime import datetime, timedelta
-from airflow import DAG
+
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator
 
+from airflow import DAG
+
 # Configuration
-KCLI_PIPELINES_DIR = '/opt/kcli-pipelines'
-JFROG_DIR = f'{KCLI_PIPELINES_DIR}/jfrog'
+KCLI_PIPELINES_DIR = "/opt/kcli-pipelines"
+JFROG_DIR = f"{KCLI_PIPELINES_DIR}/jfrog"
 
 default_args = {
-    'owner': 'qubinode',
-    'depends_on_past': False,
-    'start_date': datetime(2025, 1, 1),
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 2,
-    'retry_delay': timedelta(minutes=5),
+    "owner": "qubinode",
+    "depends_on_past": False,
+    "start_date": datetime(2025, 1, 1),
+    "email_on_failure": False,
+    "email_on_retry": False,
+    "retries": 2,
+    "retry_delay": timedelta(minutes=5),
 }
 
 dag = DAG(
-    'jfrog_deployment',
+    "jfrog_deployment",
     default_args=default_args,
-    description='Deploy JFrog Artifactory universal artifact repository',
+    description="Deploy JFrog Artifactory universal artifact repository",
     schedule=None,
     catchup=False,
-    tags=['qubinode', 'kcli-pipelines', 'jfrog', 'artifactory', 'registry'],
+    tags=["qubinode", "kcli-pipelines", "jfrog", "artifactory", "registry"],
     params={
-        'action': 'create',  # create, delete, status, health
-        'vm_name': 'jfrog',  # VM name
-        'jfrog_version': '7.77.5',  # JFrog Artifactory version
-        'jfrog_edition': 'oss',  # oss or pro
-        'cert_mode': 'step-ca',  # step-ca or self-signed
-        'domain': 'example.com',  # Domain for certificates
-        'target_server': 'localhost',  # Target server
-        'network': 'qubinet',  # Network to deploy on
-        'step_ca_vm': 'step-ca-server',  # Step-CA server VM name (for step-ca mode)
+        "action": "create",  # create, delete, status, health
+        "vm_name": "jfrog",  # VM name
+        "jfrog_version": "7.77.5",  # JFrog Artifactory version
+        "jfrog_edition": "oss",  # oss or pro
+        "cert_mode": "step-ca",  # step-ca or self-signed
+        "domain": "example.com",  # Domain for certificates
+        "target_server": "localhost",  # Target server
+        "network": "qubinet",  # Network to deploy on
+        "step_ca_vm": "step-ca-server",  # Step-CA server VM name (for step-ca mode)
     },
     doc_md="""
     # JFrog Artifactory Deployment DAG
@@ -164,19 +166,19 @@ dag = DAG(
 
 def decide_action(**context):
     """Branch based on action parameter"""
-    action = context['params'].get('action', 'create')
-    if action == 'delete':
-        return 'delete_jfrog'
-    elif action == 'status':
-        return 'check_status'
-    elif action == 'health':
-        return 'health_check'
-    return 'check_prerequisites'
+    action = context["params"].get("action", "create")
+    if action == "delete":
+        return "delete_jfrog"
+    elif action == "status":
+        return "check_status"
+    elif action == "health":
+        return "health_check"
+    return "check_prerequisites"
 
 
 # Task: Decide action
 decide_action_task = BranchPythonOperator(
-    task_id='decide_action',
+    task_id="decide_action",
     python_callable=decide_action,
     dag=dag,
 )
@@ -184,8 +186,8 @@ decide_action_task = BranchPythonOperator(
 
 # Task: Check prerequisites
 check_prerequisites = BashOperator(
-    task_id='check_prerequisites',
-    bash_command='''
+    task_id="check_prerequisites",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Checking JFrog Prerequisites"
@@ -234,15 +236,15 @@ check_prerequisites = BashOperator(
     
     echo ""
     echo "[OK] Prerequisites check complete"
-    ''',
+    """,
     dag=dag,
 )
 
 
 # Task: Validate environment
 validate_environment = BashOperator(
-    task_id='validate_environment',
-    bash_command='''
+    task_id="validate_environment",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Validating JFrog Environment"
@@ -285,15 +287,15 @@ validate_environment = BashOperator(
     
     echo ""
     echo "[OK] Environment validation complete"
-    ''',
+    """,
     dag=dag,
 )
 
 
 # Task: Create JFrog VM
 create_jfrog = BashOperator(
-    task_id='create_jfrog_vm',
-    bash_command='''
+    task_id="create_jfrog_vm",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Creating JFrog Artifactory VM"
@@ -367,7 +369,7 @@ create_jfrog = BashOperator(
     
     echo ""
     echo "[OK] JFrog deployment initiated"
-    ''',
+    """,
     execution_timeout=timedelta(minutes=45),
     dag=dag,
 )
@@ -375,8 +377,8 @@ create_jfrog = BashOperator(
 
 # Task: Wait for JFrog VM
 wait_for_jfrog = BashOperator(
-    task_id='wait_for_jfrog_vm',
-    bash_command='''
+    task_id="wait_for_jfrog_vm",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Waiting for JFrog VM"
@@ -410,7 +412,7 @@ wait_for_jfrog = BashOperator(
     done
     
     echo "[WARN] Timeout waiting for JFrog VM - may still be provisioning"
-    ''',
+    """,
     execution_timeout=timedelta(minutes=20),
     dag=dag,
 )
@@ -418,8 +420,8 @@ wait_for_jfrog = BashOperator(
 
 # Task: Validate JFrog is healthy
 validate_jfrog_health = BashOperator(
-    task_id='validate_jfrog_health',
-    bash_command='''
+    task_id="validate_jfrog_health",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Validating JFrog Health"
@@ -465,7 +467,7 @@ validate_jfrog_health = BashOperator(
     echo "[WARN] Artifactory health check timed out"
     echo "Artifactory may still be initializing. Check manually:"
     echo "  curl http://$IP:8082/artifactory/api/system/ping"
-    ''',
+    """,
     execution_timeout=timedelta(minutes=20),
     dag=dag,
 )
@@ -473,8 +475,8 @@ validate_jfrog_health = BashOperator(
 
 # Task: Complete deployment
 deployment_complete = BashOperator(
-    task_id='deployment_complete',
-    bash_command='''
+    task_id="deployment_complete",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "JFrog Artifactory Deployment Complete"
@@ -508,15 +510,15 @@ deployment_complete = BashOperator(
     echo "========================================"
     echo "JFrog Artifactory is ready"
     echo "========================================"
-    ''',
+    """,
     dag=dag,
 )
 
 
 # Task: Health check (standalone)
 health_check = BashOperator(
-    task_id='health_check',
-    bash_command='''
+    task_id="health_check",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "JFrog Artifactory Health Check"
@@ -556,15 +558,15 @@ health_check = BashOperator(
         echo "Response: $PING"
         exit 1
     fi
-    ''',
+    """,
     dag=dag,
 )
 
 
 # Task: Delete JFrog
 delete_jfrog = BashOperator(
-    task_id='delete_jfrog',
-    bash_command='''
+    task_id="delete_jfrog",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Deleting JFrog Artifactory"
@@ -583,7 +585,7 @@ delete_jfrog = BashOperator(
         echo "[WARN] VM may not exist"
     
     echo "[OK] JFrog Artifactory deleted"
-    ''',
+    """,
     execution_timeout=timedelta(minutes=10),
     dag=dag,
 )
@@ -591,8 +593,8 @@ delete_jfrog = BashOperator(
 
 # Task: Check status
 check_status = BashOperator(
-    task_id='check_status',
-    bash_command='''
+    task_id="check_status",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "JFrog Artifactory Status"
@@ -614,7 +616,7 @@ check_status = BashOperator(
         ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
             "curl -s http://$IP:8082/artifactory/api/system/ping 2>/dev/null" || echo "Health check failed"
     fi
-    ''',
+    """,
     dag=dag,
 )
 
@@ -628,4 +630,3 @@ create_jfrog >> wait_for_jfrog >> validate_jfrog_health >> deployment_complete
 decide_action_task >> delete_jfrog
 decide_action_task >> check_status
 decide_action_task >> health_check
-
