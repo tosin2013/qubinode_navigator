@@ -67,50 +67,6 @@ jobs:
           sudo mv gitleaks /usr/local/bin/
           gitleaks version
 
-      - name: Create Gitleaks config
-        run: |
-          # Create gitleaks config to ignore false positives
-          cat > .gitleaks.toml << 'EOF'
-          # Gitleaks configuration for Qubinode Navigator
-          # Extends default rules with project-specific allowlist
-
-          [extend]
-          useDefault = true
-
-          # Allowlist for ai-todo-comments rule (TODO/NOTE/FIXME comments are not secrets)
-          [[rules]]
-          id = "ai-todo-comments"
-          description = "AI TODO Comments - disabled (not secrets)"
-          regex = '''(?i)#\s*(TODO|FIXME|NOTE|XXX|HACK):'''
-          keywords = []
-
-          # Global allowlist
-          [allowlist]
-          description = "Global allowlist for false positives"
-          paths = [
-            '''test.*\.py$''',
-            '''tests/.*''',
-            '''.*_test\.py$''',
-            '''README\.md$''',
-            '''docs/.*\.md$''',
-            '''inventories/sample/.*''',
-          ]
-          regexTarget = "match"
-          regexes = [
-            '''(?i)(TODO|FIXME|NOTE|XXX|HACK):''',
-            '''(?i)#\s*Note:''',
-            '''Harbor12345''',
-            '''your-password''',
-            '''testpass''',
-            '''adminpass''',
-            '''example\.com''',
-            '''192\.168\.1\.10''',
-            '''postgresql://airflow:airflow@localhost''',
-            '''postgresql://user:pass@localhost''',
-            '''postgresql://\{\{username\}\}:\{\{password\}\}@localhost''',
-          ]
-          EOF
-
       - name: Run Gitleaks
         run: |
           echo "========================================"
