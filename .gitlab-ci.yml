@@ -10,7 +10,7 @@ sample:
     SSH_HOST: "${SSH_HOST}"
     SSH_PASSWORD: "${SSH_PASSWORD}"
   only:
-     variables:
+    variables:
       - $TARGET_SERVER == "sample"
   trigger:
     # Include the configuration file of the child pipeline
@@ -24,7 +24,7 @@ equinix:
     SSH_HOST: "${SSH_HOST}"
     SSH_PASSWORD: "${SSH_PASSWORD}"
   only:
-     variables:
+    variables:
       - $TARGET_SERVER == "equinix"
   trigger:
     include: inventories/equinix/.gitlab-ci.yml
@@ -39,7 +39,7 @@ applications:
     INVENTORY: "${INVENTORY}"
     ROCKY: "${ROCKY}"
   only:
-     variables:
+    variables:
       - $DEPLOY_APP == "freeipa"
   trigger:
     include: applications/freeipa/.gitlab-ci.yml

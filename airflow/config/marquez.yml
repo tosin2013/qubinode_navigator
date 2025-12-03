@@ -38,11 +38,11 @@ graphql:
 logging:
   level: ${LOG_LEVEL:-INFO}
   appenders:
-    - type: console
+  - type: console
 
 ### CUSTOMIZATION ###
 tags:
-  - name: PII
+- name: PII
     description: Personally identifiable information
   - name: SENSITIVE
     description: Contains sensitive information

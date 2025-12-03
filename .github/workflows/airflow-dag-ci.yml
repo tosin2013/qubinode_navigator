@@ -327,7 +327,10 @@ jobs:
             echo "Testing Airflow MCP plugin..."
             
             # Test plugin imports
-            python -c "import sys; sys.path.insert(0, 'airflow/plugins'); from qubinode import mcp_server_fastmcp; print('✅ MCP plugin imports in Airflow context')" || echo "⚠️  MCP plugin import failed"
+            python -c "import sys; sys.path.insert(0, 'airflow/plugins'); \
+              from qubinode import mcp_server_fastmcp; \
+              print('✅ MCP plugin imports in Airflow context')" || \
+              echo "⚠️  MCP plugin import failed"
           else
             echo "⚠️  No qubinode plugins directory found"
           fi
