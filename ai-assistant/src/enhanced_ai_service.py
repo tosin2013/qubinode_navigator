@@ -30,6 +30,14 @@ from qdrant_rag_service import create_rag_service, RetrievalResult
 from diagnostic_tools import diagnostic_registry
 from model_manager import ModelManager
 
+# Import Marquez context service for lineage awareness
+try:
+    from marquez_context_service import MarquezContextService, get_marquez_service
+    MARQUEZ_AVAILABLE = True
+except ImportError:
+    MARQUEZ_AVAILABLE = False
+    logging.warning("Marquez context service not available - lineage awareness disabled")
+
 logger = logging.getLogger(__name__)
 
 
@@ -42,11 +50,12 @@ class EnhancedAIService:
         self.rag_service = None
         self.llm = None
         self.llama_process = None
-        
+        self.marquez_service = None  # Lineage context service
+
         # Determine model type
         model_info = self.model_manager.get_model_info()
         self.is_api_model = model_info.get('preset_info', {}).get('provider') == 'litellm'
-        
+
         logger.info(f"Enhanced AI Service initialized")
         logger.info(f"Model type: {model_info['model_type']}")
         logger.info(f"API model: {self.is_api_model}")
@@ -74,7 +83,18 @@ class EnhancedAIService:
         # Initialize RAG service
         logger.info("Initializing RAG service...")
         self.rag_service = create_rag_service("/app/data")
-        
+
+        # Initialize Marquez context service for lineage awareness
+        if MARQUEZ_AVAILABLE:
+            logger.info("Initializing Marquez context service...")
+            self.marquez_service = get_marquez_service()
+            if await self.marquez_service.is_available():
+                logger.info("Marquez lineage service connected - AI has lineage awareness")
+            else:
+                logger.warning("Marquez not available - AI will work without lineage context")
+        else:
+            logger.info("Marquez context service not installed - skipping lineage integration")
+
         logger.info("Enhanced AI service initialized successfully")
     
     async def _initialize_local_model(self):
@@ -200,14 +220,24 @@ class EnhancedAIService:
                     )
                     rag_context = retrieval_result.contexts
                     sources = retrieval_result.sources
-                    
+
                     logger.info(f"Retrieved {len(rag_context)} relevant contexts")
-                    
+
                 except Exception as e:
                     logger.warning(f"RAG retrieval failed: {e}")
-            
+
+            # Get lineage context from Marquez (if available)
+            lineage_context = ""
+            if self.marquez_service:
+                try:
+                    lineage_context = await self.marquez_service.get_context_for_prompt(message)
+                    if lineage_context:
+                        logger.info("Added lineage context from Marquez")
+                except Exception as e:
+                    logger.warning(f"Marquez context retrieval failed: {e}")
+
             # Build prompt with context
-            prompt = self._build_prompt(message, rag_context, context)
+            prompt = self._build_prompt(message, rag_context, context, lineage_context)
             
             # Generate response
             if self.is_api_model:
@@ -225,6 +255,7 @@ class EnhancedAIService:
                     "model": self.model_manager.model_type,
                     "timestamp": time.time(),
                     "rag_enabled": bool(self.rag_service),
+                    "lineage_enabled": bool(lineage_context),
                     "sources": sources
                 }
             }
@@ -242,9 +273,15 @@ class EnhancedAIService:
                 }
             }
     
-    def _build_prompt(self, message: str, rag_context: List[str], context: Optional[Dict[str, Any]] = None) -> str:
-        """Build prompt with RAG context"""
-        
+    def _build_prompt(
+        self,
+        message: str,
+        rag_context: List[str],
+        context: Optional[Dict[str, Any]] = None,
+        lineage_context: str = ""
+    ) -> str:
+        """Build prompt with RAG and lineage context"""
+
         system_prompt = """You are the Qubinode Navigator AI Assistant, an expert in infrastructure automation, hypervisor deployment, and virtualization technologies.
 
 Your expertise includes:
@@ -254,17 +291,27 @@ Your expertise includes:
 - RHEL/CentOS/Rocky Linux systems
 - Cloud providers (AWS, Azure, GCP, Hetzner, Equinix)
 - Infrastructure automation and CI/CD
+- Airflow DAG orchestration and troubleshooting
 - Security hardening and monitoring
 
+You have access to real-time infrastructure lineage data from Marquez/OpenLineage, which shows recent DAG runs, failures, and deployment history. Use this context to provide informed answers about the current state of the infrastructure.
+
 Provide helpful, accurate, and actionable guidance for infrastructure deployment and management."""
-        
+
+        prompt_parts = [system_prompt]
+
+        # Add lineage context if available (real-time infrastructure state)
+        if lineage_context:
+            prompt_parts.append(f"\n{lineage_context}")
+
+        # Add RAG documentation context
         if rag_context:
             context_text = "\n\n".join(rag_context[:4])  # Limit context to avoid token limits
-            prompt = f"{system_prompt}\n\nRelevant Documentation:\n{context_text}\n\nUser Question: {message}\n\nResponse:"
-        else:
-            prompt = f"{system_prompt}\n\nUser Question: {message}\n\nResponse:"
-        
-        return prompt
+            prompt_parts.append(f"\nRelevant Documentation:\n{context_text}")
+
+        prompt_parts.append(f"\nUser Question: {message}\n\nResponse:")
+
+        return "\n".join(prompt_parts)
     
     async def _generate_local_response(self, prompt: str) -> str:
         """Generate response using local model"""
@@ -314,6 +361,29 @@ Provide helpful, accurate, and actionable guidance for infrastructure deployment
         except Exception as e:
             logger.error(f"Error getting diagnostic tools: {e}")
             return {}
+
+    async def get_lineage_summary(self) -> Dict[str, Any]:
+        """Get lineage summary from Marquez for API endpoint."""
+        if not self.marquez_service:
+            return {
+                "available": False,
+                "message": "Marquez context service not initialized"
+            }
+        try:
+            return await self.marquez_service.get_lineage_summary()
+        except Exception as e:
+            logger.error(f"Error getting lineage summary: {e}")
+            return {"available": False, "error": str(e)}
+
+    async def get_job_lineage(self, job_name: str) -> Optional[Dict[str, Any]]:
+        """Get detailed lineage for a specific job/DAG."""
+        if not self.marquez_service:
+            return None
+        try:
+            return await self.marquez_service.get_job_details(job_name)
+        except Exception as e:
+            logger.error(f"Error getting job lineage for {job_name}: {e}")
+            return None
 
     async def run_diagnostics(self, request: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Run system diagnostics (compatibility method)"""

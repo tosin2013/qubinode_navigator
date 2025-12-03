@@ -129,14 +129,20 @@ async def root():
     """Root endpoint with service information."""
     return {
         "service": "Qubinode AI Assistant",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "status": "running",
+        "features": {
+            "rag": "Document retrieval for context-aware responses",
+            "lineage": "Real-time infrastructure state from Marquez/OpenLineage"
+        },
         "endpoints": {
             "health": "/health",
             "chat": "/chat",
             "diagnostics": "/diagnostics",
             "diagnostics_tools": "/diagnostics/tools",
             "specific_tool": "/diagnostics/tool/{tool_name}",
+            "lineage": "/lineage",
+            "lineage_job": "/lineage/job/{job_name}",
             "models": "/models",
             "docs": "/docs"
         }
@@ -257,8 +263,58 @@ async def get_config():
     """Get current configuration (sanitized)."""
     if not config_manager:
         raise HTTPException(status_code=503, detail="Config service not available")
-    
+
     return config_manager.get_sanitized_config()
+
+
+# =============================================================================
+# Lineage Endpoints (Marquez/OpenLineage Integration)
+# =============================================================================
+
+@app.get("/lineage")
+async def get_lineage_summary():
+    """Get infrastructure lineage summary from Marquez.
+
+    Returns current state of DAG runs, failures, and deployment history.
+    This data is also used to enhance AI responses with real-time context.
+    """
+    if not ai_service:
+        raise HTTPException(status_code=503, detail="AI service not available")
+
+    try:
+        summary = await ai_service.get_lineage_summary()
+        return {
+            "lineage": summary,
+            "timestamp": time.time()
+        }
+    except Exception as e:
+        logger.error(f"Lineage summary error: {e}")
+        raise HTTPException(status_code=500, detail=f"Lineage error: {str(e)}")
+
+
+@app.get("/lineage/job/{job_name}")
+async def get_job_lineage(job_name: str):
+    """Get detailed lineage for a specific job/DAG.
+
+    Args:
+        job_name: The name of the job/DAG (e.g., 'freeipa_deployment', 'dns_management')
+    """
+    if not ai_service:
+        raise HTTPException(status_code=503, detail="AI service not available")
+
+    try:
+        job_info = await ai_service.get_job_lineage(job_name)
+        if job_info is None:
+            raise HTTPException(status_code=404, detail=f"Job '{job_name}' not found")
+        return {
+            "job": job_info,
+            "timestamp": time.time()
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Job lineage error for {job_name}: {e}")
+        raise HTTPException(status_code=500, detail=f"Lineage error: {str(e)}")
 
 
 def main():
