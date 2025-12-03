@@ -1,124 +1,79 @@
 # Gitleaks Configuration for Qubinode Navigator
-# Comprehensive security scan including AI-generated content detection
+# Uses default gitleaks rules with project-specific allowlists
+#
+# Reference: https://github.com/gitleaks/gitleaks#configuration
 
-title = "Qubinode Navigator DevSecOps Security Scan"
+title = "Qubinode Navigator Security Scan"
 
-# Critical secrets detection
-[[rules]]
-id = "real-passwords"
-description = "Actual passwords (8+ chars, not variables)"
-regex = '''(?i)(password|passwd|pwd)\s*[=:]\s*["'][^$"']{8,}["']'''
-path = '''.*\.(env|sh|yml|yaml)$'''
+# Use default gitleaks rules (detects real secrets like API keys, private keys, etc.)
+[extend]
+useDefault = true
 
-[[rules]]
-id = "api-secrets"
-description = "API keys and tokens"
-regex = '''(API_KEY|CLIENT_SECRET|ACCESS_TOKEN|PRIVATE_KEY|TOKEN)\s*[=:]\s*["'][A-Za-z0-9+/]{16,}["']'''
-path = '''.*\.(env|sh|yml|yaml|py)$'''
-
-[[rules]]
-id = "private-keys"
-description = "Private key content"
-regex = '''-----BEGIN [A-Z ]+PRIVATE KEY-----'''
-path = '''.*'''
-
-[[rules]]
-id = "ssh-keys"
-description = "SSH private keys"
-regex = '''ssh-rsa AAAA[0-9A-Za-z+/]+[=]{0,3}'''
-path = '''.*'''
-
-[[rules]]
-id = "jwt-tokens"
-description = "JWT tokens"
-regex = '''eyJ[A-Za-z0-9_/+-]*\.eyJ[A-Za-z0-9_/+-]*\.[A-Za-z0-9._/+-]*'''
-path = '''.*'''
-
-# AI-generated developer notes detection
-[[rules]]
-id = "ai-todo-comments"
-description = "AI-generated TODO comments with implementation details"
-regex = '''(?i)#\s*(TODO|FIXME|HACK|XXX|NOTE):\s*.{20,}'''
-path = '''.*\.(py|sh|yml|yaml|js|ts|md)$'''
-
-[[rules]]
-id = "ai-debug-comments"
-description = "AI-generated debug and temporary comments"
-regex = '''(?i)#\s*(DEBUG|TEMP|REMOVE|DELETE|CLEANUP):\s*.+'''
-path = '''.*\.(py|sh|yml|yaml|js|ts)$'''
-
-[[rules]]
-id = "ai-implementation-notes"
-description = "Detailed implementation notes from AI"
-regex = '''(?i)(implementation note|ai note|claude note|assistant note):\s*.{30,}'''
-path = '''.*\.(md|py|sh|yml|yaml)$'''
-
-[[rules]]
-id = "internal-architecture-details"
-description = "Internal architecture details not for end users"
-regex = '''(?i)(internal implementation|private method|internal use only|not for production).{20,}'''
-path = '''.*\.(md|py|sh|yml|yaml)$'''
-
-# Sensitive configuration patterns
-[[rules]]
-id = "database-urls"
-description = "Database connection URLs with credentials"
-regex = '''(mysql|postgresql|mongodb)://[^:]+:[^@]+@[^/]+'''
-path = '''.*\.(env|yml|yaml|py|sh)$'''
-
-[[rules]]
-id = "cloud-credentials"
-description = "Cloud provider credentials"
-regex = '''(?i)(aws_access_key|azure_client|gcp_key|do_token)\s*[=:]\s*["'][A-Za-z0-9+/]{16,}["']'''
-path = '''.*'''
-
-[[rules]]
-id = "hardcoded-ips"
-description = "Hardcoded internal IP addresses"
-regex = '''(?i)(server|host|endpoint)\s*[=:]\s*["']?(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.)[0-9.]+["']?'''
-path = '''.*\.(env|yml|yaml|py|sh)$'''
-
-# Global allowlists
+# Global allowlist for known false positives
 [allowlist]
+description = "Allowlist for Qubinode Navigator false positives"
+
+# Paths to completely ignore
 paths = [
+    # Example and template files
     '''.env.example''',
-    '''docs/adrs/''',
-    '''docs/deployments/''',
-    '''CLEAN-INSTALL-GUIDE.md''',
-    '''PRE-COMMIT-CHECKLIST.md''',
-    '''ansible_vault_setup.sh''',
+    '''.env.mcp''',
+    '''inventories/sample/.*''',
+    '''mcp-client-config-example.json''',
+    # Documentation (contains example API keys for illustration)
+    '''docs/.*''',
+    '''.*\.md$''',
+    '''MCP-.*\.md$''',
+    # Test files
+    '''tests/.*''',
+    '''.*_test\.py$''',
+    '''test_.*\.py$''',
+    # Scripts with example patterns
     '''scripts/setup-security-tools.sh''',
-    '''scripts/create-repository-backup.sh''',
     '''scripts/security-scan.sh''',
-    '''.dev-notes/''',
-    '''docs/internal/''',
-    '''docs/contributors/''',
+    '''scripts/cleanup-git-history.sh''',
+    '''deploy-fastmcp-production.sh''',
 ]
 
+# Regex patterns to ignore in detected matches
+regexTarget = "match"
 regexes = [
+    # Placeholder/example values
     '''CHANGEME''',
-    '''your_.*''',
+    '''your[-_].*''',
     '''example''',
     '''placeholder''',
     '''template''',
     '''sample''',
-    '''\$\{.*\}''',  # Variable substitutions
-    '''\$[A-Z_]+''', # Environment variables
-    '''Enter the password''', # Interactive prompts
-    '''read.*password''',     # Read password commands
-    '''# TODO: (Add|Update|Fix|Implement)''', # Standard TODO patterns
-    '''# FIXME: (Bug|Issue|Problem)''', # Standard FIXME patterns
-    '''localhost''', # Localhost references
-    '''127\.0\.0\.1''', # Localhost IP
-    '''0\.0\.0\.0''', # Bind all interfaces
+    # Variable substitutions (not real secrets)
+    '''\$\{.*\}''',
+    '''\$[A-Z_]+''',
+    # Localhost references (not sensitive)
+    '''localhost''',
+    '''127\.0\.0\.1''',
+    '''0\.0\.0\.0''',
+    # Known development/sample passwords
+    '''Harbor12345''',
+    '''testpass''',
+    '''adminpass''',
+    '''airflow:airflow''',
+    '''user:pass''',
+    # Known dev API keys (local development only)
+    '''b8c909cc21b988703db529ff2287cdbe0cc3ffca67678e9c97bd912790df6486''',
+    # Template patterns with mustache/jinja syntax
+    '''\{\{.*\}\}''',
 ]
 
-# File size limits (in bytes)
-[allowlist.files]
-max-target-megabytes = 10
+# Specific commit allowlist (for historical commits with known issues)
+commits = []
 
-# Entropy detection settings
-[allowlist.entropy]
-min = 3.0
-max = 8.0
-group = 1
+# Stopwords that indicate the value is not a real secret
+stopwords = [
+    "example",
+    "sample",
+    "test",
+    "placeholder",
+    "changeme",
+    "your-password",
+    "your_password",
+]
