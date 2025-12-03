@@ -76,29 +76,45 @@ validate_environment = BashOperator(
     echo "========================================"
     echo "Validating VyOS Deployment Environment"
     echo "========================================"
-    
-    # Check virsh connectivity
-    if ! virsh -c qemu:///system list &>/dev/null; then
-        echo "[ERROR] Cannot connect to libvirt"
+
+    # ADR-0046: Use SSH for all host commands (virsh, kcli)
+    # virsh is not available inside the Airflow container
+
+    # Check SSH connectivity to host
+    if ! ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 root@localhost "echo 'SSH OK'" 2>/dev/null; then
+        echo "[ERROR] Cannot SSH to localhost"
+        exit 1
+    fi
+    echo "[OK] SSH connectivity verified"
+
+    # Check virsh connectivity via SSH
+    if ! ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        "virsh -c qemu:///system list" &>/dev/null; then
+        echo "[ERROR] Cannot connect to libvirt on host"
         exit 1
     fi
     echo "[OK] virsh connected to libvirt"
-    
-    # Check default network
-    if ! virsh -c qemu:///system net-info default &>/dev/null; then
+
+    # Check default network via SSH
+    if ! ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        "virsh -c qemu:///system net-info default" &>/dev/null; then
         echo "[WARN] Default network not found"
         echo "Creating default network..."
-        virsh -c qemu:///system net-define /usr/share/libvirt/networks/default.xml 2>/dev/null || true
-        virsh -c qemu:///system net-start default 2>/dev/null || true
-        virsh -c qemu:///system net-autostart default 2>/dev/null || true
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+            "virsh -c qemu:///system net-define /usr/share/libvirt/networks/default.xml 2>/dev/null || true"
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+            "virsh -c qemu:///system net-start default 2>/dev/null || true"
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+            "virsh -c qemu:///system net-autostart default 2>/dev/null || true"
     fi
     echo "[OK] Default network available"
-    
-    # List current VMs
+
+    # List current VMs via SSH
     echo ""
     echo "Current VMs:"
-    virsh -c qemu:///system list --all
-    
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        "virsh -c qemu:///system list --all"
+
     echo ""
     echo "[OK] Environment validation complete"
     ''',
