@@ -190,7 +190,7 @@ decide_operation_task = BranchPythonOperator(
 # Task: Ensure qubinode-cert is available
 ensure_script = BashOperator(
     task_id='ensure_script',
-    bash_command=f"""
+    bash_command=f'''
     echo "========================================"
     echo "Checking qubinode-cert availability"
     echo "========================================"
@@ -205,14 +205,14 @@ ensure_script = BashOperator(
              chmod +x /usr/local/bin/qubinode-cert"
         echo "[OK] qubinode-cert installed"
     fi
-    """,
+    ''',
     dag=dag,
 )
 
 # Task: Request certificate
 request = BashOperator(
     task_id='request',
-    bash_command="""
+    bash_command='''
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Requesting Certificate"
@@ -255,7 +255,7 @@ request = BashOperator(
 
     # Execute on host
     ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost "$CMD"
-    """,
+    ''',
     execution_timeout=timedelta(minutes=10),
     dag=dag,
 )
@@ -263,7 +263,7 @@ request = BashOperator(
 # Task: Renew certificates
 renew = BashOperator(
     task_id='renew',
-    bash_command="""
+    bash_command='''
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Renewing Certificates"
@@ -284,7 +284,7 @@ renew = BashOperator(
         echo "[ERROR] Either set renew_all=true or provide hostname"
         exit 1
     fi
-    """,
+    ''',
     execution_timeout=timedelta(minutes=15),
     dag=dag,
 )
@@ -292,7 +292,7 @@ renew = BashOperator(
 # Task: Revoke certificate
 revoke = BashOperator(
     task_id='revoke',
-    bash_command="""
+    bash_command='''
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Revoking Certificate"
@@ -310,7 +310,7 @@ revoke = BashOperator(
     # Auto-confirm revocation in DAG context
     ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
         "echo 'yes' | qubinode-cert revoke $HOSTNAME"
-    """,
+    ''',
     execution_timeout=timedelta(minutes=5),
     dag=dag,
 )
@@ -318,7 +318,7 @@ revoke = BashOperator(
 # Task: List certificates
 list = BashOperator(
     task_id='list',
-    bash_command="""
+    bash_command='''
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Certificate Inventory"
@@ -326,14 +326,14 @@ list = BashOperator(
 
     ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
         "qubinode-cert list"
-    """,
+    ''',
     dag=dag,
 )
 
 # Task: Install CA root
 install_ca = BashOperator(
     task_id='install_ca',
-    bash_command="""
+    bash_command='''
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Installing CA Root Certificate"
@@ -345,7 +345,7 @@ install_ca = BashOperator(
 
     ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
         "qubinode-cert install-ca $CA"
-    """,
+    ''',
     execution_timeout=timedelta(minutes=5),
     dag=dag,
 )
@@ -353,7 +353,7 @@ install_ca = BashOperator(
 # Task: Bulk request
 bulk_request = BashOperator(
     task_id='bulk_request',
-    bash_command="""
+    bash_command='''
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Bulk Certificate Request"
@@ -392,7 +392,7 @@ bulk_request = BashOperator(
     echo "========================================"
     echo "Bulk request complete"
     echo "========================================"
-    """,
+    ''',
     execution_timeout=timedelta(minutes=30),
     dag=dag,
 )
@@ -400,7 +400,7 @@ bulk_request = BashOperator(
 # Task: Summary
 summary = BashOperator(
     task_id='summary',
-    bash_command="""
+    bash_command='''
     echo ""
     echo "========================================"
     echo "Certificate Operation Complete"
@@ -413,7 +413,7 @@ summary = BashOperator(
     # Show current inventory
     ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
         "qubinode-cert list" 2>/dev/null || echo "(inventory not available)"
-    """,
+    ''',
     trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
     dag=dag,
 )

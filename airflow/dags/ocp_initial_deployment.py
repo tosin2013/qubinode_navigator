@@ -71,7 +71,7 @@ dag = DAG(
 # ============================================================================
 validate_environment = BashOperator(
     task_id='validate_environment',
-    bash_command="""
+    bash_command='''
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "🔍 TASK 1: Validating Environment"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -133,7 +133,7 @@ validate_environment = BashOperator(
     else
         echo "✅ Environment validation PASSED"
     fi
-    """,
+    ''',
     dag=dag,
 )
 
@@ -142,7 +142,7 @@ validate_environment = BashOperator(
 # ============================================================================
 provision_registry_vm = BashOperator(
     task_id='provision_registry_vm',
-    bash_command="""
+    bash_command='''
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "🖥️  TASK 2: Provisioning Registry VM"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -180,7 +180,7 @@ provision_registry_vm = BashOperator(
     fi
     
     echo "✅ Registry VM ready"
-    """,
+    ''',
     execution_timeout=timedelta(minutes=30),
     dag=dag,
 )
@@ -190,7 +190,7 @@ provision_registry_vm = BashOperator(
 # ============================================================================
 setup_certificates = BashOperator(
     task_id='setup_certificates',
-    bash_command="""
+    bash_command='''
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "🔐 TASK 3: Setting Up Certificates"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -209,7 +209,7 @@ setup_certificates = BashOperator(
     fi
     
     echo "✅ Certificate setup complete"
-    """,
+    ''',
     dag=dag,
 )
 
@@ -218,7 +218,7 @@ setup_certificates = BashOperator(
 # ============================================================================
 setup_registry = BashOperator(
     task_id='setup_registry',
-    bash_command="""
+    bash_command='''
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "📦 TASK 3: Setting Up Registry"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -261,7 +261,7 @@ setup_registry = BashOperator(
     fi
     
     echo "✅ Registry setup complete"
-    """,
+    ''',
     dag=dag,
 )
 
@@ -270,7 +270,7 @@ setup_registry = BashOperator(
 # ============================================================================
 download_to_tar = BashOperator(
     task_id='download_to_tar',
-    bash_command="""
+    bash_command='''
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "⬇️  TASK 4: Downloading Images to TAR"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -305,7 +305,7 @@ download_to_tar = BashOperator(
     fi
     
     echo "✅ Download to TAR complete"
-    """,
+    ''',
     execution_timeout=timedelta(hours=4),  # Mirroring can take a long time
     dag=dag,
 )
@@ -315,7 +315,7 @@ download_to_tar = BashOperator(
 # ============================================================================
 push_to_registry = BashOperator(
     task_id='push_to_registry',
-    bash_command="""
+    bash_command='''
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "⬆️  TASK 5: Pushing Images to Registry"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -336,7 +336,7 @@ push_to_registry = BashOperator(
     fi
     
     echo "✅ Push to registry complete"
-    """,
+    ''',
     execution_timeout=timedelta(hours=2),
     dag=dag,
 )
@@ -346,7 +346,7 @@ push_to_registry = BashOperator(
 # ============================================================================
 build_appliance = BashOperator(
     task_id='build_appliance',
-    bash_command="""
+    bash_command='''
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "🔧 TASK 6: Building OpenShift Appliance"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -408,7 +408,7 @@ build_appliance = BashOperator(
     fi
     
     echo "✅ Appliance build complete"
-    """,
+    ''',
     execution_timeout=timedelta(hours=2),
     dag=dag,
 )
@@ -418,7 +418,7 @@ build_appliance = BashOperator(
 # ============================================================================
 deployment_summary = BashOperator(
     task_id='deployment_summary',
-    bash_command="""
+    bash_command='''
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "📋 DEPLOYMENT SUMMARY"
@@ -470,7 +470,7 @@ deployment_summary = BashOperator(
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "✅ OCP Initial Deployment DAG completed successfully!"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    """,
+    ''',
     trigger_rule=TriggerRule.ALL_SUCCESS,
     dag=dag,
 )

@@ -74,7 +74,7 @@ dag = DAG(
 # =============================================================================
 validate_step_ca = BashOperator(
     task_id='validate_step_ca',
-    bash_command="""
+    bash_command='''
     set -euo pipefail
     
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -119,7 +119,7 @@ validate_step_ca = BashOperator(
     
     echo ""
     echo "✅ Step-CA validation passed"
-    """,
+    ''',
     dag=dag,
 )
 
@@ -128,7 +128,7 @@ validate_step_ca = BashOperator(
 # =============================================================================
 validate_registry = BashOperator(
     task_id='validate_registry',
-    bash_command="""
+    bash_command='''
     set -euo pipefail
     
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -225,7 +225,7 @@ validate_registry = BashOperator(
     
     echo ""
     echo "✅ Registry validation passed"
-    """,
+    ''',
     dag=dag,
 )
 
@@ -234,7 +234,7 @@ validate_registry = BashOperator(
 # =============================================================================
 validate_images = BashOperator(
     task_id='validate_images',
-    bash_command="""
+    bash_command='''
     set -euo pipefail
     
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -317,7 +317,7 @@ validate_images = BashOperator(
     
     echo ""
     echo "✅ Image validation passed"
-    """,
+    ''',
     dag=dag,
 )
 
@@ -326,7 +326,7 @@ validate_images = BashOperator(
 # =============================================================================
 validate_dns = BashOperator(
     task_id='validate_dns',
-    bash_command="""
+    bash_command='''
     set -euo pipefail
     
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -408,7 +408,7 @@ validate_dns = BashOperator(
     
     echo ""
     echo "✅ DNS validation passed"
-    """,
+    ''',
     dag=dag,
 )
 
@@ -417,7 +417,7 @@ validate_dns = BashOperator(
 # =============================================================================
 validate_config = BashOperator(
     task_id='validate_config',
-    bash_command="""
+    bash_command='''
     set -euo pipefail
     
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -541,7 +541,7 @@ validate_config = BashOperator(
     
     echo ""
     echo "✅ Configuration validation passed"
-    """,
+    ''',
     dag=dag,
 )
 
@@ -550,7 +550,7 @@ validate_config = BashOperator(
 # =============================================================================
 validate_pull_secret = BashOperator(
     task_id='validate_pull_secret',
-    bash_command="""
+    bash_command='''
     set -euo pipefail
     
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -633,7 +633,7 @@ validate_pull_secret = BashOperator(
     
     echo ""
     echo "✅ Pull secret validation passed"
-    """,
+    ''',
     dag=dag,
 )
 
@@ -642,7 +642,7 @@ validate_pull_secret = BashOperator(
 # =============================================================================
 validate_disk_space = BashOperator(
     task_id='validate_disk_space',
-    bash_command="""
+    bash_command='''
     set -euo pipefail
     
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -684,7 +684,7 @@ validate_disk_space = BashOperator(
     
     echo ""
     echo "✅ Disk space validation passed"
-    """,
+    ''',
     dag=dag,
 )
 
@@ -693,7 +693,7 @@ validate_disk_space = BashOperator(
 # =============================================================================
 validation_report = BashOperator(
     task_id='validation_report',
-    bash_command="""
+    bash_command='''
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "📋 Pre-Deployment Validation Report"
@@ -723,7 +723,7 @@ validation_report = BashOperator(
     echo "    \"registry_type\": \"{{ params.registry_type }}\","
     echo "    \"deploy_on_kvm\": true"
     echo "  }'"
-    """,
+    ''',
     trigger_rule=TriggerRule.ALL_SUCCESS,
     dag=dag,
 )
@@ -733,7 +733,7 @@ validation_report = BashOperator(
 # =============================================================================
 failure_summary = BashOperator(
     task_id='failure_summary',
-    bash_command="""
+    bash_command='''
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "❌ PRE-DEPLOYMENT VALIDATION FAILED"
@@ -750,7 +750,7 @@ failure_summary = BashOperator(
     echo "After fixing, retrigger this DAG to validate again."
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    """,
+    ''',
     trigger_rule=TriggerRule.ONE_FAILED,
     dag=dag,
 )

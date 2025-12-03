@@ -124,7 +124,7 @@ dag = DAG(
 # =============================================================================
 setup_credentials = BashOperator(
     task_id='setup_credentials',
-    bash_command="""
+    bash_command='''
     set -euo pipefail
     
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -232,7 +232,7 @@ setup_credentials = BashOperator(
     echo ""
     echo "✅ Credentials setup complete"
     echo "   Merged pull secret: $MERGED_SECRET"
-    """,
+    ''',
     dag=dag,
 )
 
@@ -241,7 +241,7 @@ setup_credentials = BashOperator(
 # =============================================================================
 preflight_checks = BashOperator(
     task_id='preflight_checks',
-    bash_command="""
+    bash_command='''
     set -euo pipefail
     
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -299,7 +299,7 @@ preflight_checks = BashOperator(
     else
         echo "✅ Pre-flight checks PASSED"
     fi
-    """,
+    ''',
     dag=dag,
 )
 
@@ -308,7 +308,7 @@ preflight_checks = BashOperator(
 # =============================================================================
 health_check_registry = BashOperator(
     task_id='health_check_registry',
-    bash_command="""
+    bash_command='''
     set -euo pipefail
     
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -391,7 +391,7 @@ health_check_registry = BashOperator(
         echo "✅ Health checks passed"
         echo "   Healthy: $HEALTHY_REGISTRIES"
     fi
-    """,
+    ''',
     dag=dag,
 )
 
@@ -400,7 +400,7 @@ health_check_registry = BashOperator(
 # =============================================================================
 download_images = BashOperator(
     task_id='download_images',
-    bash_command="""
+    bash_command='''
     set -euo pipefail
     
     SKIP_DOWNLOAD="{{ params.skip_download }}"
@@ -477,7 +477,7 @@ EOF
     
     echo ""
     echo "✅ Download complete"
-    """,
+    ''',
     execution_timeout=timedelta(hours=4),
     dag=dag,
 )
@@ -487,7 +487,7 @@ EOF
 # =============================================================================
 push_to_registry = BashOperator(
     task_id='push_to_registry',
-    bash_command="""
+    bash_command='''
     set -euo pipefail
     
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -559,7 +559,7 @@ push_to_registry = BashOperator(
     
     echo ""
     echo "✅ Push complete"
-    """,
+    ''',
     execution_timeout=timedelta(hours=2),
     dag=dag,
 )
@@ -569,7 +569,7 @@ push_to_registry = BashOperator(
 # =============================================================================
 sync_report = BashOperator(
     task_id='sync_report',
-    bash_command="""
+    bash_command='''
     set -euo pipefail
     
     echo ""
@@ -638,7 +638,7 @@ sync_report = BashOperator(
     echo "  2. Deploy cluster: airflow dags trigger ocp_agent_deployment"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "✅ OCP Registry Sync completed successfully!"
-    """,
+    ''',
     trigger_rule=TriggerRule.ALL_SUCCESS,
     dag=dag,
 )
@@ -648,7 +648,7 @@ sync_report = BashOperator(
 # =============================================================================
 cleanup_on_failure = BashOperator(
     task_id='cleanup_on_failure',
-    bash_command="""
+    bash_command='''
     set +e  # Don't exit on error during cleanup
     
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -680,7 +680,7 @@ cleanup_on_failure = BashOperator(
     echo "  4. Network issues: Check connectivity to registries"
     echo ""
     echo "After fixing, retrigger this DAG"
-    """,
+    ''',
     trigger_rule=TriggerRule.ONE_FAILED,
     dag=dag,
 )

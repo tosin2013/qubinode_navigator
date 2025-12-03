@@ -1,0 +1,154 @@
+# =============================================================================
+# Pre-commit Configuration for Qubinode Navigator
+# =============================================================================
+# This file configures pre-commit hooks to enforce code quality standards.
+#
+# Installation:
+#   pip install pre-commit
+#   pre-commit install
+#
+# Manual run:
+#   pre-commit run --all-files
+#
+# =============================================================================
+
+repos:
+  # ===========================================================================
+  # Security: Gitleaks - Secret Detection
+  # ===========================================================================
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks
+        name: gitleaks (secret detection)
+        description: Detect hardcoded secrets like passwords, API keys, tokens
+        entry: gitleaks protect --staged --verbose --redact
+
+  # ===========================================================================
+  # Python: Basic Formatting and Syntax
+  # ===========================================================================
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        name: Trim trailing whitespace
+      - id: end-of-file-fixer
+        name: Fix end of files
+      - id: check-yaml
+        name: Check YAML syntax
+        args: ['--unsafe']  # Allow custom tags
+      - id: check-json
+        name: Check JSON syntax
+      - id: check-added-large-files
+        name: Check for large files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+        name: Check for merge conflict markers
+      - id: check-ast
+        name: Check Python AST
+        types: [python]
+      - id: debug-statements
+        name: Check for debug statements
+        types: [python]
+
+  # ===========================================================================
+  # Python: Ruff Linter (Fast, modern Python linter)
+  # ===========================================================================
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.9
+    hooks:
+      - id: ruff
+        name: ruff (Python linter)
+        args: [--fix, --exit-non-zero-on-fix]
+        types_or: [python, pyi]
+      - id: ruff-format
+        name: ruff-format (Python formatter)
+        types_or: [python, pyi]
+
+  # ===========================================================================
+  # Airflow: pylint-airflow (Airflow-specific checks)
+  # ===========================================================================
+  - repo: local
+    hooks:
+      - id: pylint-airflow
+        name: pylint-airflow (Airflow DAG linting)
+        entry: bash -c 'pip install pylint-airflow >/dev/null 2>&1; pylint --load-plugins=pylint_airflow --errors-only --disable=all --enable=E83 "$@"' --
+        language: system
+        files: ^airflow/dags/.*\.py$
+        exclude: ^airflow/dags/(dag_helpers|dag_factory|dag_loader|dag_logging_mixin)\.py$
+        pass_filenames: true
+        require_serial: true
+
+  # ===========================================================================
+  # Airflow: airflint (Airflow best practices)
+  # ===========================================================================
+  - repo: https://github.com/feluelle/airflint
+    rev: v0.3.2-alpha
+    hooks:
+      - id: airflint
+        name: airflint (Airflow best practices)
+        files: ^airflow/dags/.*\.py$
+        exclude: ^airflow/dags/(dag_helpers|dag_factory|dag_loader|dag_logging_mixin)\.py$
+        additional_dependencies:
+          - apache-airflow>=2.0.0
+
+  # ===========================================================================
+  # Airflow: Custom DAG Linting (ADR-0045, ADR-0046 compliance)
+  # ===========================================================================
+  - repo: local
+    hooks:
+      - id: qubinode-dag-lint
+        name: qubinode-dag-lint (ADR compliance)
+        entry: bash -c './airflow/scripts/lint-dags.sh "$@"' --
+        language: system
+        files: ^airflow/dags/.*\.py$
+        exclude: ^airflow/dags/(dag_helpers|dag_factory|dag_loader|dag_logging_mixin)\.py$
+        pass_filenames: true
+
+  # ===========================================================================
+  # Shell: ShellCheck (Shell script linting)
+  # ===========================================================================
+  - repo: https://github.com/koalaman/shellcheck-precommit
+    rev: v0.9.0
+    hooks:
+      - id: shellcheck
+        name: shellcheck (Shell script linting)
+        args: ['--severity=warning']
+        exclude: ^(\.git|\.venv)/
+
+  # ===========================================================================
+  # YAML: yamllint
+  # ===========================================================================
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.33.0
+    hooks:
+      - id: yamllint
+        name: yamllint (YAML linting)
+        args: ['-d', '{extends: relaxed, rules: {line-length: {max: 200}}}']
+
+  # ===========================================================================
+  # Markdown: mdformat
+  # ===========================================================================
+  - repo: https://github.com/executablebooks/mdformat
+    rev: 0.7.17
+    hooks:
+      - id: mdformat
+        name: mdformat (Markdown formatting)
+        additional_dependencies:
+          - mdformat-gfm
+          - mdformat-tables
+
+# =============================================================================
+# CI Configuration
+# =============================================================================
+ci:
+  autofix_commit_msg: |
+    [pre-commit.ci] auto fixes from pre-commit hooks
+
+    for more information, see https://pre-commit.ci
+  autofix_prs: true
+  autoupdate_branch: ''
+  autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
+  autoupdate_schedule: weekly
+  skip: []
+  submodules: false

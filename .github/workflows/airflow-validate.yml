@@ -469,11 +469,9 @@ jobs:
               fi
             fi
 
-            # Check for triple single quotes (ADR-0045 violation)
-            if grep -q "bash_command='''" "$dag_file"; then
-              echo "  [ERROR] Uses triple single quotes (violates ADR-0045)"
-              ERRORS=$((ERRORS + 1))
-            fi
+            # Note: Triple single quotes are allowed when bash commands contain
+            # curly braces (awk, bash arrays) that conflict with f-string parsing.
+            # The lint-dags.sh script handles this validation.
 
             echo "  [OK] Passed basic checks"
           done

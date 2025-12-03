@@ -52,7 +52,7 @@ dag = DAG(
 # ============================================================================
 pre_update_validation = BashOperator(
     task_id='pre_update_validation',
-    bash_command="""
+    bash_command='''
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "🔍 TASK 1: Pre-Update Validation"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -128,7 +128,7 @@ pre_update_validation = BashOperator(
     else
         echo "✅ Pre-update validation PASSED"
     fi
-    """,
+    ''',
     dag=dag,
 )
 
@@ -137,7 +137,7 @@ pre_update_validation = BashOperator(
 # ============================================================================
 download_incremental = BashOperator(
     task_id='download_incremental',
-    bash_command="""
+    bash_command='''
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "⬇️  TASK 2: Downloading Incremental Images"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -166,7 +166,7 @@ download_incremental = BashOperator(
     fi
     
     echo "✅ Incremental download complete"
-    """,
+    ''',
     execution_timeout=timedelta(hours=2),
     dag=dag,
 )
@@ -176,7 +176,7 @@ download_incremental = BashOperator(
 # ============================================================================
 push_to_registry = BashOperator(
     task_id='push_to_registry',
-    bash_command="""
+    bash_command='''
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "⬆️  TASK 3: Pushing Images to Registry"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -194,7 +194,7 @@ push_to_registry = BashOperator(
     fi
     
     echo "✅ Push to registry complete"
-    """,
+    ''',
     execution_timeout=timedelta(hours=1),
     dag=dag,
 )
@@ -204,7 +204,7 @@ push_to_registry = BashOperator(
 # ============================================================================
 apply_manifests = BashOperator(
     task_id='apply_manifests',
-    bash_command="""
+    bash_command='''
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "📄 TASK 4: Applying ICSP/IDMS Manifests"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -254,7 +254,7 @@ apply_manifests = BashOperator(
     oc get mcp
     
     echo "✅ Manifests applied"
-    """,
+    ''',
     dag=dag,
 )
 
@@ -263,7 +263,7 @@ apply_manifests = BashOperator(
 # ============================================================================
 trigger_update = BashOperator(
     task_id='trigger_update',
-    bash_command="""
+    bash_command='''
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "🚀 TASK 5: Triggering Cluster Update"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -298,7 +298,7 @@ trigger_update = BashOperator(
     echo ""
     echo "✅ Update triggered"
     echo "Monitor progress with: oc get clusterversion"
-    """,
+    ''',
     dag=dag,
 )
 
@@ -307,7 +307,7 @@ trigger_update = BashOperator(
 # ============================================================================
 monitor_update = BashOperator(
     task_id='monitor_update',
-    bash_command="""
+    bash_command='''
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "📊 TASK 6: Monitoring Update Progress"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -352,7 +352,7 @@ monitor_update = BashOperator(
     echo "The update may still be in progress. Check manually with:"
     echo "  oc get clusterversion"
     echo "  oc get co"
-    """,
+    ''',
     execution_timeout=timedelta(hours=3),
     dag=dag,
 )
@@ -362,7 +362,7 @@ monitor_update = BashOperator(
 # ============================================================================
 update_summary = BashOperator(
     task_id='update_summary',
-    bash_command="""
+    bash_command='''
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "📋 UPDATE SUMMARY"
@@ -392,7 +392,7 @@ update_summary = BashOperator(
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "✅ OCP Incremental Update DAG completed!"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    """,
+    ''',
     trigger_rule=TriggerRule.ALL_DONE,
     dag=dag,
 )

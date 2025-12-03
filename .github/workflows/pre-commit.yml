@@ -1,0 +1,158 @@
+# =============================================================================
+# Pre-commit CI Workflow
+# =============================================================================
+# Runs pre-commit hooks on all files for comprehensive code quality checks.
+#
+# Includes:
+# - Gitleaks (secret detection)
+# - Ruff (Python linting & formatting)
+# - pylint-airflow (Airflow DAG checks)
+# - airflint (Airflow best practices)
+# - ShellCheck (Shell script linting)
+# - YAML/JSON validation
+# - Custom Qubinode DAG linting (ADR-0045/ADR-0046)
+#
+# =============================================================================
+
+name: Pre-commit
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  pre-commit:
+    name: Pre-commit Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pre-commit
+        run: |
+          pip install pre-commit
+          pip install pylint pylint-airflow apache-airflow==2.10.4
+
+      - name: Run pre-commit
+        uses: pre-commit/action@v3.0.1
+        with:
+          extra_args: --all-files --show-diff-on-failure
+
+  # Separate job for Gitleaks with better reporting
+  gitleaks:
+    name: Secret Detection (Gitleaks)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for better detection
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}  # Optional for extended features
+
+  # Separate job for comprehensive Airflow linting
+  airflow-lint:
+    name: Airflow DAG Linting
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install apache-airflow==2.10.4
+          pip install apache-airflow-providers-postgres
+          pip install pylint pylint-airflow airflint
+          pip install pyyaml
+
+      - name: Run Qubinode DAG linter
+        run: |
+          chmod +x airflow/scripts/lint-dags.sh
+          ./airflow/scripts/lint-dags.sh airflow/dags/
+
+      - name: Run pylint-airflow
+        continue-on-error: true  # Don't fail on warnings
+        run: |
+          echo "========================================"
+          echo "pylint-airflow Analysis"
+          echo "========================================"
+
+          # Run pylint with airflow plugin on DAG files
+          for dag in airflow/dags/*.py; do
+            filename=$(basename "$dag")
+
+            # Skip non-DAG files
+            [[ "$filename" == dag_helpers.py ]] && continue
+            [[ "$filename" == dag_factory.py ]] && continue
+            [[ "$filename" == dag_loader.py ]] && continue
+            [[ "$filename" == dag_logging_mixin.py ]] && continue
+
+            echo ""
+            echo "Checking: $filename"
+            pylint --load-plugins=pylint_airflow \
+              --disable=all \
+              --enable=C83,R83,W83,E83 \
+              "$dag" 2>/dev/null || true
+          done
+
+          echo ""
+          echo "[OK] pylint-airflow analysis complete"
+
+      - name: Run airflint
+        continue-on-error: true  # Don't fail on suggestions
+        run: |
+          echo "========================================"
+          echo "airflint Best Practices Analysis"
+          echo "========================================"
+
+          airflint airflow/dags/ 2>/dev/null || true
+
+          echo ""
+          echo "[OK] airflint analysis complete"
+
+      - name: Validate DAG imports
+        run: |
+          echo "========================================"
+          echo "Validating DAG Imports"
+          echo "========================================"
+
+          export AIRFLOW_HOME=$(pwd)/airflow
+          export AIRFLOW__CORE__DAGS_FOLDER=$(pwd)/airflow/dags
+          export AIRFLOW__CORE__LOAD_EXAMPLES=false
+          export AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=sqlite:///airflow.db
+
+          cd airflow
+
+          # Initialize Airflow DB
+          airflow db init 2>/dev/null
+
+          # List DAGs and check for import errors
+          airflow dags list 2>&1 | tee dag_list.txt
+
+          if grep -iE "error|exception" dag_list.txt | grep -v "No data found"; then
+            echo "[ERROR] DAG import errors detected"
+            exit 1
+          fi
+
+          echo ""
+          echo "[OK] All DAGs imported successfully"
