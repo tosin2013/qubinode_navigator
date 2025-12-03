@@ -212,7 +212,7 @@ download_vyos = BashOperator(
     # The ISO name format is: vyos-<version>-generic-amd64.iso
     # where version already includes -rolling suffix (e.g., 2025.11.24-0021-rolling)
     ISO_NAME="vyos-${VYOS_VERSION}-generic-amd64.iso"
-    ISO_PATH="/root/${ISO_NAME}"
+    ISO_PATH="/var/lib/libvirt/images/${ISO_NAME}"
     ISO_URL="https://github.com/vyos/vyos-nightly-build/releases/download/${VYOS_VERSION}/${ISO_NAME}"
     
     echo "ISO Name: $ISO_NAME"
@@ -293,7 +293,6 @@ create_vyos_vm = BashOperator(
     ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
         "export ACTION=create && \
          export VYOS_VERSION=$VYOS_VERSION && \
-         export HOME=/home/lab-user && \
          cd /opt/kcli-pipelines/vyos-router && \
          ./deploy.sh"
     
