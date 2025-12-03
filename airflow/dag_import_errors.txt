@@ -1,0 +1,14 @@
+/home/ubuntu/.local/lib/python3.12/site-packages/airflow/cli/commands/dag_command.py:48 UserWarning: Could not import graphviz. Rendering graph to the graphical format will not be possible.
+[INFO] Loading DAGs from registry: /workspace/airflow/dags/registry.yaml
+[INFO] Loaded DAG registry from: /workspace/airflow/dags/registry.yaml
+[OK] Generated DAG: freeipa_deployment
+[OK] Generated DAG: vyos_deployment
+[OK] Generated DAG: stepca_deployment
+filepath                                | error                                 
+========================================+=======================================
+/workspace/airflow/dags/freeipa_deploym | AirflowDagDuplicatedIdException:      
+ent.py                                  | Ignoring DAG freeipa_deployment from  
+                                        | /workspace/airflow/dags/freeipa_deploy
+                                        | ment.py - also found in               
+                                        | /workspace/airflow/dags/dag_loader.py 
+                                                                                

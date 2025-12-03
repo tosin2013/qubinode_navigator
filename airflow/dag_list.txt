@@ -1,0 +1,92 @@
+/home/ubuntu/.local/lib/python3.12/site-packages/airflow/cli/commands/dag_command.py:48 UserWarning: Could not import graphviz. Rendering graph to the graphical format will not be possible.
+Error: Failed to load all files. For details, run `airflow dags 
+list-import-errors`
+[INFO] Loading DAGs from registry: /workspace/airflow/dags/registry.yaml
+[INFO] Loaded DAG registry from: /workspace/airflow/dags/registry.yaml
+[OK] Generated DAG: freeipa_deployment
+[OK] Generated DAG: vyos_deployment
+[OK] Generated DAG: stepca_deployment
+dag_id                | fileloc              | owners                | is_paused
+======================+======================+=======================+==========
+certificate_provision | /workspace/airflow/d | qubinode              | None     
+ing                   | ags/certificate_prov |                       |          
+                      | isioning.py          |                       |          
+dag_template          | /workspace/airflow/d | qubinode              | None     
+                      | ags/templates/dag_te |                       |          
+                      | mplate.py            |                       |          
+dns_management        | /workspace/airflow/d | qubinode              | None     
+                      | ags/dns_management.p |                       |          
+                      | y                    |                       |          
+example_kcli_virsh_co | /workspace/airflow/d | qubinode              | None     
+mbined                | ags/example_kcli_vir |                       |          
+                      | sh_combined.py       |                       |          
+example_kcli_vm_provi | /workspace/airflow/d | qubinode              | None     
+sioning               | ags/example_kcli_vm_ |                       |          
+                      | provisioning.py      |                       |          
+freeipa_deployment    | /workspace/airflow/d | qubinode              | None     
+                      | ags/dag_loader.py    |                       |          
+generic_vm_deployment | /workspace/airflow/d | qubinode              | None     
+                      | ags/generic_vm_deplo |                       |          
+                      | yment.py             |                       |          
+harbor_deployment     | /workspace/airflow/d | qubinode              | None     
+                      | ags/harbor_deploymen |                       |          
+                      | t.py                 |                       |          
+infrastructure_health | /workspace/airflow/d | qubinode              | None     
+_check                | ags/infrastructure_h |                       |          
+                      | ealth_check.py       |                       |          
+jfrog_deployment      | /workspace/airflow/d | qubinode              | None     
+                      | ags/jfrog_deployment |                       |          
+                      | .py                  |                       |          
+jumpserver_deployment | /workspace/airflow/d | qubinode              | None     
+                      | ags/jumpserver_deplo |                       |          
+                      | yment.py             |                       |          
+mirror_registry_deplo | /workspace/airflow/d | qubinode              | None     
+yment                 | ags/mirror_registry_ |                       |          
+                      | deployment.py        |                       |          
+ocp_agent_deployment  | /workspace/airflow/d | ocp4-disconnected-hel | None     
+                      | ags/ocp_agent_deploy | per                   |          
+                      | ment.py              |                       |          
+ocp_disconnected_work | /workspace/airflow/d | ocp4-disconnected-hel | None     
+flow                  | ags/ocp_disconnected | per                   |          
+                      | _workflow.py         |                       |          
+ocp_incremental_updat | /workspace/airflow/d | ocp4-disconnected-hel | None     
+e                     | ags/ocp_incremental_ | per                   |          
+                      | update.py            |                       |          
+ocp_initial_deploymen | /workspace/airflow/d | ocp4-disconnected-hel | None     
+t                     | ags/ocp_initial_depl | per                   |          
+                      | oyment.py            |                       |          
+ocp_pre_deployment_va | /workspace/airflow/d | ocp4-disconnected-hel | None     
+lidation              | ags/ocp_pre_deployme | per                   |          
+                      | nt_validation.py     |                       |          
+ocp_registry_sync     | /workspace/airflow/d | ocp4-disconnected-hel | None     
+                      | ags/ocp_registry_syn | per                   |          
+                      | c.py                 |                       |          
+rag_bootstrap         | /workspace/airflow/d | qubinode-team         | None     
+                      | ags/rag_bootstrap.py |                       |          
+rag_document_ingestio | /workspace/airflow/d | qubinode              | None     
+n                     | ags/rag_document_ing |                       |          
+                      | estion.py            |                       |          
+registry_deployment   | /workspace/airflow/d | qubinode              | None     
+                      | ags/registry_deploym |                       |          
+                      | ent.py               |                       |          
+smoke_test_dag        | /workspace/airflow/d | qubinode              | None     
+                      | ags/smoke_test_dag.p |                       |          
+                      | y                    |                       |          
+step_ca_deployment    | /workspace/airflow/d | qubinode              | None     
+                      | ags/step_ca_deployme |                       |          
+                      | nt.py                |                       |          
+step_ca_operations    | /workspace/airflow/d | qubinode              | None     
+                      | ags/step_ca_operatio |                       |          
+                      | ns.py                |                       |          
+stepca_deployment     | /workspace/airflow/d | qubinode              | None     
+                      | ags/dag_loader.py    |                       |          
+vault_dynamic_secrets | /workspace/airflow/d | qubinode              | None     
+_example              | ags/examples/vault_d |                       |          
+                      | ynamic_secrets_examp |                       |          
+                      | le.py                |                       |          
+vyos_deployment       | /workspace/airflow/d | qubinode              | None     
+                      | ags/dag_loader.py    |                       |          
+vyos_router_deploymen | /workspace/airflow/d | qubinode              | None     
+t                     | ags/vyos_router_depl |                       |          
+                      | oyment.py            |                       |          
+                                                                                
