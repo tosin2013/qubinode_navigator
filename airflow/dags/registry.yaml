@@ -26,22 +26,24 @@ dags:
   # ===========================================================================
 
   # FreeIPA Identity Management
-  - component: freeipa
-    description: Deploy FreeIPA Identity Management Server
-    script_path: /opt/kcli-pipelines/freeipa
-    tags: [identity, dns, kerberos, ldap, ipa]
-    category: identity
-    params:
-      action: create
-      community_version: "true"
-      os_version: "9"
-      domain: example.com
-      realm: EXAMPLE.COM
-      idm_hostname: idm
-      dns_forwarder: 8.8.8.8
-    volume_mounts:
-      - /opt/freeipa-workshop-deployer:/opt/freeipa-workshop-deployer
-      - /root/.generated:/root/.generated
+  # NOTE: Commented out to avoid conflict with standalone freeipa_deployment.py
+  # The standalone DAG provides more comprehensive multi-stage workflow implementation
+  # - component: freeipa
+  #   description: Deploy FreeIPA Identity Management Server
+  #   script_path: /opt/kcli-pipelines/freeipa
+  #   tags: [identity, dns, kerberos, ldap, ipa]
+  #   category: identity
+  #   params:
+  #     action: create
+  #     community_version: "true"
+  #     os_version: "9"
+  #     domain: example.com
+  #     realm: EXAMPLE.COM
+  #     idm_hostname: idm
+  #     dns_forwarder: 8.8.8.8
+  #   volume_mounts:
+  #     - /opt/freeipa-workshop-deployer:/opt/freeipa-workshop-deployer
+  #     - /root/.generated:/root/.generated
 
   # ===========================================================================
   # Network Services

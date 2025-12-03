@@ -1,9 +1,6 @@
 /home/ubuntu/.local/lib/python3.12/site-packages/airflow/cli/commands/dag_command.py:48 UserWarning: Could not import graphviz. Rendering graph to the graphical format will not be possible.
-Error: Failed to load all files. For details, run `airflow dags 
-list-import-errors`
 [INFO] Loading DAGs from registry: /workspace/airflow/dags/registry.yaml
 [INFO] Loaded DAG registry from: /workspace/airflow/dags/registry.yaml
-[OK] Generated DAG: freeipa_deployment
 [OK] Generated DAG: vyos_deployment
 [OK] Generated DAG: stepca_deployment
 dag_id                | fileloc              | owners                | is_paused
@@ -24,7 +21,8 @@ example_kcli_vm_provi | /workspace/airflow/d | qubinode              | None
 sioning               | ags/example_kcli_vm_ |                       |          
                       | provisioning.py      |                       |          
 freeipa_deployment    | /workspace/airflow/d | qubinode              | None     
-                      | ags/dag_loader.py    |                       |          
+                      | ags/freeipa_deployme |                       |          
+                      | nt.py                |                       |          
 generic_vm_deployment | /workspace/airflow/d | qubinode              | None     
                       | ags/generic_vm_deplo |                       |          
                       | yment.py             |                       |          
