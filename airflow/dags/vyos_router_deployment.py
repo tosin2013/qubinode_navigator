@@ -293,6 +293,7 @@ create_vyos_vm = BashOperator(
     ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
         "export ACTION=create && \
          export VYOS_VERSION=$VYOS_VERSION && \
+         export HOME=/home/lab-user && \
          cd /opt/kcli-pipelines/vyos-router && \
          ./deploy.sh"
     
