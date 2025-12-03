@@ -100,7 +100,7 @@ dag = DAG(
 # =============================================================================
 workflow_start = BashOperator(
     task_id='workflow_start',
-    bash_command='''
+    bash_command="""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "🚀 OCP Disconnected Workflow - Starting"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -119,7 +119,7 @@ workflow_start = BashOperator(
     echo "  3. Pre-Deployment Validation"
     echo "  4. OpenShift Deployment"
     echo ""
-    ''',
+    """,
     dag=dag,
 )
 
@@ -141,20 +141,20 @@ decide_infra = BranchPythonOperator(
 
 skip_infra_setup = BashOperator(
     task_id='skip_infra_setup',
-    bash_command='''
+    bash_command="""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "⏭️  Skipping Infrastructure Setup"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
     echo "Assuming Step-CA and Registry are already deployed."
     echo "Set skip_infra_setup=false to deploy infrastructure."
-    ''',
+    """,
     dag=dag,
 )
 
 setup_infrastructure = BashOperator(
     task_id='setup_infrastructure',
-    bash_command='''
+    bash_command="""
     set -euo pipefail
     
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -207,7 +207,7 @@ setup_infrastructure = BashOperator(
     
     echo ""
     echo "✅ Infrastructure check complete"
-    ''',
+    """,
     dag=dag,
 )
 
@@ -236,14 +236,14 @@ decide_sync = BranchPythonOperator(
 
 skip_image_sync = BashOperator(
     task_id='skip_image_sync',
-    bash_command='''
+    bash_command="""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "⏭️  Skipping Image Sync"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
     echo "Assuming images are already synced to registry."
     echo "Set skip_image_sync=false to sync images."
-    ''',
+    """,
     dag=dag,
 )
 
@@ -304,7 +304,7 @@ decide_deploy = BranchPythonOperator(
 
 skip_deployment = BashOperator(
     task_id='skip_deployment',
-    bash_command='''
+    bash_command="""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "⏭️  Skipping KVM Deployment"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -315,7 +315,7 @@ skip_deployment = BashOperator(
     echo "To deploy manually:"
     echo "  cd /root/openshift-agent-install/hack"
     echo "  ./deploy-on-kvm.sh {{ params.example_config }}"
-    ''',
+    """,
     dag=dag,
 )
 
@@ -347,7 +347,7 @@ deploy_complete = EmptyOperator(
 # =============================================================================
 workflow_complete = BashOperator(
     task_id='workflow_complete',
-    bash_command='''
+    bash_command="""
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "✅ OCP Disconnected Workflow Complete"
@@ -375,7 +375,7 @@ workflow_complete = BashOperator(
     
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    ''',
+    """,
     trigger_rule=TriggerRule.ALL_SUCCESS,
     dag=dag,
 )
@@ -385,7 +385,7 @@ workflow_complete = BashOperator(
 # =============================================================================
 workflow_failed = BashOperator(
     task_id='workflow_failed',
-    bash_command='''
+    bash_command="""
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "❌ OCP Disconnected Workflow Failed"
@@ -407,7 +407,7 @@ workflow_failed = BashOperator(
     echo "  - Config error: Edit the file mentioned in the error"
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    ''',
+    """,
     trigger_rule=TriggerRule.ONE_FAILED,
     dag=dag,
 )

@@ -73,7 +73,7 @@ dag = DAG(
 # Task: Check host resources
 check_host_resources = BashOperator(
     task_id='check_host_resources',
-    bash_command='''
+    bash_command="""
     echo "========================================"
     echo "Host Resource Check"
     echo "========================================"
@@ -124,7 +124,7 @@ check_host_resources = BashOperator(
     fi
 
     exit $ERRORS
-    ''',
+    """,
     dag=dag,
 )
 
@@ -132,7 +132,7 @@ check_host_resources = BashOperator(
 # Task: Check FreeIPA
 check_freeipa = BashOperator(
     task_id='check_freeipa',
-    bash_command='''
+    bash_command="""
     echo "========================================"
     echo "FreeIPA Health Check"
     echo "========================================"
@@ -209,7 +209,7 @@ check_freeipa = BashOperator(
     fi
 
     exit $ERRORS
-    ''',
+    """,
     dag=dag,
 )
 
@@ -217,7 +217,7 @@ check_freeipa = BashOperator(
 # Task: Check Step-CA
 check_stepca = BashOperator(
     task_id='check_stepca',
-    bash_command='''
+    bash_command="""
     echo "========================================"
     echo "Step-CA Health Check"
     echo "========================================"
@@ -273,7 +273,7 @@ check_stepca = BashOperator(
     fi
 
     exit $ERRORS
-    ''',
+    """,
     dag=dag,
 )
 
@@ -281,7 +281,7 @@ check_stepca = BashOperator(
 # Task: Check VyOS Router
 check_vyos = BashOperator(
     task_id='check_vyos',
-    bash_command='''
+    bash_command="""
     echo "========================================"
     echo "VyOS Router Health Check"
     echo "========================================"
@@ -354,7 +354,7 @@ check_vyos = BashOperator(
     fi
 
     exit $ERRORS
-    ''',
+    """,
     dag=dag,
 )
 
@@ -362,7 +362,7 @@ check_vyos = BashOperator(
 # Task: Check Vault
 check_vault = BashOperator(
     task_id='check_vault',
-    bash_command='''
+    bash_command="""
     echo "========================================"
     echo "Vault Health Check"
     echo "========================================"
@@ -420,7 +420,7 @@ check_vault = BashOperator(
     fi
 
     exit $ERRORS
-    ''',
+    """,
     dag=dag,
 )
 
@@ -428,7 +428,7 @@ check_vault = BashOperator(
 # Task: Check certificates
 check_certificates = BashOperator(
     task_id='check_certificates',
-    bash_command='''
+    bash_command="""
     echo "========================================"
     echo "Certificate Expiry Check"
     echo "========================================"
@@ -489,7 +489,7 @@ check_certificates = BashOperator(
         exit 1
     fi
     exit 0
-    ''',
+    """,
     dag=dag,
 )
 
@@ -497,7 +497,7 @@ check_certificates = BashOperator(
 # Task: Generate health report
 generate_report = BashOperator(
     task_id='generate_report',
-    bash_command='''
+    bash_command="""
     echo "========================================"
     echo "Infrastructure Health Report"
     echo "========================================"
@@ -519,7 +519,7 @@ generate_report = BashOperator(
     echo "========================================"
     echo "Health check complete"
     echo "========================================"
-    ''',
+    """,
     trigger_rule='all_done',
     dag=dag,
 )
