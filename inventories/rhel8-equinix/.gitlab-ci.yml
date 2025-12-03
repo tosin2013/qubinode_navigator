@@ -20,7 +20,7 @@ vault_query:
   variables:
     VAULT_ADDRESS: http://CHANGEME:8200/
     VAULT_TOKEN: CHANGEME
-    SECRET_PATH:  equinix
+    SECRET_PATH: equinix
   script:
       - dnf install -y dnf-plugins-core
       - dnf config-manager --add-repo https://rpm.releases.hashicorp.com/fedora/hashicorp.repo
