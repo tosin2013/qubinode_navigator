@@ -122,13 +122,17 @@ validate_environment = BashOperator(
 )
 
 # Task: Create libvirt networks
+# ADR-0046: All virsh commands must use SSH to host
 create_networks = BashOperator(
     task_id='create_libvirt_networks',
     bash_command='''
     echo "========================================"
     echo "Creating Isolated Libvirt Networks"
     echo "========================================"
-    
+
+    # ADR-0046: All virsh commands must use SSH to the host
+    # virsh is not available inside the Airflow container
+
     # Network definitions for VyOS interfaces
     # These create isolated networks for different purposes:
     # 1924 - Lab network
@@ -136,47 +140,57 @@ create_networks = BashOperator(
     # 1926 - Reserved
     # 1927 - Metal (bare metal) network
     # 1928 - Provisioning network
-    
+
     NETWORKS=("1924" "1925" "1926" "1927" "1928")
-    
+
     for NET in "${NETWORKS[@]}"; do
         echo "Checking network: $NET"
-        
-        if virsh -c qemu:///system net-info "$NET" &>/dev/null; then
-            STATE=$(virsh -c qemu:///system net-info "$NET" | grep "Active:" | awk '{print $2}')
+
+        if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+            "virsh -c qemu:///system net-info $NET" &>/dev/null; then
+            STATE=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+                "virsh -c qemu:///system net-info $NET | grep 'Active:' | awk '{print \\$2}'")
             if [ "$STATE" == "yes" ]; then
                 echo "  [OK] Network $NET already exists and is active"
                 continue
             else
                 echo "  Starting network $NET..."
-                virsh -c qemu:///system net-start "$NET"
+                ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+                    "virsh -c qemu:///system net-start $NET"
             fi
         else
             echo "  Creating network $NET..."
-            
+
             # Get last digit for bridge naming
             LAST_DIGIT="${NET: -1}"
-            
-            cat > /tmp/net-$NET.xml <<EOF
+
+            # Create network XML on host via SSH
+            ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+                "cat > /tmp/net-$NET.xml <<NETEOF
 <network>
   <name>$NET</name>
   <bridge name='virbr$LAST_DIGIT' stp='on' delay='0'/>
   <domain name='$NET' localOnly='yes'/>
 </network>
-EOF
-            
-            virsh -c qemu:///system net-define /tmp/net-$NET.xml
-            virsh -c qemu:///system net-start "$NET"
-            virsh -c qemu:///system net-autostart "$NET"
-            rm /tmp/net-$NET.xml
-            
+NETEOF"
+
+            ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+                "virsh -c qemu:///system net-define /tmp/net-$NET.xml"
+            ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+                "virsh -c qemu:///system net-start $NET"
+            ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+                "virsh -c qemu:///system net-autostart $NET"
+            ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+                "rm /tmp/net-$NET.xml"
+
             echo "  [OK] Network $NET created"
         fi
     done
-    
+
     echo ""
     echo "Current networks:"
-    virsh -c qemu:///system net-list --all
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        "virsh -c qemu:///system net-list --all"
     ''',
     dag=dag,
 )
@@ -436,57 +450,60 @@ wait_for_boot = BashOperator(
 )
 
 # Task: Configure VyOS (optional)
+# ADR-0046: All virsh commands must use SSH to host
 configure_vyos = BashOperator(
     task_id='configure_vyos',
     bash_command=f'''
     echo "========================================"
     echo "VyOS Configuration Instructions"
     echo "========================================"
-    
+
     CONFIGURE="{{{{ params.configure_router }}}}"
-    
+
     if [ "$CONFIGURE" != "true" ]; then
         echo "Skipping automatic configuration (configure_router=false)"
         exit 0
     fi
-    
-    # Check for configuration script
+
+    # Check for configuration script on host via SSH
     CONFIG_SCRIPT="{KCLI_PIPELINES_DIR}/vyos-router/vyos-config.sh"
     DEMO_VIRT_SCRIPT="{DEMO_VIRT_DIR}/demo.redhat.com/vyos-config-1.5.sh"
-    
-    if [ -f "$CONFIG_SCRIPT" ]; then
+
+    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost "test -f $CONFIG_SCRIPT"; then
         echo "Found configuration script: $CONFIG_SCRIPT"
-    elif [ -f "$DEMO_VIRT_SCRIPT" ]; then
+    elif ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost "test -f $DEMO_VIRT_SCRIPT"; then
         echo "Found configuration script: $DEMO_VIRT_SCRIPT"
         CONFIG_SCRIPT="$DEMO_VIRT_SCRIPT"
     else
-        echo "[WARN]  No configuration script found"
+        echo "[WARN] No configuration script found"
         echo ""
         echo "Manual configuration required. Connect to VyOS:"
         echo "  ssh vyos@<vyos-ip>"
         echo ""
-        echo "Or use console:"
+        echo "Or use console (on host):"
         echo "  virsh console vyos-router"
         exit 0
     fi
-    
-    # Get VyOS IP
+
+    # Get VyOS IP via SSH
     VM_NAME="vyos-router"
-    VYOS_IP=$(virsh domifaddr "$VM_NAME" 2>/dev/null | grep -oP '\\d+\\.\\d+\\.\\d+\\.\\d+' | head -1)
-    
+    VYOS_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        "virsh domifaddr $VM_NAME 2>/dev/null | grep -oP '\\\\d+\\\\.\\\\d+\\\\.\\\\d+\\\\.\\\\d+' | head -1")
+
     if [ -z "$VYOS_IP" ]; then
-        VYOS_IP=$(virsh net-dhcp-leases default 2>/dev/null | grep vyos | awk '{{print $5}}' | sed 's/\\/24//g' | tail -1)
+        VYOS_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+            "virsh net-dhcp-leases default 2>/dev/null | grep vyos | awk '{{print \\$5}}' | sed 's/\\\\/24//g' | tail -1")
     fi
-    
+
     if [ -z "$VYOS_IP" ]; then
         echo "[ERROR] Could not determine VyOS IP"
         echo "Manual configuration required"
         exit 0
     fi
-    
+
     echo "VyOS IP: $VYOS_IP"
     echo ""
-    echo "To configure VyOS, copy and run the configuration script:"
+    echo "To configure VyOS, copy and run the configuration script (on host):"
     echo ""
     echo "  scp $CONFIG_SCRIPT vyos@$VYOS_IP:/tmp/"
     echo "  ssh vyos@$VYOS_IP 'vbash /tmp/vyos-config.sh'"
@@ -499,37 +516,40 @@ configure_vyos = BashOperator(
 )
 
 # Task: Add host routes
+# ADR-0046: All virsh/ip route commands must use SSH to host
 add_host_routes = BashOperator(
     task_id='add_host_routes',
     bash_command='''
     echo "========================================"
     echo "Adding Host Routes"
     echo "========================================"
-    
+
     ADD_ROUTES="{{ params.add_host_routes }}"
-    
+
     if [ "$ADD_ROUTES" != "true" ]; then
         echo "Skipping host routes (add_host_routes=false)"
         exit 0
     fi
-    
-    # Get VyOS IP (gateway)
+
+    # Get VyOS IP (gateway) via SSH
     VM_NAME="vyos-router"
-    GATEWAY=$(virsh domifaddr "$VM_NAME" 2>/dev/null | grep -oP '\\d+\\.\\d+\\.\\d+\\.\\d+' | head -1)
-    
+    GATEWAY=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        "virsh domifaddr $VM_NAME 2>/dev/null | grep -oP '\\\\d+\\\\.\\\\d+\\\\.\\\\d+\\\\.\\\\d+' | head -1")
+
     if [ -z "$GATEWAY" ]; then
-        GATEWAY=$(virsh net-dhcp-leases default 2>/dev/null | grep vyos | awk '{print $5}' | sed 's/\\/24//g' | tail -1)
+        GATEWAY=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+            "virsh net-dhcp-leases default 2>/dev/null | grep vyos | awk '{print \\$5}' | sed 's/\\\\/24//g' | tail -1")
     fi
-    
+
     if [ -z "$GATEWAY" ]; then
-        echo "[WARN]  Could not determine VyOS gateway IP"
+        echo "[WARN] Could not determine VyOS gateway IP"
         echo "Routes not added"
         exit 0
     fi
-    
+
     echo "VyOS Gateway: $GATEWAY"
     echo ""
-    
+
     # Define routes for VyOS networks
     ROUTES=(
         "192.168.49.0/24"
@@ -543,63 +563,72 @@ add_host_routes = BashOperator(
         "192.168.57.0/24"
         "192.168.58.0/24"
     )
-    
-    echo "Adding routes via $GATEWAY..."
+
+    echo "Adding routes via $GATEWAY on host..."
     for ROUTE in "${ROUTES[@]}"; do
-        if ip route show | grep -q "$ROUTE"; then
-            echo "  [WARN]  Route $ROUTE already exists"
+        if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+            "ip route show | grep -q '$ROUTE'"; then
+            echo "  [WARN] Route $ROUTE already exists"
         else
-            if ip route add "$ROUTE" via "$GATEWAY" 2>/dev/null; then
+            if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+                "ip route add $ROUTE via $GATEWAY" 2>/dev/null; then
                 echo "  [OK] Added route: $ROUTE via $GATEWAY"
             else
                 echo "  [ERROR] Failed to add route: $ROUTE"
             fi
         fi
     done
-    
+
     echo ""
     echo "Current routes to VyOS networks:"
-    ip route show | grep "$GATEWAY" || echo "No routes found"
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        "ip route show | grep '$GATEWAY'" || echo "No routes found"
     ''',
     dag=dag,
 )
 
 # Task: Validate deployment
+# ADR-0046: All virsh commands must use SSH to host
 validate_deployment = BashOperator(
     task_id='validate_deployment',
     bash_command='''
     echo "========================================"
     echo "Validating VyOS Deployment"
     echo "========================================"
-    
+
     VM_NAME="vyos-router"
-    
-    # Check VM status
+
+    # Check VM status via SSH
     echo "VM Status:"
-    virsh domstate "$VM_NAME"
-    
-    # Get IP
-    VYOS_IP=$(virsh domifaddr "$VM_NAME" 2>/dev/null | grep -oP '\\d+\\.\\d+\\.\\d+\\.\\d+' | head -1)
-    
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        "virsh domstate $VM_NAME"
+
+    # Get IP via SSH
+    VYOS_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        "virsh domifaddr $VM_NAME 2>/dev/null | grep -oP '\\\\d+\\\\.\\\\d+\\\\.\\\\d+\\\\.\\\\d+' | head -1")
+
     if [ -z "$VYOS_IP" ]; then
-        VYOS_IP=$(virsh net-dhcp-leases default 2>/dev/null | grep vyos | awk '{print $5}' | sed 's/\\/24//g' | tail -1)
+        VYOS_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+            "virsh net-dhcp-leases default 2>/dev/null | grep vyos | awk '{print \\$5}' | sed 's/\\\\/24//g' | tail -1")
     fi
-    
+
     echo ""
     echo "Network Interfaces:"
-    virsh domifaddr "$VM_NAME" 2>/dev/null || echo "Could not get interface addresses"
-    
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        "virsh domifaddr $VM_NAME 2>/dev/null" || echo "Could not get interface addresses"
+
     echo ""
     echo "Isolated Networks:"
     for NET in 1924 1925 1926 1927 1928; do
-        STATE=$(virsh net-info "$NET" 2>/dev/null | grep "Active:" | awk '{print $2}')
+        STATE=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+            "virsh net-info $NET 2>/dev/null | grep 'Active:' | awk '{print \\$2}'")
         if [ "$STATE" == "yes" ]; then
             echo "  [OK] Network $NET: Active"
         else
-            echo "  [WARN]  Network $NET: Inactive or missing"
+            echo "  [WARN] Network $NET: Inactive or missing"
         fi
     done
-    
+
     echo ""
     echo "========================================"
     echo "[OK] VyOS Router Deployment Complete!"
@@ -609,7 +638,7 @@ validate_deployment = BashOperator(
     if [ -n "$VYOS_IP" ]; then
         echo "  SSH: ssh vyos@$VYOS_IP"
     fi
-    echo "  Console: virsh console vyos-router"
+    echo "  Console (on host): virsh console vyos-router"
     echo ""
     echo "Default Credentials:"
     echo "  Username: vyos"
@@ -620,41 +649,50 @@ validate_deployment = BashOperator(
 )
 
 # Task: Destroy VyOS
+# ADR-0046: All virsh commands must use SSH to host
 destroy_vyos = BashOperator(
     task_id='destroy_vyos',
     bash_command='''
     echo "========================================"
     echo "Destroying VyOS Router"
     echo "========================================"
-    
+
     VM_NAME="vyos-router"
-    
-    # Stop VM if running
-    if virsh domstate "$VM_NAME" 2>/dev/null | grep -q "running"; then
+
+    # Stop VM if running via SSH
+    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        "virsh domstate $VM_NAME 2>/dev/null | grep -q 'running'"; then
         echo "Stopping VM..."
-        virsh destroy "$VM_NAME"
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+            "virsh destroy $VM_NAME"
     fi
-    
-    # Undefine VM
-    if virsh dominfo "$VM_NAME" &>/dev/null; then
+
+    # Undefine VM via SSH
+    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        "virsh dominfo $VM_NAME" &>/dev/null; then
         echo "Removing VM definition..."
-        virsh undefine "$VM_NAME" --remove-all-storage
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+            "virsh undefine $VM_NAME --remove-all-storage"
     fi
-    
-    # Cleanup files
-    rm -f /var/lib/libvirt/images/${VM_NAME}.qcow2
-    rm -f /var/lib/libvirt/images/seed.iso
-    
+
+    # Cleanup files on host via SSH
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        "rm -f /var/lib/libvirt/images/${VM_NAME}.qcow2"
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        "rm -f /var/lib/libvirt/images/seed.iso"
+
     # Optionally remove networks (commented out to preserve for other VMs)
     # for NET in 1924 1925 1926 1927 1928; do
-    #     virsh net-destroy "$NET" 2>/dev/null
-    #     virsh net-undefine "$NET" 2>/dev/null
+    #     ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    #         "virsh net-destroy $NET" 2>/dev/null
+    #     ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    #         "virsh net-undefine $NET" 2>/dev/null
     # done
-    
+
     echo "[OK] VyOS Router destroyed successfully"
     echo ""
     echo "Note: Isolated networks (1924-1928) were preserved."
-    echo "To remove them, run:"
+    echo "To remove them (on host), run:"
     echo "  for NET in 1924 1925 1926 1927 1928; do virsh net-destroy \\$NET; virsh net-undefine \\$NET; done"
     ''',
     dag=dag,
