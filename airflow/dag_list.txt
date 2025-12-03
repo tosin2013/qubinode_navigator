@@ -1,0 +1,39 @@
+/home/runner/.local/lib/python3.12/site-packages/airflow/cli/commands/dag_command.py:48 UserWarning: Could not import graphviz. Rendering graph to the graphical format will not be possible.
+Error: Failed to load all files. For details, run `airflow dags 
+list-import-errors`
+[INFO] Loading DAGs from registry: /home/runner/work/qubinode_navigator/qubinode_navigator/airflow/dags/registry.yaml
+[INFO] Loaded DAG registry from: /home/runner/work/qubinode_navigator/qubinode_navigator/airflow/dags/registry.yaml
+[OK] Generated DAG: freeipa_deployment
+[OK] Generated DAG: vyos_deployment
+[OK] Generated DAG: stepca_deployment
+dag_id                        | fileloc                                                                                                        | owners                   | is_paused
+==============================+================================================================================================================+==========================+==========
+certificate_provisioning      | /home/runner/work/qubinode_navigator/qubinode_navigator/airflow/dags/certificate_provisioning.py               | qubinode                 | None     
+dag_template                  | /home/runner/work/qubinode_navigator/qubinode_navigator/airflow/dags/templates/dag_template.py                 | qubinode                 | None     
+dns_management                | /home/runner/work/qubinode_navigator/qubinode_navigator/airflow/dags/dns_management.py                         | qubinode                 | None     
+example_kcli_virsh_combined   | /home/runner/work/qubinode_navigator/qubinode_navigator/airflow/dags/example_kcli_virsh_combined.py            | qubinode                 | None     
+example_kcli_vm_provisioning  | /home/runner/work/qubinode_navigator/qubinode_navigator/airflow/dags/example_kcli_vm_provisioning.py           | qubinode                 | None     
+freeipa_deployment            | /home/runner/work/qubinode_navigator/qubinode_navigator/airflow/dags/dag_loader.py                             | qubinode                 | None     
+generic_vm_deployment         | /home/runner/work/qubinode_navigator/qubinode_navigator/airflow/dags/generic_vm_deployment.py                  | qubinode                 | None     
+harbor_deployment             | /home/runner/work/qubinode_navigator/qubinode_navigator/airflow/dags/harbor_deployment.py                      | qubinode                 | None     
+infrastructure_health_check   | /home/runner/work/qubinode_navigator/qubinode_navigator/airflow/dags/infrastructure_health_check.py            | qubinode                 | None     
+jfrog_deployment              | /home/runner/work/qubinode_navigator/qubinode_navigator/airflow/dags/jfrog_deployment.py                       | qubinode                 | None     
+jumpserver_deployment         | /home/runner/work/qubinode_navigator/qubinode_navigator/airflow/dags/jumpserver_deployment.py                  | qubinode                 | None     
+mirror_registry_deployment    | /home/runner/work/qubinode_navigator/qubinode_navigator/airflow/dags/mirror_registry_deployment.py             | qubinode                 | None     
+ocp_agent_deployment          | /home/runner/work/qubinode_navigator/qubinode_navigator/airflow/dags/ocp_agent_deployment.py                   | ocp4-disconnected-helper | None     
+ocp_disconnected_workflow     | /home/runner/work/qubinode_navigator/qubinode_navigator/airflow/dags/ocp_disconnected_workflow.py              | ocp4-disconnected-helper | None     
+ocp_incremental_update        | /home/runner/work/qubinode_navigator/qubinode_navigator/airflow/dags/ocp_incremental_update.py                 | ocp4-disconnected-helper | None     
+ocp_initial_deployment        | /home/runner/work/qubinode_navigator/qubinode_navigator/airflow/dags/ocp_initial_deployment.py                 | ocp4-disconnected-helper | None     
+ocp_pre_deployment_validation | /home/runner/work/qubinode_navigator/qubinode_navigator/airflow/dags/ocp_pre_deployment_validation.py          | ocp4-disconnected-helper | None     
+ocp_registry_sync             | /home/runner/work/qubinode_navigator/qubinode_navigator/airflow/dags/ocp_registry_sync.py                      | ocp4-disconnected-helper | None     
+rag_bootstrap                 | /home/runner/work/qubinode_navigator/qubinode_navigator/airflow/dags/rag_bootstrap.py                          | qubinode-team            | None     
+rag_document_ingestion        | /home/runner/work/qubinode_navigator/qubinode_navigator/airflow/dags/rag_document_ingestion.py                 | qubinode                 | None     
+registry_deployment           | /home/runner/work/qubinode_navigator/qubinode_navigator/airflow/dags/registry_deployment.py                    | qubinode                 | None     
+smoke_test_dag                | /home/runner/work/qubinode_navigator/qubinode_navigator/airflow/dags/smoke_test_dag.py                         | qubinode                 | None     
+step_ca_deployment            | /home/runner/work/qubinode_navigator/qubinode_navigator/airflow/dags/step_ca_deployment.py                     | qubinode                 | None     
+step_ca_operations            | /home/runner/work/qubinode_navigator/qubinode_navigator/airflow/dags/step_ca_operations.py                     | qubinode                 | None     
+stepca_deployment             | /home/runner/work/qubinode_navigator/qubinode_navigator/airflow/dags/dag_loader.py                             | qubinode                 | None     
+vault_dynamic_secrets_example | /home/runner/work/qubinode_navigator/qubinode_navigator/airflow/dags/examples/vault_dynamic_secrets_example.py | qubinode                 | None     
+vyos_deployment               | /home/runner/work/qubinode_navigator/qubinode_navigator/airflow/dags/dag_loader.py                             | qubinode                 | None     
+vyos_router_deployment        | /home/runner/work/qubinode_navigator/qubinode_navigator/airflow/dags/vyos_router_deployment.py                 | qubinode                 | None     
+                                                                                                                                                                                     

@@ -213,8 +213,11 @@ jobs:
           # List DAGs and check for import errors (auto-confirm with yes)
           yes | python -m airflow dags list 2>&1 | tee dag_list.txt || true
 
-          if grep -iE "error|exception" dag_list.txt | grep -v "No data found" | grep -v "Could not import graphviz"; then
+          # Check for actual import errors by running list-import-errors
+          echo "Checking for DAG import errors..."
+          if yes | python -m airflow dags list-import-errors 2>&1 | grep -v "No data found" | grep -v "Could not import graphviz" | grep -E "Traceback|ImportError|ModuleNotFoundError|SyntaxError"; then
             echo "[ERROR] DAG import errors detected"
+            yes | python -m airflow dags list-import-errors 2>&1
             exit 1
           fi
 
