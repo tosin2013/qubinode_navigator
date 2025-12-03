@@ -13,57 +13,59 @@ Each validation error points to the specific file/config to fix.
 """
 
 from datetime import datetime, timedelta
-from airflow import DAG
+
+from airflow.models.param import Param
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator
 from airflow.utils.trigger_rule import TriggerRule
-from airflow.models.param import Param
+
+from airflow import DAG
 
 # =============================================================================
 # Configuration
 # =============================================================================
-AGENT_INSTALL_DIR = '/root/openshift-agent-install'
-EXAMPLES_DIR = f'{AGENT_INSTALL_DIR}/examples'
+AGENT_INSTALL_DIR = "/root/openshift-agent-install"
+EXAMPLES_DIR = f"{AGENT_INSTALL_DIR}/examples"
 
 default_args = {
-    'owner': 'ocp4-disconnected-helper',
-    'depends_on_past': False,
-    'start_date': datetime(2025, 1, 1),
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 0,  # No retries for validation - fail fast
-    'retry_delay': timedelta(minutes=1),
+    "owner": "ocp4-disconnected-helper",
+    "depends_on_past": False,
+    "start_date": datetime(2025, 1, 1),
+    "email_on_failure": False,
+    "email_on_retry": False,
+    "retries": 0,  # No retries for validation - fail fast
+    "retry_delay": timedelta(minutes=1),
 }
 
 dag = DAG(
-    'ocp_pre_deployment_validation',
+    "ocp_pre_deployment_validation",
     default_args=default_args,
-    description='Validate prerequisites before OpenShift deployment',
+    description="Validate prerequisites before OpenShift deployment",
     schedule=None,
     catchup=False,
-    tags=['ocp4-disconnected-helper', 'openshift', 'validation', 'pre-deployment'],
+    tags=["ocp4-disconnected-helper", "openshift", "validation", "pre-deployment"],
     params={
-        'example_config': Param(
-            default='sno-disconnected',
-            type='string',
-            description='Example configuration to validate',
+        "example_config": Param(
+            default="sno-disconnected",
+            type="string",
+            description="Example configuration to validate",
         ),
-        'registry_type': Param(
-            default='quay',
-            type='string',
-            enum=['quay', 'harbor', 'jfrog'],
-            description='Registry type to validate',
+        "registry_type": Param(
+            default="quay",
+            type="string",
+            enum=["quay", "harbor", "jfrog"],
+            description="Registry type to validate",
         ),
-        'ocp_version': Param(
-            default='4.19',
-            type='string',
-            enum=['4.17', '4.18', '4.19', '4.20'],
-            description='Expected OpenShift version',
+        "ocp_version": Param(
+            default="4.19",
+            type="string",
+            enum=["4.17", "4.18", "4.19", "4.20"],
+            description="Expected OpenShift version",
         ),
-        'min_cert_days': Param(
+        "min_cert_days": Param(
             default=7,
-            type='integer',
-            description='Minimum days of certificate validity',
+            type="integer",
+            description="Minimum days of certificate validity",
         ),
     },
     doc_md=__doc__,
@@ -73,8 +75,8 @@ dag = DAG(
 # Task 1: Validate Step-CA Health
 # =============================================================================
 validate_step_ca = BashOperator(
-    task_id='validate_step_ca',
-    bash_command='''
+    task_id="validate_step_ca",
+    bash_command="""
     set -euo pipefail
     
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -119,7 +121,7 @@ validate_step_ca = BashOperator(
     
     echo ""
     echo "✅ Step-CA validation passed"
-    ''',
+    """,
     dag=dag,
 )
 
@@ -127,8 +129,8 @@ validate_step_ca = BashOperator(
 # Task 2: Validate Registry Health and Certificate
 # =============================================================================
 validate_registry = BashOperator(
-    task_id='validate_registry',
-    bash_command='''
+    task_id="validate_registry",
+    bash_command="""
     set -euo pipefail
     
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -225,7 +227,7 @@ validate_registry = BashOperator(
     
     echo ""
     echo "✅ Registry validation passed"
-    ''',
+    """,
     dag=dag,
 )
 
@@ -233,8 +235,8 @@ validate_registry = BashOperator(
 # Task 3: Validate Images Exist in Registry
 # =============================================================================
 validate_images = BashOperator(
-    task_id='validate_images',
-    bash_command='''
+    task_id="validate_images",
+    bash_command="""
     set -euo pipefail
     
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -317,7 +319,7 @@ validate_images = BashOperator(
     
     echo ""
     echo "✅ Image validation passed"
-    ''',
+    """,
     dag=dag,
 )
 
@@ -325,8 +327,8 @@ validate_images = BashOperator(
 # Task 4: Validate DNS Resolution
 # =============================================================================
 validate_dns = BashOperator(
-    task_id='validate_dns',
-    bash_command='''
+    task_id="validate_dns",
+    bash_command="""
     set -euo pipefail
     
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -408,7 +410,7 @@ validate_dns = BashOperator(
     
     echo ""
     echo "✅ DNS validation passed"
-    ''',
+    """,
     dag=dag,
 )
 
@@ -416,8 +418,8 @@ validate_dns = BashOperator(
 # Task 5: Validate Configuration Files
 # =============================================================================
 validate_config = BashOperator(
-    task_id='validate_config',
-    bash_command='''
+    task_id="validate_config",
+    bash_command="""
     set -euo pipefail
     
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -541,7 +543,7 @@ validate_config = BashOperator(
     
     echo ""
     echo "✅ Configuration validation passed"
-    ''',
+    """,
     dag=dag,
 )
 
@@ -549,8 +551,8 @@ validate_config = BashOperator(
 # Task 6: Validate Pull Secret
 # =============================================================================
 validate_pull_secret = BashOperator(
-    task_id='validate_pull_secret',
-    bash_command='''
+    task_id="validate_pull_secret",
+    bash_command="""
     set -euo pipefail
     
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -633,7 +635,7 @@ validate_pull_secret = BashOperator(
     
     echo ""
     echo "✅ Pull secret validation passed"
-    ''',
+    """,
     dag=dag,
 )
 
@@ -641,8 +643,8 @@ validate_pull_secret = BashOperator(
 # Task 7: Validate Disk Space
 # =============================================================================
 validate_disk_space = BashOperator(
-    task_id='validate_disk_space',
-    bash_command='''
+    task_id="validate_disk_space",
+    bash_command="""
     set -euo pipefail
     
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -684,7 +686,7 @@ validate_disk_space = BashOperator(
     
     echo ""
     echo "✅ Disk space validation passed"
-    ''',
+    """,
     dag=dag,
 )
 
@@ -692,8 +694,8 @@ validate_disk_space = BashOperator(
 # Task 8: Generate Validation Report
 # =============================================================================
 validation_report = BashOperator(
-    task_id='validation_report',
-    bash_command='''
+    task_id="validation_report",
+    bash_command="""
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "📋 Pre-Deployment Validation Report"
@@ -723,7 +725,7 @@ validation_report = BashOperator(
     echo "    \"registry_type\": \"{{ params.registry_type }}\","
     echo "    \"deploy_on_kvm\": true"
     echo "  }'"
-    ''',
+    """,
     trigger_rule=TriggerRule.ALL_SUCCESS,
     dag=dag,
 )
@@ -732,8 +734,8 @@ validation_report = BashOperator(
 # Task 9: Failure Summary
 # =============================================================================
 failure_summary = BashOperator(
-    task_id='failure_summary',
-    bash_command='''
+    task_id="failure_summary",
+    bash_command="""
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "❌ PRE-DEPLOYMENT VALIDATION FAILED"
@@ -750,7 +752,7 @@ failure_summary = BashOperator(
     echo "After fixing, retrigger this DAG to validate again."
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    ''',
+    """,
     trigger_rule=TriggerRule.ONE_FAILED,
     dag=dag,
 )
@@ -759,8 +761,23 @@ failure_summary = BashOperator(
 # Task Dependencies
 # =============================================================================
 # All validations run in parallel for speed
-[validate_step_ca, validate_registry, validate_images, validate_dns, validate_config, validate_pull_secret, validate_disk_space] >> validation_report
+[
+    validate_step_ca,
+    validate_registry,
+    validate_images,
+    validate_dns,
+    validate_config,
+    validate_pull_secret,
+    validate_disk_space,
+] >> validation_report
 
 # Failure summary runs if any validation fails
-[validate_step_ca, validate_registry, validate_images, validate_dns, validate_config, validate_pull_secret, validate_disk_space] >> failure_summary
-
+[
+    validate_step_ca,
+    validate_registry,
+    validate_images,
+    validate_dns,
+    validate_config,
+    validate_pull_secret,
+    validate_disk_space,
+] >> failure_summary

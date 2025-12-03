@@ -12,44 +12,53 @@ Calls: /opt/kcli-pipelines/mirror-registry/deploy.sh
 """
 
 from datetime import datetime, timedelta
-from airflow import DAG
+
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.utils.trigger_rule import TriggerRule
 
+from airflow import DAG
+
 # Configuration
-KCLI_PIPELINES_DIR = '/opt/kcli-pipelines'
-MIRROR_REGISTRY_DIR = f'{KCLI_PIPELINES_DIR}/mirror-registry'
+KCLI_PIPELINES_DIR = "/opt/kcli-pipelines"
+MIRROR_REGISTRY_DIR = f"{KCLI_PIPELINES_DIR}/mirror-registry"
 
 default_args = {
-    'owner': 'qubinode',
-    'depends_on_past': False,
-    'start_date': datetime(2025, 1, 1),
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 2,
-    'retry_delay': timedelta(minutes=5),
+    "owner": "qubinode",
+    "depends_on_past": False,
+    "start_date": datetime(2025, 1, 1),
+    "email_on_failure": False,
+    "email_on_retry": False,
+    "retries": 2,
+    "retry_delay": timedelta(minutes=5),
 }
 
 dag = DAG(
-    'mirror_registry_deployment',
+    "mirror_registry_deployment",
     default_args=default_args,
-    description='Deploy Quay-based mirror-registry for disconnected OpenShift installs',
+    description="Deploy Quay-based mirror-registry for disconnected OpenShift installs",
     schedule=None,
     catchup=False,
-    tags=['qubinode', 'kcli-pipelines', 'mirror-registry', 'quay', 'disconnected', 'ocp4-disconnected-helper'],
+    tags=[
+        "qubinode",
+        "kcli-pipelines",
+        "mirror-registry",
+        "quay",
+        "disconnected",
+        "ocp4-disconnected-helper",
+    ],
     params={
-        'action': 'create',  # create, delete, status, health
-        'vm_name': 'mirror-registry',  # VM name
-        'quay_version': 'v2.0.3',  # Quay mirror-registry version (latest stable)
-        'domain': 'example.com',  # Domain for certificates
-        'target_server': 'localhost',  # Target server
-        'network': 'default',  # Primary network (DHCP for management)
-        'isolated_network': '1924',  # Isolated network for disconnected OCP
-        'isolated_ip': '192.168.49.10',  # Static IP on isolated network
-        'isolated_gateway': '192.168.49.1',  # Gateway for isolated network
-        'step_ca_vm': 'step-ca-server',  # Step-CA server VM name
+        "action": "create",  # create, delete, status, health
+        "vm_name": "mirror-registry",  # VM name
+        "quay_version": "v2.0.3",  # Quay mirror-registry version (latest stable)
+        "domain": "example.com",  # Domain for certificates
+        "target_server": "localhost",  # Target server
+        "network": "default",  # Primary network (DHCP for management)
+        "isolated_network": "1924",  # Isolated network for disconnected OCP
+        "isolated_ip": "192.168.49.10",  # Static IP on isolated network
+        "isolated_gateway": "192.168.49.1",  # Gateway for isolated network
+        "step_ca_vm": "step-ca-server",  # Step-CA server VM name
     },
     doc_md="""
     # Mirror-Registry Deployment DAG
@@ -163,19 +172,19 @@ dag = DAG(
 
 def decide_action(**context):
     """Branch based on action parameter"""
-    action = context['params'].get('action', 'create')
-    if action == 'delete':
-        return 'delete_registry'
-    elif action == 'status':
-        return 'check_status'
-    elif action == 'health':
-        return 'health_check'
-    return 'check_step_ca_available'
+    action = context["params"].get("action", "create")
+    if action == "delete":
+        return "delete_registry"
+    elif action == "status":
+        return "check_status"
+    elif action == "health":
+        return "health_check"
+    return "check_step_ca_available"
 
 
 # Task: Decide action
 decide_action_task = BranchPythonOperator(
-    task_id='decide_action',
+    task_id="decide_action",
     python_callable=decide_action,
     dag=dag,
 )
@@ -183,8 +192,8 @@ decide_action_task = BranchPythonOperator(
 
 # Task: Check Step-CA is available (prerequisite)
 check_step_ca = BashOperator(
-    task_id='check_step_ca_available',
-    bash_command='''
+    task_id="check_step_ca_available",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Checking Step-CA Prerequisite"
@@ -231,15 +240,15 @@ check_step_ca = BashOperator(
     
     echo ""
     echo "[OK] Step-CA prerequisite check complete"
-    ''',
+    """,
     dag=dag,
 )
 
 
 # Task: Validate environment
 validate_environment = BashOperator(
-    task_id='validate_environment',
-    bash_command='''
+    task_id="validate_environment",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Validating Mirror-Registry Environment"
@@ -292,15 +301,15 @@ validate_environment = BashOperator(
     
     echo ""
     echo "[OK] Environment validation complete"
-    ''',
+    """,
     dag=dag,
 )
 
 
 # Task: Create Mirror-Registry VM
 create_registry = BashOperator(
-    task_id='create_registry_vm',
-    bash_command='''
+    task_id="create_registry_vm",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Creating Mirror-Registry VM (Dual-NIC)"
@@ -373,7 +382,7 @@ create_registry = BashOperator(
     
     echo ""
     echo "[OK] Mirror-Registry deployment initiated with dual-NIC"
-    ''',
+    """,
     execution_timeout=timedelta(minutes=45),
     dag=dag,
 )
@@ -381,8 +390,8 @@ create_registry = BashOperator(
 
 # Task: Wait for Registry VM
 wait_for_registry = BashOperator(
-    task_id='wait_for_registry_vm',
-    bash_command='''
+    task_id="wait_for_registry_vm",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Waiting for Mirror-Registry VM"
@@ -416,7 +425,7 @@ wait_for_registry = BashOperator(
     done
     
     echo "[WARN] Timeout waiting for Mirror-Registry VM - may still be provisioning"
-    ''',
+    """,
     execution_timeout=timedelta(minutes=20),
     dag=dag,
 )
@@ -424,8 +433,8 @@ wait_for_registry = BashOperator(
 
 # Task: Validate registry is healthy
 validate_registry_health = BashOperator(
-    task_id='validate_registry_health',
-    bash_command='''
+    task_id="validate_registry_health",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Validating Mirror-Registry Health"
@@ -471,7 +480,7 @@ validate_registry_health = BashOperator(
     echo "[WARN] Registry health check timed out"
     echo "The registry may still be initializing. Check manually:"
     echo "  curl -k https://$IP:8443/health/instance"
-    ''',
+    """,
     execution_timeout=timedelta(minutes=20),
     dag=dag,
 )
@@ -479,8 +488,8 @@ validate_registry_health = BashOperator(
 
 # Task: Complete deployment
 deployment_complete = BashOperator(
-    task_id='deployment_complete',
-    bash_command='''
+    task_id="deployment_complete",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Mirror-Registry Deployment Complete"
@@ -512,15 +521,15 @@ deployment_complete = BashOperator(
     echo "========================================"
     echo "Mirror-Registry is ready for ocp4-disconnected-helper workflows"
     echo "========================================"
-    ''',
+    """,
     dag=dag,
 )
 
 
 # Task: Health check (standalone)
 health_check = BashOperator(
-    task_id='health_check',
-    bash_command='''
+    task_id="health_check",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Mirror-Registry Health Check"
@@ -554,15 +563,15 @@ health_check = BashOperator(
         echo "Response: $HEALTH"
         exit 1
     fi
-    ''',
+    """,
     dag=dag,
 )
 
 
 # Task: Delete Registry
 delete_registry = BashOperator(
-    task_id='delete_registry',
-    bash_command='''
+    task_id="delete_registry",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Deleting Mirror-Registry"
@@ -581,7 +590,7 @@ delete_registry = BashOperator(
         echo "[WARN] VM may not exist"
     
     echo "[OK] Mirror-Registry deleted"
-    ''',
+    """,
     execution_timeout=timedelta(minutes=10),
     dag=dag,
 )
@@ -589,8 +598,8 @@ delete_registry = BashOperator(
 
 # Task: Check status
 check_status = BashOperator(
-    task_id='check_status',
-    bash_command='''
+    task_id="check_status",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Mirror-Registry Status"
@@ -612,15 +621,15 @@ check_status = BashOperator(
         ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
             "curl -sk https://$IP:8443/health/instance 2>/dev/null" || echo "Health check failed"
     fi
-    ''',
+    """,
     dag=dag,
 )
 
 
 # DNS Registration task - registers the VM hostname in FreeIPA
 register_dns = BashOperator(
-    task_id='register_dns',
-    bash_command='''
+    task_id="register_dns",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Registering DNS in FreeIPA"
@@ -686,7 +695,7 @@ EOF
     else
         echo "[INFO] DNS may need time to propagate"
     fi
-    ''',
+    """,
     execution_timeout=timedelta(minutes=5),
     dag=dag,
 )
@@ -696,8 +705,8 @@ EOF
 # Task: Cleanup VM on Failure (CI/CD style)
 # =============================================================================
 cleanup_vm_on_failure = BashOperator(
-    task_id='cleanup_vm_on_failure',
-    bash_command='''
+    task_id="cleanup_vm_on_failure",
+    bash_command="""
     set +e  # Don't exit on error during cleanup
     
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
@@ -734,7 +743,7 @@ cleanup_vm_on_failure = BashOperator(
     echo "  - Network issue: Check libvirt networks"
     echo ""
     echo "After fixing, retrigger this DAG - no manual cleanup needed."
-    ''',
+    """,
     trigger_rule=TriggerRule.ONE_FAILED,
     dag=dag,
 )
@@ -743,7 +752,13 @@ cleanup_vm_on_failure = BashOperator(
 # Define task dependencies
 # Main create flow
 decide_action_task >> check_step_ca >> validate_environment >> create_registry
-create_registry >> register_dns >> wait_for_registry >> validate_registry_health >> deployment_complete
+(
+    create_registry
+    >> register_dns
+    >> wait_for_registry
+    >> validate_registry_health
+    >> deployment_complete
+)
 
 # Alternative flows
 decide_action_task >> delete_registry
@@ -751,4 +766,10 @@ decide_action_task >> check_status
 decide_action_task >> health_check
 
 # Cleanup on failure - runs if any create task fails
-[check_step_ca, validate_environment, create_registry, wait_for_registry, validate_registry_health] >> cleanup_vm_on_failure
+[
+    check_step_ca,
+    validate_environment,
+    create_registry,
+    wait_for_registry,
+    validate_registry_health,
+] >> cleanup_vm_on_failure

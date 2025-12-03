@@ -14,9 +14,11 @@ Created: [Date]
 """
 
 from datetime import datetime, timedelta
-from airflow import DAG
+
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator, PythonOperator
+
+from airflow import DAG
 
 # =============================================================================
 # DAG Configuration
@@ -44,16 +46,13 @@ default_args = {
 dag_params = {
     # Common action parameter for create/delete/status workflows
     "action": "create",  # Options: create, delete, status
-
     # VM Configuration
     "vm_name": "",  # Leave empty for auto-generated names
     "vm_profile": "default",
     "target_server": "localhost",
-
     # Network Configuration
     "domain": "example.com",
     "dns_server": "",
-
     # Add your custom parameters here
     # "custom_param": "default_value",
 }
@@ -111,6 +110,7 @@ dag = DAG(
 # Helper Functions
 # =============================================================================
 
+
 def decide_action(**context) -> str:
     """
     Branch based on action parameter.
@@ -146,7 +146,7 @@ decide_action_task = BranchPythonOperator(
 # ADR-0046: Use SSH for host commands
 validate_prerequisites = BashOperator(
     task_id="validate_prerequisites",
-    bash_command='''
+    bash_command="""
     echo "========================================"
     echo "Validating Prerequisites"
     echo "========================================"
@@ -182,7 +182,7 @@ validate_prerequisites = BashOperator(
 
     echo ""
     echo "[OK] All prerequisites validated"
-    ''',
+    """,
     dag=dag,
 )
 
@@ -190,7 +190,7 @@ validate_prerequisites = BashOperator(
 # ADR-0046: Wrap kcli/virsh commands in SSH
 create_resources = BashOperator(
     task_id="create_resources",
-    bash_command='''
+    bash_command="""
     echo "========================================"
     echo "Creating Resources"
     echo "========================================"
@@ -234,14 +234,14 @@ create_resources = BashOperator(
     echo "[OK] Resource creation complete"
     echo "VM Name: $VM_NAME"
     echo "VM IP: ${VM_IP:-pending}"
-    ''',
+    """,
     dag=dag,
 )
 
 # Task: Delete resources
 delete_resources = BashOperator(
     task_id="delete_resources",
-    bash_command='''
+    bash_command="""
     echo "========================================"
     echo "Deleting Resources"
     echo "========================================"
@@ -271,14 +271,14 @@ delete_resources = BashOperator(
 
     echo ""
     echo "[OK] VM $VM_NAME deleted successfully"
-    ''',
+    """,
     dag=dag,
 )
 
 # Task: Check status
 status_resources = BashOperator(
     task_id="status_resources",
-    bash_command='''
+    bash_command="""
     echo "========================================"
     echo "Resource Status"
     echo "========================================"
@@ -301,7 +301,7 @@ status_resources = BashOperator(
 
     echo ""
     echo "[OK] Status check complete"
-    ''',
+    """,
     dag=dag,
 )
 

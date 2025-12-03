@@ -14,36 +14,38 @@ Calls: /opt/kcli-pipelines/deploy-vm.sh
 """
 
 from datetime import datetime, timedelta
-from airflow import DAG
+
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator
 
+from airflow import DAG
+
 # Configuration
-KCLI_PIPELINES_DIR = '/opt/kcli-pipelines'
+KCLI_PIPELINES_DIR = "/opt/kcli-pipelines"
 
 default_args = {
-    'owner': 'qubinode',
-    'depends_on_past': False,
-    'start_date': datetime(2025, 1, 1),
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 2,
-    'retry_delay': timedelta(minutes=3),
+    "owner": "qubinode",
+    "depends_on_past": False,
+    "start_date": datetime(2025, 1, 1),
+    "email_on_failure": False,
+    "email_on_retry": False,
+    "retries": 2,
+    "retry_delay": timedelta(minutes=3),
 }
 
 dag = DAG(
-    'generic_vm_deployment',
+    "generic_vm_deployment",
     default_args=default_args,
-    description='Deploy VMs using kcli profiles (RHEL, Fedora, Ubuntu, etc.)',
+    description="Deploy VMs using kcli profiles (RHEL, Fedora, Ubuntu, etc.)",
     schedule=None,
     catchup=False,
-    tags=['qubinode', 'kcli-pipelines', 'vm', 'infrastructure'],
+    tags=["qubinode", "kcli-pipelines", "vm", "infrastructure"],
     params={
-        'action': 'create',  # create, delete, status
-        'vm_profile': 'rhel9',  # VM profile to deploy
-        'vm_name': '',  # VM name (auto-generated if empty)
-        'community_version': 'false',  # Use community packages
-        'target_server': 'localhost',  # Target server
+        "action": "create",  # create, delete, status
+        "vm_profile": "rhel9",  # VM profile to deploy
+        "vm_name": "",  # VM name (auto-generated if empty)
+        "community_version": "false",  # Use community packages
+        "target_server": "localhost",  # Target server
     },
     doc_md="""
     # Generic VM Deployment DAG
@@ -85,25 +87,25 @@ dag = DAG(
 
 def decide_action(**context):
     """Branch based on action parameter"""
-    action = context['params'].get('action', 'create')
-    if action == 'delete':
-        return 'delete_vm'
-    elif action == 'status':
-        return 'check_status'
-    return 'validate_environment'
+    action = context["params"].get("action", "create")
+    if action == "delete":
+        return "delete_vm"
+    elif action == "status":
+        return "check_status"
+    return "validate_environment"
 
 
 # Task: Decide action
 decide_action_task = BranchPythonOperator(
-    task_id='decide_action',
+    task_id="decide_action",
     python_callable=decide_action,
     dag=dag,
 )
 
 # Task: Validate environment
 validate_environment = BashOperator(
-    task_id='validate_environment',
-    bash_command='''
+    task_id="validate_environment",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Validating VM Deployment Environment"
@@ -144,14 +146,14 @@ validate_environment = BashOperator(
     
     echo ""
     echo "[OK] Environment validation complete"
-    ''',
+    """,
     dag=dag,
 )
 
 # Task: Configure kcli profile
 configure_profile = BashOperator(
-    task_id='configure_kcli_profile',
-    bash_command='''
+    task_id="configure_kcli_profile",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Configuring kcli Profile"
@@ -183,15 +185,15 @@ configure_profile = BashOperator(
         fi"
     
     echo "[OK] Profile configuration complete"
-    ''',
+    """,
     execution_timeout=timedelta(minutes=5),
     dag=dag,
 )
 
 # Task: Create VM
 create_vm = BashOperator(
-    task_id='create_vm',
-    bash_command='''
+    task_id="create_vm",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Creating VM via kcli-pipelines"
@@ -233,15 +235,15 @@ create_vm = BashOperator(
     
     echo ""
     echo "[OK] VM deployment initiated"
-    ''',
+    """,
     execution_timeout=timedelta(minutes=30),
     dag=dag,
 )
 
 # Task: Wait for VM to be ready
 wait_for_vm = BashOperator(
-    task_id='wait_for_vm',
-    bash_command='''
+    task_id="wait_for_vm",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Waiting for VM to be Ready"
@@ -294,15 +296,15 @@ wait_for_vm = BashOperator(
     done
     
     echo "[WARN] Timeout waiting for VM - may still be provisioning"
-    ''',
+    """,
     execution_timeout=timedelta(minutes=15),
     dag=dag,
 )
 
 # Task: Validate deployment
 validate_deployment = BashOperator(
-    task_id='validate_deployment',
-    bash_command='''
+    task_id="validate_deployment",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Validating VM Deployment"
@@ -340,14 +342,14 @@ validate_deployment = BashOperator(
     echo "Access:"
     echo "  SSH: ssh cloud-user@$IP"
     echo "  Console: kcli console $VM_NAME"
-    ''',
+    """,
     dag=dag,
 )
 
 # Task: Delete VM
 delete_vm = BashOperator(
-    task_id='delete_vm',
-    bash_command='''
+    task_id="delete_vm",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Deleting VM"
@@ -375,15 +377,15 @@ delete_vm = BashOperator(
          ./deploy-vm.sh"
     
     echo "[OK] VM deleted"
-    ''',
+    """,
     execution_timeout=timedelta(minutes=10),
     dag=dag,
 )
 
 # Task: Check status
 check_status = BashOperator(
-    task_id='check_status',
-    bash_command='''
+    task_id="check_status",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "VM Status"
@@ -400,11 +402,18 @@ check_status = BashOperator(
         ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
             "kcli list vm | grep -E '$VM_PROFILE|Name'" 2>/dev/null
     fi
-    ''',
+    """,
     dag=dag,
 )
 
 # Define task dependencies
-decide_action_task >> validate_environment >> configure_profile >> create_vm >> wait_for_vm >> validate_deployment
+(
+    decide_action_task
+    >> validate_environment
+    >> configure_profile
+    >> create_vm
+    >> wait_for_vm
+    >> validate_deployment
+)
 decide_action_task >> delete_vm
 decide_action_task >> check_status

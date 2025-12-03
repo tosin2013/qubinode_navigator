@@ -46,23 +46,25 @@
 # collects sensitive user input. It's used as a fallback when the enhanced template
 # system is unavailable. Changes must maintain backward compatibility.
 
-import fire
 import argparse
 import getpass
 import os
-import yaml
-import netifaces
-import psutil
 import re
-import time
 import subprocess
 import sys
+import time
+
+import fire
+import netifaces
+import psutil
+import yaml
 
 # 📊 GLOBAL VARIABLES (shared with other scripts):
-inventory_env = os.environ.get('INVENTORY')  # Environment inventory name
+inventory_env = os.environ.get("INVENTORY")  # Environment inventory name
 if not inventory_env:
     print("INVENTORY environment variable not found.")
     sys.exit(1)
+
 
 # Inventory Update Manager - The "Configuration Collector"
 def update_inventory(username=None, domain_name=None, dnf_forwarder=None):
@@ -86,11 +88,13 @@ def update_inventory(username=None, domain_name=None, dnf_forwarder=None):
     # Priority 1: Function parameters (from CLI args)
     # Priority 2: Environment variables
     # Priority 3: Interactive prompts
-    
+
     if username is None:
         # Check environment variables first
-        username = os.environ.get('QUBINODE_ADMIN_USER') or os.environ.get('ENV_USERNAME')
-        
+        username = os.environ.get("QUBINODE_ADMIN_USER") or os.environ.get(
+            "ENV_USERNAME"
+        )
+
         if username is None:
             # Fall back to interactive prompt
             if os.geteuid() == 0:
@@ -100,8 +104,8 @@ def update_inventory(username=None, domain_name=None, dnf_forwarder=None):
 
     if domain_name is None:
         # Check environment variables first
-        domain_name = os.environ.get('QUBINODE_DOMAIN')
-        
+        domain_name = os.environ.get("QUBINODE_DOMAIN")
+
         if domain_name is None:
             # Fall back to interactive prompt with validation
             while True:
@@ -113,39 +117,41 @@ def update_inventory(username=None, domain_name=None, dnf_forwarder=None):
 
     if dnf_forwarder is None:
         # Check environment variables first
-        dnf_forwarder = os.environ.get('FORWARDER')
-        
+        dnf_forwarder = os.environ.get("FORWARDER")
+
         if dnf_forwarder is None:
             # Fall back to interactive prompt
             dnf_forwarder = input("Enter the DNS forwarder for your system: ")
 
-    inventory_path = 'inventories/'+str(inventory_env)+'/group_vars/all.yml'
-    with open(inventory_path, 'r') as f:
+    inventory_path = "inventories/" + str(inventory_env) + "/group_vars/all.yml"
+    with open(inventory_path, "r") as f:
         inventory = yaml.safe_load(f)
 
-    inventory['admin_user'] = username
-    inventory['domain'] = domain_name
-    inventory['dns_forwarder'] = dnf_forwarder
+    inventory["admin_user"] = username
+    inventory["domain"] = domain_name
+    inventory["dns_forwarder"] = dnf_forwarder
 
-    with open(inventory_path, 'w') as f:
+    with open(inventory_path, "w") as f:
         yaml.dump(inventory, f, default_flow_style=False)
 
 
 def get_interface_ips(configure_bridge=None, interface=None):
     """
     Detect and configure network interfaces with environment variable support.
-    
+
     Enhanced: Now checks INTERFACE and ACTIVE_BRIDGE environment variables first
     """
     if configure_bridge is None:
         # Check environment variables first
-        bridge_env = os.environ.get('ACTIVE_BRIDGE')
+        bridge_env = os.environ.get("ACTIVE_BRIDGE")
         if bridge_env is not None:
-            configure_bridge = bridge_env.lower() in ('true', '1', 'yes')
+            configure_bridge = bridge_env.lower() in ("true", "1", "yes")
         else:
             # Fall back to original logic
             if os.geteuid() == 0:
-                print("Error: Cannot set configure_bridge to True when running as root.")
+                print(
+                    "Error: Cannot set configure_bridge to True when running as root."
+                )
                 configure_bridge = False
                 print("configure_bridge is set to", configure_bridge)
             else:
@@ -156,12 +162,16 @@ def get_interface_ips(configure_bridge=None, interface=None):
     interfaces = netifaces.interfaces()
 
     # Filter out loopback interfaces and any that don't have an IPv4 address
-    interfaces = [i for i in interfaces if i != 'lo' and netifaces.AF_INET in netifaces.ifaddresses(i)]
+    interfaces = [
+        i
+        for i in interfaces
+        if i != "lo" and netifaces.AF_INET in netifaces.ifaddresses(i)
+    ]
 
     if interface is None:
         # Check environment variables first
-        interface = os.environ.get('INTERFACE')
-        
+        interface = os.environ.get("INTERFACE")
+
         if interface is None:
             # Fall back to auto-detection
             if len(interfaces) == 1:
@@ -171,35 +181,39 @@ def get_interface_ips(configure_bridge=None, interface=None):
                 for i, iface in enumerate(interfaces):
                     print(f"{i+1}. {iface}")
                 choice = int(input("Choose an interface to use: "))
-                interface = interfaces[choice-1]
+                interface = interfaces[choice - 1]
             else:
                 raise Exception("No network interfaces found")
 
     # Get the IPv4 address, netmask, and MAC address for the chosen interface
     addrs = netifaces.ifaddresses(interface)
-    ip = addrs[netifaces.AF_INET][0]['addr']
-    netmask = addrs[netifaces.AF_INET][0]['netmask']
-    macaddr = addrs[netifaces.AF_LINK][0]['addr']
+    ip = addrs[netifaces.AF_INET][0]["addr"]
+    netmask = addrs[netifaces.AF_INET][0]["netmask"]
+    macaddr = addrs[netifaces.AF_LINK][0]["addr"]
 
     # Calculate the network address and prefix length from the netmask
-    netaddr = '.'.join(str(int(x) & int(y)) for x, y in zip(ip.split('.'), netmask.split('.')))
-    prefix_len = sum(bin(int(x)).count('1') for x in netmask.split('.'))
+    netaddr = ".".join(
+        str(int(x) & int(y)) for x, y in zip(ip.split("."), netmask.split("."))
+    )
+    prefix_len = sum(bin(int(x)).count("1") for x in netmask.split("."))
 
     # Prepare the configuration for the inventory
     config = {
-        'kvm_host_gw': get_default_gateway(),
-        'kvm_host_interface': interface,
-        'kvm_host_ip': ip,
-        'kvm_host_macaddr': macaddr,
-        'kvm_host_mask_prefix': prefix_len,
-        'kvm_host_netmask': netmask
+        "kvm_host_gw": get_default_gateway(),
+        "kvm_host_interface": interface,
+        "kvm_host_ip": ip,
+        "kvm_host_macaddr": macaddr,
+        "kvm_host_mask_prefix": prefix_len,
+        "kvm_host_netmask": netmask,
     }
 
     print(config)
 
     # Update YAML file
-    inventory_path = 'inventories/'+str(inventory_env)+'/group_vars/control/kvm_host.yml'
-    with open(inventory_path, 'r') as f:
+    inventory_path = (
+        "inventories/" + str(inventory_env) + "/group_vars/control/kvm_host.yml"
+    )
+    with open(inventory_path, "r") as f:
         inventory = yaml.safe_load(f)
 
     for key, value in config.items():
@@ -213,7 +227,7 @@ def get_default_gateway():
     """Get the default gateway IP address"""
     try:
         gws = netifaces.gateways()
-        return gws['default'][netifaces.AF_INET][0]
+        return gws["default"][netifaces.AF_INET][0]
     except Exception:
         return "0.0.0.0"
 
@@ -221,14 +235,14 @@ def get_default_gateway():
 def select_disk(disk=None):
     """
     Select a disk for KVM storage with environment variable support.
-    
+
     Enhanced: Now checks KVM_HOST_LIBVIRT_EXTRA_DISK environment variable first,
     and allows "skip" to disable disk selection
     """
     if disk is None:
         # Check environment variables first
-        disk = os.environ.get('KVM_HOST_LIBVIRT_EXTRA_DISK')
-        
+        disk = os.environ.get("KVM_HOST_LIBVIRT_EXTRA_DISK")
+
         if disk is None:
             # Fall back to interactive selection
             disks = []
@@ -236,9 +250,13 @@ def select_disk(disk=None):
 
             # Get a list of all disks
             for partition in psutil.disk_partitions():
-                disk_name = partition.device.split('/')[-1]
+                disk_name = partition.device.split("/")[-1]
                 # Skip loop devices, ram disks, and the root partition
-                if not disk_name.startswith('loop') and not disk_name.startswith('ram') and disk_name != 'sda':
+                if (
+                    not disk_name.startswith("loop")
+                    and not disk_name.startswith("ram")
+                    and disk_name != "sda"
+                ):
                     disks.append(partition.device)
 
             disks = list(set(disks))
@@ -253,7 +271,7 @@ def select_disk(disk=None):
                     print(f"{i}: {disk_option}")
                 print("0: Exit")
                 choice = input("Select a disk to use (1, 2, ...): ")
-                
+
                 if choice == "0":
                     print("Exiting disk selection.")
                     return
@@ -267,16 +285,16 @@ def select_disk(disk=None):
                         print("Invalid selection.")
                         return
             else:
-                print('No suitable disks found.')
+                print("No suitable disks found.")
                 return
-    
+
     # Handle "skip" option
     if disk and disk.lower() == "skip":
         print("Skipping disk selection.")
         use_root_disk = True
     else:
         use_root_disk = False
-        
+
         # Check if disk is already mounted
         mounted = False
         if disk:
@@ -293,36 +311,38 @@ def select_disk(disk=None):
             use_root_disk = True
 
     # Update YAML file with selected disk
-    inventory_path = 'inventories/'+str(inventory_env)+'/group_vars/control/kvm_host.yml'
-    with open(inventory_path, 'r') as f:
+    inventory_path = (
+        "inventories/" + str(inventory_env) + "/group_vars/control/kvm_host.yml"
+    )
+    with open(inventory_path, "r") as f:
         inventory = yaml.safe_load(f)
 
     if use_root_disk is True or disk is None:
-        print('No disk selected.')
-        inventory['create_libvirt_storage'] = False
-        inventory['create_lvm'] = False
-        with open(inventory_path, 'w') as f:
+        print("No disk selected.")
+        inventory["create_libvirt_storage"] = False
+        inventory["create_lvm"] = False
+        with open(inventory_path, "w") as f:
             yaml.dump(inventory, f, default_flow_style=False)
     else:
-        disk_name = disk.replace('/dev/', '')
-        inventory['create_libvirt_storage'] = True
-        inventory['create_lvm'] = True
-        inventory['kvm_host_libvirt_extra_disk'] = disk_name
+        disk_name = disk.replace("/dev/", "")
+        inventory["create_libvirt_storage"] = True
+        inventory["create_lvm"] = True
+        inventory["kvm_host_libvirt_extra_disk"] = disk_name
         with open(inventory_path, "w") as f:
             yaml.dump(inventory, f)
-            
+
         print(f"Selected disk: {disk_name}")
         print(f"Updated {inventory_path}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--username', help='Username for the system')
-    parser.add_argument('--domain', help='Domain name for the system')
-    parser.add_argument('--forwarder', help='DNS forwarder for the system')
-    parser.add_argument('--bridge', type=bool, help='Configure bridge for the system')
-    parser.add_argument('--interface', help='Network interface to use')
-    parser.add_argument('--disk', help='Disk to use, or "skip" to skip disk selection')
+    parser.add_argument("--username", help="Username for the system")
+    parser.add_argument("--domain", help="Domain name for the system")
+    parser.add_argument("--forwarder", help="DNS forwarder for the system")
+    parser.add_argument("--bridge", type=bool, help="Configure bridge for the system")
+    parser.add_argument("--interface", help="Network interface to use")
+    parser.add_argument("--disk", help='Disk to use, or "skip" to skip disk selection')
     args = parser.parse_args()
 
     update_inventory(args.username, args.domain, args.forwarder)

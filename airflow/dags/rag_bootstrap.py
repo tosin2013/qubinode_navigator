@@ -19,16 +19,17 @@ Usage:
     trigger_dag("rag_bootstrap")
 """
 
-from datetime import datetime, timedelta
-from pathlib import Path
+import glob
 import logging
 import os
-import glob
+from datetime import datetime, timedelta
+from pathlib import Path
+
+from airflow.operators.bash import BashOperator
+from airflow.operators.python import PythonOperator
+from airflow.utils.dates import days_ago
 
 from airflow import DAG
-from airflow.operators.python import PythonOperator
-from airflow.operators.bash import BashOperator
-from airflow.utils.dates import days_ago
 
 # Configuration
 QUBINODE_ROOT = os.getenv("QUBINODE_ROOT", "/opt/qubinode_navigator")
@@ -53,6 +54,7 @@ def get_rag_store():
     """Get RAG store instance."""
     try:
         from qubinode.rag_store import get_rag_store as _get_rag_store
+
         return _get_rag_store()
     except ImportError as e:
         logger.error(f"RAG store not available: {e}")
@@ -99,8 +101,8 @@ def ingest_adrs(**context):
                 metadata={
                     "title": title,
                     "filename": adr_file.name,
-                    "category": "architecture"
-                }
+                    "category": "architecture",
+                },
             )
             ingested += 1
 
@@ -112,7 +114,7 @@ def ingest_adrs(**context):
         "status": "completed",
         "ingested": ingested,
         "errors": errors,
-        "path": str(adr_path)
+        "path": str(adr_path),
     }
 
     logger.info(f"ADR ingestion complete: {result}")
@@ -170,8 +172,8 @@ def ingest_dag_examples(**context):
                 metadata={
                     "filename": dag_file.name,
                     "description": description,
-                    "category": "example"
-                }
+                    "category": "example",
+                },
             )
             ingested += 1
 
@@ -184,7 +186,7 @@ def ingest_dag_examples(**context):
         "ingested": ingested,
         "errors": errors,
         "skipped": skipped,
-        "path": str(dags_path)
+        "path": str(dags_path),
     }
 
     logger.info(f"DAG examples ingestion complete: {result}")
@@ -240,7 +242,7 @@ ssh_task = SSHOperator(
 3. Handle errors with retries
 4. Use do_xcom_push for command output
 """,
-            "doc_url": "https://airflow.apache.org/docs/apache-airflow-providers-ssh/stable/index.html"
+            "doc_url": "https://airflow.apache.org/docs/apache-airflow-providers-ssh/stable/index.html",
         },
         {
             "name": "PostgreSQL Provider",
@@ -276,7 +278,7 @@ create_table = PostgresOperator(
 3. Use transactions for data integrity
 4. Consider using PostgresHook for complex operations
 """,
-            "doc_url": "https://airflow.apache.org/docs/apache-airflow-providers-postgres/stable/index.html"
+            "doc_url": "https://airflow.apache.org/docs/apache-airflow-providers-postgres/stable/index.html",
         },
         {
             "name": "HTTP Provider",
@@ -310,7 +312,7 @@ api_call = SimpleHttpOperator(
 3. Set appropriate retries for transient failures
 4. Use response_filter to extract data
 """,
-            "doc_url": "https://airflow.apache.org/docs/apache-airflow-providers-http/stable/index.html"
+            "doc_url": "https://airflow.apache.org/docs/apache-airflow-providers-http/stable/index.html",
         },
         {
             "name": "OpenLineage Provider",
@@ -344,8 +346,8 @@ You can add custom metadata to lineage events using facets:
 3. Configure appropriate transport (HTTP to Marquez)
 4. Review lineage in Marquez Web UI
 """,
-            "doc_url": "https://airflow.apache.org/docs/apache-airflow-providers-openlineage/stable/index.html"
-        }
+            "doc_url": "https://airflow.apache.org/docs/apache-airflow-providers-openlineage/stable/index.html",
+        },
     ]
 
     ingested = 0
@@ -362,8 +364,8 @@ You can add custom metadata to lineage events using facets:
                 metadata={
                     "provider_name": provider["name"],
                     "package": provider["package"],
-                    "category": "provider"
-                }
+                    "category": "provider",
+                },
             )
             ingested += 1
 
@@ -375,7 +377,7 @@ You can add custom metadata to lineage events using facets:
         "status": "completed",
         "ingested": ingested,
         "errors": errors,
-        "total_providers": len(provider_docs)
+        "total_providers": len(provider_docs),
     }
 
     logger.info(f"Provider docs ingestion complete: {result}")
@@ -442,7 +444,7 @@ my_dag:
 - Log errors with context for troubleshooting
 """,
             "doc_type": "guide",
-            "category": "development"
+            "category": "development",
         },
         {
             "title": "Qubinode Troubleshooting Guide",
@@ -501,8 +503,8 @@ my_dag:
 4. Check Airflow logs for OpenLineage errors
 """,
             "doc_type": "troubleshooting",
-            "category": "support"
-        }
+            "category": "support",
+        },
     ]
 
     ingested = 0
@@ -515,10 +517,7 @@ my_dag:
             store.ingest_document(
                 content=guide["content"],
                 doc_type=guide["doc_type"],
-                metadata={
-                    "title": guide["title"],
-                    "category": guide["category"]
-                }
+                metadata={"title": guide["title"], "category": guide["category"]},
             )
             ingested += 1
 
@@ -530,7 +529,7 @@ my_dag:
         "status": "completed",
         "ingested": ingested,
         "errors": errors,
-        "total_guides": len(guides)
+        "total_guides": len(guides),
     }
 
     logger.info(f"Guides ingestion complete: {result}")
@@ -556,17 +555,15 @@ def verify_rag_health(**context):
 
     # Test query
     test_query = "How do I create a new DAG?"
-    test_results = store.search_documents(
-        query=test_query,
-        limit=3,
-        threshold=0.3
-    )
+    test_results = store.search_documents(query=test_query, limit=3, threshold=0.3)
 
     # Collect results from previous tasks
     ti = context["ti"]
     adr_result = ti.xcom_pull(key="adr_result", task_ids="ingest_adrs") or {}
     dag_result = ti.xcom_pull(key="dag_result", task_ids="ingest_dag_examples") or {}
-    provider_result = ti.xcom_pull(key="provider_result", task_ids="ingest_provider_docs") or {}
+    provider_result = (
+        ti.xcom_pull(key="provider_result", task_ids="ingest_provider_docs") or {}
+    )
     guides_result = ti.xcom_pull(key="guides_result", task_ids="ingest_guides") or {}
 
     health_report = {
@@ -576,20 +573,24 @@ def verify_rag_health(**context):
         "test_query": {
             "query": test_query,
             "results_count": len(test_results),
-            "top_similarity": test_results[0].get("similarity", 0) if test_results else 0
+            "top_similarity": (
+                test_results[0].get("similarity", 0) if test_results else 0
+            ),
         },
         "ingestion_summary": {
             "adrs": adr_result.get("ingested", 0),
             "dags": dag_result.get("ingested", 0),
             "providers": provider_result.get("ingested", 0),
-            "guides": guides_result.get("ingested", 0)
+            "guides": guides_result.get("ingested", 0),
         },
-        "total_documents": sum([
-            adr_result.get("ingested", 0),
-            dag_result.get("ingested", 0),
-            provider_result.get("ingested", 0),
-            guides_result.get("ingested", 0)
-        ])
+        "total_documents": sum(
+            [
+                adr_result.get("ingested", 0),
+                dag_result.get("ingested", 0),
+                provider_result.get("ingested", 0),
+                guides_result.get("ingested", 0),
+            ]
+        ),
     }
 
     logger.info(f"RAG Health Report: {health_report}")
@@ -616,44 +617,49 @@ with DAG(
     ingest_adrs_task = PythonOperator(
         task_id="ingest_adrs",
         python_callable=ingest_adrs,
-        doc_md="Ingest Architecture Decision Records from docs/adrs/"
+        doc_md="Ingest Architecture Decision Records from docs/adrs/",
     )
 
     # Task: Ingest DAG Examples
     ingest_dags_task = PythonOperator(
         task_id="ingest_dag_examples",
         python_callable=ingest_dag_examples,
-        doc_md="Ingest existing DAG files as examples"
+        doc_md="Ingest existing DAG files as examples",
     )
 
     # Task: Ingest Provider Docs
     ingest_providers_task = PythonOperator(
         task_id="ingest_provider_docs",
         python_callable=ingest_provider_docs,
-        doc_md="Ingest Airflow provider documentation"
+        doc_md="Ingest Airflow provider documentation",
     )
 
     # Task: Ingest Guides
     ingest_guides_task = PythonOperator(
         task_id="ingest_guides",
         python_callable=ingest_guides,
-        doc_md="Ingest troubleshooting and development guides"
+        doc_md="Ingest troubleshooting and development guides",
     )
 
     # Task: Verify RAG Health
     verify_health_task = PythonOperator(
         task_id="verify_rag_health",
         python_callable=verify_rag_health,
-        doc_md="Verify RAG system health and generate report"
+        doc_md="Verify RAG system health and generate report",
     )
 
     # Task: Generate Lineage Facets
     generate_facets_task = BashOperator(
         task_id="generate_lineage_facets",
         bash_command="/opt/airflow/scripts/generate-lineage-facets.sh || true",
-        doc_md="Generate OpenLineage facets for all DAGs"
+        doc_md="Generate OpenLineage facets for all DAGs",
     )
 
     # Dependencies: Parallel ingestion, then verification
-    [ingest_adrs_task, ingest_dags_task, ingest_providers_task, ingest_guides_task] >> verify_health_task
+    [
+        ingest_adrs_task,
+        ingest_dags_task,
+        ingest_providers_task,
+        ingest_guides_task,
+    ] >> verify_health_task
     verify_health_task >> generate_facets_task

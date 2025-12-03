@@ -26,70 +26,78 @@ Usage:
 """
 
 from datetime import datetime, timedelta
-from airflow import DAG
+
+from airflow.models.param import Param
 from airflow.operators.bash import BashOperator
+from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import BranchPythonOperator
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
-from airflow.operators.empty import EmptyOperator
-from airflow.utils.trigger_rule import TriggerRule
-from airflow.models.param import Param
 from airflow.sensors.external_task import ExternalTaskSensor
+from airflow.utils.trigger_rule import TriggerRule
+
+from airflow import DAG
 
 default_args = {
-    'owner': 'ocp4-disconnected-helper',
-    'depends_on_past': False,
-    'start_date': datetime(2025, 1, 1),
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 0,  # No retries - fail fast, fix, retrigger
-    'retry_delay': timedelta(minutes=5),
+    "owner": "ocp4-disconnected-helper",
+    "depends_on_past": False,
+    "start_date": datetime(2025, 1, 1),
+    "email_on_failure": False,
+    "email_on_retry": False,
+    "retries": 0,  # No retries - fail fast, fix, retrigger
+    "retry_delay": timedelta(minutes=5),
 }
 
 dag = DAG(
-    'ocp_disconnected_workflow',
+    "ocp_disconnected_workflow",
     default_args=default_args,
-    description='End-to-end disconnected OpenShift deployment workflow',
+    description="End-to-end disconnected OpenShift deployment workflow",
     schedule=None,
     catchup=False,
     max_active_runs=1,
-    tags=['ocp4-disconnected-helper', 'openshift', 'workflow', 'master', 'disconnected'],
+    tags=[
+        "ocp4-disconnected-helper",
+        "openshift",
+        "workflow",
+        "master",
+        "disconnected",
+    ],
     params={
-        'example_config': Param(
-            default='sno-disconnected',
-            type='string',
-            description='Example configuration to deploy',
+        "example_config": Param(
+            default="sno-disconnected",
+            type="string",
+            description="Example configuration to deploy",
         ),
-        'registry_type': Param(
-            default='quay',
-            type='string',
-            enum=['quay', 'harbor', 'jfrog'],
-            description='Registry type to use',
+        "registry_type": Param(
+            default="quay",
+            type="string",
+            enum=["quay", "harbor", "jfrog"],
+            description="Registry type to use",
         ),
-        'ocp_version': Param(
-            default='4.19',
-            type='string',
-            enum=['4.17', '4.18', '4.19', '4.20'],
-            description='OpenShift version',
+        "ocp_version": Param(
+            default="4.19",
+            type="string",
+            enum=["4.17", "4.18", "4.19", "4.20"],
+            description="OpenShift version",
         ),
-        'skip_infra_setup': Param(
+        "skip_infra_setup": Param(
             default=True,
-            type='boolean',
-            description='Skip infrastructure setup (Step-CA, Registry already exist)',
+            type="boolean",
+            description="Skip infrastructure setup (Step-CA, Registry already exist)",
         ),
-        'skip_image_sync': Param(
+        "skip_image_sync": Param(
             default=True,
-            type='boolean',
-            description='Skip image sync (images already in registry)',
+            type="boolean",
+            description="Skip image sync (images already in registry)",
         ),
-        'deploy_on_kvm': Param(
+        "deploy_on_kvm": Param(
             default=True,
-            type='boolean',
-            description='Deploy to local KVM',
+            type="boolean",
+            description="Deploy to local KVM",
         ),
-        'wait_for_install': Param(
+        "wait_for_install": Param(
             default=False,
-            type='boolean',
-            description='Wait for installation to complete (can take 30-60 min)',
+            type="boolean",
+            description="Wait for installation to complete (can take 30-60 min)",
         ),
     },
     doc_md=__doc__,
@@ -99,8 +107,8 @@ dag = DAG(
 # Task 1: Workflow Start
 # =============================================================================
 workflow_start = BashOperator(
-    task_id='workflow_start',
-    bash_command='''
+    task_id="workflow_start",
+    bash_command="""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "🚀 OCP Disconnected Workflow - Starting"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -119,42 +127,44 @@ workflow_start = BashOperator(
     echo "  3. Pre-Deployment Validation"
     echo "  4. OpenShift Deployment"
     echo ""
-    ''',
+    """,
     dag=dag,
 )
+
 
 # =============================================================================
 # Task 2: Check/Setup Infrastructure
 # =============================================================================
 def decide_infra_setup(**context):
     """Branch based on skip_infra_setup parameter."""
-    skip = context['params'].get('skip_infra_setup', True)
+    skip = context["params"].get("skip_infra_setup", True)
     if skip:
-        return 'skip_infra_setup'
-    return 'setup_infrastructure'
+        return "skip_infra_setup"
+    return "setup_infrastructure"
+
 
 decide_infra = BranchPythonOperator(
-    task_id='decide_infra_setup',
+    task_id="decide_infra_setup",
     python_callable=decide_infra_setup,
     dag=dag,
 )
 
 skip_infra_setup = BashOperator(
-    task_id='skip_infra_setup',
-    bash_command='''
+    task_id="skip_infra_setup",
+    bash_command="""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "⏭️  Skipping Infrastructure Setup"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
     echo "Assuming Step-CA and Registry are already deployed."
     echo "Set skip_infra_setup=false to deploy infrastructure."
-    ''',
+    """,
     dag=dag,
 )
 
 setup_infrastructure = BashOperator(
-    task_id='setup_infrastructure',
-    bash_command='''
+    task_id="setup_infrastructure",
+    bash_command="""
     set -euo pipefail
     
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -207,54 +217,56 @@ setup_infrastructure = BashOperator(
     
     echo ""
     echo "✅ Infrastructure check complete"
-    ''',
+    """,
     dag=dag,
 )
 
 # Join point after infrastructure
 infra_complete = EmptyOperator(
-    task_id='infra_complete',
+    task_id="infra_complete",
     trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
     dag=dag,
 )
+
 
 # =============================================================================
 # Task 3: Image Sync
 # =============================================================================
 def decide_image_sync(**context):
     """Branch based on skip_image_sync parameter."""
-    skip = context['params'].get('skip_image_sync', True)
+    skip = context["params"].get("skip_image_sync", True)
     if skip:
-        return 'skip_image_sync'
-    return 'sync_images'
+        return "skip_image_sync"
+    return "sync_images"
+
 
 decide_sync = BranchPythonOperator(
-    task_id='decide_image_sync',
+    task_id="decide_image_sync",
     python_callable=decide_image_sync,
     dag=dag,
 )
 
 skip_image_sync = BashOperator(
-    task_id='skip_image_sync',
-    bash_command='''
+    task_id="skip_image_sync",
+    bash_command="""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "⏭️  Skipping Image Sync"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
     echo "Assuming images are already synced to registry."
     echo "Set skip_image_sync=false to sync images."
-    ''',
+    """,
     dag=dag,
 )
 
 # Trigger the registry sync DAG
 sync_images = TriggerDagRunOperator(
-    task_id='sync_images',
-    trigger_dag_id='ocp_registry_sync',
+    task_id="sync_images",
+    trigger_dag_id="ocp_registry_sync",
     conf={
-        'ocp_version': '{{ params.ocp_version }}',
-        'target_registry': '{{ params.registry_type }}',
-        'skip_download': False,
+        "ocp_version": "{{ params.ocp_version }}",
+        "target_registry": "{{ params.registry_type }}",
+        "skip_download": False,
     },
     wait_for_completion=True,
     poke_interval=60,
@@ -264,7 +276,7 @@ sync_images = TriggerDagRunOperator(
 
 # Join point after sync
 sync_complete = EmptyOperator(
-    task_id='sync_complete',
+    task_id="sync_complete",
     trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
     dag=dag,
 )
@@ -273,12 +285,12 @@ sync_complete = EmptyOperator(
 # Task 4: Pre-Deployment Validation
 # =============================================================================
 run_validation = TriggerDagRunOperator(
-    task_id='run_validation',
-    trigger_dag_id='ocp_pre_deployment_validation',
+    task_id="run_validation",
+    trigger_dag_id="ocp_pre_deployment_validation",
     conf={
-        'example_config': '{{ params.example_config }}',
-        'registry_type': '{{ params.registry_type }}',
-        'ocp_version': '{{ params.ocp_version }}',
+        "example_config": "{{ params.example_config }}",
+        "registry_type": "{{ params.registry_type }}",
+        "ocp_version": "{{ params.ocp_version }}",
     },
     wait_for_completion=True,
     poke_interval=30,
@@ -286,25 +298,27 @@ run_validation = TriggerDagRunOperator(
     dag=dag,
 )
 
+
 # =============================================================================
 # Task 5: Deploy OpenShift
 # =============================================================================
 def decide_deployment(**context):
     """Branch based on deploy_on_kvm parameter."""
-    deploy = context['params'].get('deploy_on_kvm', True)
+    deploy = context["params"].get("deploy_on_kvm", True)
     if deploy:
-        return 'deploy_openshift'
-    return 'skip_deployment'
+        return "deploy_openshift"
+    return "skip_deployment"
+
 
 decide_deploy = BranchPythonOperator(
-    task_id='decide_deployment',
+    task_id="decide_deployment",
     python_callable=decide_deployment,
     dag=dag,
 )
 
 skip_deployment = BashOperator(
-    task_id='skip_deployment',
-    bash_command='''
+    task_id="skip_deployment",
+    bash_command="""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "⏭️  Skipping KVM Deployment"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -315,19 +329,19 @@ skip_deployment = BashOperator(
     echo "To deploy manually:"
     echo "  cd /root/openshift-agent-install/hack"
     echo "  ./deploy-on-kvm.sh {{ params.example_config }}"
-    ''',
+    """,
     dag=dag,
 )
 
 deploy_openshift = TriggerDagRunOperator(
-    task_id='deploy_openshift',
-    trigger_dag_id='ocp_agent_deployment',
+    task_id="deploy_openshift",
+    trigger_dag_id="ocp_agent_deployment",
     conf={
-        'example_config': '{{ params.example_config }}',
-        'registry_type': '{{ params.registry_type }}',
-        'ocp_version': '{{ params.ocp_version }}',
-        'deploy_on_kvm': True,
-        'wait_for_install': '{{ params.wait_for_install }}',
+        "example_config": "{{ params.example_config }}",
+        "registry_type": "{{ params.registry_type }}",
+        "ocp_version": "{{ params.ocp_version }}",
+        "deploy_on_kvm": True,
+        "wait_for_install": "{{ params.wait_for_install }}",
     },
     wait_for_completion=True,
     poke_interval=60,
@@ -337,7 +351,7 @@ deploy_openshift = TriggerDagRunOperator(
 
 # Join point after deployment
 deploy_complete = EmptyOperator(
-    task_id='deploy_complete',
+    task_id="deploy_complete",
     trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
     dag=dag,
 )
@@ -346,8 +360,8 @@ deploy_complete = EmptyOperator(
 # Task 6: Workflow Complete
 # =============================================================================
 workflow_complete = BashOperator(
-    task_id='workflow_complete',
-    bash_command='''
+    task_id="workflow_complete",
+    bash_command="""
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "✅ OCP Disconnected Workflow Complete"
@@ -375,7 +389,7 @@ workflow_complete = BashOperator(
     
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    ''',
+    """,
     trigger_rule=TriggerRule.ALL_SUCCESS,
     dag=dag,
 )
@@ -384,8 +398,8 @@ workflow_complete = BashOperator(
 # Task 7: Workflow Failed
 # =============================================================================
 workflow_failed = BashOperator(
-    task_id='workflow_failed',
-    bash_command='''
+    task_id="workflow_failed",
+    bash_command="""
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "❌ OCP Disconnected Workflow Failed"
@@ -407,7 +421,7 @@ workflow_failed = BashOperator(
     echo "  - Config error: Edit the file mentioned in the error"
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    ''',
+    """,
     trigger_rule=TriggerRule.ONE_FAILED,
     dag=dag,
 )
@@ -429,4 +443,3 @@ deploy_complete >> workflow_complete
 
 # Failure handling - runs if any stage fails
 [infra_complete, sync_complete, run_validation, deploy_complete] >> workflow_failed
-

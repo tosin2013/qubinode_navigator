@@ -11,20 +11,22 @@ This DAG provides a flexible interface for deploying OpenShift clusters using:
 Reference: https://github.com/tosin2013/openshift-agent-install
 """
 
+import os
 from datetime import datetime, timedelta
 from pathlib import Path
-import os
 
-from airflow import DAG
-from airflow.operators.bash import BashOperator
-from airflow.operators.python import BranchPythonOperator, PythonOperator
 from airflow.models import Variable
 from airflow.models.param import Param
+from airflow.operators.bash import BashOperator
+from airflow.operators.python import BranchPythonOperator, PythonOperator
+
+from airflow import DAG
 
 # Configuration
-AGENT_INSTALL_DIR = '/root/openshift-agent-install'
-EXAMPLES_DIR = f'{AGENT_INSTALL_DIR}/examples'
-GENERATED_ASSETS_BASE = '/root/generated_assets'
+AGENT_INSTALL_DIR = "/root/openshift-agent-install"
+EXAMPLES_DIR = f"{AGENT_INSTALL_DIR}/examples"
+GENERATED_ASSETS_BASE = "/root/generated_assets"
+
 
 # =============================================================================
 # Dynamic Example Discovery
@@ -39,10 +41,10 @@ def discover_examples():
             for example_dir in sorted(examples_path.iterdir()):
                 if example_dir.is_dir():
                     # Check if it has cluster.yml or nodes.yml (agent-based config)
-                    has_cluster = (example_dir / 'cluster.yml').exists()
-                    has_nodes = (example_dir / 'nodes.yml').exists()
+                    has_cluster = (example_dir / "cluster.yml").exists()
+                    has_nodes = (example_dir / "nodes.yml").exists()
                     # Check if it has appliance-vars.yml (appliance config)
-                    has_appliance = (example_dir / 'appliance-vars.yml').exists()
+                    has_appliance = (example_dir / "appliance-vars.yml").exists()
 
                     if has_cluster or has_nodes or has_appliance:
                         examples.append(example_dir.name)
@@ -50,101 +52,109 @@ def discover_examples():
         # Handle CI environments where /root is not accessible
         pass
 
-    return examples if examples else ['sno-disconnected']
+    return examples if examples else ["sno-disconnected"]
+
 
 # Get examples at DAG parse time
 AVAILABLE_EXAMPLES = discover_examples()
 
 # Registry configurations
 REGISTRY_CONFIGS = {
-    'mirror-registry': {
-        'server': 'mirror-registry.example.com:8443',
-        'description': 'Quay-based mirror-registry on 192.168.122.x',
+    "mirror-registry": {
+        "server": "mirror-registry.example.com:8443",
+        "description": "Quay-based mirror-registry on 192.168.122.x",
     },
-    'harbor': {
-        'server': 'harbor.example.com',
-        'description': 'Harbor registry',
+    "harbor": {
+        "server": "harbor.example.com",
+        "description": "Harbor registry",
     },
-    'jfrog': {
-        'server': 'jfrog.example.com',
-        'description': 'JFrog Artifactory',
+    "jfrog": {
+        "server": "jfrog.example.com",
+        "description": "JFrog Artifactory",
     },
-    'upstream': {
-        'server': '',
-        'description': 'Pull directly from upstream (requires internet)',
+    "upstream": {
+        "server": "",
+        "description": "Pull directly from upstream (requires internet)",
     },
 }
 
 # Deployment size configurations
 DEPLOYMENT_SIZES = {
-    'sno': {
-        'description': 'Single Node OpenShift',
-        'master_count': 1,
-        'worker_count': 0,
+    "sno": {
+        "description": "Single Node OpenShift",
+        "master_count": 1,
+        "worker_count": 0,
     },
-    '3-node': {
-        'description': 'Compact 3-node cluster (masters only)',
-        'master_count': 3,
-        'worker_count': 0,
+    "3-node": {
+        "description": "Compact 3-node cluster (masters only)",
+        "master_count": 3,
+        "worker_count": 0,
     },
-    'full': {
-        'description': 'Full cluster with workers',
-        'master_count': 3,
-        'worker_count': 2,
+    "full": {
+        "description": "Full cluster with workers",
+        "master_count": 3,
+        "worker_count": 2,
     },
 }
 
 default_args = {
-    'owner': 'ocp4-disconnected-helper',
-    'depends_on_past': False,
-    'start_date': datetime(2025, 1, 1),
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 1,
-    'retry_delay': timedelta(minutes=5),
+    "owner": "ocp4-disconnected-helper",
+    "depends_on_past": False,
+    "start_date": datetime(2025, 1, 1),
+    "email_on_failure": False,
+    "email_on_retry": False,
+    "retries": 1,
+    "retry_delay": timedelta(minutes=5),
 }
 
 dag = DAG(
-    'ocp_agent_deployment',
+    "ocp_agent_deployment",
     default_args=default_args,
-    description='OpenShift Agent-Based Deployment with dropdown parameters',
+    description="OpenShift Agent-Based Deployment with dropdown parameters",
     schedule=None,
     catchup=False,
-    tags=['ocp4-disconnected-helper', 'openshift', 'agent-install', 'disconnected', 'sno', '3-node'],
+    tags=[
+        "ocp4-disconnected-helper",
+        "openshift",
+        "agent-install",
+        "disconnected",
+        "sno",
+        "3-node",
+    ],
     params={
-        'registry_type': Param(
-            default='mirror-registry',
-            type='string',
-            enum=['mirror-registry', 'harbor', 'jfrog', 'upstream'],
-            description='Registry type for pulling images',
+        "registry_type": Param(
+            default="mirror-registry",
+            type="string",
+            enum=["mirror-registry", "harbor", "jfrog", "upstream"],
+            description="Registry type for pulling images",
         ),
-        'deployment_size': Param(
-            default='sno',
-            type='string',
-            enum=['sno', '3-node', 'full'],
-            description='Cluster deployment size',
+        "deployment_size": Param(
+            default="sno",
+            type="string",
+            enum=["sno", "3-node", "full"],
+            description="Cluster deployment size",
         ),
-        'example_config': Param(
-            default='sno-disconnected',
-            type='string',
+        "example_config": Param(
+            default="sno-disconnected",
+            type="string",
             enum=AVAILABLE_EXAMPLES,
-            description='Example configuration to use',
+            description="Example configuration to use",
         ),
-        'ocp_version': Param(
-            default='4.19',
-            type='string',
-            enum=['4.17', '4.18', '4.19', '4.20'],
-            description='OpenShift version',
+        "ocp_version": Param(
+            default="4.19",
+            type="string",
+            enum=["4.17", "4.18", "4.19", "4.20"],
+            description="OpenShift version",
         ),
-        'deploy_on_kvm': Param(
+        "deploy_on_kvm": Param(
             default=False,
-            type='boolean',
-            description='Deploy to local KVM for testing',
+            type="boolean",
+            description="Deploy to local KVM for testing",
         ),
-        'wait_for_install': Param(
+        "wait_for_install": Param(
             default=True,
-            type='boolean',
-            description='Wait for installation to complete',
+            type="boolean",
+            description="Wait for installation to complete",
         ),
     },
     doc_md=f"""
@@ -207,7 +217,7 @@ dag = DAG(
 # Task: Validate Configuration
 # =============================================================================
 validate_config = BashOperator(
-    task_id='validate_config',
+    task_id="validate_config",
     bash_command="""
     set -euo pipefail
     
@@ -220,7 +230,9 @@ validate_config = BashOperator(
     DEPLOYMENT_SIZE="{{ params.deployment_size }}"
     OCP_VERSION="{{ params.ocp_version }}"
     
-    EXAMPLES_DIR=""" + EXAMPLES_DIR + """
+    EXAMPLES_DIR="""
+    + EXAMPLES_DIR
+    + """
     CONFIG_PATH="$EXAMPLES_DIR/$EXAMPLE_CONFIG"
     
     echo "Configuration:"
@@ -279,7 +291,7 @@ validate_config = BashOperator(
 # Task: Setup Registry Trust
 # =============================================================================
 setup_registry_trust = BashOperator(
-    task_id='setup_registry_trust',
+    task_id="setup_registry_trust",
     bash_command="""
     set -euo pipefail
     
@@ -290,7 +302,9 @@ setup_registry_trust = BashOperator(
     REGISTRY_TYPE="{{ params.registry_type }}"
     EXAMPLE_CONFIG="{{ params.example_config }}"
     
-    AGENT_INSTALL_DIR=""" + AGENT_INSTALL_DIR + """
+    AGENT_INSTALL_DIR="""
+    + AGENT_INSTALL_DIR
+    + """
     CONFIG_PATH="$AGENT_INSTALL_DIR/examples/$EXAMPLE_CONFIG"
     
     echo "Registry Type: $REGISTRY_TYPE"
@@ -342,7 +356,7 @@ setup_registry_trust = BashOperator(
 # Task: Create Agent ISO
 # =============================================================================
 create_agent_iso = BashOperator(
-    task_id='create_agent_iso',
+    task_id="create_agent_iso",
     bash_command="""
     set -euo pipefail
     
@@ -353,8 +367,12 @@ create_agent_iso = BashOperator(
     EXAMPLE_CONFIG="{{ params.example_config }}"
     OCP_VERSION="{{ params.ocp_version }}"
     
-    AGENT_INSTALL_DIR=""" + AGENT_INSTALL_DIR + """
-    GENERATED_ASSETS=""" + GENERATED_ASSETS_BASE + """/$EXAMPLE_CONFIG
+    AGENT_INSTALL_DIR="""
+    + AGENT_INSTALL_DIR
+    + """
+    GENERATED_ASSETS="""
+    + GENERATED_ASSETS_BASE
+    + """/$EXAMPLE_CONFIG
     
     echo "Example Config: $EXAMPLE_CONFIG"
     echo "OCP Version: $OCP_VERSION"
@@ -395,25 +413,27 @@ create_agent_iso = BashOperator(
     dag=dag,
 )
 
+
 # =============================================================================
 # Task: Deploy on KVM (Optional)
 # =============================================================================
 def should_deploy_kvm(**context):
     """Branch based on deploy_on_kvm parameter."""
-    deploy_kvm = context['params'].get('deploy_on_kvm', False)
+    deploy_kvm = context["params"].get("deploy_on_kvm", False)
     if deploy_kvm:
-        return 'deploy_on_kvm'
+        return "deploy_on_kvm"
     else:
-        return 'skip_kvm_deploy'
+        return "skip_kvm_deploy"
+
 
 decide_kvm_deploy = BranchPythonOperator(
-    task_id='decide_kvm_deploy',
+    task_id="decide_kvm_deploy",
     python_callable=should_deploy_kvm,
     dag=dag,
 )
 
 deploy_on_kvm = BashOperator(
-    task_id='deploy_on_kvm',
+    task_id="deploy_on_kvm",
     bash_command="""
     set -euo pipefail
     
@@ -423,8 +443,12 @@ deploy_on_kvm = BashOperator(
     
     EXAMPLE_CONFIG="{{ params.example_config }}"
     
-    AGENT_INSTALL_DIR=""" + AGENT_INSTALL_DIR + """
-    GENERATED_ASSETS=""" + GENERATED_ASSETS_BASE + """/$EXAMPLE_CONFIG
+    AGENT_INSTALL_DIR="""
+    + AGENT_INSTALL_DIR
+    + """
+    GENERATED_ASSETS="""
+    + GENERATED_ASSETS_BASE
+    + """/$EXAMPLE_CONFIG
     
     cd "$AGENT_INSTALL_DIR/hack"
     
@@ -448,7 +472,7 @@ deploy_on_kvm = BashOperator(
 )
 
 skip_kvm_deploy = BashOperator(
-    task_id='skip_kvm_deploy',
+    task_id="skip_kvm_deploy",
     bash_command="""
     echo "Skipping KVM deployment (deploy_on_kvm=false)"
     echo "Agent ISO is ready for manual deployment"
@@ -460,14 +484,16 @@ skip_kvm_deploy = BashOperator(
 # Task: Wait for Bootstrap
 # =============================================================================
 wait_bootstrap = BashOperator(
-    task_id='wait_bootstrap',
+    task_id="wait_bootstrap",
     bash_command="""
     set -euo pipefail
     
     EXAMPLE_CONFIG="{{ params.example_config }}"
     WAIT_FOR_INSTALL="{{ params.wait_for_install }}"
     
-    GENERATED_ASSETS=""" + GENERATED_ASSETS_BASE + """/$EXAMPLE_CONFIG
+    GENERATED_ASSETS="""
+    + GENERATED_ASSETS_BASE
+    + """/$EXAMPLE_CONFIG
     
     if [ "$WAIT_FOR_INSTALL" != "True" ] && [ "$WAIT_FOR_INSTALL" != "true" ]; then
         echo "Skipping bootstrap wait (wait_for_install=false)"
@@ -492,7 +518,7 @@ wait_bootstrap = BashOperator(
     echo ""
     echo "✅ Bootstrap complete"
     """,
-    trigger_rule='none_failed_min_one_success',
+    trigger_rule="none_failed_min_one_success",
     dag=dag,
 )
 
@@ -500,14 +526,16 @@ wait_bootstrap = BashOperator(
 # Task: Wait for Install Complete
 # =============================================================================
 wait_install = BashOperator(
-    task_id='wait_install',
+    task_id="wait_install",
     bash_command="""
     set -euo pipefail
     
     EXAMPLE_CONFIG="{{ params.example_config }}"
     WAIT_FOR_INSTALL="{{ params.wait_for_install }}"
     
-    GENERATED_ASSETS=""" + GENERATED_ASSETS_BASE + """/$EXAMPLE_CONFIG
+    GENERATED_ASSETS="""
+    + GENERATED_ASSETS_BASE
+    + """/$EXAMPLE_CONFIG
     
     if [ "$WAIT_FOR_INSTALL" != "True" ] && [ "$WAIT_FOR_INSTALL" != "true" ]; then
         echo "Skipping install wait (wait_for_install=false)"
@@ -538,7 +566,7 @@ wait_install = BashOperator(
         echo "Kubeconfig: export KUBECONFIG=$GENERATED_ASSETS/auth/kubeconfig"
     fi
     """,
-    trigger_rule='none_failed_min_one_success',
+    trigger_rule="none_failed_min_one_success",
     dag=dag,
 )
 
@@ -546,14 +574,16 @@ wait_install = BashOperator(
 # Task: Post-Install Validation
 # =============================================================================
 post_install_validation = BashOperator(
-    task_id='post_install_validation',
+    task_id="post_install_validation",
     bash_command="""
     set -euo pipefail
     
     EXAMPLE_CONFIG="{{ params.example_config }}"
     WAIT_FOR_INSTALL="{{ params.wait_for_install }}"
     
-    GENERATED_ASSETS=""" + GENERATED_ASSETS_BASE + """/$EXAMPLE_CONFIG
+    GENERATED_ASSETS="""
+    + GENERATED_ASSETS_BASE
+    + """/$EXAMPLE_CONFIG
     
     if [ "$WAIT_FOR_INSTALL" != "True" ] && [ "$WAIT_FOR_INSTALL" != "true" ]; then
         echo "Skipping post-install validation (wait_for_install=false)"
@@ -585,7 +615,7 @@ post_install_validation = BashOperator(
     echo ""
     echo "✅ Post-install validation complete"
     """,
-    trigger_rule='none_failed_min_one_success',
+    trigger_rule="none_failed_min_one_success",
     dag=dag,
 )
 
@@ -593,14 +623,16 @@ post_install_validation = BashOperator(
 # Task: Cleanup Temp (runs on any outcome)
 # =============================================================================
 cleanup_temp = BashOperator(
-    task_id='cleanup_temp',
+    task_id="cleanup_temp",
     bash_command="""
     echo "╔════════════════════════════════════════════════════════════╗"
     echo "║          Cleanup Temporary Files                           ║"
     echo "╚════════════════════════════════════════════════════════════╝"
     
     EXAMPLE_CONFIG="{{ params.example_config }}"
-    GENERATED_ASSETS=""" + GENERATED_ASSETS_BASE + """/$EXAMPLE_CONFIG
+    GENERATED_ASSETS="""
+    + GENERATED_ASSETS_BASE
+    + """/$EXAMPLE_CONFIG
     
     # Clean up oc-mirror workspace if it exists
     if [ -d "/tmp/oc-mirror-workspace" ]; then
@@ -613,7 +645,7 @@ cleanup_temp = BashOperator(
     
     echo "✅ Cleanup complete"
     """,
-    trigger_rule='all_done',  # Run regardless of upstream task status
+    trigger_rule="all_done",  # Run regardless of upstream task status
     dag=dag,
 )
 
@@ -623,7 +655,7 @@ cleanup_temp = BashOperator(
 from airflow.utils.trigger_rule import TriggerRule
 
 cleanup_vm_on_failure = BashOperator(
-    task_id='cleanup_vm_on_failure',
+    task_id="cleanup_vm_on_failure",
     bash_command="""
     set +e  # Don't exit on error during cleanup
     
@@ -703,5 +735,11 @@ wait_bootstrap >> wait_install >> post_install_validation
 post_install_validation >> cleanup_temp
 
 # Cleanup VM on failure - runs if any deployment task fails
-[validate_config, setup_registry_trust, create_agent_iso, deploy_on_kvm, wait_bootstrap, wait_install] >> cleanup_vm_on_failure
-
+[
+    validate_config,
+    setup_registry_trust,
+    create_agent_iso,
+    deploy_on_kvm,
+    wait_bootstrap,
+    wait_install,
+] >> cleanup_vm_on_failure

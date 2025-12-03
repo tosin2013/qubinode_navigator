@@ -25,51 +25,57 @@ Usage:
 """
 
 from datetime import datetime, timedelta
-from airflow import DAG
+
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator, PythonOperator
 from airflow.utils.trigger_rule import TriggerRule
 
+from airflow import DAG
+
 # Configuration
-QUBINODE_CERT_SCRIPT = '/opt/qubinode_navigator/scripts/qubinode-cert'
+QUBINODE_CERT_SCRIPT = "/opt/qubinode_navigator/scripts/qubinode-cert"
 
 default_args = {
-    'owner': 'qubinode',
-    'depends_on_past': False,
-    'start_date': datetime(2025, 1, 1),
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 1,
-    'retry_delay': timedelta(minutes=2),
+    "owner": "qubinode",
+    "depends_on_past": False,
+    "start_date": datetime(2025, 1, 1),
+    "email_on_failure": False,
+    "email_on_retry": False,
+    "retries": 1,
+    "retry_delay": timedelta(minutes=2),
 }
 
 dag = DAG(
-    'certificate_provisioning',
+    "certificate_provisioning",
     default_args=default_args,
-    description='Unified certificate management (Step-CA, Vault PKI, Let\'s Encrypt)',
+    description="Unified certificate management (Step-CA, Vault PKI, Let's Encrypt)",
     schedule=None,  # Manual trigger only
     catchup=False,
-    tags=['qubinode', 'security', 'certificates', 'step-ca', 'vault', 'letsencrypt', 'adr-0054'],
+    tags=[
+        "qubinode",
+        "security",
+        "certificates",
+        "step-ca",
+        "vault",
+        "letsencrypt",
+        "adr-0054",
+    ],
     params={
         # Operation parameters
-        'operation': 'request',  # request, renew, revoke, list, install-ca, bulk-request
-
+        "operation": "request",  # request, renew, revoke, list, install-ca, bulk-request
         # Request parameters
-        'hostname': '',
-        'ca': 'auto',  # auto, step-ca, vault, letsencrypt
-        'service': 'generic',  # nginx, haproxy, httpd, harbor, postgresql, registry, generic
-        'san_list': '',  # comma-separated SANs
-        'duration': '',  # e.g., 720h, 30d
-        'install': False,  # Auto-install for service
-
+        "hostname": "",
+        "ca": "auto",  # auto, step-ca, vault, letsencrypt
+        "service": "generic",  # nginx, haproxy, httpd, harbor, postgresql, registry, generic
+        "san_list": "",  # comma-separated SANs
+        "duration": "",  # e.g., 720h, 30d
+        "install": False,  # Auto-install for service
         # Renew parameters
-        'renew_all': True,  # Renew all expiring certs
-
+        "renew_all": True,  # Renew all expiring certs
         # Bulk request parameters (JSON list)
-        'bulk_hosts': '',  # e.g., '[{"hostname": "a.example.com", "service": "nginx"}, ...]'
-
+        "bulk_hosts": "",  # e.g., '[{"hostname": "a.example.com", "service": "nginx"}, ...]'
         # CA installation
-        'ca_to_install': 'step-ca',  # step-ca or vault
+        "ca_to_install": "step-ca",  # step-ca or vault
     },
     doc_md="""
     # Certificate Provisioning DAG
@@ -166,31 +172,31 @@ dag = DAG(
 
 def decide_operation(**context):
     """Branch based on operation parameter"""
-    operation = context['params'].get('operation', 'request')
+    operation = context["params"].get("operation", "request")
     valid_operations = [
-        'request',
-        'renew',
-        'revoke',
-        'list',
-        'install-ca',
-        'bulk-request'
+        "request",
+        "renew",
+        "revoke",
+        "list",
+        "install-ca",
+        "bulk-request",
     ]
     if operation in valid_operations:
-        return operation.replace('-', '_')  # Convert to valid task_id
-    return 'list'
+        return operation.replace("-", "_")  # Convert to valid task_id
+    return "list"
 
 
 # Task: Decide operation
 decide_operation_task = BranchPythonOperator(
-    task_id='decide_operation',
+    task_id="decide_operation",
     python_callable=decide_operation,
     dag=dag,
 )
 
 # Task: Ensure qubinode-cert is available
 ensure_script = BashOperator(
-    task_id='ensure_script',
-    bash_command=f'''
+    task_id="ensure_script",
+    bash_command=f"""
     echo "========================================"
     echo "Checking qubinode-cert availability"
     echo "========================================"
@@ -205,14 +211,14 @@ ensure_script = BashOperator(
              chmod +x /usr/local/bin/qubinode-cert"
         echo "[OK] qubinode-cert installed"
     fi
-    ''',
+    """,
     dag=dag,
 )
 
 # Task: Request certificate
 request = BashOperator(
-    task_id='request',
-    bash_command='''
+    task_id="request",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Requesting Certificate"
@@ -255,15 +261,15 @@ request = BashOperator(
 
     # Execute on host
     ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost "$CMD"
-    ''',
+    """,
     execution_timeout=timedelta(minutes=10),
     dag=dag,
 )
 
 # Task: Renew certificates
 renew = BashOperator(
-    task_id='renew',
-    bash_command='''
+    task_id="renew",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Renewing Certificates"
@@ -284,15 +290,15 @@ renew = BashOperator(
         echo "[ERROR] Either set renew_all=true or provide hostname"
         exit 1
     fi
-    ''',
+    """,
     execution_timeout=timedelta(minutes=15),
     dag=dag,
 )
 
 # Task: Revoke certificate
 revoke = BashOperator(
-    task_id='revoke',
-    bash_command='''
+    task_id="revoke",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Revoking Certificate"
@@ -310,15 +316,15 @@ revoke = BashOperator(
     # Auto-confirm revocation in DAG context
     ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
         "echo 'yes' | qubinode-cert revoke $HOSTNAME"
-    ''',
+    """,
     execution_timeout=timedelta(minutes=5),
     dag=dag,
 )
 
 # Task: List certificates
 list = BashOperator(
-    task_id='list',
-    bash_command='''
+    task_id="list",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Certificate Inventory"
@@ -326,14 +332,14 @@ list = BashOperator(
 
     ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
         "qubinode-cert list"
-    ''',
+    """,
     dag=dag,
 )
 
 # Task: Install CA root
 install_ca = BashOperator(
-    task_id='install_ca',
-    bash_command='''
+    task_id="install_ca",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Installing CA Root Certificate"
@@ -345,15 +351,15 @@ install_ca = BashOperator(
 
     ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
         "qubinode-cert install-ca $CA"
-    ''',
+    """,
     execution_timeout=timedelta(minutes=5),
     dag=dag,
 )
 
 # Task: Bulk request
 bulk_request = BashOperator(
-    task_id='bulk_request',
-    bash_command='''
+    task_id="bulk_request",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Bulk Certificate Request"
@@ -392,15 +398,15 @@ bulk_request = BashOperator(
     echo "========================================"
     echo "Bulk request complete"
     echo "========================================"
-    ''',
+    """,
     execution_timeout=timedelta(minutes=30),
     dag=dag,
 )
 
 # Task: Summary
 summary = BashOperator(
-    task_id='summary',
-    bash_command='''
+    task_id="summary",
+    bash_command="""
     echo ""
     echo "========================================"
     echo "Certificate Operation Complete"
@@ -413,13 +419,17 @@ summary = BashOperator(
     # Show current inventory
     ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
         "qubinode-cert list" 2>/dev/null || echo "(inventory not available)"
-    ''',
+    """,
     trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
     dag=dag,
 )
 
 # Define task dependencies
-ensure_script >> decide_operation_task >> [request, renew, revoke, list, install_ca, bulk_request]
+(
+    ensure_script
+    >> decide_operation_task
+    >> [request, renew, revoke, list, install_ca, bulk_request]
+)
 request >> summary
 renew >> summary
 revoke >> summary

@@ -19,8 +19,9 @@ import os
 from datetime import datetime, timedelta
 from typing import List
 
-from airflow import DAG
 from airflow.operators.python import PythonOperator
+
+from airflow import DAG
 
 # Directory to scan for documents. Can be overridden via environment variable.
 DOC_ROOT = os.environ.get("RAG_DOC_DIR", "/opt/documents/incoming")

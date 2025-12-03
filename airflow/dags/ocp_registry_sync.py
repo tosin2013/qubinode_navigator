@@ -24,96 +24,97 @@ Target: OpenShift 4.19/4.20
 Designed to run on qubinode_navigator's Airflow instance.
 """
 
+import json
 from datetime import datetime, timedelta
-from airflow import DAG
-from airflow.operators.bash import BashOperator
-from airflow.operators.python import PythonOperator, BranchPythonOperator
-from airflow.operators.empty import EmptyOperator
-from airflow.utils.trigger_rule import TriggerRule
+
 from airflow.models import Variable
 from airflow.models.param import Param
-import json
+from airflow.operators.bash import BashOperator
+from airflow.operators.empty import EmptyOperator
+from airflow.operators.python import BranchPythonOperator, PythonOperator
+from airflow.utils.trigger_rule import TriggerRule
+
+from airflow import DAG
 
 # =============================================================================
 # Configuration
 # =============================================================================
 DEFAULT_CONFIG = {
-    'ocp_version': '4.19',
-    'playbooks_path': '/root/ocp4-disconnected-helper/playbooks',
-    'extra_vars_path': '/root/ocp4-disconnected-helper/extra_vars',
-    'mirror_path': '/opt/images',
-    'pull_secret_path': '/root/pull-secret.json',
-    
+    "ocp_version": "4.19",
+    "playbooks_path": "/root/ocp4-disconnected-helper/playbooks",
+    "extra_vars_path": "/root/ocp4-disconnected-helper/extra_vars",
+    "mirror_path": "/opt/images",
+    "pull_secret_path": "/root/pull-secret.json",
     # Registry configuration - uses FQDNs
-    'registries': {
-        'quay': {
-            'server': 'mirror-registry.example.com',
-            'port': 8443,
-            'health_endpoint': '/v2/',
-            'username_var': 'quay_username',
-            'password_var': 'quay_password',
+    "registries": {
+        "quay": {
+            "server": "mirror-registry.example.com",
+            "port": 8443,
+            "health_endpoint": "/v2/",
+            "username_var": "quay_username",
+            "password_var": "quay_password",
         },
-        'harbor': {
-            'server': 'harbor.example.com',
-            'port': 443,
-            'health_endpoint': '/api/v2.0/health',
-            'username_var': 'harbor_username',
-            'password_var': 'harbor_password',
+        "harbor": {
+            "server": "harbor.example.com",
+            "port": 443,
+            "health_endpoint": "/api/v2.0/health",
+            "username_var": "harbor_username",
+            "password_var": "harbor_password",
         },
-        'jfrog': {
-            'server': 'jfrog.example.com',
-            'port': 8082,
-            'health_endpoint': '/artifactory/api/system/ping',
-            'username_var': 'jfrog_username',
-            'password_var': 'jfrog_password',
+        "jfrog": {
+            "server": "jfrog.example.com",
+            "port": 8082,
+            "health_endpoint": "/artifactory/api/system/ping",
+            "username_var": "jfrog_username",
+            "password_var": "jfrog_password",
         },
     },
 }
 
 # Default arguments for all tasks
 default_args = {
-    'owner': 'ocp4-disconnected-helper',
-    'depends_on_past': False,
-    'start_date': datetime(2025, 11, 28),
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 1,
-    'retry_delay': timedelta(minutes=5),
+    "owner": "ocp4-disconnected-helper",
+    "depends_on_past": False,
+    "start_date": datetime(2025, 11, 28),
+    "email_on_failure": False,
+    "email_on_retry": False,
+    "retries": 1,
+    "retry_delay": timedelta(minutes=5),
 }
 
 # =============================================================================
 # Define the DAG
 # =============================================================================
 dag = DAG(
-    'ocp_registry_sync',
+    "ocp_registry_sync",
     default_args=default_args,
-    description='Sync OCP images to registries using Airflow Variables for credentials',
+    description="Sync OCP images to registries using Airflow Variables for credentials",
     schedule=None,  # Manual trigger only for now
     catchup=False,
     max_active_runs=1,
-    tags=['ocp4-disconnected-helper', 'openshift', 'registry', 'sync'],
+    tags=["ocp4-disconnected-helper", "openshift", "registry", "sync"],
     params={
-        'ocp_version': Param(
-            default='4.19',
-            type='string',
-            enum=['4.17', '4.18', '4.19', '4.20'],
-            description='OpenShift version to sync',
+        "ocp_version": Param(
+            default="4.19",
+            type="string",
+            enum=["4.17", "4.18", "4.19", "4.20"],
+            description="OpenShift version to sync",
         ),
-        'target_registry': Param(
-            default='quay',
-            type='string',
-            enum=['quay', 'harbor', 'jfrog', 'all'],
-            description='Target registry (or all)',
+        "target_registry": Param(
+            default="quay",
+            type="string",
+            enum=["quay", "harbor", "jfrog", "all"],
+            description="Target registry (or all)",
         ),
-        'skip_download': Param(
+        "skip_download": Param(
             default=False,
-            type='boolean',
-            description='Skip download, only push existing tar',
+            type="boolean",
+            description="Skip download, only push existing tar",
         ),
-        'clean_mirror': Param(
+        "clean_mirror": Param(
             default=False,
-            type='boolean',
-            description='Full mirror (true) or incremental (false)',
+            type="boolean",
+            description="Full mirror (true) or incremental (false)",
         ),
     },
     doc_md=__doc__,
@@ -123,8 +124,8 @@ dag = DAG(
 # Task 1: Setup Credentials from Airflow Variables
 # =============================================================================
 setup_credentials = BashOperator(
-    task_id='setup_credentials',
-    bash_command='''
+    task_id="setup_credentials",
+    bash_command="""
     set -euo pipefail
     
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -232,7 +233,7 @@ setup_credentials = BashOperator(
     echo ""
     echo "✅ Credentials setup complete"
     echo "   Merged pull secret: $MERGED_SECRET"
-    ''',
+    """,
     dag=dag,
 )
 
@@ -240,8 +241,8 @@ setup_credentials = BashOperator(
 # Task 2: Pre-flight Checks
 # =============================================================================
 preflight_checks = BashOperator(
-    task_id='preflight_checks',
-    bash_command='''
+    task_id="preflight_checks",
+    bash_command="""
     set -euo pipefail
     
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -299,7 +300,7 @@ preflight_checks = BashOperator(
     else
         echo "✅ Pre-flight checks PASSED"
     fi
-    ''',
+    """,
     dag=dag,
 )
 
@@ -307,8 +308,8 @@ preflight_checks = BashOperator(
 # Task 3: Health Check Target Registry
 # =============================================================================
 health_check_registry = BashOperator(
-    task_id='health_check_registry',
-    bash_command='''
+    task_id="health_check_registry",
+    bash_command="""
     set -euo pipefail
     
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -391,7 +392,7 @@ health_check_registry = BashOperator(
         echo "✅ Health checks passed"
         echo "   Healthy: $HEALTHY_REGISTRIES"
     fi
-    ''',
+    """,
     dag=dag,
 )
 
@@ -399,8 +400,8 @@ health_check_registry = BashOperator(
 # Task 4: Download Images (Skip if skip_download=true)
 # =============================================================================
 download_images = BashOperator(
-    task_id='download_images',
-    bash_command='''
+    task_id="download_images",
+    bash_command="""
     set -euo pipefail
     
     SKIP_DOWNLOAD="{{ params.skip_download }}"
@@ -477,7 +478,7 @@ EOF
     
     echo ""
     echo "✅ Download complete"
-    ''',
+    """,
     execution_timeout=timedelta(hours=4),
     dag=dag,
 )
@@ -486,8 +487,8 @@ EOF
 # Task 5: Push to Registry
 # =============================================================================
 push_to_registry = BashOperator(
-    task_id='push_to_registry',
-    bash_command='''
+    task_id="push_to_registry",
+    bash_command="""
     set -euo pipefail
     
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -559,7 +560,7 @@ push_to_registry = BashOperator(
     
     echo ""
     echo "✅ Push complete"
-    ''',
+    """,
     execution_timeout=timedelta(hours=2),
     dag=dag,
 )
@@ -568,8 +569,8 @@ push_to_registry = BashOperator(
 # Task 6: Verify Push and Generate Report
 # =============================================================================
 sync_report = BashOperator(
-    task_id='sync_report',
-    bash_command='''
+    task_id="sync_report",
+    bash_command="""
     set -euo pipefail
     
     echo ""
@@ -638,7 +639,7 @@ sync_report = BashOperator(
     echo "  2. Deploy cluster: airflow dags trigger ocp_agent_deployment"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "✅ OCP Registry Sync completed successfully!"
-    ''',
+    """,
     trigger_rule=TriggerRule.ALL_SUCCESS,
     dag=dag,
 )
@@ -647,8 +648,8 @@ sync_report = BashOperator(
 # Task 7: Cleanup on Failure
 # =============================================================================
 cleanup_on_failure = BashOperator(
-    task_id='cleanup_on_failure',
-    bash_command='''
+    task_id="cleanup_on_failure",
+    bash_command="""
     set +e  # Don't exit on error during cleanup
     
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -680,7 +681,7 @@ cleanup_on_failure = BashOperator(
     echo "  4. Network issues: Check connectivity to registries"
     echo ""
     echo "After fixing, retrigger this DAG"
-    ''',
+    """,
     trigger_rule=TriggerRule.ONE_FAILED,
     dag=dag,
 )
@@ -688,7 +689,20 @@ cleanup_on_failure = BashOperator(
 # =============================================================================
 # Task Dependencies
 # =============================================================================
-setup_credentials >> preflight_checks >> health_check_registry >> download_images >> push_to_registry >> sync_report
+(
+    setup_credentials
+    >> preflight_checks
+    >> health_check_registry
+    >> download_images
+    >> push_to_registry
+    >> sync_report
+)
 
 # Cleanup runs on any failure
-[setup_credentials, preflight_checks, health_check_registry, download_images, push_to_registry] >> cleanup_on_failure
+[
+    setup_credentials,
+    preflight_checks,
+    health_check_registry,
+    download_images,
+    push_to_registry,
+] >> cleanup_on_failure

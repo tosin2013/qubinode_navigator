@@ -17,51 +17,53 @@ Designed to run on qubinode_navigator's Airflow instance.
 """
 
 from datetime import datetime, timedelta
-from airflow import DAG
+
 from airflow.operators.bash import BashOperator
-from airflow.operators.python import PythonOperator, BranchPythonOperator
 from airflow.operators.empty import EmptyOperator
+from airflow.operators.python import BranchPythonOperator, PythonOperator
 from airflow.utils.trigger_rule import TriggerRule
+
+from airflow import DAG
 
 # Configuration - can be overridden via DAG params
 DEFAULT_CONFIG = {
-    'ocp_version': '4.20.0',
-    'registry_type': 'mirror-registry',  # Options: mirror-registry (recommended), harbor, jfrog
-    'mirror_path': '/opt/openshift-mirror',
-    'pull_secret_path': '/root/pull-secret.json',
-    'playbooks_path': '/root/ocp4-disconnected-helper/playbooks',
-    'extra_vars_path': '/root/ocp4-disconnected-helper/extra_vars',
-    'clean_mirror': 'false',  # 'true' for full mirror, 'false' for incremental
-    'provision_registry_vm': 'true',  # Set to 'false' to use localhost
-    'registry_vm_name': 'registry',
-    'registry_vm_memory': '8192',
-    'registry_vm_cpus': '4',
-    'registry_vm_disk_size': '500',
+    "ocp_version": "4.20.0",
+    "registry_type": "mirror-registry",  # Options: mirror-registry (recommended), harbor, jfrog
+    "mirror_path": "/opt/openshift-mirror",
+    "pull_secret_path": "/root/pull-secret.json",
+    "playbooks_path": "/root/ocp4-disconnected-helper/playbooks",
+    "extra_vars_path": "/root/ocp4-disconnected-helper/extra_vars",
+    "clean_mirror": "false",  # 'true' for full mirror, 'false' for incremental
+    "provision_registry_vm": "true",  # Set to 'false' to use localhost
+    "registry_vm_name": "registry",
+    "registry_vm_memory": "8192",
+    "registry_vm_cpus": "4",
+    "registry_vm_disk_size": "500",
 }
 
 # Default arguments for all tasks
 default_args = {
-    'owner': 'ocp4-disconnected-helper',
-    'depends_on_past': False,
-    'start_date': datetime(2025, 11, 26),
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 1,
-    'retry_delay': timedelta(minutes=5),
+    "owner": "ocp4-disconnected-helper",
+    "depends_on_past": False,
+    "start_date": datetime(2025, 11, 26),
+    "email_on_failure": False,
+    "email_on_retry": False,
+    "retries": 1,
+    "retry_delay": timedelta(minutes=5),
 }
 
 # Define the DAG
 dag = DAG(
-    'ocp_initial_deployment',
+    "ocp_initial_deployment",
     default_args=default_args,
-    description='Complete OCP deployment workflow for disconnected environments',
+    description="Complete OCP deployment workflow for disconnected environments",
     schedule_interval=None,  # Manual trigger only
     catchup=False,
-    tags=['ocp4-disconnected-helper', 'openshift', 'deployment', 'disconnected'],
+    tags=["ocp4-disconnected-helper", "openshift", "deployment", "disconnected"],
     params={
-        'ocp_version': '4.20.0',
-        'registry_type': 'mirror-registry',  # Options: mirror-registry, harbor, jfrog
-        'clean_mirror': 'false',
+        "ocp_version": "4.20.0",
+        "registry_type": "mirror-registry",  # Options: mirror-registry, harbor, jfrog
+        "clean_mirror": "false",
     },
     doc_md=__doc__,
 )
@@ -70,8 +72,8 @@ dag = DAG(
 # Task 1: Validate Environment
 # ============================================================================
 validate_environment = BashOperator(
-    task_id='validate_environment',
-    bash_command='''
+    task_id="validate_environment",
+    bash_command="""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "🔍 TASK 1: Validating Environment"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -133,7 +135,7 @@ validate_environment = BashOperator(
     else
         echo "✅ Environment validation PASSED"
     fi
-    ''',
+    """,
     dag=dag,
 )
 
@@ -141,8 +143,8 @@ validate_environment = BashOperator(
 # Task 2: Provision Registry VM (ADR 0018)
 # ============================================================================
 provision_registry_vm = BashOperator(
-    task_id='provision_registry_vm',
-    bash_command='''
+    task_id="provision_registry_vm",
+    bash_command="""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "🖥️  TASK 2: Provisioning Registry VM"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -180,7 +182,7 @@ provision_registry_vm = BashOperator(
     fi
     
     echo "✅ Registry VM ready"
-    ''',
+    """,
     execution_timeout=timedelta(minutes=30),
     dag=dag,
 )
@@ -189,8 +191,8 @@ provision_registry_vm = BashOperator(
 # Task 3: Setup Certificates
 # ============================================================================
 setup_certificates = BashOperator(
-    task_id='setup_certificates',
-    bash_command='''
+    task_id="setup_certificates",
+    bash_command="""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "🔐 TASK 3: Setting Up Certificates"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -209,7 +211,7 @@ setup_certificates = BashOperator(
     fi
     
     echo "✅ Certificate setup complete"
-    ''',
+    """,
     dag=dag,
 )
 
@@ -217,8 +219,8 @@ setup_certificates = BashOperator(
 # Task 3: Setup Registry
 # ============================================================================
 setup_registry = BashOperator(
-    task_id='setup_registry',
-    bash_command='''
+    task_id="setup_registry",
+    bash_command="""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "📦 TASK 3: Setting Up Registry"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -261,7 +263,7 @@ setup_registry = BashOperator(
     fi
     
     echo "✅ Registry setup complete"
-    ''',
+    """,
     dag=dag,
 )
 
@@ -269,8 +271,8 @@ setup_registry = BashOperator(
 # Task 4: Download Images to TAR
 # ============================================================================
 download_to_tar = BashOperator(
-    task_id='download_to_tar',
-    bash_command='''
+    task_id="download_to_tar",
+    bash_command="""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "⬇️  TASK 4: Downloading Images to TAR"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -305,7 +307,7 @@ download_to_tar = BashOperator(
     fi
     
     echo "✅ Download to TAR complete"
-    ''',
+    """,
     execution_timeout=timedelta(hours=4),  # Mirroring can take a long time
     dag=dag,
 )
@@ -314,8 +316,8 @@ download_to_tar = BashOperator(
 # Task 5: Push TAR to Registry
 # ============================================================================
 push_to_registry = BashOperator(
-    task_id='push_to_registry',
-    bash_command='''
+    task_id="push_to_registry",
+    bash_command="""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "⬆️  TASK 5: Pushing Images to Registry"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -336,7 +338,7 @@ push_to_registry = BashOperator(
     fi
     
     echo "✅ Push to registry complete"
-    ''',
+    """,
     execution_timeout=timedelta(hours=2),
     dag=dag,
 )
@@ -345,8 +347,8 @@ push_to_registry = BashOperator(
 # Task 6: Build Appliance
 # ============================================================================
 build_appliance = BashOperator(
-    task_id='build_appliance',
-    bash_command='''
+    task_id="build_appliance",
+    bash_command="""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "🔧 TASK 6: Building OpenShift Appliance"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -408,7 +410,7 @@ build_appliance = BashOperator(
     fi
     
     echo "✅ Appliance build complete"
-    ''',
+    """,
     execution_timeout=timedelta(hours=2),
     dag=dag,
 )
@@ -417,8 +419,8 @@ build_appliance = BashOperator(
 # Task 7: Deployment Summary
 # ============================================================================
 deployment_summary = BashOperator(
-    task_id='deployment_summary',
-    bash_command='''
+    task_id="deployment_summary",
+    bash_command="""
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "📋 DEPLOYMENT SUMMARY"
@@ -470,7 +472,7 @@ deployment_summary = BashOperator(
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "✅ OCP Initial Deployment DAG completed successfully!"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    ''',
+    """,
     trigger_rule=TriggerRule.ALL_SUCCESS,
     dag=dag,
 )
@@ -488,7 +490,16 @@ deployment_summary = BashOperator(
 # 6. Push TAR to local registry
 # 7. Build appliance (using local registry with mirrored content)
 # 8. Summary
-validate_environment >> provision_registry_vm >> setup_certificates >> setup_registry >> download_to_tar >> push_to_registry >> build_appliance >> deployment_summary
+(
+    validate_environment
+    >> provision_registry_vm
+    >> setup_certificates
+    >> setup_registry
+    >> download_to_tar
+    >> push_to_registry
+    >> build_appliance
+    >> deployment_summary
+)
 
 # ============================================================================
 # DAG Documentation

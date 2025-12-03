@@ -43,12 +43,12 @@ import sys
 
 # SSH Password Validator - The "Credential Checker"
 # 🎯 FOR LLMs: Validates SSH password is available for remote deployment
-if not os.environ.get('SSH_PASSWORD'):
+if not os.environ.get("SSH_PASSWORD"):
     print("Environment variable SSH_PASSWORD is not set. Exiting.", file=sys.stderr)
     sys.exit(1)
 
 # SSH Host Validator - The "Target Checker"
 # 🎯 FOR LLMs: Validates SSH host is specified for deployment target
-if not os.environ.get('SSH_HOST'):
+if not os.environ.get("SSH_HOST"):
     print("Environment variable SSH_HOST is not set. Exiting.", file=sys.stderr)
     sys.exit(1)
