@@ -33,18 +33,14 @@ class TestPluginFunctionality(unittest.TestCase):
         plugin_dirs = [
             os.path.join(os.path.dirname(__file__), "..", "..", "plugins", "os"),
             os.path.join(os.path.dirname(__file__), "..", "..", "plugins", "cloud"),
-            os.path.join(
-                os.path.dirname(__file__), "..", "..", "plugins", "environments"
-            ),
+            os.path.join(os.path.dirname(__file__), "..", "..", "plugins", "environments"),
             os.path.join(os.path.dirname(__file__), "..", "..", "plugins", "services"),
         ]
 
         # Filter to existing directories
         existing_dirs = [d for d in plugin_dirs if os.path.exists(d)]
 
-        self.plugin_manager = PluginManager(
-            plugin_directories=existing_dirs, event_system=self.event_system
-        )
+        self.plugin_manager = PluginManager(plugin_directories=existing_dirs, event_system=self.event_system)
 
         # Initialize and discover plugins
         self.plugin_manager.initialize()
@@ -60,16 +56,12 @@ class TestPluginFunctionality(unittest.TestCase):
             plugin = self.plugin_manager.load_plugin("CentOSStream10Plugin")
             if plugin is None:
                 plugin = self.plugin_manager.load_plugin("centos_stream10_plugin")
-            self.assertIsNotNone(
-                plugin, "CentOS Stream 10 plugin should load successfully"
-            )
+            self.assertIsNotNone(plugin, "CentOS Stream 10 plugin should load successfully")
 
             # Test state checking
             current_state = plugin.check_state()
             self.assertIsNotNone(current_state, "Plugin should return current state")
-            print(
-                f"✅ State checking: {len(current_state.state_data)} state items detected"
-            )
+            print(f"✅ State checking: {len(current_state.state_data)} state items detected")
 
             # Test desired state generation
             context = ExecutionContext(
@@ -100,9 +92,7 @@ class TestPluginFunctionality(unittest.TestCase):
         try:
             # Check if RHEL 8 plugin exists
             discovered_plugins = self.plugin_manager._discovered_plugins
-            rhel8_plugins = [
-                name for name in discovered_plugins.keys() if "rhel8" in name.lower()
-            ]
+            rhel8_plugins = [name for name in discovered_plugins.keys() if "rhel8" in name.lower()]
 
             if not rhel8_plugins:
                 print("⚠️  RHEL 8 plugin not found (expected on CentOS Stream 10)")
@@ -134,9 +124,7 @@ class TestPluginFunctionality(unittest.TestCase):
         try:
             # Check if Rocky Linux plugin exists
             discovered_plugins = self.plugin_manager._discovered_plugins
-            rocky_plugins = [
-                name for name in discovered_plugins.keys() if "rocky" in name.lower()
-            ]
+            rocky_plugins = [name for name in discovered_plugins.keys() if "rocky" in name.lower()]
 
             if not rocky_plugins:
                 print("⚠️  Rocky Linux plugin not found")
@@ -146,9 +134,7 @@ class TestPluginFunctionality(unittest.TestCase):
             plugin = self.plugin_manager.load_plugin(plugin_name)
 
             if plugin is None:
-                print(
-                    "⚠️  Rocky Linux plugin cannot load on CentOS Stream 10 (expected)"
-                )
+                print("⚠️  Rocky Linux plugin cannot load on CentOS Stream 10 (expected)")
                 return True
 
             # Test configuration validation
@@ -159,9 +145,7 @@ class TestPluginFunctionality(unittest.TestCase):
             return True
 
         except Exception as e:
-            print(
-                f"⚠️  Rocky Linux plugin test: {e} (may be expected on CentOS Stream 10)"
-            )
+            print(f"⚠️  Rocky Linux plugin test: {e} (may be expected on CentOS Stream 10)")
             return True
 
     def test_plugin_discovery(self):
@@ -171,9 +155,7 @@ class TestPluginFunctionality(unittest.TestCase):
 
         try:
             discovered_plugins = self.plugin_manager._discovered_plugins
-            self.assertGreater(
-                len(discovered_plugins), 0, "Should discover at least one plugin"
-            )
+            self.assertGreater(len(discovered_plugins), 0, "Should discover at least one plugin")
 
             print(f"✅ Discovered {len(discovered_plugins)} plugins:")
             for plugin_name in discovered_plugins.keys():
@@ -276,12 +258,8 @@ class TestPluginFunctionality(unittest.TestCase):
             print(f"✅ Global configuration loaded: {len(config)} items")
 
             # Test plugin-specific configuration
-            plugin_config = self.config_manager.get_plugin_config(
-                "CentOSStream10Plugin"
-            )
-            self.assertIsInstance(
-                plugin_config, dict, "Plugin config should be a dictionary"
-            )
+            plugin_config = self.config_manager.get_plugin_config("CentOSStream10Plugin")
+            self.assertIsInstance(plugin_config, dict, "Plugin config should be a dictionary")
             print(f"✅ Plugin configuration loaded: {len(plugin_config)} items")
 
             # Test environment variable overrides
@@ -312,7 +290,7 @@ def run_functionality_tests():
     print()
 
     # Create test suite
-    suite = unittest.TestSuite()
+    unittest.TestSuite()
     test_case = TestPluginFunctionality()
 
     # Add test methods

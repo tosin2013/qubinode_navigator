@@ -97,15 +97,7 @@ delete_vm = KcliVMDeleteOperator(
 )
 
 # Define task dependencies
-(
-    list_vms_before
-    >> create_vm
-    >> wait_for_vm
-    >> validate_vm
-    >> list_vms_after
-    >> keep_vm_running
-    >> delete_vm
-)
+(list_vms_before >> create_vm >> wait_for_vm >> validate_vm >> list_vms_after >> keep_vm_running >> delete_vm)
 
 # Task documentation
 dag.doc_md = """

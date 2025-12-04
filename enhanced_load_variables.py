@@ -118,9 +118,7 @@ class EnhancedConfigGenerator:
 
     def __init__(self):
         # 📊 GLOBAL VARIABLES (shared with bash scripts):
-        self.inventory_env = os.environ.get(
-            "INVENTORY"
-        )  # Environment inventory (e.g., 'hetzner', 'rhel9-equinix')
+        self.inventory_env = os.environ.get("INVENTORY")  # Environment inventory (e.g., 'hetzner', 'rhel9-equinix')
         if not self.inventory_env:
             print("INVENTORY environment variable not found.")
             sys.exit(1)
@@ -129,15 +127,9 @@ class EnhancedConfigGenerator:
         self.vault_client = None  # HashiCorp Vault client instance
 
         # 🔧 CONFIGURATION CONSTANTS FOR LLMs:
-        self.use_vault = (
-            os.environ.get("USE_HASHICORP_VAULT", "false").lower() == "true"
-        )  # Enable HashiCorp Vault
-        self.use_hcp = (
-            os.environ.get("USE_HASHICORP_CLOUD", "false").lower() == "true"
-        )  # Enable HCP Vault Secrets
-        self.openshift_vault = (
-            os.environ.get("OPENSHIFT_VAULT", "false").lower() == "true"
-        )  # OpenShift vault mode
+        self.use_vault = os.environ.get("USE_HASHICORP_VAULT", "false").lower() == "true"  # Enable HashiCorp Vault
+        self.use_hcp = os.environ.get("USE_HASHICORP_CLOUD", "false").lower() == "true"  # Enable HCP Vault Secrets
+        self.openshift_vault = os.environ.get("OPENSHIFT_VAULT", "false").lower() == "true"  # OpenShift vault mode
         self.hcp_token = None  # HCP API token for cloud secrets
 
         # Initialize HashiCorp Vault client if enabled
@@ -169,9 +161,7 @@ class EnhancedConfigGenerator:
                         print("❌ Failed to authenticate with HashiCorp Vault")
                         self.vault_client = None
                 else:
-                    print(
-                        "⚠️ No valid authentication method configured. Vault features disabled."
-                    )
+                    print("⚠️ No valid authentication method configured. Vault features disabled.")
                     self.vault_client = None
             else:
                 print("⚠️ VAULT_ADDR not set. Vault features disabled.")
@@ -191,9 +181,7 @@ class EnhancedConfigGenerator:
                 vault_role = os.environ.get("VAULT_ROLE", "qubinode-navigator")
 
                 # Authenticate with Kubernetes auth method
-                response = self.vault_client.auth.kubernetes.login(
-                    role=vault_role, jwt=jwt_token
-                )
+                response = self.vault_client.auth.kubernetes.login(role=vault_role, jwt=jwt_token)
 
                 if response and "auth" in response:
                     self.vault_client.token = response["auth"]["client_token"]
@@ -233,9 +221,7 @@ class EnhancedConfigGenerator:
                     print(f"❌ Failed to authenticate with HCP: {response.status_code}")
                     self.hcp_token = None
             else:
-                print(
-                    "⚠️ HCP_CLIENT_ID or HCP_CLIENT_SECRET not set. HCP features disabled."
-                )
+                print("⚠️ HCP_CLIENT_ID or HCP_CLIENT_SECRET not set. HCP features disabled.")
         except Exception as e:
             print(f"❌ Error connecting to HCP: {e}")
             self.hcp_token = None
@@ -278,16 +264,10 @@ class EnhancedConfigGenerator:
             "admin_user_password": os.environ.get("ADMIN_USER_PASSWORD", ""),
             "offline_token": os.environ.get("OFFLINE_TOKEN", ""),
             "openshift_pull_secret": os.environ.get("OPENSHIFT_PULL_SECRET", ""),
-            "automation_hub_offline_token": os.environ.get(
-                "AUTOMATION_HUB_OFFLINE_TOKEN", ""
-            ),
-            "freeipa_server_admin_password": os.environ.get(
-                "FREEIPA_SERVER_ADMIN_PASSWORD", ""
-            ),
+            "automation_hub_offline_token": os.environ.get("AUTOMATION_HUB_OFFLINE_TOKEN", ""),
+            "freeipa_server_admin_password": os.environ.get("FREEIPA_SERVER_ADMIN_PASSWORD", ""),
             "xrdp_remote_user": os.environ.get("XRDP_REMOTE_USER", "remoteuser"),
-            "xrdp_remote_user_password": os.environ.get(
-                "XRDP_REMOTE_USER_PASSWORD", ""
-            ),
+            "xrdp_remote_user_password": os.environ.get("XRDP_REMOTE_USER_PASSWORD", ""),
             "aws_access_key": os.environ.get("AWS_ACCESS_KEY", ""),
             "aws_secret_key": os.environ.get("AWS_SECRET_KEY", ""),
         }
@@ -323,15 +303,11 @@ class EnhancedConfigGenerator:
 
         try:
             # Based on existing CI/CD patterns in repository
-            secret_path = os.environ.get(
-                "SECRET_PATH", f"ansiblesafe/{self.inventory_env}"
-            )
+            secret_path = os.environ.get("SECRET_PATH", f"ansiblesafe/{self.inventory_env}")
 
             # Try to read from configured secret path (kv mount)
             try:
-                response = self.vault_client.secrets.kv.v2.read_secret_version(
-                    path=secret_path, mount_point="kv"
-                )
+                response = self.vault_client.secrets.kv.v2.read_secret_version(path=secret_path, mount_point="kv")
                 if response and "data" in response and "data" in response["data"]:
                     vault_vars.update(response["data"]["data"])
                     print(f"✅ Retrieved {len(vault_vars)} secrets from Vault")
@@ -345,14 +321,12 @@ class EnhancedConfigGenerator:
                 f"secrets/{secret_path}",
             ]:
                 try:
-                    response = self.vault_client.secrets.kv.v2.read_secret_version(
-                        path=path, mount_point="kv"
-                    )
+                    response = self.vault_client.secrets.kv.v2.read_secret_version(path=path, mount_point="kv")
                     if response and "data" in response and "data" in response["data"]:
                         vault_vars.update(response["data"]["data"])
                         print(f"✅ Retrieved secrets from Vault path: {path}")
                         break
-                except:
+                except Exception:
                     continue
 
         except Exception as e:
@@ -401,18 +375,14 @@ class EnhancedConfigGenerator:
             else:
                 print(f"⚠️ Failed to retrieve HCP secrets: {response.status_code}")
                 if response.status_code == 404:
-                    print(
-                        f"   App '{app_name}' not found. Please create it in HCP Vault Secrets."
-                    )
+                    print(f"   App '{app_name}' not found. Please create it in HCP Vault Secrets.")
 
         except Exception as e:
             print(f"❌ Error retrieving from HCP: {e}")
 
         return hcp_vars
 
-    def _prompt_for_missing_variables(
-        self, variables: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _prompt_for_missing_variables(self, variables: Dict[str, Any]) -> Dict[str, Any]:
         """Prompt for missing required variables"""
 
         required_fields = ["rhsm_username", "rhsm_password", "admin_user_password"]
@@ -420,9 +390,7 @@ class EnhancedConfigGenerator:
         for field in required_fields:
             if not variables.get(field):
                 if "password" in field.lower():
-                    variables[field] = getpass.getpass(
-                        f"Enter {field.replace('_', ' ')}: "
-                    )
+                    variables[field] = getpass.getpass(f"Enter {field.replace('_', ' ')}: ")
                 else:
                     variables[field] = input(f"Enter {field.replace('_', ' ')}: ")
 
@@ -443,9 +411,7 @@ class EnhancedConfigGenerator:
 
             # Add custom functions for templates
             env.globals["vault_get"] = lambda path: self._vault_get(path)
-            env.globals["generate_password"] = lambda length=16: os.urandom(
-                length
-            ).hex()[:length]
+            env.globals["generate_password"] = lambda length=16: os.urandom(length).hex()[:length]
 
             return template.render(**variables)
 
@@ -462,7 +428,7 @@ class EnhancedConfigGenerator:
             response = self.vault_client.secrets.kv.v2.read_secret_version(path=path)
             if response and "data" in response and "data" in response["data"]:
                 return response["data"]["data"].get("value", "")
-        except:
+        except Exception:
             pass
 
         return ""
@@ -478,16 +444,10 @@ class EnhancedConfigGenerator:
             "admin_user_password": variables.get("admin_user_password", "changeme"),
             "offline_token": variables.get("offline_token", ""),
             "openshift_pull_secret": variables.get("openshift_pull_secret", ""),
-            "automation_hub_offline_token": variables.get(
-                "automation_hub_offline_token", ""
-            ),
-            "freeipa_server_admin_password": variables.get(
-                "freeipa_server_admin_password", "changeme"
-            ),
+            "automation_hub_offline_token": variables.get("automation_hub_offline_token", ""),
+            "freeipa_server_admin_password": variables.get("freeipa_server_admin_password", "changeme"),
             "xrdp_remote_user": variables.get("xrdp_remote_user", "remoteuser"),
-            "xrdp_remote_user_password": variables.get(
-                "xrdp_remote_user_password", "changeme"
-            ),
+            "xrdp_remote_user_password": variables.get("xrdp_remote_user_password", "changeme"),
         }
 
         # Add optional AWS credentials if provided
@@ -523,7 +483,7 @@ class EnhancedConfigGenerator:
                 # Clean up temp file on error
                 try:
                     os.unlink(temp_path)
-                except:
+                except OSError:
                     pass
                 raise e
 
@@ -548,14 +508,10 @@ class EnhancedConfigGenerator:
                 config = yaml.safe_load(f)
 
             # Prepare secrets for Vault
-            secret_path = os.environ.get(
-                "SECRET_PATH", f"ansiblesafe/{self.inventory_env}"
-            )
+            secret_path = os.environ.get("SECRET_PATH", f"ansiblesafe/{self.inventory_env}")
 
             # Write to Vault
-            self.vault_client.secrets.kv.v2.create_or_update_secret(
-                path=secret_path, secret=config
-            )
+            self.vault_client.secrets.kv.v2.create_or_update_secret(path=secret_path, secret=config)
 
             print(f"✅ Updated Vault at path: {secret_path}")
             return True
@@ -603,9 +559,7 @@ class EnhancedLoadVariables(EnhancedConfigGenerator):
         """Network interface detection and configuration with automatic discovery"""
         if configure_bridge is None:
             if os.geteuid() == 0:
-                print(
-                    "Error: Cannot set configure_bridge to True when running as root."
-                )
+                print("Error: Cannot set configure_bridge to True when running as root.")
                 configure_bridge = False
                 print("configure_bridge is set to", configure_bridge)
             else:
@@ -626,11 +580,7 @@ class EnhancedLoadVariables(EnhancedConfigGenerator):
         interfaces = netifaces.interfaces()
 
         # Filter out loopback interfaces and any that don't have an IPv4 address
-        interfaces = [
-            i
-            for i in interfaces
-            if i != "lo" and netifaces.AF_INET in netifaces.ifaddresses(i)
-        ]
+        interfaces = [i for i in interfaces if i != "lo" and netifaces.AF_INET in netifaces.ifaddresses(i)]
 
         if interface is None:
             # If there's only one interface, use that
@@ -654,14 +604,10 @@ class EnhancedLoadVariables(EnhancedConfigGenerator):
         macaddr = addrs[netifaces.AF_LINK][0]["addr"]
 
         # Calculate the network address and prefix length from the netmask
-        netaddr = ".".join(
-            str(int(x) & int(y)) for x, y in zip(ip.split("."), netmask.split("."))
-        )
+        ".".join(str(int(x) & int(y)) for x, y in zip(ip.split("."), netmask.split(".")))
         prefix_len = sum(bin(int(x)).count("1") for x in netmask.split("."))
 
-        inventory_path = (
-            f"inventories/{self.inventory_env}/group_vars/control/kvm_host.yml"
-        )
+        inventory_path = f"inventories/{self.inventory_env}/group_vars/control/kvm_host.yml"
         with open(inventory_path, "r") as f:
             inventory = yaml.safe_load(f)
 
@@ -706,9 +652,7 @@ class EnhancedLoadVariables(EnhancedConfigGenerator):
             print("Error: Could not get volume group information.")
             return False
 
-        inventory_path = (
-            f"inventories/{self.inventory_env}/group_vars/control/kvm_host.yml"
-        )
+        inventory_path = f"inventories/{self.inventory_env}/group_vars/control/kvm_host.yml"
 
         if "vg_qubi" in vgdisplay_output:
             print("✅ Volume group 'vg_qubi' already exists.")
@@ -720,9 +664,7 @@ class EnhancedLoadVariables(EnhancedConfigGenerator):
             inventory["skip_libvirt_pool"] = True
             with open(inventory_path, "w") as f:
                 yaml.dump(inventory, f, default_flow_style=False)
-            print(
-                "🔧 Storage configuration updated: LVM creation disabled (existing vg_qubi detected)"
-            )
+            print("🔧 Storage configuration updated: LVM creation disabled (existing vg_qubi detected)")
             print(f"📁 Updated {inventory_path}")
             return True
 
@@ -787,9 +729,7 @@ class EnhancedLoadVariables(EnhancedConfigGenerator):
 if __name__ == "__main__":
     generator = EnhancedConfigGenerator()
 
-    parser = argparse.ArgumentParser(
-        description="Enhanced Qubinode Navigator Configuration Generator"
-    )
+    parser = argparse.ArgumentParser(description="Enhanced Qubinode Navigator Configuration Generator")
     parser.add_argument(
         "--generate-config",
         action="store_true",

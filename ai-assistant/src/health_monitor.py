@@ -211,11 +211,7 @@ class HealthMonitor:
     async def _check_rag_service(self) -> Dict[str, Any]:
         """Check RAG service status."""
         try:
-            if (
-                self.ai_service
-                and hasattr(self.ai_service, "rag_service")
-                and self.ai_service.rag_service
-            ):
+            if self.ai_service and hasattr(self.ai_service, "rag_service") and self.ai_service.rag_service:
                 return await self.ai_service.rag_service.get_health_status()
             else:
                 return {

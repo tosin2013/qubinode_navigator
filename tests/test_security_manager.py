@@ -101,9 +101,7 @@ class TestSecurityManager:
         access_level = AccessLevel.ADMIN
         permissions = ["read", "write", "deploy"]
 
-        token, jwt_token = self.security_manager.generate_access_token(
-            user_id=user_id, access_level=access_level, permissions=permissions
-        )
+        token, jwt_token = self.security_manager.generate_access_token(user_id=user_id, access_level=access_level, permissions=permissions)
 
         # Check token properties
         assert isinstance(token, AccessToken)
@@ -123,9 +121,7 @@ class TestSecurityManager:
     def test_validate_access_token(self):
         """Test access token validation"""
         # Generate token
-        token, jwt_token = self.security_manager.generate_access_token(
-            user_id="test_user", access_level=AccessLevel.READ, permissions=["read"]
-        )
+        token, jwt_token = self.security_manager.generate_access_token(user_id="test_user", access_level=AccessLevel.READ, permissions=["read"])
 
         # Validate token
         validated_token = self.security_manager.validate_access_token(jwt_token)
@@ -146,9 +142,7 @@ class TestSecurityManager:
     def test_revoke_access_token(self):
         """Test access token revocation"""
         # Generate token
-        token, jwt_token = self.security_manager.generate_access_token(
-            user_id="test_user", access_level=AccessLevel.READ
-        )
+        token, jwt_token = self.security_manager.generate_access_token(user_id="test_user", access_level=AccessLevel.READ)
 
         # Revoke token
         success = self.security_manager.revoke_access_token(token.token_id, "test_user")
@@ -182,9 +176,7 @@ class TestSecurityManager:
 
     def test_super_admin_permissions(self):
         """Test super admin has all permissions"""
-        token, _ = self.security_manager.generate_access_token(
-            user_id="admin", access_level=AccessLevel.SUPER_ADMIN
-        )
+        token, _ = self.security_manager.generate_access_token(user_id="admin", access_level=AccessLevel.SUPER_ADMIN)
 
         # Super admin should have all permissions
         assert self.security_manager.check_permission(token, "read") is True
@@ -239,9 +231,7 @@ class TestSecurityManager:
         insecure_file.chmod(0o644)  # World readable
 
         # Scan for vulnerabilities
-        vulnerabilities = await self.security_manager.scan_for_vulnerabilities(
-            [str(test_dir)]
-        )
+        vulnerabilities = await self.security_manager.scan_for_vulnerabilities([str(test_dir)])
 
         # Should find vulnerabilities
         assert len(vulnerabilities) > 0
@@ -259,16 +249,11 @@ class TestSecurityManager:
             f.write('DATABASE_URL = "postgresql://user:pass@localhost/db"\n')
             f.write('SECRET_KEY = "very-secret-key-12345"\n')
 
-        vulnerabilities = await self.security_manager._scan_file_for_vulnerabilities(
-            test_file
-        )
+        vulnerabilities = await self.security_manager._scan_file_for_vulnerabilities(test_file)
 
         # Should find credential exposure vulnerabilities
         assert len(vulnerabilities) > 0
-        assert all(
-            v.vulnerability_type == VulnerabilityType.CREDENTIAL_EXPOSURE
-            for v in vulnerabilities
-        )
+        assert all(v.vulnerability_type == VulnerabilityType.CREDENTIAL_EXPOSURE for v in vulnerabilities)
 
     def test_should_skip_file(self):
         """Test file skipping logic"""
@@ -284,10 +269,7 @@ class TestSecurityManager:
 
         # Should skip files in excluded directories
         assert self.security_manager._should_skip_file(Path(".git/config")) is True
-        assert (
-            self.security_manager._should_skip_file(Path("__pycache__/test.pyc"))
-            is True
-        )
+        assert self.security_manager._should_skip_file(Path("__pycache__/test.pyc")) is True
 
     def test_log_security_event(self):
         """Test security event logging"""
@@ -337,9 +319,7 @@ class TestSecurityManager:
         self.security_manager.generate_access_token("test_user", AccessLevel.READ)
 
         # Log event
-        self.security_manager.log_security_event(
-            "test_event", "test_user", "resource", "action", "success"
-        )
+        self.security_manager.log_security_event("test_event", "test_user", "resource", "action", "success")
 
         summary = self.security_manager.get_security_summary()
 
@@ -387,9 +367,7 @@ class TestSecurityManager:
         assert all_vulns[1].severity == SecurityLevel.MEDIUM
 
         # Filter by severity
-        critical_vulns = self.security_manager.get_vulnerability_report(
-            SecurityLevel.CRITICAL
-        )
+        critical_vulns = self.security_manager.get_vulnerability_report(SecurityLevel.CRITICAL)
         assert len(critical_vulns) == 1
         assert critical_vulns[0].vulnerability_id == "vuln_1"
 
@@ -410,9 +388,7 @@ class TestSecurityManager:
         self.security_manager.security_vulnerabilities.append(vuln)
 
         # Resolve vulnerability
-        success = self.security_manager.resolve_vulnerability(
-            "test_vuln", "Fixed by test"
-        )
+        success = self.security_manager.resolve_vulnerability("test_vuln", "Fixed by test")
         assert success is True
 
         # Check vulnerability is marked as resolved
@@ -427,9 +403,7 @@ class TestSecurityManager:
     def test_cleanup_expired_tokens(self):
         """Test expired token cleanup"""
         # Generate token with short expiry
-        token, _ = self.security_manager.generate_access_token(
-            user_id="test_user", access_level=AccessLevel.READ
-        )
+        token, _ = self.security_manager.generate_access_token(user_id="test_user", access_level=AccessLevel.READ)
 
         # Manually expire token
         token.expires_at = datetime.now() - timedelta(hours=1)
@@ -443,24 +417,16 @@ class TestSecurityManager:
     def test_get_audit_logs(self):
         """Test audit log retrieval"""
         # Log some events
-        self.security_manager.log_security_event(
-            "event1", "user1", "resource1", "action1", "success"
-        )
-        self.security_manager.log_security_event(
-            "event2", "user2", "resource2", "action2", "failure"
-        )
-        self.security_manager.log_security_event(
-            "event1", "user3", "resource3", "action3", "success"
-        )
+        self.security_manager.log_security_event("event1", "user1", "resource1", "action1", "success")
+        self.security_manager.log_security_event("event2", "user2", "resource2", "action2", "failure")
+        self.security_manager.log_security_event("event1", "user3", "resource3", "action3", "success")
 
         # Get all logs
         all_logs = self.security_manager.get_audit_logs(hours=24)
         assert len(all_logs) == 3
 
         # Filter by event type
-        event1_logs = self.security_manager.get_audit_logs(
-            hours=24, event_type="event1"
-        )
+        event1_logs = self.security_manager.get_audit_logs(hours=24, event_type="event1")
         assert len(event1_logs) == 2
         assert all(log.event_type == "event1" for log in event1_logs)
 
@@ -641,9 +607,7 @@ class TestEnums:
         """Test vulnerability type enum"""
         assert VulnerabilityType.CREDENTIAL_EXPOSURE.value == "credential_exposure"
         assert VulnerabilityType.WEAK_AUTHENTICATION.value == "weak_authentication"
-        assert (
-            VulnerabilityType.INSECURE_COMMUNICATION.value == "insecure_communication"
-        )
+        assert VulnerabilityType.INSECURE_COMMUNICATION.value == "insecure_communication"
         assert VulnerabilityType.PRIVILEGE_ESCALATION.value == "privilege_escalation"
         assert VulnerabilityType.CODE_INJECTION.value == "code_injection"
         assert VulnerabilityType.PATH_TRAVERSAL.value == "path_traversal"

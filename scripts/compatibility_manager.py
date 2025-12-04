@@ -68,25 +68,14 @@ def print_compatibility_report(report: Dict[str, Any]):
         if details["supported_versions"]:
             print("      Supported Versions:")
             for os_ver, versions in details["supported_versions"].items():
-                print(
-                    f"        OS {os_ver}: {', '.join(versions[:3])}"
-                    + (f" (+{len(versions)-3} more)" if len(versions) > 3 else "")
-                )
+                print(f"        OS {os_ver}: {', '.join(versions[:3])}" + (f" (+{len(versions)-3} more)" if len(versions) > 3 else ""))
 
         # Show recent test results
         if details["recent_test_results"]:
             print("      Recent Test Results:")
             for test in details["recent_test_results"][:3]:  # Show last 3
-                status_icon = (
-                    "✅"
-                    if test["status"] == "passed"
-                    else "❌"
-                    if test["status"] == "failed"
-                    else "⏳"
-                )
-                print(
-                    f"        {status_icon} {test['version']} on OS {test['os_version']} - {test['status']}"
-                )
+                status_icon = "✅" if test["status"] == "passed" else "❌" if test["status"] == "failed" else "⏳"
+                print(f"        {status_icon} {test['version']} on OS {test['os_version']} - {test['status']}")
 
 
 def print_test_result(result):
@@ -123,14 +112,10 @@ async def validate_command(args):
 
     manager = CompatibilityManager(config)
 
-    print(
-        f"🔍 Validating compatibility: {args.component} {args.version} on OS {args.os_version}"
-    )
+    print(f"🔍 Validating compatibility: {args.component} {args.version} on OS {args.os_version}")
 
     try:
-        level, reason = await manager.validate_compatibility(
-            args.component, args.version, args.os_version
-        )
+        level, reason = await manager.validate_compatibility(args.component, args.version, args.os_version)
 
         level_icon = {
             "compatible": "✅",
@@ -179,14 +164,10 @@ async def test_command(args):
 
     manager = CompatibilityManager(config)
 
-    print(
-        f"🧪 Running compatibility test: {args.component} {args.version} on OS {args.os_version}"
-    )
+    print(f"🧪 Running compatibility test: {args.component} {args.version} on OS {args.os_version}")
 
     try:
-        result = await manager.run_compatibility_test(
-            args.component, args.version, args.os_version, args.test_type
-        )
+        result = await manager.run_compatibility_test(args.component, args.version, args.os_version, args.test_type)
 
         if args.format == "json":
             result_dict = {
@@ -355,9 +336,7 @@ Examples:
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # Validate command
-    validate_parser = subparsers.add_parser(
-        "validate", help="Validate component compatibility"
-    )
+    validate_parser = subparsers.add_parser("validate", help="Validate component compatibility")
     validate_parser.add_argument("component", help="Component name")
     validate_parser.add_argument("version", help="Component version")
     validate_parser.add_argument("--os-version", required=True, help="OS version")
@@ -399,9 +378,7 @@ Examples:
     )
 
     # Report command
-    report_parser = subparsers.add_parser(
-        "report", help="Generate compatibility report"
-    )
+    report_parser = subparsers.add_parser("report", help="Generate compatibility report")
     report_parser.add_argument(
         "--format",
         choices=["summary", "json"],
@@ -411,12 +388,10 @@ Examples:
     report_parser.add_argument("--output", help="Save report to file")
 
     # Update command
-    update_parser = subparsers.add_parser(
-        "update", help="Update compatibility matrices"
-    )
+    subparsers.add_parser("update", help="Update compatibility matrices")
 
     # List command
-    list_parser = subparsers.add_parser("list", help="List available components")
+    subparsers.add_parser("list", help="List available components")
 
     args = parser.parse_args()
 

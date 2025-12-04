@@ -38,9 +38,7 @@ class RHEL8Plugin(QubiNodePlugin):
 
     def _initialize_plugin(self) -> None:
         """Initialize RHEL 8 plugin"""
-        self.logger.info(
-            "Initializing RHEL 8 plugin - Legacy Enterprise Infrastructure Architect"
-        )
+        self.logger.info("Initializing RHEL 8 plugin - Legacy Enterprise Infrastructure Architect")
 
         # Validate we're running on RHEL 8
         if not self._is_rhel8():
@@ -49,9 +47,7 @@ class RHEL8Plugin(QubiNodePlugin):
         # Set configuration constants
         self.kvm_version = self.config.get("kvm_version", "latest")
         self.ansible_safe_version = self.config.get("ansible_safe_version", "0.0.9")
-        self.git_repo = self.config.get(
-            "git_repo", "https://github.com/Qubinode/qubinode_navigator.git"
-        )
+        self.git_repo = self.config.get("git_repo", "https://github.com/Qubinode/qubinode_navigator.git")
 
         # Set default packages for RHEL 8
         self.packages = self.config.get(
@@ -88,9 +84,7 @@ class RHEL8Plugin(QubiNodePlugin):
         # Validate vault configuration if enabled
         if self.use_hashicorp_vault.lower() == "true":
             if not all([os.getenv("VAULT_ADDRESS"), os.getenv("SECRET_PATH")]):
-                raise RuntimeError(
-                    "Vault environment variables not properly configured"
-                )
+                raise RuntimeError("Vault environment variables not properly configured")
 
     def _is_rhel8(self) -> bool:
         """Check if running on RHEL 8"""
@@ -166,9 +160,7 @@ class RHEL8Plugin(QubiNodePlugin):
 
         try:
             # Handle subscription management if needed
-            if desired_state.get("subscription_registered") and not current_state.get(
-                "subscription_registered"
-            ):
+            if desired_state.get("subscription_registered") and not current_state.get("subscription_registered"):
                 username = context.variables.get("rhel_username")
                 password = context.variables.get("rhel_password")
 
@@ -176,23 +168,15 @@ class RHEL8Plugin(QubiNodePlugin):
                     self._register_subscription(username, password)
                     changes_made.append("Registered RHEL subscription")
                 else:
-                    self.logger.warning(
-                        "RHEL credentials not provided - skipping subscription registration"
-                    )
+                    self.logger.warning("RHEL credentials not provided - skipping subscription registration")
 
             # Attach subscription if registered but not attached
-            if (
-                desired_state.get("subscription_attached")
-                and current_state.get("subscription_registered")
-                and not current_state.get("subscription_attached")
-            ):
+            if desired_state.get("subscription_attached") and current_state.get("subscription_registered") and not current_state.get("subscription_attached"):
                 self._attach_subscription()
                 changes_made.append("Attached RHEL subscription")
 
             # Enable required repositories
-            if not current_state.get("repositories_enabled") and desired_state.get(
-                "repositories_enabled"
-            ):
+            if not current_state.get("repositories_enabled") and desired_state.get("repositories_enabled"):
                 self._enable_required_repositories()
                 changes_made.append("Enabled required repositories")
 
@@ -203,9 +187,7 @@ class RHEL8Plugin(QubiNodePlugin):
 
             if missing_packages:
                 self._install_packages(list(missing_packages))
-                changes_made.append(
-                    f"Installed packages: {', '.join(missing_packages)}"
-                )
+                changes_made.append(f"Installed packages: {', '.join(missing_packages)}")
 
             # Configure firewall
             if not current_state.get("firewalld_enabled"):
@@ -217,9 +199,7 @@ class RHEL8Plugin(QubiNodePlugin):
                 changes_made.append("Started firewalld service")
 
             # Create lab user if needed
-            if desired_state.get("lab_user_exists") and not current_state.get(
-                "lab_user_exists"
-            ):
+            if desired_state.get("lab_user_exists") and not current_state.get("lab_user_exists"):
                 self._create_lab_user()
                 changes_made.append("Created lab-user")
 
@@ -279,9 +259,7 @@ class RHEL8Plugin(QubiNodePlugin):
     def _is_subscription_registered(self) -> bool:
         """Check if RHEL subscription is registered"""
         try:
-            result = subprocess.run(
-                ["subscription-manager", "status"], capture_output=True, text=True
-            )
+            result = subprocess.run(["subscription-manager", "status"], capture_output=True, text=True)
 
             return "Overall Status: Current" in result.stdout
         except (subprocess.CalledProcessError, FileNotFoundError):
@@ -387,9 +365,7 @@ class RHEL8Plugin(QubiNodePlugin):
     def _is_service_enabled(self, service: str) -> bool:
         """Check if service is enabled"""
         try:
-            result = subprocess.run(
-                ["systemctl", "is-enabled", service], capture_output=True, text=True
-            )
+            result = subprocess.run(["systemctl", "is-enabled", service], capture_output=True, text=True)
             return result.returncode == 0
         except subprocess.CalledProcessError:
             return False
@@ -397,9 +373,7 @@ class RHEL8Plugin(QubiNodePlugin):
     def _is_service_active(self, service: str) -> bool:
         """Check if service is active"""
         try:
-            result = subprocess.run(
-                ["systemctl", "is-active", service], capture_output=True, text=True
-            )
+            result = subprocess.run(["systemctl", "is-active", service], capture_output=True, text=True)
             return result.stdout.strip() == "active"
         except subprocess.CalledProcessError:
             return False
@@ -415,9 +389,7 @@ class RHEL8Plugin(QubiNodePlugin):
     def _get_python_version(self) -> tuple:
         """Get Python version tuple"""
         try:
-            result = subprocess.run(
-                ["python3", "--version"], capture_output=True, text=True, check=True
-            )
+            result = subprocess.run(["python3", "--version"], capture_output=True, text=True, check=True)
             version_str = result.stdout.strip().split()[1]
             parts = version_str.split(".")
             return (int(parts[0]), int(parts[1]))
@@ -435,9 +407,7 @@ class RHEL8Plugin(QubiNodePlugin):
     def _create_lab_user(self) -> None:
         """Create lab-user with sudo privileges"""
         # Create user
-        subprocess.run(
-            ["sudo", "useradd", "-m", "-s", "/bin/bash", "lab-user"], check=True
-        )
+        subprocess.run(["sudo", "useradd", "-m", "-s", "/bin/bash", "lab-user"], check=True)
 
         # Add to sudo group
         subprocess.run(["sudo", "usermod", "-aG", "wheel", "lab-user"], check=True)
@@ -448,18 +418,14 @@ class RHEL8Plugin(QubiNodePlugin):
         """Configure Python upgrade from 3.6.8 to 3.9 for RHEL 8"""
         try:
             # Check current Python version
-            result = subprocess.run(
-                ["python3", "--version"], capture_output=True, text=True
-            )
+            result = subprocess.run(["python3", "--version"], capture_output=True, text=True)
             version = result.stdout.strip().split()[1]
 
             if version == "3.6.8":
                 self.logger.info("Python version is 3.6.8. Upgrading to 3.9...")
 
                 # Enable Python 3.9 module
-                subprocess.run(
-                    ["sudo", "dnf", "module", "install", "-y", "python39"], check=True
-                )
+                subprocess.run(["sudo", "dnf", "module", "install", "-y", "python39"], check=True)
                 subprocess.run(
                     [
                         "sudo",
@@ -472,14 +438,10 @@ class RHEL8Plugin(QubiNodePlugin):
                     ],
                     check=True,
                 )
-                subprocess.run(
-                    ["sudo", "dnf", "module", "enable", "-y", "python39"], check=True
-                )
+                subprocess.run(["sudo", "dnf", "module", "enable", "-y", "python39"], check=True)
 
                 # Disable Python 3.6 module
-                subprocess.run(
-                    ["sudo", "dnf", "module", "disable", "-y", "python36"], check=True
-                )
+                subprocess.run(["sudo", "dnf", "module", "disable", "-y", "python36"], check=True)
 
                 # Set alternatives
                 subprocess.run(
@@ -537,9 +499,7 @@ class RHEL8Plugin(QubiNodePlugin):
             subprocess.run(["sudo", "chmod", "4755", "/usr/bin/newuidmap"], check=True)
 
             # Reinstall shadow-utils
-            subprocess.run(
-                ["sudo", "dnf", "reinstall", "-yq", "shadow-utils"], check=True
-            )
+            subprocess.run(["sudo", "dnf", "reinstall", "-yq", "shadow-utils"], check=True)
 
             # Configure XDG_RUNTIME_DIR
             xdg_script = '''export XDG_RUNTIME_DIR="$HOME/.run/containers"'''
@@ -602,18 +562,14 @@ class RHEL8Plugin(QubiNodePlugin):
                 subprocess.run(["git", "-C", nav_dir, "pull"], check=True)
             else:
                 self.logger.info("Cloning Qubinode Navigator repository")
-                subprocess.run(
-                    ["git", "clone", self.git_repo], cwd=home_dir, check=True
-                )
+                subprocess.run(["git", "clone", self.git_repo], cwd=home_dir, check=True)
 
                 # Create symlink
                 subprocess.run(
                     ["sudo", "usermod", "-aG", "users", os.getenv("USER", "root")],
                     check=True,
                 )
-                subprocess.run(
-                    ["sudo", "chown", "-R", "root:users", "/opt"], check=True
-                )
+                subprocess.run(["sudo", "chown", "-R", "root:users", "/opt"], check=True)
                 subprocess.run(["sudo", "chmod", "-R", "g+w", "/opt"], check=True)
 
                 if not os.path.exists("/opt/qubinode_navigator"):
@@ -708,9 +664,7 @@ gpgkey=https://packages.microsoft.com/keys/microsoft.asc"""
                     ["sudo", "mv", "/tmp/vscode.repo", "/etc/yum.repos.d/vscode.repo"],
                     check=True,
                 )
-                subprocess.run(
-                    ["sudo", "dnf", "check-update"], check=False
-                )  # Don't fail if no updates
+                subprocess.run(["sudo", "dnf", "check-update"], check=False)  # Don't fail if no updates
                 subprocess.run(["sudo", "dnf", "install", "code", "-y"], check=True)
             else:
                 self.logger.info("Development Tools group already installed")

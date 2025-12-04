@@ -24,9 +24,7 @@ from health_monitor import HealthMonitor
 from rag_ingestion_api import router as rag_router
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 # Global services
@@ -216,9 +214,7 @@ async def run_specific_diagnostic_tool(tool_name: str, request: dict = None):
 
     try:
         request_data = request or {}
-        result = await ai_service.run_specific_diagnostic_tool(
-            tool_name, **request_data
-        )
+        result = await ai_service.run_specific_diagnostic_tool(tool_name, **request_data)
         return result
 
     except Exception as e:

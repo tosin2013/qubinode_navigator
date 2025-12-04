@@ -90,15 +90,9 @@ class UpdateDetector:
 
         # Configuration
         self.check_interval = self.config.get("check_interval", 3600)  # 1 hour
-        self.ai_assistant_url = self.config.get(
-            "ai_assistant_url", "http://localhost:8080"
-        )
-        self.cache_directory = Path(
-            self.config.get("cache_directory", "/tmp/update_cache")
-        )
-        self.compatibility_file = self.config.get(
-            "compatibility_file", "config/compatibility_matrix.yml"
-        )
+        self.ai_assistant_url = self.config.get("ai_assistant_url", "http://localhost:8080")
+        self.cache_directory = Path(self.config.get("cache_directory", "/tmp/update_cache"))
+        self.compatibility_file = self.config.get("compatibility_file", "config/compatibility_matrix.yml")
         self.enable_ai_compatibility = self.config.get("enable_ai_compatibility", True)
 
         # State
@@ -127,18 +121,12 @@ class UpdateDetector:
                         supported_versions=data.get("supported_versions", {}),
                         known_issues=data.get("known_issues", []),
                         test_results=data.get("test_results", {}),
-                        last_updated=datetime.fromisoformat(
-                            data.get("last_updated", datetime.now().isoformat())
-                        ),
+                        last_updated=datetime.fromisoformat(data.get("last_updated", datetime.now().isoformat())),
                     )
 
-                self.logger.info(
-                    f"Loaded compatibility matrix for {len(self.compatibility_matrix)} components"
-                )
+                self.logger.info(f"Loaded compatibility matrix for {len(self.compatibility_matrix)} components")
             else:
-                self.logger.warning(
-                    f"Compatibility matrix file not found: {matrix_file}"
-                )
+                self.logger.warning(f"Compatibility matrix file not found: {matrix_file}")
 
         except Exception as e:
             self.logger.error(f"Failed to load compatibility matrix: {e}")
@@ -156,9 +144,7 @@ class UpdateDetector:
             elif os_info["id"] in ["ubuntu", "debian"]:
                 updates.extend(await self._detect_apt_updates())
             else:
-                self.logger.warning(
-                    f"Unsupported OS for update detection: {os_info['id']}"
-                )
+                self.logger.warning(f"Unsupported OS for update detection: {os_info['id']}")
 
             self.logger.info(f"Detected {len(updates)} OS package updates")
             return updates
@@ -170,9 +156,7 @@ class UpdateDetector:
     async def _get_os_info(self) -> Dict[str, str]:
         """Get OS information"""
         try:
-            result = subprocess.run(
-                ["cat", "/etc/os-release"], capture_output=True, text=True
-            )
+            result = subprocess.run(["cat", "/etc/os-release"], capture_output=True, text=True)
             if result.returncode == 0:
                 os_info = {}
                 for line in result.stdout.strip().split("\n"):
@@ -210,14 +194,10 @@ class UpdateDetector:
                             available_version = parts[1]
 
                             # Get current version
-                            current_version = await self._get_rpm_current_version(
-                                package_name
-                            )
+                            current_version = await self._get_rpm_current_version(package_name)
 
                             # Determine severity
-                            severity = await self._determine_update_severity(
-                                package_name, available_version
-                            )
+                            severity = await self._determine_update_severity(package_name, available_version)
 
                             update = UpdateInfo(
                                 component_type="os_package",
@@ -266,14 +246,10 @@ class UpdateDetector:
                             available_version = parts[1]
 
                             # Get current version
-                            current_version = await self._get_apt_current_version(
-                                package_name
-                            )
+                            current_version = await self._get_apt_current_version(package_name)
 
                             # Determine severity
-                            severity = await self._determine_update_severity(
-                                package_name, available_version
-                            )
+                            severity = await self._determine_update_severity(package_name, available_version)
 
                             update = UpdateInfo(
                                 component_type="os_package",
@@ -353,9 +329,7 @@ class UpdateDetector:
         """Check for Podman updates"""
         try:
             # Get current version
-            result = subprocess.run(
-                ["podman", "--version"], capture_output=True, text=True
-            )
+            result = subprocess.run(["podman", "--version"], capture_output=True, text=True)
             if result.returncode != 0:
                 return []
 
@@ -364,9 +338,7 @@ class UpdateDetector:
             # Check latest version from GitHub API
             latest_version = await self._get_github_latest_release("containers/podman")
 
-            if latest_version and version.parse(latest_version) > version.parse(
-                current_version
-            ):
+            if latest_version and version.parse(latest_version) > version.parse(current_version):
                 return [
                     UpdateInfo(
                         component_type="software",
@@ -390,9 +362,7 @@ class UpdateDetector:
         """Check for Ansible updates"""
         try:
             # Get current version
-            result = subprocess.run(
-                ["ansible", "--version"], capture_output=True, text=True
-            )
+            result = subprocess.run(["ansible", "--version"], capture_output=True, text=True)
             if result.returncode != 0:
                 return []
 
@@ -408,9 +378,7 @@ class UpdateDetector:
             # Check PyPI for latest version - use ansible-core instead of ansible
             latest_version = await self._get_pypi_latest_version("ansible-core")
 
-            if latest_version and version.parse(latest_version) > version.parse(
-                current_version
-            ):
+            if latest_version and version.parse(latest_version) > version.parse(current_version):
                 return [
                     UpdateInfo(
                         component_type="software",
@@ -434,9 +402,7 @@ class UpdateDetector:
         """Check for Python updates"""
         try:
             # Get current version
-            result = subprocess.run(
-                ["python3", "--version"], capture_output=True, text=True
-            )
+            result = subprocess.run(["python3", "--version"], capture_output=True, text=True)
             if result.returncode != 0:
                 return []
 
@@ -444,7 +410,7 @@ class UpdateDetector:
 
             # For Python, we mainly care about security updates within the same minor version
             # Check for patch updates (e.g., 3.12.0 -> 3.12.1)
-            major_minor = ".".join(current_version.split(".")[:2])
+            ".".join(current_version.split(".")[:2])
 
             # This would need to be enhanced with actual Python release checking
             # For now, we'll return empty as Python updates are typically handled by OS packages
@@ -458,9 +424,7 @@ class UpdateDetector:
         """Check for Git updates"""
         try:
             # Get current version
-            result = subprocess.run(
-                ["git", "--version"], capture_output=True, text=True
-            )
+            result = subprocess.run(["git", "--version"], capture_output=True, text=True)
             if result.returncode != 0:
                 return []
 
@@ -469,9 +433,7 @@ class UpdateDetector:
             # Check latest version from GitHub API
             latest_version = await self._get_github_latest_release("git/git")
 
-            if latest_version and version.parse(
-                latest_version.lstrip("v")
-            ) > version.parse(current_version):
+            if latest_version and version.parse(latest_version.lstrip("v")) > version.parse(current_version):
                 return [
                     UpdateInfo(
                         component_type="software",
@@ -495,9 +457,7 @@ class UpdateDetector:
         """Check for Docker updates"""
         try:
             # Get current version
-            result = subprocess.run(
-                ["docker", "--version"], capture_output=True, text=True
-            )
+            result = subprocess.run(["docker", "--version"], capture_output=True, text=True)
             if result.returncode != 0:
                 return []  # Docker not installed
 
@@ -506,9 +466,7 @@ class UpdateDetector:
             # Check latest version from GitHub API
             latest_version = await self._get_github_latest_release("docker/cli")
 
-            if latest_version and version.parse(
-                latest_version.lstrip("v")
-            ) > version.parse(current_version):
+            if latest_version and version.parse(latest_version.lstrip("v")) > version.parse(current_version):
                 return [
                     UpdateInfo(
                         component_type="software",
@@ -548,13 +506,9 @@ class UpdateDetector:
                         current_version = collection_info.get("version", "unknown")
 
                         # Check for updates on Ansible Galaxy
-                        latest_version = await self._get_galaxy_latest_version(
-                            collection_name
-                        )
+                        latest_version = await self._get_galaxy_latest_version(collection_name)
 
-                        if latest_version and version.parse(
-                            latest_version
-                        ) > version.parse(current_version):
+                        if latest_version and version.parse(latest_version) > version.parse(current_version):
                             update = UpdateInfo(
                                 component_type="collection",
                                 component_name=collection_name,
@@ -675,9 +629,7 @@ class UpdateDetector:
                     return "compatible"
 
                 # Check test results
-                test_status = matrix.test_results.get(
-                    update.available_version, "unknown"
-                )
+                test_status = matrix.test_results.get(update.available_version, "unknown")
                 if test_status in ["passed", "compatible"]:
                     return "compatible"
                 elif test_status in ["failed", "incompatible"]:
@@ -692,9 +644,7 @@ class UpdateDetector:
             return "needs_testing"
 
         except Exception as e:
-            self.logger.error(
-                f"Failed to check compatibility for {update.component_name}: {e}"
-            )
+            self.logger.error(f"Failed to check compatibility for {update.component_name}: {e}")
             return "unknown"
 
     async def _ai_compatibility_check(self, update: UpdateInfo) -> Optional[str]:
@@ -740,17 +690,13 @@ class UpdateDetector:
             return None
 
         except requests.exceptions.Timeout:
-            self.logger.warning(
-                f"AI compatibility check timed out for {update.component_name}"
-            )
+            self.logger.warning(f"AI compatibility check timed out for {update.component_name}")
             return None
         except Exception as e:
             self.logger.error(f"AI compatibility check failed: {e}")
             return None
 
-    async def create_update_batches(
-        self, updates: List[UpdateInfo]
-    ) -> List[UpdateBatch]:
+    async def create_update_batches(self, updates: List[UpdateInfo]) -> List[UpdateBatch]:
         """Create logical batches of updates"""
         batches = []
 
@@ -772,9 +718,7 @@ class UpdateDetector:
                     total_size=sum(u.update_size or 0 for u in security_updates),
                     estimated_duration="15-30 minutes",
                     risk_level="medium",
-                    requires_reboot=any(
-                        "kernel" in u.component_name for u in security_updates
-                    ),
+                    requires_reboot=any("kernel" in u.component_name for u in security_updates),
                     rollback_plan="Automated snapshot rollback available",
                     created_at=datetime.now(),
                 )
@@ -859,29 +803,15 @@ class UpdateDetector:
                 "low": len([u for u in all_updates if u.severity == "low"]),
             },
             "compatibility_status": {
-                "compatible": len(
-                    [u for u in all_updates if u.compatibility_status == "compatible"]
-                ),
-                "incompatible": len(
-                    [u for u in all_updates if u.compatibility_status == "incompatible"]
-                ),
-                "needs_testing": len(
-                    [
-                        u
-                        for u in all_updates
-                        if u.compatibility_status == "needs_testing"
-                    ]
-                ),
-                "unknown": len(
-                    [u for u in all_updates if u.compatibility_status == "unknown"]
-                ),
+                "compatible": len([u for u in all_updates if u.compatibility_status == "compatible"]),
+                "incompatible": len([u for u in all_updates if u.compatibility_status == "incompatible"]),
+                "needs_testing": len([u for u in all_updates if u.compatibility_status == "needs_testing"]),
+                "unknown": len([u for u in all_updates if u.compatibility_status == "unknown"]),
             },
             "update_batches": len(update_batches),
             "updates": [asdict(update) for update in all_updates],
             "batches": [asdict(batch) for batch in update_batches],
         }
 
-        self.logger.info(
-            f"Update detection completed: {len(all_updates)} updates found in {summary['check_duration']:.2f}s"
-        )
+        self.logger.info(f"Update detection completed: {len(all_updates)} updates found in {summary['check_duration']:.2f}s")
         return summary

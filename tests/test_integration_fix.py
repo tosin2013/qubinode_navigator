@@ -50,12 +50,8 @@ def test_integration_fix():
 
     try:
         # Clean up
-        subprocess.run(
-            ["docker", "stop", container_name], check=False, capture_output=True
-        )
-        subprocess.run(
-            ["docker", "rm", container_name], check=False, capture_output=True
-        )
+        subprocess.run(["docker", "stop", container_name], check=False, capture_output=True)
+        subprocess.run(["docker", "rm", container_name], check=False, capture_output=True)
 
         # Start test container
         print("Starting test container...")
@@ -102,12 +98,8 @@ def test_integration_fix():
         return False
     finally:
         # Cleanup
-        subprocess.run(
-            ["docker", "stop", container_name], check=False, capture_output=True
-        )
-        subprocess.run(
-            ["docker", "rm", container_name], check=False, capture_output=True
-        )
+        subprocess.run(["docker", "stop", container_name], check=False, capture_output=True)
+        subprocess.run(["docker", "rm", container_name], check=False, capture_output=True)
 
 
 def main():

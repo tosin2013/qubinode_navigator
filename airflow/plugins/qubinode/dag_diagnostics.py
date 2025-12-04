@@ -14,7 +14,7 @@ def get_dag_failures() -> Dict[str, Any]:
     """
     try:
         # Get failed task instances
-        result = subprocess.run(
+        subprocess.run(
             ["airflow", "tasks", "failed-deps", "--output", "json"],
             capture_output=True,
             text=True,
@@ -85,9 +85,7 @@ def diagnose_dag(dag_id: str) -> Dict[str, Any]:
             try:
                 runs = json.loads(runs_result.stdout)
                 if runs:
-                    diagnostics["last_run"] = (
-                        runs[0] if isinstance(runs, list) else runs
-                    )
+                    diagnostics["last_run"] = runs[0] if isinstance(runs, list) else runs
             except json.JSONDecodeError:
                 pass
 

@@ -497,15 +497,7 @@ destroy_freeipa = BashOperator(
 # =============================================================================
 
 # Create workflow
-(
-    decide_action_task
-    >> validate_environment
-    >> create_freeipa_vm
-    >> wait_for_vm
-    >> prepare_ansible
-    >> install_freeipa
-    >> validate_freeipa
-)
+(decide_action_task >> validate_environment >> create_freeipa_vm >> wait_for_vm >> prepare_ansible >> install_freeipa >> validate_freeipa)
 
 # Destroy workflow
 decide_action_task >> destroy_freeipa

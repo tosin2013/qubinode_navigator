@@ -37,15 +37,11 @@ class RHEL10Plugin(QubiNodePlugin):
 
         # Validate we're running on RHEL 10 or CentOS Stream 10
         if not self._is_rhel10_or_centos10():
-            raise RuntimeError(
-                "RHEL 10 plugin can only run on RHEL 10 or CentOS Stream 10 systems"
-            )
+            raise RuntimeError("RHEL 10 plugin can only run on RHEL 10 or CentOS Stream 10 systems")
 
         # Validate x86_64-v3 microarchitecture
         if not self._validate_microarchitecture():
-            raise RuntimeError(
-                "System does not meet x86_64-v3 microarchitecture requirement for RHEL 10/CentOS 10"
-            )
+            raise RuntimeError("System does not meet x86_64-v3 microarchitecture requirement for RHEL 10/CentOS 10")
 
         # Set packages adapted for RHEL 10/CentOS 10 (no modularity)
         self.packages = self.config.get(
@@ -83,9 +79,7 @@ class RHEL10Plugin(QubiNodePlugin):
                 if 'ID="rhel"' in content and 'VERSION_ID="10' in content:
                     return True
                 # Check for CentOS Stream 10
-                if ('ID="centos"' in content and 'VERSION_ID="10"' in content) or (
-                    "CentOS Stream release 10" in content
-                ):
+                if ('ID="centos"' in content and 'VERSION_ID="10"' in content) or ("CentOS Stream release 10" in content):
                     return True
                 return False
         except FileNotFoundError:
@@ -232,9 +226,7 @@ class RHEL10Plugin(QubiNodePlugin):
 
             if missing_packages:
                 self._install_packages_no_modularity(list(missing_packages))
-                changes_made.append(
-                    f"Installed packages: {', '.join(missing_packages)}"
-                )
+                changes_made.append(f"Installed packages: {', '.join(missing_packages)}")
 
             # Configure firewall
             if not current_state.get("firewalld_enabled"):
@@ -246,9 +238,7 @@ class RHEL10Plugin(QubiNodePlugin):
                 changes_made.append("Started firewalld service")
 
             # Create lab user if needed
-            if desired_state.get("lab_user_exists") and not current_state.get(
-                "lab_user_exists"
-            ):
+            if desired_state.get("lab_user_exists") and not current_state.get("lab_user_exists"):
                 self._create_lab_user()
                 changes_made.append("Created lab-user")
 
@@ -282,12 +272,8 @@ class RHEL10Plugin(QubiNodePlugin):
     def _get_python_version(self) -> Tuple[int, int]:
         """Get Python version tuple"""
         try:
-            result = subprocess.run(
-                ["python3", "--version"], capture_output=True, text=True, check=True
-            )
-            version_str = result.stdout.strip().split()[
-                1
-            ]  # "Python 3.12.1" -> "3.12.1"
+            result = subprocess.run(["python3", "--version"], capture_output=True, text=True, check=True)
+            version_str = result.stdout.strip().split()[1]  # "Python 3.12.1" -> "3.12.1"
             parts = version_str.split(".")
             return (int(parts[0]), int(parts[1]))
         except (subprocess.CalledProcessError, ValueError, IndexError):
@@ -327,16 +313,12 @@ class RHEL10Plugin(QubiNodePlugin):
         if result.returncode != 0:
             raise RuntimeError(f"Package installation failed: {result.stderr}")
 
-        self.logger.info(
-            f"Installed packages without modularity: {', '.join(packages)}"
-        )
+        self.logger.info(f"Installed packages without modularity: {', '.join(packages)}")
 
     def _is_service_enabled(self, service: str) -> bool:
         """Check if service is enabled"""
         try:
-            result = subprocess.run(
-                ["systemctl", "is-enabled", service], capture_output=True, text=True
-            )
+            result = subprocess.run(["systemctl", "is-enabled", service], capture_output=True, text=True)
             return result.returncode == 0
         except subprocess.CalledProcessError:
             return False
@@ -344,9 +326,7 @@ class RHEL10Plugin(QubiNodePlugin):
     def _is_service_active(self, service: str) -> bool:
         """Check if service is active"""
         try:
-            result = subprocess.run(
-                ["systemctl", "is-active", service], capture_output=True, text=True
-            )
+            result = subprocess.run(["systemctl", "is-active", service], capture_output=True, text=True)
             return result.stdout.strip() == "active"
         except subprocess.CalledProcessError:
             return False
@@ -370,9 +350,7 @@ class RHEL10Plugin(QubiNodePlugin):
     def _create_lab_user(self) -> None:
         """Create lab-user with sudo privileges"""
         # Create user
-        subprocess.run(
-            ["sudo", "useradd", "-m", "-s", "/bin/bash", "lab-user"], check=True
-        )
+        subprocess.run(["sudo", "useradd", "-m", "-s", "/bin/bash", "lab-user"], check=True)
 
         # Add to sudo group (wheel group in RHEL/CentOS)
         subprocess.run(["sudo", "usermod", "-aG", "wheel", "lab-user"], check=True)

@@ -44,9 +44,7 @@ class TestAIAssistantFullIntegration:
         }
 
         plugin = AIAssistantPlugin(config)
-        context = ExecutionContext(
-            inventory="localhost", environment="integration_test", config={"test": True}
-        )
+        context = ExecutionContext(inventory="localhost", environment="integration_test", config={"test": True})
 
         # Mock container operations to simulate already running container
         with patch("subprocess.run") as mock_run, patch("requests.get") as mock_get:
@@ -61,9 +59,7 @@ class TestAIAssistantFullIntegration:
                 status_code=200,
                 json=lambda: {
                     "status": "healthy",
-                    "ai_service": {
-                        "components": {"rag_service": {"documents_loaded": True}}
-                    },
+                    "ai_service": {"components": {"rag_service": {"documents_loaded": True}}},
                 },
             )
 
@@ -153,9 +149,7 @@ class TestAIAssistantFullIntegration:
         }
 
         plugin = AIAssistantPlugin(config)
-        context = ExecutionContext(
-            inventory="localhost", environment="test", config={"test": True}
-        )
+        ExecutionContext(inventory="localhost", environment="test", config={"test": True})
 
         # Test plugin capabilities
         capabilities = plugin.capabilities
@@ -165,9 +159,7 @@ class TestAIAssistantFullIntegration:
 
         # Test plugin dependencies
         dependencies = plugin.get_dependencies()
-        assert isinstance(
-            dependencies, list
-        )  # Should return empty list as per implementation
+        assert isinstance(dependencies, list)  # Should return empty list as per implementation
 
         # Mock AI service health check
         with patch.object(plugin, "_ai_service_healthy") as mock_health:
@@ -199,9 +191,7 @@ class TestAIAssistantFullIntegration:
 
         # Test handling of unavailable AI service
         with patch("requests.get") as mock_get:
-            mock_get.side_effect = requests.exceptions.ConnectionError(
-                "Connection failed"
-            )
+            mock_get.side_effect = requests.exceptions.ConnectionError("Connection failed")
 
             # Plugin should handle connection errors gracefully
             current_state = plugin.check_state()
@@ -213,9 +203,7 @@ class TestAIAssistantFullIntegration:
 
             # AI query should handle errors gracefully
             response = plugin.ask_ai("test query")
-            assert response is None or (
-                isinstance(response, dict) and "error" in str(response).lower()
-            )
+            assert response is None or (isinstance(response, dict) and "error" in str(response).lower())
 
     def test_performance_characteristics(self):
         """Test performance characteristics of AI Assistant integration"""
@@ -229,17 +217,9 @@ class TestAIAssistantFullIntegration:
         plugin = AIAssistantPlugin(config)
 
         # Mock all health check methods for fast execution
-        with patch.object(
-            plugin, "_ai_service_healthy"
-        ) as mock_ai_health, patch.object(
-            plugin, "_container_exists"
-        ) as mock_container_exists, patch.object(
+        with patch.object(plugin, "_ai_service_healthy") as mock_ai_health, patch.object(plugin, "_container_exists") as mock_container_exists, patch.object(
             plugin, "_container_running"
-        ) as mock_container_running, patch.object(
-            plugin, "_rag_system_loaded"
-        ) as mock_rag_loaded, patch.object(
-            plugin, "_diagnostic_tools_available"
-        ) as mock_diagnostics:
+        ) as mock_container_running, patch.object(plugin, "_rag_system_loaded") as mock_rag_loaded, patch.object(plugin, "_diagnostic_tools_available") as mock_diagnostics:
             # Mock all checks to return quickly
             mock_ai_health.return_value = True
             mock_container_exists.return_value = True
@@ -338,9 +318,7 @@ class TestAIAssistantFullIntegration:
 class TestAIAssistantContainerIntegration:
     """Integration tests that require actual container"""
 
-    @pytest.mark.skipif(
-        os.getenv("CI") != "true", reason="Container tests only run in CI environment"
-    )
+    @pytest.mark.skipif(os.getenv("CI") != "true", reason="Container tests only run in CI environment")
     def test_real_container_integration(self):
         """Test integration with real AI Assistant container"""
         # This test would run in CI/CD with actual container

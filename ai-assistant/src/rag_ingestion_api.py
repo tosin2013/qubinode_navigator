@@ -95,9 +95,7 @@ class RAGIngestionService:
             chunks = await self._process_document(content, file.filename, metadata)
 
             if not chunks:
-                raise HTTPException(
-                    status_code=400, detail="No valid content found in document"
-                )
+                raise HTTPException(status_code=400, detail="No valid content found in document")
 
             # Validate content quality
             validation_result = None
@@ -116,9 +114,7 @@ class RAGIngestionService:
                     )
 
             # Determine approval status
-            quality_score = (
-                validation_result.quality_score if validation_result else 1.0
-            )
+            quality_score = validation_result.quality_score if validation_result else 1.0
 
             if auto_approve or quality_score >= self.auto_approve_score:
                 # Auto-approve high-quality content
@@ -145,9 +141,7 @@ class RAGIngestionService:
             logger.error(f"Error ingesting document {file.filename}: {e}")
             raise HTTPException(status_code=500, detail=f"Ingestion failed: {str(e)}")
 
-    async def _process_document(
-        self, content: bytes, filename: str, metadata: DocumentMetadata
-    ) -> List[ProcessedChunk]:
+    async def _process_document(self, content: bytes, filename: str, metadata: DocumentMetadata) -> List[ProcessedChunk]:
         """Process document into chunks suitable for RAG"""
 
         try:
@@ -273,10 +267,7 @@ class RAGIngestionService:
                 score += 0.1
 
             # Check for step-by-step instructions
-            if any(
-                pattern in chunk.content.lower()
-                for pattern in ["step 1", "1.", "first,", "then,"]
-            ):
+            if any(pattern in chunk.content.lower() for pattern in ["step 1", "1.", "first,", "then,"]):
                 score += 0.1
 
             # Update chunk quality score
@@ -323,17 +314,13 @@ class RAGIngestionService:
 
             # Add to vector database
             # Note: This would need to be implemented in the RAG service
-            logger.info(
-                f"Added {len(documents)} chunks from document {doc_id} to RAG database"
-            )
+            logger.info(f"Added {len(documents)} chunks from document {doc_id} to RAG database")
 
         except Exception as e:
             logger.error(f"Error adding chunks to RAG database: {e}")
             raise
 
-    async def _queue_for_review(
-        self, doc_id: str, chunks: List[ProcessedChunk], metadata: DocumentMetadata
-    ):
+    async def _queue_for_review(self, doc_id: str, chunks: List[ProcessedChunk], metadata: DocumentMetadata):
         """Queue document for manual review"""
 
         review_data = {
@@ -346,9 +333,7 @@ class RAGIngestionService:
                 {
                     "id": chunk.id,
                     "title": chunk.title,
-                    "content": chunk.content[:500] + "..."
-                    if len(chunk.content) > 500
-                    else chunk.content,
+                    "content": chunk.content[:500] + "..." if len(chunk.content) > 500 else chunk.content,
                     "quality_score": chunk.quality_score,
                 }
                 for chunk in chunks
@@ -361,9 +346,7 @@ class RAGIngestionService:
 
         logger.info(f"Document {doc_id} queued for manual review")
 
-    async def _save_contribution(
-        self, doc_id: str, filename: str, content: bytes, metadata: DocumentMetadata
-    ):
+    async def _save_contribution(self, doc_id: str, filename: str, content: bytes, metadata: DocumentMetadata):
         """Save original contribution for record keeping"""
 
         contribution_data = {
@@ -437,9 +420,7 @@ async def ingest_document(
         difficulty_level=difficulty_level,
     )
 
-    return await rag_service.ingest_document(
-        file=file, metadata=metadata, validate=validate, auto_approve=auto_approve
-    )
+    return await rag_service.ingest_document(file=file, metadata=metadata, validate=validate, auto_approve=auto_approve)
 
 
 @router.get("/contributions")
@@ -458,9 +439,7 @@ async def list_contributions():
 
     return {
         "total_contributions": len(contributions),
-        "contributions": sorted(
-            contributions, key=lambda x: x["submitted_at"], reverse=True
-        ),
+        "contributions": sorted(contributions, key=lambda x: x["submitted_at"], reverse=True),
     }
 
 
@@ -469,9 +448,7 @@ async def get_ingestion_stats():
     """Get RAG ingestion statistics"""
 
     # Count contributions by status
-    total_contributions = len(
-        list(rag_service.contributions_dir.glob("*_metadata.json"))
-    )
+    total_contributions = len(list(rag_service.contributions_dir.glob("*_metadata.json")))
     pending_reviews = len(list(rag_service.contributions_dir.glob("*_review.json")))
 
     # Get category breakdown
@@ -491,7 +468,5 @@ async def get_ingestion_stats():
         "pending_reviews": pending_reviews,
         "approved": total_contributions - pending_reviews,
         "categories": categories,
-        "rag_service_status": "initialized"
-        if rag_service.rag_service
-        else "not_initialized",
+        "rag_service_status": "initialized" if rag_service.rag_service else "not_initialized",
     }

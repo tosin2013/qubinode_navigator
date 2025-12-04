@@ -74,9 +74,7 @@ class FAISSRAGService:
                 await self._build_index_from_documents()
 
             self.documents_loaded = len(self.documents) > 0
-            self.logger.info(
-                f"FAISS RAG service initialized with {len(self.documents)} documents"
-            )
+            self.logger.info(f"FAISS RAG service initialized with {len(self.documents)} documents")
             return True
 
         except Exception as e:
@@ -90,11 +88,7 @@ class FAISSRAGService:
             metadata_file = self.vector_db_dir / "metadata.pkl"
             documents_file = self.vector_db_dir / "documents.pkl"
 
-            if not (
-                index_file.exists()
-                and metadata_file.exists()
-                and documents_file.exists()
-            ):
+            if not (index_file.exists() and metadata_file.exists() and documents_file.exists()):
                 return False
 
             # Load FAISS index
@@ -107,9 +101,7 @@ class FAISSRAGService:
             with open(documents_file, "rb") as f:
                 self.documents = pickle.load(f)
 
-            self.logger.info(
-                f"Loaded existing index with {len(self.documents)} documents"
-            )
+            self.logger.info(f"Loaded existing index with {len(self.documents)} documents")
             return True
 
         except Exception as e:
@@ -152,15 +144,11 @@ class FAISSRAGService:
 
             for i in range(0, len(texts), batch_size):
                 batch_texts = texts[i : i + batch_size]
-                batch_embeddings = self.embeddings_model.encode(
-                    batch_texts, convert_to_numpy=True, show_progress_bar=True
-                )
+                batch_embeddings = self.embeddings_model.encode(batch_texts, convert_to_numpy=True, show_progress_bar=True)
                 all_embeddings.append(batch_embeddings)
 
                 if i % 100 == 0:
-                    self.logger.info(
-                        f"Processed {i + len(batch_texts)}/{len(texts)} documents"
-                    )
+                    self.logger.info(f"Processed {i + len(batch_texts)}/{len(texts)} documents")
 
             # Combine all embeddings
             embeddings_matrix = np.vstack(all_embeddings)
@@ -216,9 +204,7 @@ class FAISSRAGService:
         except Exception as e:
             self.logger.error(f"Failed to save index: {e}")
 
-    async def search_documents(
-        self, query: str, n_results: int = 5, document_types: Optional[List[str]] = None
-    ) -> List[RetrievalResult]:
+    async def search_documents(self, query: str, n_results: int = 5, document_types: Optional[List[str]] = None) -> List[RetrievalResult]:
         """Search for relevant documents using FAISS"""
         if not self.documents_loaded or not self.faiss_index:
             self.logger.warning("FAISS RAG service not properly initialized")
@@ -226,15 +212,11 @@ class FAISSRAGService:
 
         try:
             # Generate query embedding
-            query_embedding = self.embeddings_model.encode(
-                [query], convert_to_numpy=True
-            )
+            query_embedding = self.embeddings_model.encode([query], convert_to_numpy=True)
             faiss.normalize_L2(query_embedding)
 
             # Search FAISS index
-            search_k = min(
-                n_results * 3, len(self.documents)
-            )  # Get more candidates for filtering
+            search_k = min(n_results * 3, len(self.documents))  # Get more candidates for filtering
             scores, indices = self.faiss_index.search(query_embedding, search_k)
 
             # Convert results
@@ -265,9 +247,7 @@ class FAISSRAGService:
                 if len(results) >= n_results:
                     break
 
-            self.logger.info(
-                f"Retrieved {len(results)} documents for query: {query[:50]}..."
-            )
+            self.logger.info(f"Retrieved {len(results)} documents for query: {query[:50]}...")
             return results
 
         except Exception as e:
@@ -326,25 +306,17 @@ class FAISSRAGService:
 
         return status
 
-    async def search_by_document_type(
-        self, query: str, doc_type: str, n_results: int = 3
-    ) -> List[RetrievalResult]:
+    async def search_by_document_type(self, query: str, doc_type: str, n_results: int = 3) -> List[RetrievalResult]:
         """Search for documents of a specific type"""
-        return await self.search_documents(
-            query, n_results=n_results, document_types=[doc_type]
-        )
+        return await self.search_documents(query, n_results=n_results, document_types=[doc_type])
 
     async def get_adr_context(self, query: str) -> Tuple[str, List[str]]:
         """Get ADR-specific context for architectural questions"""
-        return await self.get_context_for_query(
-            query, document_types=["adr"], max_context_length=3000
-        )
+        return await self.get_context_for_query(query, document_types=["adr"], max_context_length=3000)
 
     async def get_config_context(self, query: str) -> Tuple[str, List[str]]:
         """Get configuration-specific context"""
-        return await self.get_context_for_query(
-            query, document_types=["config"], max_context_length=2000
-        )
+        return await self.get_context_for_query(query, document_types=["config"], max_context_length=2000)
 
 
 # Mock RAG service for when FAISS is not available
@@ -358,9 +330,7 @@ class MockRAGService:
     async def initialize(self) -> bool:
         return True
 
-    async def search_documents(
-        self, query: str, n_results: int = 5, document_types: Optional[List[str]] = None
-    ) -> List[RetrievalResult]:
+    async def search_documents(self, query: str, n_results: int = 5, document_types: Optional[List[str]] = None) -> List[RetrievalResult]:
         # Return mock results
         return [
             RetrievalResult(
@@ -392,9 +362,7 @@ class MockRAGService:
             "index_type": "mock",
         }
 
-    async def search_by_document_type(
-        self, query: str, doc_type: str, n_results: int = 3
-    ) -> List[RetrievalResult]:
+    async def search_by_document_type(self, query: str, doc_type: str, n_results: int = 3) -> List[RetrievalResult]:
         return await self.search_documents(query, n_results)
 
     async def get_adr_context(self, query: str) -> Tuple[str, List[str]]:

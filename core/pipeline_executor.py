@@ -69,9 +69,7 @@ class PipelineExecutor:
         # Configuration
         self.max_concurrent_phases = self.config.get("max_concurrent_phases", 2)
         self.phase_timeout_minutes = self.config.get("phase_timeout_minutes", 120)
-        self.validation_timeout_minutes = self.config.get(
-            "validation_timeout_minutes", 30
-        )
+        self.validation_timeout_minutes = self.config.get("validation_timeout_minutes", 30)
         self.rollback_timeout_minutes = self.config.get("rollback_timeout_minutes", 60)
 
         # Components
@@ -97,9 +95,7 @@ class PipelineExecutor:
             pipeline.status = PipelineStage.DEPLOYING
 
             # Start health monitoring for rollback detection
-            monitoring_task = asyncio.create_task(
-                self._monitor_pipeline_for_rollback(pipeline)
-            )
+            monitoring_task = asyncio.create_task(self._monitor_pipeline_for_rollback(pipeline))
 
             # Execute phases based on strategy
             if pipeline.strategy == RolloutStrategy.CANARY:
@@ -127,9 +123,7 @@ class PipelineExecutor:
             elif result == ExecutionResult.CANCELLED:
                 pipeline.status = PipelineStage.CANCELLED
 
-            self.logger.info(
-                f"Pipeline {pipeline.pipeline_id} execution completed with result: {result.value}"
-            )
+            self.logger.info(f"Pipeline {pipeline.pipeline_id} execution completed with result: {result.value}")
             return result
 
         except Exception as e:
@@ -144,14 +138,10 @@ class PipelineExecutor:
 
             return ExecutionResult.FAILED
 
-    async def _execute_canary_strategy(
-        self, pipeline: RolloutPipeline
-    ) -> ExecutionResult:
+    async def _execute_canary_strategy(self, pipeline: RolloutPipeline) -> ExecutionResult:
         """Execute canary deployment strategy"""
 
-        self.logger.info(
-            f"Executing canary strategy for pipeline {pipeline.pipeline_id}"
-        )
+        self.logger.info(f"Executing canary strategy for pipeline {pipeline.pipeline_id}")
 
         # Phase 1: Deploy to canary environment (small subset)
         canary_phases = [p for p in pipeline.phases if "canary" in p.phase_name.lower()]
@@ -164,16 +154,12 @@ class PipelineExecutor:
             await self._monitor_canary_deployment(canary_phases[0], pipeline)
 
         # Phase 2: Check approval gates for full rollout
-        full_rollout_approved = await self._check_phase_approvals(
-            pipeline, "full_rollout"
-        )
+        full_rollout_approved = await self._check_phase_approvals(pipeline, "full_rollout")
         if not full_rollout_approved:
             return ExecutionResult.CANCELLED
 
         # Phase 3: Execute remaining phases
-        remaining_phases = [
-            p for p in pipeline.phases if "canary" not in p.phase_name.lower()
-        ]
+        remaining_phases = [p for p in pipeline.phases if "canary" not in p.phase_name.lower()]
         for phase in remaining_phases:
             result = await self._execute_phase(phase, pipeline)
             if result != ExecutionResult.SUCCESS:
@@ -181,14 +167,10 @@ class PipelineExecutor:
 
         return ExecutionResult.SUCCESS
 
-    async def _execute_blue_green_strategy(
-        self, pipeline: RolloutPipeline
-    ) -> ExecutionResult:
+    async def _execute_blue_green_strategy(self, pipeline: RolloutPipeline) -> ExecutionResult:
         """Execute blue-green deployment strategy"""
 
-        self.logger.info(
-            f"Executing blue-green strategy for pipeline {pipeline.pipeline_id}"
-        )
+        self.logger.info(f"Executing blue-green strategy for pipeline {pipeline.pipeline_id}")
 
         # Phase 1: Deploy to green environment
         green_phases = [p for p in pipeline.phases if "green" in p.phase_name.lower()]
@@ -219,14 +201,10 @@ class PipelineExecutor:
 
         return ExecutionResult.SUCCESS
 
-    async def _execute_rolling_strategy(
-        self, pipeline: RolloutPipeline
-    ) -> ExecutionResult:
+    async def _execute_rolling_strategy(self, pipeline: RolloutPipeline) -> ExecutionResult:
         """Execute rolling deployment strategy"""
 
-        self.logger.info(
-            f"Executing rolling strategy for pipeline {pipeline.pipeline_id}"
-        )
+        self.logger.info(f"Executing rolling strategy for pipeline {pipeline.pipeline_id}")
 
         # Execute phases sequentially with validation between each
         for i, phase in enumerate(pipeline.phases):
@@ -252,14 +230,10 @@ class PipelineExecutor:
 
         return ExecutionResult.SUCCESS
 
-    async def _execute_all_at_once_strategy(
-        self, pipeline: RolloutPipeline
-    ) -> ExecutionResult:
+    async def _execute_all_at_once_strategy(self, pipeline: RolloutPipeline) -> ExecutionResult:
         """Execute all-at-once deployment strategy"""
 
-        self.logger.info(
-            f"Executing all-at-once strategy for pipeline {pipeline.pipeline_id}"
-        )
+        self.logger.info(f"Executing all-at-once strategy for pipeline {pipeline.pipeline_id}")
 
         # Check final approval gate
         approved = await self._check_phase_approvals(pipeline, "deployment")
@@ -278,18 +252,14 @@ class PipelineExecutor:
         # Check results
         for i, result in enumerate(results):
             if isinstance(result, Exception):
-                self.logger.error(
-                    f"Phase {pipeline.phases[i].phase_id} failed: {result}"
-                )
+                self.logger.error(f"Phase {pipeline.phases[i].phase_id} failed: {result}")
                 return ExecutionResult.FAILED
             elif result != ExecutionResult.SUCCESS:
                 return result
 
         return ExecutionResult.SUCCESS
 
-    async def _execute_phase(
-        self, phase: RolloutPhase, pipeline: RolloutPipeline
-    ) -> ExecutionResult:
+    async def _execute_phase(self, phase: RolloutPhase, pipeline: RolloutPipeline) -> ExecutionResult:
         """Execute individual pipeline phase"""
 
         phase_execution = PhaseExecution(
@@ -317,9 +287,7 @@ class PipelineExecutor:
             phase_execution.current_step = "Applying updates"
             phase_execution.progress_percentage = 30.0
 
-            deployment_result = await self._deploy_updates(
-                phase.update_batch, phase.target_environments
-            )
+            deployment_result = await self._deploy_updates(phase.update_batch, phase.target_environments)
             if not deployment_result:
                 raise Exception("Update deployment failed")
 
@@ -346,9 +314,7 @@ class PipelineExecutor:
             duration = phase.completed_at - phase.started_at
             phase.actual_duration = f"{duration.total_seconds() / 60:.1f} minutes"
 
-            self.logger.info(
-                f"Phase {phase.phase_id} completed successfully in {phase.actual_duration}"
-            )
+            self.logger.info(f"Phase {phase.phase_id} completed successfully in {phase.actual_duration}")
 
             # Move to history
             self.execution_history.append(phase_execution)
@@ -372,15 +338,11 @@ class PipelineExecutor:
 
             return ExecutionResult.FAILED
 
-    async def _deploy_updates(
-        self, update_batch: UpdateBatch, target_environments: List[str]
-    ) -> bool:
+    async def _deploy_updates(self, update_batch: UpdateBatch, target_environments: List[str]) -> bool:
         """Deploy updates to target environments"""
 
         try:
-            self.logger.info(
-                f"Deploying {len(update_batch.updates)} updates to {len(target_environments)} environments"
-            )
+            self.logger.info(f"Deploying {len(update_batch.updates)} updates to {len(target_environments)} environments")
 
             # Simulate deployment process
             for env in target_environments:
@@ -388,9 +350,7 @@ class PipelineExecutor:
 
                 # Apply each update in the batch
                 for update in update_batch.updates:
-                    self.logger.debug(
-                        f"Applying update: {update.component_name} {update.available_version}"
-                    )
+                    self.logger.debug(f"Applying update: {update.component_name} {update.available_version}")
 
                     # Simulate update application
                     await asyncio.sleep(1)  # Simulate deployment time
@@ -401,9 +361,7 @@ class PipelineExecutor:
             self.logger.error(f"Update deployment failed: {e}")
             return False
 
-    async def _run_phase_validation(
-        self, phase: RolloutPhase, pipeline: RolloutPipeline
-    ) -> Dict[str, Any]:
+    async def _run_phase_validation(self, phase: RolloutPhase, pipeline: RolloutPipeline) -> Dict[str, Any]:
         """Run validation tests for phase"""
 
         try:
@@ -425,13 +383,9 @@ class PipelineExecutor:
                 await asyncio.sleep(0.5)  # Simulate test time
 
             # Check success criteria
-            success_criteria_met = await self._check_success_criteria(
-                phase.success_criteria, validation_results
-            )
+            success_criteria_met = await self._check_success_criteria(phase.success_criteria, validation_results)
 
-            validation_results["overall_status"] = (
-                "passed" if success_criteria_met else "failed"
-            )
+            validation_results["overall_status"] = "passed" if success_criteria_met else "failed"
             validation_results["criteria_met"] = success_criteria_met
 
             return validation_results
@@ -440,24 +394,14 @@ class PipelineExecutor:
             self.logger.error(f"Phase validation failed: {e}")
             return {"overall_status": "failed", "error": str(e)}
 
-    async def _check_success_criteria(
-        self, criteria: Dict[str, Any], validation_results: Dict[str, Any]
-    ) -> bool:
+    async def _check_success_criteria(self, criteria: Dict[str, Any], validation_results: Dict[str, Any]) -> bool:
         """Check if success criteria are met"""
 
         try:
             # Check minimum test pass rate
             if "min_test_pass_rate" in criteria:
-                passed_tests = len(
-                    [
-                        r
-                        for r in validation_results.values()
-                        if isinstance(r, dict) and r.get("status") == "passed"
-                    ]
-                )
-                total_tests = len(
-                    [r for r in validation_results.values() if isinstance(r, dict)]
-                )
+                passed_tests = len([r for r in validation_results.values() if isinstance(r, dict) and r.get("status") == "passed"])
+                total_tests = len([r for r in validation_results.values() if isinstance(r, dict)])
 
                 if total_tests > 0:
                     pass_rate = passed_tests / total_tests
@@ -480,29 +424,20 @@ class PipelineExecutor:
             self.logger.error(f"Success criteria check failed: {e}")
             return False
 
-    async def _check_phase_approvals(
-        self, pipeline: RolloutPipeline, phase_name: str
-    ) -> bool:
+    async def _check_phase_approvals(self, pipeline: RolloutPipeline, phase_name: str) -> bool:
         """Check if phase has required approvals"""
 
         # Find approval gates for this phase
-        phase_gates = [
-            gate for gate in pipeline.approval_gates if phase_name in gate.stage
-        ]
+        phase_gates = [gate for gate in pipeline.approval_gates if phase_name in gate.stage]
 
         if not phase_gates:
             return True  # No approval required
 
         # Check each gate
         for gate in phase_gates:
-            status, message = await self.approval_manager.check_gate_approval_status(
-                gate
-            )
+            status, message = await self.approval_manager.check_gate_approval_status(gate)
 
-            if (
-                status == ApprovalStatus.APPROVED
-                or status == ApprovalStatus.AUTO_APPROVED
-            ):
+            if status == ApprovalStatus.APPROVED or status == ApprovalStatus.AUTO_APPROVED:
                 continue
             elif status == ApprovalStatus.REJECTED:
                 self.logger.warning(f"Phase {phase_name} rejected: {message}")
@@ -517,9 +452,7 @@ class PipelineExecutor:
 
         return True
 
-    async def _monitor_canary_deployment(
-        self, canary_phase: RolloutPhase, pipeline: RolloutPipeline
-    ):
+    async def _monitor_canary_deployment(self, canary_phase: RolloutPhase, pipeline: RolloutPipeline):
         """Monitor canary deployment for issues"""
 
         monitor_duration = 300  # 5 minutes
@@ -531,9 +464,7 @@ class PipelineExecutor:
             health_status = await self._check_deployment_health(canary_phase)
 
             if not health_status["healthy"]:
-                self.logger.warning(
-                    f"Canary deployment health issue detected: {health_status['issues']}"
-                )
+                self.logger.warning(f"Canary deployment health issue detected: {health_status['issues']}")
                 # Could trigger automatic rollback here
 
             await asyncio.sleep(30)  # Check every 30 seconds
@@ -553,37 +484,27 @@ class PipelineExecutor:
             "issues": [],
         }
 
-    async def _validate_environment(
-        self, pipeline: RolloutPipeline, environment: str
-    ) -> bool:
+    async def _validate_environment(self, pipeline: RolloutPipeline, environment: str) -> bool:
         """Validate deployment environment"""
 
-        self.logger.info(
-            f"Validating {environment} environment for pipeline {pipeline.pipeline_id}"
-        )
+        self.logger.info(f"Validating {environment} environment for pipeline {pipeline.pipeline_id}")
 
         # Run environment-specific validation
         # This would integrate with the UpdateValidator
 
         return True  # Simplified for now
 
-    async def _switch_traffic(
-        self, pipeline: RolloutPipeline, from_env: str, to_env: str
-    ) -> ExecutionResult:
+    async def _switch_traffic(self, pipeline: RolloutPipeline, from_env: str, to_env: str) -> ExecutionResult:
         """Switch traffic between environments"""
 
-        self.logger.info(
-            f"Switching traffic from {from_env} to {to_env} for pipeline {pipeline.pipeline_id}"
-        )
+        self.logger.info(f"Switching traffic from {from_env} to {to_env} for pipeline {pipeline.pipeline_id}")
 
         # Simulate traffic switch
         await asyncio.sleep(5)
 
         return ExecutionResult.SUCCESS
 
-    async def _decommission_environment(
-        self, phase: RolloutPhase, pipeline: RolloutPipeline
-    ):
+    async def _decommission_environment(self, phase: RolloutPhase, pipeline: RolloutPipeline):
         """Decommission old environment"""
 
         self.logger.info(f"Decommissioning environment for phase {phase.phase_id}")
@@ -591,9 +512,7 @@ class PipelineExecutor:
         # Simulate environment cleanup
         await asyncio.sleep(2)
 
-    async def _validate_phase_completion(
-        self, phase: RolloutPhase, pipeline: RolloutPipeline
-    ) -> bool:
+    async def _validate_phase_completion(self, phase: RolloutPhase, pipeline: RolloutPipeline) -> bool:
         """Validate that phase completed successfully"""
 
         # Check phase status and validation results
@@ -607,11 +526,7 @@ class PipelineExecutor:
     def get_execution_status(self, pipeline_id: str) -> Dict[str, Any]:
         """Get current execution status for pipeline"""
 
-        active_phases = [
-            exec
-            for exec in self.active_executions.values()
-            if exec.pipeline_id == pipeline_id
-        ]
+        active_phases = [exec for exec in self.active_executions.values() if exec.pipeline_id == pipeline_id]
 
         return {
             "pipeline_id": pipeline_id,
@@ -640,9 +555,7 @@ class PipelineExecutor:
                 trigger = await self.rollback_manager.monitor_pipeline_health(pipeline)
 
                 if trigger:
-                    self.logger.warning(
-                        f"Rollback trigger detected for pipeline {pipeline.pipeline_id}: {trigger.value}"
-                    )
+                    self.logger.warning(f"Rollback trigger detected for pipeline {pipeline.pipeline_id}: {trigger.value}")
 
                     # Create and execute rollback plan
                     rollback_plan = await self.rollback_manager.create_rollback_plan(
@@ -653,20 +566,14 @@ class PipelineExecutor:
                     )
 
                     # Execute rollback
-                    rollback_success = await self.rollback_manager.execute_rollback(
-                        rollback_plan
-                    )
+                    rollback_success = await self.rollback_manager.execute_rollback(rollback_plan)
 
                     if rollback_success:
                         pipeline.status = PipelineStage.ROLLED_BACK
-                        self.logger.info(
-                            f"Pipeline {pipeline.pipeline_id} successfully rolled back"
-                        )
+                        self.logger.info(f"Pipeline {pipeline.pipeline_id} successfully rolled back")
                     else:
                         pipeline.status = PipelineStage.FAILED
-                        self.logger.error(
-                            f"Pipeline {pipeline.pipeline_id} rollback failed"
-                        )
+                        self.logger.error(f"Pipeline {pipeline.pipeline_id} rollback failed")
 
                     break
 
@@ -674,17 +581,11 @@ class PipelineExecutor:
                 await asyncio.sleep(30)  # Check every 30 seconds
 
         except asyncio.CancelledError:
-            self.logger.debug(
-                f"Rollback monitoring cancelled for pipeline {pipeline.pipeline_id}"
-            )
+            self.logger.debug(f"Rollback monitoring cancelled for pipeline {pipeline.pipeline_id}")
         except Exception as e:
-            self.logger.error(
-                f"Rollback monitoring error for pipeline {pipeline.pipeline_id}: {e}"
-            )
+            self.logger.error(f"Rollback monitoring error for pipeline {pipeline.pipeline_id}: {e}")
 
-    async def _handle_pipeline_failure(
-        self, pipeline: RolloutPipeline, error_message: str
-    ) -> bool:
+    async def _handle_pipeline_failure(self, pipeline: RolloutPipeline, error_message: str) -> bool:
         """Handle pipeline failure with automatic rollback"""
 
         try:
@@ -702,14 +603,10 @@ class PipelineExecutor:
             )
 
             # Execute rollback
-            rollback_success = await self.rollback_manager.execute_rollback(
-                rollback_plan
-            )
+            rollback_success = await self.rollback_manager.execute_rollback(rollback_plan)
 
             if rollback_success:
-                self.logger.info(
-                    f"Pipeline {pipeline.pipeline_id} failure handled with successful rollback"
-                )
+                self.logger.info(f"Pipeline {pipeline.pipeline_id} failure handled with successful rollback")
                 return True
             else:
                 self.logger.error(f"Pipeline {pipeline.pipeline_id} rollback failed")
@@ -719,20 +616,14 @@ class PipelineExecutor:
             self.logger.error(f"Failed to handle pipeline failure: {e}")
             return False
 
-    async def trigger_manual_rollback(
-        self, pipeline_id: str, reason: str, requested_by: str
-    ) -> bool:
+    async def trigger_manual_rollback(self, pipeline_id: str, reason: str, requested_by: str) -> bool:
         """Trigger manual rollback for pipeline"""
 
         try:
-            rollback_plan = await self.rollback_manager.trigger_manual_rollback(
-                pipeline_id=pipeline_id, reason=reason, requested_by=requested_by
-            )
+            rollback_plan = await self.rollback_manager.trigger_manual_rollback(pipeline_id=pipeline_id, reason=reason, requested_by=requested_by)
 
             if rollback_plan:
-                rollback_success = await self.rollback_manager.execute_rollback(
-                    rollback_plan
-                )
+                rollback_success = await self.rollback_manager.execute_rollback(rollback_plan)
                 return rollback_success
 
             return False

@@ -53,9 +53,7 @@ def discover_and_run_tests(test_type="all", verbosity=2):
         suite.addTests(integration_tests)
 
     # Run tests
-    runner = unittest.TextTestRunner(
-        verbosity=verbosity, stream=sys.stdout, buffer=True
-    )
+    runner = unittest.TextTestRunner(verbosity=verbosity, stream=sys.stdout, buffer=True)
 
     result = runner.run(suite)
 
@@ -88,15 +86,7 @@ def print_test_summary(result):
         for test, reason in result.skipped:
             print(f"  - {test}: {reason}")
 
-    success_rate = (
-        (
-            (result.testsRun - len(result.failures) - len(result.errors))
-            / result.testsRun
-            * 100
-        )
-        if result.testsRun > 0
-        else 0
-    )
+    success_rate = ((result.testsRun - len(result.failures) - len(result.errors)) / result.testsRun * 100) if result.testsRun > 0 else 0
     print(f"\nSuccess Rate: {success_rate:.1f}%")
 
     if result.wasSuccessful():
@@ -138,9 +128,7 @@ def check_dependencies():
 
 def main():
     """Main test runner function"""
-    parser = argparse.ArgumentParser(
-        description="Run Qubinode Navigator Plugin Framework Tests"
-    )
+    parser = argparse.ArgumentParser(description="Run Qubinode Navigator Plugin Framework Tests")
     parser.add_argument(
         "--type",
         choices=["unit", "integration", "all"],

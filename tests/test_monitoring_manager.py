@@ -277,9 +277,7 @@ class TestMonitoringManager:
     async def test_monitor_update_pipeline(self):
         """Test pipeline monitoring"""
         # Start monitoring the pipeline
-        monitor_task = asyncio.create_task(
-            self.monitoring_manager.monitor_update_pipeline(self.test_pipeline)
-        )
+        monitor_task = asyncio.create_task(self.monitoring_manager.monitor_update_pipeline(self.test_pipeline))
 
         # Let it record initial metrics
         await asyncio.sleep(0.1)
@@ -299,23 +297,17 @@ class TestMonitoringManager:
             pass
 
         # Check that metrics were recorded
-        pipeline_metrics = [
-            m for m in self.monitoring_manager.metrics if "pipeline" in m.name
-        ]
+        pipeline_metrics = [m for m in self.monitoring_manager.metrics if "pipeline" in m.name]
         assert len(pipeline_metrics) > 0
 
     async def test_system_resource_monitoring(self):
         """Test system resource monitoring"""
         # Mock system files
-        with mock.patch(
-            "builtins.open", mock.mock_open(read_data="1.5 1.2 1.0 1/100 12345")
-        ):
+        with mock.patch("builtins.open", mock.mock_open(read_data="1.5 1.2 1.0 1/100 12345")):
             await self.monitoring_manager.monitor_system_resources()
 
         # Check that CPU metric was recorded
-        cpu_metrics = [
-            m for m in self.monitoring_manager.metrics if m.name == "cpu_usage"
-        ]
+        cpu_metrics = [m for m in self.monitoring_manager.metrics if m.name == "cpu_usage"]
         assert len(cpu_metrics) > 0
         assert cpu_metrics[0].unit == "%"
 
@@ -403,9 +395,7 @@ class TestMonitoringManager:
         assert set(summary["metric_names"]) == {"metric1", "metric2"}
 
         # Test specific metric summary
-        summary = self.monitoring_manager.get_metrics_summary(
-            metric_name="metric1", hours=24
-        )
+        summary = self.monitoring_manager.get_metrics_summary(metric_name="metric1", hours=24)
         assert summary["total_metrics"] == 2  # Only metric1 entries
 
     async def test_send_log_alert(self):
@@ -439,7 +429,7 @@ class TestMonitoringManager:
             metadata={},
         )
 
-        with mock.patch("smtplib.SMTP") as mock_smtp:
+        with mock.patch("smtplib.SMTP"):
             await self.monitoring_manager._send_email_alert(alert)
 
             # Wait for async email sending

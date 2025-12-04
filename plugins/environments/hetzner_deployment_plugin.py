@@ -42,9 +42,7 @@ class HetznerDeploymentPlugin(QubiNodePlugin):
             "https://gist.githubusercontent.com/tosin2013/385054f345ff7129df6167631156fa2a/raw/b67866c8d0ec220c393ea83d2c7056f33c472e65/configure-sudo-user.sh",
         )
 
-        self.required_packages = self.config.get(
-            "required_packages", ["curl", "wget", "git", "vim", "openssh-clients"]
-        )
+        self.required_packages = self.config.get("required_packages", ["curl", "wget", "git", "vim", "openssh-clients"])
 
     def check_state(self) -> SystemState:
         """Check current Hetzner deployment state"""
@@ -67,9 +65,7 @@ class HetznerDeploymentPlugin(QubiNodePlugin):
         state_data["notouch_env_exists"] = os.path.exists("notouch.env")
 
         # Check if configure script is available
-        state_data["configure_script_available"] = os.path.exists(
-            "./configure-sudo-user.sh"
-        )
+        state_data["configure_script_available"] = os.path.exists("./configure-sudo-user.sh")
 
         # Check required packages
         state_data["required_packages_installed"] = self._check_required_packages()
@@ -139,9 +135,7 @@ class HetznerDeploymentPlugin(QubiNodePlugin):
                 changes_made.append("Created lab-user using configure-sudo-user.sh")
 
             # Ensure lab-user has sudo privileges
-            if current_state.get("lab_user_exists") and not current_state.get(
-                "lab_user_sudo"
-            ):
+            if current_state.get("lab_user_exists") and not current_state.get("lab_user_sudo"):
                 self._ensure_lab_user_sudo()
                 changes_made.append("Ensured lab-user has sudo privileges")
 
@@ -162,8 +156,7 @@ class HetznerDeploymentPlugin(QubiNodePlugin):
                 data={
                     "changes": changes_made,
                     "hetzner_deployment": True,
-                    "lab_user_ready": self._user_exists("lab-user")
-                    and self._user_has_sudo("lab-user"),
+                    "lab_user_ready": self._user_exists("lab-user") and self._user_has_sudo("lab-user"),
                     "next_steps": self._get_next_steps(),
                 },
             )
@@ -180,18 +173,11 @@ class HetznerDeploymentPlugin(QubiNodePlugin):
         # Basic checks for Hetzner environment
         hetzner_indicators = [
             # Check for Hetzner-specific network interfaces
-            lambda: "eth0"
-            in subprocess.run(["ip", "link"], capture_output=True, text=True).stdout,
+            lambda: "eth0" in subprocess.run(["ip", "link"], capture_output=True, text=True).stdout,
             # Check for Hetzner metadata (if available)
             lambda: self._check_hetzner_metadata(),
             # Check hostname patterns
-            lambda: any(
-                pattern
-                in subprocess.run(
-                    ["hostname"], capture_output=True, text=True
-                ).stdout.lower()
-                for pattern in ["hetzner", "fsn", "nbg", "ash"]
-            ),
+            lambda: any(pattern in subprocess.run(["hostname"], capture_output=True, text=True).stdout.lower() for pattern in ["hetzner", "fsn", "nbg", "ash"]),
         ]
 
         return any(check() for check in hetzner_indicators)
@@ -225,9 +211,7 @@ class HetznerDeploymentPlugin(QubiNodePlugin):
     def _user_has_sudo(self, username: str) -> bool:
         """Check if user has sudo privileges"""
         try:
-            result = subprocess.run(
-                ["groups", username], capture_output=True, text=True, check=True
-            )
+            result = subprocess.run(["groups", username], capture_output=True, text=True, check=True)
             return "wheel" in result.stdout
         except subprocess.CalledProcessError:
             return False
@@ -263,9 +247,7 @@ class HetznerDeploymentPlugin(QubiNodePlugin):
         if result.returncode != 0:
             raise RuntimeError(f"Package installation failed: {result.stderr}")
 
-        self.logger.info(
-            f"Installed required packages: {', '.join(self.required_packages)}"
-        )
+        self.logger.info(f"Installed required packages: {', '.join(self.required_packages)}")
 
     def _download_configure_script(self) -> None:
         """Download the configure-sudo-user.sh script"""
@@ -337,9 +319,7 @@ class HetznerDeploymentPlugin(QubiNodePlugin):
             )
 
             # Get IP address and set up SSH copy-id
-            ip_result = subprocess.run(
-                ["hostname", "-I"], capture_output=True, text=True, check=True
-            )
+            ip_result = subprocess.run(["hostname", "-I"], capture_output=True, text=True, check=True)
 
             ip_address = ip_result.stdout.strip().split()[0]
 
@@ -352,9 +332,7 @@ class HetznerDeploymentPlugin(QubiNodePlugin):
 
             # Set proper permissions
             os.chmod(f"{ssh_dir}/authorized_keys", 0o600)
-            subprocess.run(
-                ["chown", "lab-user:lab-user", f"{ssh_dir}/authorized_keys"], check=True
-            )
+            subprocess.run(["chown", "lab-user:lab-user", f"{ssh_dir}/authorized_keys"], check=True)
 
             self.logger.info(f"Configured SSH keys for lab-user (IP: {ip_address})")
 
@@ -372,17 +350,13 @@ class HetznerDeploymentPlugin(QubiNodePlugin):
                     config_content = f.read()
 
                 if "PLACEHOLDER" in config_content or len(config_content.strip()) < 50:
-                    messages.append(
-                        "⚠️  /tmp/config.yml exists but appears to be a template - please update with real values"
-                    )
+                    messages.append("⚠️  /tmp/config.yml exists but appears to be a template - please update with real values")
                 else:
                     messages.append("✅ /tmp/config.yml validated")
             except Exception:
                 messages.append("❌ /tmp/config.yml exists but cannot be read")
         else:
-            messages.append(
-                "❌ /tmp/config.yml not found - please create it before running deployment"
-            )
+            messages.append("❌ /tmp/config.yml not found - please create it before running deployment")
 
         # Check notouch.env
         if os.path.exists("notouch.env"):
@@ -391,17 +365,13 @@ class HetznerDeploymentPlugin(QubiNodePlugin):
                     env_content = f.read()
 
                 if "DontForgetToChangeMe" in env_content:
-                    messages.append(
-                        "⚠️  notouch.env exists but SSH_PASSWORD needs to be updated"
-                    )
+                    messages.append("⚠️  notouch.env exists but SSH_PASSWORD needs to be updated")
                 else:
                     messages.append("✅ notouch.env validated")
             except Exception:
                 messages.append("❌ notouch.env exists but cannot be read")
         else:
-            messages.append(
-                "❌ notouch.env not found - please create it before running deployment"
-            )
+            messages.append("❌ notouch.env not found - please create it before running deployment")
 
         return "; ".join(messages) if messages else "Config files validated"
 
@@ -413,9 +383,7 @@ class HetznerDeploymentPlugin(QubiNodePlugin):
             next_steps.append("Switch to lab-user: sudo su - lab-user")
 
         if os.path.exists("/tmp/config.yml"):
-            next_steps.append(
-                "Verify /tmp/config.yml has real credentials (not placeholders)"
-            )
+            next_steps.append("Verify /tmp/config.yml has real credentials (not placeholders)")
         else:
             next_steps.append("Create /tmp/config.yml with your credentials")
 
@@ -424,9 +392,7 @@ class HetznerDeploymentPlugin(QubiNodePlugin):
         else:
             next_steps.append("Create notouch.env with environment variables")
 
-        next_steps.extend(
-            ["Run: source notouch.env", "Continue with Qubinode Navigator deployment"]
-        )
+        next_steps.extend(["Run: source notouch.env", "Continue with Qubinode Navigator deployment"])
 
         return next_steps
 
@@ -452,11 +418,9 @@ class HetznerDeploymentPlugin(QubiNodePlugin):
         base_status.update(
             {
                 "hetzner_environment": self._is_hetzner_environment(),
-                "lab_user_ready": self._user_exists("lab-user")
-                and self._user_has_sudo("lab-user"),
+                "lab_user_ready": self._user_exists("lab-user") and self._user_has_sudo("lab-user"),
                 "ssh_configured": self._is_lab_user_ssh_configured(),
-                "config_files_present": os.path.exists("/tmp/config.yml")
-                and os.path.exists("notouch.env"),
+                "config_files_present": os.path.exists("/tmp/config.yml") and os.path.exists("notouch.env"),
             }
         )
 

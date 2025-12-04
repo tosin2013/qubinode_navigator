@@ -65,9 +65,7 @@ class TestAnalyticsEngine:
                 "strategy": "rolling",
                 "status": "completed",
                 "created_at": (datetime.now() - timedelta(days=1)).isoformat(),
-                "completed_at": (
-                    datetime.now() - timedelta(days=1) + timedelta(minutes=45)
-                ).isoformat(),
+                "completed_at": (datetime.now() - timedelta(days=1) + timedelta(minutes=45)).isoformat(),
                 "total_duration": "45 minutes",
                 "phases": [{"phase_id": "phase_1", "status": "completed"}],
                 "created_by": "test_user",
@@ -78,9 +76,7 @@ class TestAnalyticsEngine:
                 "strategy": "canary",
                 "status": "failed",
                 "created_at": (datetime.now() - timedelta(days=2)).isoformat(),
-                "completed_at": (
-                    datetime.now() - timedelta(days=2) + timedelta(minutes=30)
-                ).isoformat(),
+                "completed_at": (datetime.now() - timedelta(days=2) + timedelta(minutes=30)).isoformat(),
                 "total_duration": "30 minutes",
                 "phases": [{"phase_id": "phase_2", "status": "failed"}],
                 "created_by": "test_user",
@@ -91,9 +87,7 @@ class TestAnalyticsEngine:
                 "strategy": "blue_green",
                 "status": "rolled_back",
                 "created_at": (datetime.now() - timedelta(days=3)).isoformat(),
-                "completed_at": (
-                    datetime.now() - timedelta(days=3) + timedelta(minutes=60)
-                ).isoformat(),
+                "completed_at": (datetime.now() - timedelta(days=3) + timedelta(minutes=60)).isoformat(),
                 "total_duration": "60 minutes",
                 "phases": [{"phase_id": "phase_3", "status": "rolled_back"}],
                 "created_by": "test_user",
@@ -104,9 +98,7 @@ class TestAnalyticsEngine:
                 "strategy": "rolling",
                 "status": "completed",
                 "created_at": (datetime.now() - timedelta(days=4)).isoformat(),
-                "completed_at": (
-                    datetime.now() - timedelta(days=4) + timedelta(minutes=35)
-                ).isoformat(),
+                "completed_at": (datetime.now() - timedelta(days=4) + timedelta(minutes=35)).isoformat(),
                 "total_duration": "35 minutes",
                 "phases": [{"phase_id": "phase_4", "status": "completed"}],
                 "created_by": "test_user",
@@ -117,9 +109,7 @@ class TestAnalyticsEngine:
                 "strategy": "all_at_once",
                 "status": "completed",
                 "created_at": (datetime.now() - timedelta(days=5)).isoformat(),
-                "completed_at": (
-                    datetime.now() - timedelta(days=5) + timedelta(minutes=25)
-                ).isoformat(),
+                "completed_at": (datetime.now() - timedelta(days=5) + timedelta(minutes=25)).isoformat(),
                 "total_duration": "25 minutes",
                 "phases": [{"phase_id": "phase_5", "status": "completed"}],
                 "created_by": "test_user",
@@ -136,9 +126,7 @@ class TestAnalyticsEngine:
         """Test analytics engine initialization"""
         assert self.analytics_engine.data_retention_days == 90
         assert self.analytics_engine.cache_ttl_minutes == 15
-        assert self.analytics_engine.pipeline_storage_path == Path(
-            self.config["pipeline_storage_path"]
-        )
+        assert self.analytics_engine.pipeline_storage_path == Path(self.config["pipeline_storage_path"])
         assert len(self.analytics_engine._cache) == 0
         assert len(self.analytics_engine._cache_timestamps) == 0
 
@@ -173,9 +161,7 @@ class TestAnalyticsEngine:
 
     def test_calculate_success_rates(self):
         """Test success rate calculation"""
-        success_metrics = self.analytics_engine.calculate_success_rates(
-            TimeRange.LAST_7D
-        )
+        success_metrics = self.analytics_engine.calculate_success_rates(TimeRange.LAST_7D)
 
         assert isinstance(success_metrics, SuccessRateMetrics)
         assert success_metrics.total_deployments == 5
@@ -205,9 +191,7 @@ class TestAnalyticsEngine:
 
     def test_calculate_performance_metrics(self):
         """Test performance metrics calculation"""
-        performance_metrics = self.analytics_engine.calculate_performance_metrics(
-            TimeRange.LAST_7D
-        )
+        performance_metrics = self.analytics_engine.calculate_performance_metrics(TimeRange.LAST_7D)
 
         assert isinstance(performance_metrics, PerformanceMetrics)
         assert performance_metrics.average_deployment_time > 0
@@ -228,9 +212,7 @@ class TestAnalyticsEngine:
 
     def test_analyze_trends(self):
         """Test trend analysis"""
-        trend_analysis = self.analytics_engine.analyze_trends(
-            "success_rate", TimeRange.LAST_7D
-        )
+        trend_analysis = self.analytics_engine.analyze_trends("success_rate", TimeRange.LAST_7D)
 
         assert isinstance(trend_analysis, TrendAnalysis)
         assert trend_analysis.metric_name == "success_rate"
@@ -239,16 +221,12 @@ class TestAnalyticsEngine:
         assert len(trend_analysis.time_series) > 0
 
         # Test with different metric
-        duration_trend = self.analytics_engine.analyze_trends(
-            "deployment_duration", TimeRange.LAST_30D
-        )
+        duration_trend = self.analytics_engine.analyze_trends("deployment_duration", TimeRange.LAST_30D)
         assert duration_trend.metric_name == "deployment_duration"
 
     def test_generate_summary_report(self):
         """Test summary report generation"""
-        summary_report = self.analytics_engine.generate_summary_report(
-            TimeRange.LAST_7D
-        )
+        summary_report = self.analytics_engine.generate_summary_report(TimeRange.LAST_7D)
 
         assert "report_type" in summary_report
         assert summary_report["report_type"] == "summary"
@@ -269,9 +247,7 @@ class TestAnalyticsEngine:
 
     def test_generate_detailed_report(self):
         """Test detailed report generation"""
-        detailed_report = self.analytics_engine.generate_detailed_report(
-            TimeRange.LAST_7D
-        )
+        detailed_report = self.analytics_engine.generate_detailed_report(TimeRange.LAST_7D)
 
         assert "report_type" in detailed_report
         assert detailed_report["report_type"] == "detailed"
@@ -350,9 +326,7 @@ class TestAnalyticsEngine:
             "2025-11-06": {"total": 1, "successful": 0},
         }
 
-        recommendations = self.analytics_engine._generate_recommendations(
-            strategy_stats, daily_stats
-        )
+        recommendations = self.analytics_engine._generate_recommendations(strategy_stats, daily_stats)
 
         assert isinstance(recommendations, list)
         assert len(recommendations) > 0
@@ -389,9 +363,7 @@ class TestAnalyticsEngine:
 
         alert_stats = {"active_alerts": 2, "total_alerts": 10}
 
-        insights = self.analytics_engine._generate_key_insights(
-            success_metrics, performance_metrics, alert_stats
-        )
+        insights = self.analytics_engine._generate_key_insights(success_metrics, performance_metrics, alert_stats)
 
         assert isinstance(insights, list)
         assert len(insights) > 0
@@ -416,9 +388,7 @@ class TestAnalyticsEngine:
         start_date = datetime.now() - timedelta(days=3)
         end_date = datetime.now() - timedelta(days=1)
 
-        pipelines = self.analytics_engine._load_pipelines(
-            TimeRange.CUSTOM, start_date, end_date
-        )
+        pipelines = self.analytics_engine._load_pipelines(TimeRange.CUSTOM, start_date, end_date)
 
         # Should include pipelines within the custom range
         for pipeline in pipelines:
@@ -465,9 +435,7 @@ class TestAnalyticsEngine:
 
     def test_get_metric_time_series(self):
         """Test metric time series generation"""
-        time_series = self.analytics_engine._get_metric_time_series(
-            "success_rate", TimeRange.LAST_24H
-        )
+        time_series = self.analytics_engine._get_metric_time_series("success_rate", TimeRange.LAST_24H)
 
         assert isinstance(time_series, list)
         assert len(time_series) > 0

@@ -53,9 +53,7 @@ def print_ai_analysis(component_name: str, analysis):
 
     print(f"\n🤖 AI Analysis: {component_name}")
     print(f"   {risk_icon} Risk Level: {analysis.risk_level.value.upper()}")
-    print(
-        f"   {rec_icon} Recommendation: {analysis.recommendation.value.replace('_', ' ').title()}"
-    )
+    print(f"   {rec_icon} Recommendation: {analysis.recommendation.value.replace('_', ' ').title()}")
     print(f"   🎯 Confidence: {analysis.confidence_score:.1%}")
     print(f"   💭 Reasoning: {analysis.reasoning}")
 
@@ -88,9 +86,7 @@ def print_update_plan(plan):
     for i, phase in enumerate(plan.phases, 1):
         print(f"   Phase {i}: {phase['name']}")
         print(f"      Duration: {phase['estimated_duration']}")
-        print(
-            f"      Updates: {', '.join(phase['updates']) if phase['updates'] else 'N/A'}"
-        )
+        print(f"      Updates: {', '.join(phase['updates']) if phase['updates'] else 'N/A'}")
         if phase.get("parallel_execution"):
             print("      Execution: Parallel")
         if phase.get("approval_required"):
@@ -120,10 +116,7 @@ async def analyze_command(args):
     try:
         # Get available updates
         update_result = await ai_manager.update_detector.run_full_update_check()
-        updates = [
-            UpdateInfo(**update_dict)
-            for update_dict in update_result.get("updates", [])
-        ]
+        updates = [UpdateInfo(**update_dict) for update_dict in update_result.get("updates", [])]
 
         if not updates:
             print("✅ No updates available for analysis")
@@ -241,10 +234,7 @@ async def plan_command(args):
     try:
         # Get available updates
         update_result = await ai_manager.update_detector.run_full_update_check()
-        updates = [
-            UpdateInfo(**update_dict)
-            for update_dict in update_result.get("updates", [])
-        ]
+        updates = [UpdateInfo(**update_dict) for update_dict in update_result.get("updates", [])]
 
         if not updates:
             print("✅ No updates available for planning")
@@ -343,10 +333,7 @@ async def recommend_command(args):
     try:
         # Get available updates
         update_result = await ai_manager.update_detector.run_full_update_check()
-        updates = [
-            UpdateInfo(**update_dict)
-            for update_dict in update_result.get("updates", [])
-        ]
+        updates = [UpdateInfo(**update_dict) for update_dict in update_result.get("updates", [])]
 
         if not updates:
             print("✅ No updates available for recommendations")
@@ -383,13 +370,9 @@ async def recommend_command(args):
                     auto_approve_count += 1
 
                 print(f"\n{rec_icon} {component}")
-                print(
-                    f"   {risk_icon} Risk: {rec['risk_level'].replace('_', ' ').title()}"
-                )
+                print(f"   {risk_icon} Risk: {rec['risk_level'].replace('_', ' ').title()}")
                 print(f"   🎯 Confidence: {rec['confidence']:.1%}")
-                print(
-                    f"   {auto_approve} Auto-approve: {'Yes' if rec['should_auto_approve'] else 'No'}"
-                )
+                print(f"   {auto_approve} Auto-approve: {'Yes' if rec['should_auto_approve'] else 'No'}")
                 print(f"   💭 {rec['reasoning']}")
 
             print("\n📊 SUMMARY")
@@ -401,9 +384,7 @@ async def recommend_command(args):
             output = {
                 "recommendations_timestamp": datetime.now().isoformat(),
                 "total_updates": len(recommendations),
-                "auto_approvable": sum(
-                    1 for r in recommendations.values() if r["should_auto_approve"]
-                ),
+                "auto_approvable": sum(1 for r in recommendations.values() if r["should_auto_approve"]),
                 "recommendations": recommendations,
             }
             print(json.dumps(output, indent=2))
@@ -452,9 +433,7 @@ Examples:
         help="AI request timeout in seconds (default: 30)",
     )
 
-    parser.add_argument(
-        "--no-ai", action="store_true", help="Disable AI analysis (use fallback logic)"
-    )
+    parser.add_argument("--no-ai", action="store_true", help="Disable AI analysis (use fallback logic)")
 
     parser.add_argument(
         "--log-level",
@@ -467,9 +446,7 @@ Examples:
 
     # Analyze command
     analyze_parser = subparsers.add_parser("analyze", help="Analyze updates with AI")
-    analyze_parser.add_argument(
-        "--max-updates", type=int, help="Maximum updates to analyze"
-    )
+    analyze_parser.add_argument("--max-updates", type=int, help="Maximum updates to analyze")
     analyze_parser.add_argument(
         "--format",
         choices=["summary", "json"],
@@ -480,9 +457,7 @@ Examples:
 
     # Plan command
     plan_parser = subparsers.add_parser("plan", help="Create AI-powered update plan")
-    plan_parser.add_argument(
-        "--max-updates", type=int, help="Maximum updates to include in plan"
-    )
+    plan_parser.add_argument("--max-updates", type=int, help="Maximum updates to include in plan")
     plan_parser.add_argument(
         "--approval-threshold",
         type=float,
@@ -498,9 +473,7 @@ Examples:
     plan_parser.add_argument("--output", help="Save plan to file")
 
     # Recommend command
-    recommend_parser = subparsers.add_parser(
-        "recommend", help="Get AI update recommendations"
-    )
+    recommend_parser = subparsers.add_parser("recommend", help="Get AI update recommendations")
     recommend_parser.add_argument(
         "--approval-threshold",
         type=float,

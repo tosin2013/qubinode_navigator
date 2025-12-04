@@ -224,17 +224,13 @@ class LogAnalyzer:
 
         return entries
 
-    def analyze_deployment_session(
-        self, log_entries: List[LogEntry]
-    ) -> DeploymentSession:
+    def analyze_deployment_session(self, log_entries: List[LogEntry]) -> DeploymentSession:
         """Analyze a complete deployment session"""
         if not log_entries:
             return None
 
         # Find session boundaries
-        start_entry = next(
-            (e for e in log_entries if e.event_type == "deployment_start"), None
-        )
+        start_entry = next((e for e in log_entries if e.event_type == "deployment_start"), None)
         end_entry = next(
             (e for e in reversed(log_entries) if e.event_type == "deployment_complete"),
             None,
@@ -244,14 +240,10 @@ class LogAnalyzer:
             return None
 
         # Generate session ID
-        session_id = hashlib.md5(
-            f"{start_entry.timestamp}_{start_entry.data.get('playbook', 'unknown')}".encode()
-        ).hexdigest()[:8]
+        session_id = hashlib.md5(f"{start_entry.timestamp}_{start_entry.data.get('playbook', 'unknown')}".encode()).hexdigest()[:8]
 
         # Analyze session metrics
-        task_events = [
-            e for e in log_entries if e.event_type in ["task_success", "task_failed"]
-        ]
+        task_events = [e for e in log_entries if e.event_type in ["task_success", "task_failed"]]
         failed_events = [e for e in log_entries if e.event_type == "task_failed"]
 
         # Extract errors
@@ -286,9 +278,7 @@ class LogAnalyzer:
         self.deployment_sessions[session_id] = session
         return session
 
-    def _calculate_performance_metrics(
-        self, log_entries: List[LogEntry]
-    ) -> Dict[str, Any]:
+    def _calculate_performance_metrics(self, log_entries: List[LogEntry]) -> Dict[str, Any]:
         """Calculate performance metrics from log entries"""
         metrics = {
             "total_duration": 0,
@@ -298,18 +288,14 @@ class LogAnalyzer:
         }
 
         # Find deployment duration
-        start_entry = next(
-            (e for e in log_entries if e.event_type == "deployment_start"), None
-        )
+        start_entry = next((e for e in log_entries if e.event_type == "deployment_start"), None)
         end_entry = next(
             (e for e in reversed(log_entries) if e.event_type == "deployment_complete"),
             None,
         )
 
         if start_entry and end_entry:
-            duration = (
-                end_entry.parsed_timestamp - start_entry.parsed_timestamp
-            ).total_seconds()
+            duration = (end_entry.parsed_timestamp - start_entry.parsed_timestamp).total_seconds()
             metrics["total_duration"] = duration
 
         # Analyze task performance
@@ -334,9 +320,7 @@ class LogAnalyzer:
             metrics["average_task_duration"] = sum(task_durations) / len(task_durations)
 
         # Calculate failure rate
-        total_tasks = len(
-            [e for e in log_entries if e.event_type in ["task_success", "task_failed"]]
-        )
+        total_tasks = len([e for e in log_entries if e.event_type in ["task_success", "task_failed"]])
         failed_tasks = len([e for e in log_entries if e.event_type == "task_failed"])
 
         if total_tasks > 0:
@@ -366,9 +350,7 @@ class LogAnalyzer:
 
         return list(set(matched_patterns))  # Remove duplicates
 
-    async def generate_ai_analysis(
-        self, session: DeploymentSession, error_patterns: List[str]
-    ) -> str:
+    async def generate_ai_analysis(self, session: DeploymentSession, error_patterns: List[str]) -> str:
         """Generate AI-powered analysis of deployment issues"""
         try:
             # Prepare context for AI analysis
@@ -422,9 +404,7 @@ class LogAnalyzer:
             self.logger.error(f"Failed to generate AI analysis: {e}")
             return f"AI analysis failed: {str(e)}"
 
-    def generate_resolution_recommendations(
-        self, session: DeploymentSession, error_patterns: List[str]
-    ) -> List[ResolutionRecommendation]:
+    def generate_resolution_recommendations(self, session: DeploymentSession, error_patterns: List[str]) -> List[ResolutionRecommendation]:
         """Generate automated resolution recommendations"""
         recommendations = []
 
@@ -501,9 +481,7 @@ class LogAnalyzer:
 
         return severity_weights.get(self.error_patterns[pattern_id].severity, 0)
 
-    async def run_diagnostic_analysis(
-        self, session: DeploymentSession
-    ) -> Dict[str, Any]:
+    async def run_diagnostic_analysis(self, session: DeploymentSession) -> Dict[str, Any]:
         """Run comprehensive diagnostic analysis using AI Assistant"""
         try:
             response = requests.post(
@@ -563,9 +541,7 @@ class LogAnalyzer:
 
         return report
 
-    def _generate_next_steps(
-        self, recommendations: List[ResolutionRecommendation]
-    ) -> List[str]:
+    def _generate_next_steps(self, recommendations: List[ResolutionRecommendation]) -> List[str]:
         """Generate prioritized next steps"""
         if not recommendations:
             return ["No specific issues identified. Monitor future deployments."]
@@ -573,31 +549,19 @@ class LogAnalyzer:
         next_steps = []
 
         # High-confidence automated fixes first
-        auto_recs = [
-            r
-            for r in recommendations
-            if r.resolution_type == "automated" and r.confidence > 0.8
-        ]
+        auto_recs = [r for r in recommendations if r.resolution_type == "automated" and r.confidence > 0.8]
         if auto_recs:
-            next_steps.append(
-                f"Apply automated fixes for {len(auto_recs)} high-confidence issues"
-            )
+            next_steps.append(f"Apply automated fixes for {len(auto_recs)} high-confidence issues")
 
         # Manual interventions
         manual_recs = [r for r in recommendations if r.resolution_type == "manual"]
         if manual_recs:
-            next_steps.append(
-                f"Review and apply {len(manual_recs)} manual resolution steps"
-            )
+            next_steps.append(f"Review and apply {len(manual_recs)} manual resolution steps")
 
         # Escalations
-        escalation_recs = [
-            r for r in recommendations if r.resolution_type == "escalation"
-        ]
+        escalation_recs = [r for r in recommendations if r.resolution_type == "escalation"]
         if escalation_recs:
-            next_steps.append(
-                f"Escalate {len(escalation_recs)} critical issues requiring expert intervention"
-            )
+            next_steps.append(f"Escalate {len(escalation_recs)} critical issues requiring expert intervention")
 
         next_steps.append("Re-run deployment after applying fixes")
         next_steps.append("Monitor for recurring patterns")
@@ -608,25 +572,17 @@ class LogAnalyzer:
         """Generate prevention measures for identified patterns"""
         prevention_measures = []
 
-        pattern_types = [
-            self.error_patterns[pid].error_type
-            for pid in error_patterns
-            if pid in self.error_patterns
-        ]
+        pattern_types = [self.error_patterns[pid].error_type for pid in error_patterns if pid in self.error_patterns]
         type_counts = Counter(pattern_types)
 
         if "hardware" in type_counts:
-            prevention_measures.append(
-                "Implement pre-deployment hardware validation checks"
-            )
+            prevention_measures.append("Implement pre-deployment hardware validation checks")
 
         if "package" in type_counts:
             prevention_measures.append("Create dependency validation playbooks")
 
         if "service" in type_counts:
-            prevention_measures.append(
-                "Add service health checks to deployment workflow"
-            )
+            prevention_measures.append("Add service health checks to deployment workflow")
 
         if "storage" in type_counts:
             prevention_measures.append("Implement disk space monitoring and alerts")
@@ -659,17 +615,13 @@ class LogAnalyzer:
         error_patterns = self.identify_error_patterns(session)
 
         # Generate recommendations
-        recommendations = self.generate_resolution_recommendations(
-            session, error_patterns
-        )
+        recommendations = self.generate_resolution_recommendations(session, error_patterns)
 
         # Get AI analysis
         ai_analysis = await self.generate_ai_analysis(session, error_patterns)
 
         # Generate comprehensive report
-        report = self.generate_analysis_report(
-            session, error_patterns, recommendations, ai_analysis
-        )
+        report = self.generate_analysis_report(session, error_patterns, recommendations, ai_analysis)
 
         self.logger.info(f"Analysis complete for session {session.session_id}")
         return report

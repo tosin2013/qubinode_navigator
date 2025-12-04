@@ -95,9 +95,7 @@ class AIService:
             if rag_initialized:
                 logger.info("RAG service initialized successfully")
             else:
-                logger.warning(
-                    "RAG service initialization failed - using basic responses"
-                )
+                logger.warning("RAG service initialization failed - using basic responses")
 
             self.is_initialized = True
             logger.info("AI service initialized successfully")
@@ -138,9 +136,7 @@ class AIService:
                 model_url,
             ]
 
-            process = await asyncio.create_subprocess_exec(
-                *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
-            )
+            process = await asyncio.create_subprocess_exec(*cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
 
             stdout, stderr = await process.communicate()
 
@@ -177,9 +173,7 @@ class AIService:
                 "--log-disable",
             ]
 
-            self.server_process = await asyncio.create_subprocess_exec(
-                *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
-            )
+            self.server_process = await asyncio.create_subprocess_exec(*cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
 
             # Wait for server to start
             await asyncio.sleep(5)
@@ -214,9 +208,7 @@ class AIService:
             }
 
         # Start mock server in background
-        config = uvicorn.Config(
-            mock_app, host="0.0.0.0", port=8081, log_level="warning"
-        )
+        config = uvicorn.Config(mock_app, host="0.0.0.0", port=8081, log_level="warning")
         server = uvicorn.Server(config)
         asyncio.create_task(server.serve())
 
@@ -238,9 +230,7 @@ class AIService:
         except Exception as e:
             logger.warning(f"Connection test failed: {e}")
 
-    async def process_message(
-        self, message: str, context: dict = None, **kwargs
-    ) -> dict:
+    async def process_message(self, message: str, context: dict = None, **kwargs) -> dict:
         """Process a user message and return AI response with RAG enhancement."""
         if not self.is_initialized:
             raise RuntimeError("AI service not initialized")
@@ -252,9 +242,7 @@ class AIService:
 
             if self.rag_service:
                 try:
-                    rag_context, sources = await self.rag_service.get_context_for_query(
-                        message
-                    )
+                    rag_context, sources = await self.rag_service.get_context_for_query(message)
                     logger.info(f"Retrieved RAG context from {len(sources)} sources")
                 except Exception as e:
                     logger.warning(f"RAG retrieval failed: {e}")
@@ -316,7 +304,7 @@ Provide clear, actionable guidance. When troubleshooting, ask for specific error
         try:
             # Extract parameters from request
             tool_name = request.get("tool", None)
-            run_all = request.get("run_all", True)
+            request.get("run_all", True)
             include_ai_analysis = request.get("include_ai_analysis", True)
 
             if tool_name:
@@ -335,9 +323,7 @@ Provide clear, actionable guidance. When troubleshooting, ask for specific error
             else:
                 # Run comprehensive diagnostics
                 logger.info("Running comprehensive system diagnostics")
-                diagnostics_data = (
-                    await diagnostic_registry.run_comprehensive_diagnostics()
-                )
+                diagnostics_data = await diagnostic_registry.run_comprehensive_diagnostics()
 
             # Get AI analysis if requested
             ai_analysis = None
@@ -346,9 +332,7 @@ Provide clear, actionable guidance. When troubleshooting, ask for specific error
                     # Create a concise summary for AI analysis
                     analysis_data = {
                         "summary": diagnostics_data["summary"],
-                        "key_findings": self._extract_key_findings(
-                            diagnostics_data["tool_results"]
-                        ),
+                        "key_findings": self._extract_key_findings(diagnostics_data["tool_results"]),
                     }
 
                     analysis_prompt = f"""Analyze this system diagnostic data and provide actionable recommendations for a Qubinode KVM hypervisor environment:
@@ -364,9 +348,7 @@ Focus on:
 
 Provide clear, actionable recommendations."""
 
-                    ai_response = await self.process_message(
-                        analysis_prompt, max_tokens=500
-                    )
+                    ai_response = await self.process_message(analysis_prompt, max_tokens=500)
                     ai_analysis = ai_response["text"]
 
                 except Exception as e:
@@ -380,9 +362,7 @@ Provide clear, actionable recommendations."""
                 "timestamp": time.time(),
             }
 
-            logger.info(
-                f"Diagnostics completed: {diagnostics_data['summary']['successful_tools']}/{diagnostics_data['summary']['total_tools']} tools successful"
-            )
+            logger.info(f"Diagnostics completed: {diagnostics_data['summary']['successful_tools']}/{diagnostics_data['summary']['total_tools']} tools successful")
             return result
 
         except Exception as e:
@@ -403,66 +383,40 @@ Provide clear, actionable recommendations."""
                 }
 
             # Resource usage key points
-            if (
-                "resource_usage" in tool_results
-                and tool_results["resource_usage"]["success"]
-            ):
+            if "resource_usage" in tool_results and tool_results["resource_usage"]["success"]:
                 res_data = tool_results["resource_usage"]["data"]
                 key_findings["resources"] = {
                     "cpu_usage": res_data.get("cpu", {}).get("usage_percent", 0),
                     "memory_usage": res_data.get("memory", {}).get("usage_percent", 0),
-                    "disk_usage": {
-                        k: v.get("usage_percent", 0)
-                        for k, v in res_data.get("disk", {}).items()
-                    },
+                    "disk_usage": {k: v.get("usage_percent", 0) for k, v in res_data.get("disk", {}).items()},
                 }
 
             # Service status key points
-            if (
-                "service_status" in tool_results
-                and tool_results["service_status"]["success"]
-            ):
+            if "service_status" in tool_results and tool_results["service_status"]["success"]:
                 svc_data = tool_results["service_status"]["data"]
                 services = svc_data.get("services", {})
                 key_findings["services"] = {
-                    "critical_services_down": [
-                        name
-                        for name, info in services.items()
-                        if not info.get("active", False)
-                    ],
+                    "critical_services_down": [name for name, info in services.items() if not info.get("active", False)],
                     "total_services_checked": len(services),
                 }
 
             # KVM diagnostics key points
-            if (
-                "kvm_diagnostics" in tool_results
-                and tool_results["kvm_diagnostics"]["success"]
-            ):
+            if "kvm_diagnostics" in tool_results and tool_results["kvm_diagnostics"]["success"]:
                 kvm_data = tool_results["kvm_diagnostics"]["data"]
                 key_findings["kvm"] = {
-                    "virtualization_support": kvm_data.get("vmx_support", False)
-                    or kvm_data.get("svm_support", False),
+                    "virtualization_support": kvm_data.get("vmx_support", False) or kvm_data.get("svm_support", False),
                     "kvm_module_loaded": kvm_data.get("kvm_module_loaded", False),
                     "libvirt_available": kvm_data.get("libvirt_available", False),
                     "vm_count": kvm_data.get("vm_count", 0),
                 }
 
             # Network diagnostics key points
-            if (
-                "network_diagnostics" in tool_results
-                and tool_results["network_diagnostics"]["success"]
-            ):
+            if "network_diagnostics" in tool_results and tool_results["network_diagnostics"]["success"]:
                 net_data = tool_results["network_diagnostics"]["data"]
                 connectivity = net_data.get("connectivity", {})
                 key_findings["network"] = {
-                    "connectivity_issues": [
-                        target
-                        for target, info in connectivity.items()
-                        if not info.get("reachable", False)
-                    ],
-                    "dns_working": net_data.get("dns_resolution", {}).get(
-                        "working", False
-                    ),
+                    "connectivity_issues": [target for target, info in connectivity.items() if not info.get("reachable", False)],
+                    "dns_working": net_data.get("dns_resolution", {}).get("working", False),
                 }
 
         except Exception as e:
@@ -489,9 +443,7 @@ Provide clear, actionable recommendations."""
         return {
             "current_model": "granite-4.0-micro",
             "model_path": str(self.model_path) if self.model_path else None,
-            "model_size": self.model_path.stat().st_size
-            if self.model_path and self.model_path.exists()
-            else 0,
+            "model_size": self.model_path.stat().st_size if self.model_path and self.model_path.exists() else 0,
             "status": "loaded" if self.is_initialized else "not_loaded",
         }
 

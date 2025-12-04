@@ -46,9 +46,7 @@ class TestLogAnalysisPlugin:
         self._create_sample_log_file()
 
         # Mock execution context
-        self.context = ExecutionContext(
-            inventory="localhost", environment="development", config={}, variables={}
-        )
+        self.context = ExecutionContext(inventory="localhost", environment="development", config={}, variables={})
 
     def teardown_method(self):
         """Cleanup test environment"""
@@ -316,9 +314,7 @@ class TestLogAnalysisPlugin:
 
         assert summary["total_files_analyzed"] == 2
         assert summary["total_errors"] == 3  # 2 + 1
-        assert (
-            summary["critical_issues"] == 2
-        )  # Both have critical virtualization issue
+        assert summary["critical_issues"] == 2  # Both have critical virtualization issue
         assert summary["high_priority_issues"] == 1  # One kcli issue
 
         # Check pattern frequency
@@ -365,9 +361,7 @@ class TestLogAnalysisPlugin:
             },
             "error_analysis": {
                 "patterns_identified": 1,
-                "pattern_details": [
-                    {"pattern_id": "virtualization_disabled", "severity": "critical"}
-                ],
+                "pattern_details": [{"pattern_id": "virtualization_disabled", "severity": "critical"}],
             },
             "recommendations": [{"error_pattern_id": "virtualization_disabled"}],
         }
@@ -430,9 +424,7 @@ class TestLogAnalysisPlugin:
     def test_cleanup_failure(self):
         """Test cleanup with permission errors"""
         # Mock permission error
-        with mock.patch(
-            "pathlib.Path.unlink", side_effect=PermissionError("Permission denied")
-        ):
+        with mock.patch("pathlib.Path.unlink", side_effect=PermissionError("Permission denied")):
             # Create a report file
             report_file = Path(self.temp_report_dir) / "analysis_test.json"
             report_file.write_text('{"test": "data"}')

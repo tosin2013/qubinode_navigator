@@ -152,7 +152,7 @@ validate_environment = BashOperator(
     # Check FreeIPA for DNS
     echo "Checking FreeIPA..."
     FREEIPA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
-        "kcli info vm freeipa 2>/dev/null | grep 'ip:' | awk '{print \$2}' | head -1")
+        "kcli info vm freeipa 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     if [ -n "$FREEIPA_IP" ]; then
         echo "[OK] FreeIPA available at $FREEIPA_IP"
@@ -269,7 +269,7 @@ wait_for_vm = BashOperator(
 
         # Get VM IP
         IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
-            "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \$2}' | head -1")
+            "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
         if [ -n "$IP" ] && [ "$IP" != "None" ]; then
             echo "VM IP: $IP"
@@ -307,7 +307,7 @@ configure_step_ca = BashOperator(
 
     # Get VM IP
     IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
-        "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \$2}' | head -1")
+        "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     if [ -z "$IP" ]; then
         echo "[ERROR] Could not get Step-CA VM IP"
@@ -326,7 +326,7 @@ configure_step_ca = BashOperator(
 
     # Get FreeIPA DNS IP
     FREEIPA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
-        "kcli info vm freeipa 2>/dev/null | grep 'ip:' | awk '{print \$2}' | head -1")
+        "kcli info vm freeipa 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
     if [ -z "$FREEIPA_IP" ]; then
         FREEIPA_IP="8.8.8.8"
     fi
@@ -368,7 +368,7 @@ register_ca = BashOperator(
 
     # Get VM IP
     IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
-        "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \$2}' | head -1")
+        "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     echo "Step-CA IP: $IP"
 
@@ -419,7 +419,7 @@ validate_deployment = BashOperator(
 
     # Get VM info
     IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
-        "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \$2}' | head -1")
+        "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     echo "Step-CA VM: $VM_NAME"
     echo "IP Address: $IP"
@@ -502,7 +502,7 @@ check_status = BashOperator(
 
     # Get IP and check health
     IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
-        "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \$2}' | head -1")
+        "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     if [ -n "$IP" ]; then
         echo ""

@@ -17,9 +17,7 @@ logger = logging.getLogger(__name__)
 
 # AI Assistant API configuration
 # Using container name for communication within the same Podman network
-AI_ASSISTANT_URL = (
-    "http://qubinode-ai-assistant:8080"  # Container name on airflow_default network
-)
+AI_ASSISTANT_URL = "http://qubinode-ai-assistant:8080"  # Container name on airflow_default network
 
 # Safe commands that can be executed (read-only operations)
 SAFE_COMMANDS = {
@@ -51,9 +49,7 @@ def execute_safe_command(command_parts):
     # Security check: only allow whitelisted commands
     allowed = False
     for cmd_category, allowed_cmds in SAFE_COMMANDS.items():
-        if base_cmd in allowed_cmds or any(
-            base_cmd.startswith(ac) for ac in allowed_cmds
-        ):
+        if base_cmd in allowed_cmds or any(base_cmd.startswith(ac) for ac in allowed_cmds):
             allowed = True
             break
 
@@ -785,9 +781,7 @@ with DAG(..., schedule=[my_dataset]) as consumer_dag:
                 ],
                 "note": "Not yet implemented in Qubinode operators, but can be added for data-driven workflows",
             }
-            context[
-                "user_intent"
-            ] = "User is accessing AI Assistant from Airflow UI for help with workflow orchestration, VM provisioning, or troubleshooting"
+            context["user_intent"] = "User is accessing AI Assistant from Airflow UI for help with workflow orchestration, VM provisioning, or troubleshooting"
 
             # Connect to AI Assistant on the same Podman network
             # AI Assistant can take 30-60 seconds to respond due to LLM processing
@@ -802,9 +796,7 @@ with DAG(..., schedule=[my_dataset]) as consumer_dag:
 
             return jsonify(
                 {
-                    "response": ai_response.get(
-                        "response", "I'm not sure how to help with that."
-                    ),
+                    "response": ai_response.get("response", "I'm not sure how to help with that."),
                     "status": "success",
                 }
             )
@@ -843,6 +835,4 @@ class AIAssistantChatPlugin(AirflowPlugin):
 
     name = "ai_assistant_chat"
     flask_blueprints = [ai_chat_blueprint]
-    appbuilder_views = [
-        {"name": "AI Assistant", "category": "Qubinode", "view": AIAssistantChatView()}
-    ]
+    appbuilder_views = [{"name": "AI Assistant", "category": "Qubinode", "view": AIAssistantChatView()}]

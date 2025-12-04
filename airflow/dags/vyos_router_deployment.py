@@ -55,9 +55,7 @@ dag = DAG(
 )
 
 # Environment setup
-KCLI_PIPELINES_DIR = Variable.get(
-    "KCLI_PIPELINES_DIR", default_var="/opt/kcli-pipelines"
-)
+KCLI_PIPELINES_DIR = Variable.get("KCLI_PIPELINES_DIR", default_var="/opt/kcli-pipelines")
 DEMO_VIRT_DIR = Variable.get("DEMO_VIRT_DIR", default_var="/opt/demo-virt")
 
 
@@ -709,14 +707,7 @@ destroy_vyos = BashOperator(
 decide_action_task >> validate_environment
 validate_environment >> create_networks >> download_vyos >> create_vyos_vm
 # wait_for_install polls until VyOS is installed (user completes manual steps)
-(
-    create_vyos_vm
-    >> wait_for_install
-    >> wait_for_boot
-    >> configure_vyos
-    >> add_host_routes
-    >> validate_deployment
-)
+(create_vyos_vm >> wait_for_install >> wait_for_boot >> configure_vyos >> add_host_routes >> validate_deployment)
 
 decide_action_task >> destroy_vyos
 

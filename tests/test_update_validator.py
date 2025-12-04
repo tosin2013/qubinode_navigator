@@ -5,12 +5,14 @@ Tests the automated update validation infrastructure including
 containerized testing, test execution, and result evaluation.
 """
 
-import pytest
-import unittest.mock as mock
-import tempfile
-from pathlib import Path
-from datetime import datetime
+import subprocess
 import sys
+import tempfile
+import unittest.mock as mock
+from datetime import datetime
+from pathlib import Path
+
+import pytest
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
@@ -215,9 +217,7 @@ class TestUpdateValidator:
         assert result is True
 
         # Should fail without version in output
-        result = self.validator._evaluate_test_result(
-            test, "command output without key words", ""
-        )
+        result = self.validator._evaluate_test_result(test, "command output without key words", "")
         assert result is False
 
     def test_evaluate_test_result_hello_world(self):
@@ -268,9 +268,7 @@ class TestUpdateValidator:
     async def test_execute_validation_test_success(self, mock_run):
         """Test successful validation test execution"""
         # Mock successful subprocess call
-        mock_run.return_value = mock.MagicMock(
-            returncode=0, stdout="test output", stderr=""
-        )
+        mock_run.return_value = mock.MagicMock(returncode=0, stdout="test output", stderr="")
 
         test = ValidationTest(
             test_id="test_success",
@@ -295,9 +293,7 @@ class TestUpdateValidator:
     async def test_execute_validation_test_failure(self, mock_run):
         """Test failed validation test execution"""
         # Mock failed subprocess call
-        mock_run.return_value = mock.MagicMock(
-            returncode=1, stdout="", stderr="command failed"
-        )
+        mock_run.return_value = mock.MagicMock(returncode=1, stdout="", stderr="command failed")
 
         test = ValidationTest(
             test_id="test_failure",
@@ -437,9 +433,7 @@ class TestUpdateValidator:
     async def test_create_test_environment_failure(self, mock_run):
         """Test failed test environment creation"""
         # Mock failed container creation
-        mock_run.return_value = mock.MagicMock(
-            returncode=1, stderr="container creation failed"
-        )
+        mock_run.return_value = mock.MagicMock(returncode=1, stderr="container creation failed")
 
         suite = ValidationSuite(
             suite_id="test_suite",

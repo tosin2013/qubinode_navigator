@@ -29,9 +29,7 @@ class ReportingSystem:
         self.logger = logging.getLogger(__name__)
 
         # Configuration
-        self.reports_storage_path = Path(
-            self.config.get("reports_storage_path", "data/reports")
-        )
+        self.reports_storage_path = Path(self.config.get("reports_storage_path", "data/reports"))
         self.dashboard_enabled = self.config.get("dashboard_enabled", True)
         self.auto_generate_reports = self.config.get("auto_generate_reports", True)
 
@@ -87,9 +85,7 @@ class ReportingSystem:
             },
         }
 
-    def generate_dashboard(
-        self, time_range: TimeRange = TimeRange.LAST_7D
-    ) -> Dict[str, Any]:
+    def generate_dashboard(self, time_range: TimeRange = TimeRange.LAST_7D) -> Dict[str, Any]:
         """Generate comprehensive dashboard data"""
 
         self.logger.info(f"Generating dashboard for {time_range.value}")
@@ -140,19 +136,13 @@ class ReportingSystem:
                 "value": success_metrics["success_rate"],
                 "unit": "%",
                 "trend": self._get_trend_indicator(summary_report, "success_rate"),
-                "status": self._get_status_color(
-                    success_metrics["success_rate"], 95, 85
-                ),
+                "status": self._get_status_color(success_metrics["success_rate"], 95, 85),
             },
             "average_deployment_time": {
                 "value": performance_metrics["average_deployment_time"],
                 "unit": "minutes",
-                "trend": self._get_trend_indicator(
-                    summary_report, "deployment_duration"
-                ),
-                "status": self._get_status_color(
-                    performance_metrics["average_deployment_time"], 30, 60, reverse=True
-                ),
+                "trend": self._get_trend_indicator(summary_report, "deployment_duration"),
+                "status": self._get_status_color(performance_metrics["average_deployment_time"], 30, 60, reverse=True),
             },
             "total_deployments": {
                 "value": success_metrics["total_deployments"],
@@ -164,9 +154,7 @@ class ReportingSystem:
                 "value": success_metrics["rollback_rate"],
                 "unit": "%",
                 "trend": self._get_trend_indicator(summary_report, "rollback_rate"),
-                "status": self._get_status_color(
-                    success_metrics["rollback_rate"], 2, 5, reverse=True
-                ),
+                "status": self._get_status_color(success_metrics["rollback_rate"], 2, 5, reverse=True),
             },
             "active_alerts": {
                 "value": summary_report["alert_statistics"]["active_alerts"],
@@ -187,9 +175,7 @@ class ReportingSystem:
             },
         }
 
-    def _get_trend_indicator(
-        self, summary_report: Dict[str, Any], metric_name: str
-    ) -> str:
+    def _get_trend_indicator(self, summary_report: Dict[str, Any], metric_name: str) -> str:
         """Get trend indicator for a metric"""
         trends = summary_report.get("trends", {})
 
@@ -231,18 +217,14 @@ class ReportingSystem:
             else:
                 return "danger"
 
-    def _generate_chart_data(
-        self, summary_report: Dict[str, Any], detailed_report: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _generate_chart_data(self, summary_report: Dict[str, Any], detailed_report: Dict[str, Any]) -> Dict[str, Any]:
         """Generate data for charts and visualizations"""
 
         charts = {
             "success_rate_trend": {
                 "type": "line",
                 "title": "Success Rate Trend",
-                "data": self._format_trend_data(
-                    summary_report["trends"]["success_rate"]
-                ),
+                "data": self._format_trend_data(summary_report["trends"]["success_rate"]),
                 "options": {
                     "yAxis": {"min": 0, "max": 100, "unit": "%"},
                     "colors": ["#28a745"],
@@ -251,9 +233,7 @@ class ReportingSystem:
             "deployment_duration_trend": {
                 "type": "line",
                 "title": "Deployment Duration Trend",
-                "data": self._format_trend_data(
-                    summary_report["trends"]["deployment_duration"]
-                ),
+                "data": self._format_trend_data(summary_report["trends"]["deployment_duration"]),
                 "options": {
                     "yAxis": {"min": 0, "unit": "minutes"},
                     "colors": ["#007bff"],
@@ -265,23 +245,17 @@ class ReportingSystem:
                 "data": [
                     {
                         "label": "Successful",
-                        "value": summary_report["success_metrics"][
-                            "successful_deployments"
-                        ],
+                        "value": summary_report["success_metrics"]["successful_deployments"],
                         "color": "#28a745",
                     },
                     {
                         "label": "Failed",
-                        "value": summary_report["success_metrics"][
-                            "failed_deployments"
-                        ],
+                        "value": summary_report["success_metrics"]["failed_deployments"],
                         "color": "#dc3545",
                     },
                     {
                         "label": "Rolled Back",
-                        "value": summary_report["success_metrics"][
-                            "rolled_back_deployments"
-                        ],
+                        "value": summary_report["success_metrics"]["rolled_back_deployments"],
                         "color": "#ffc107",
                     },
                 ],
@@ -289,9 +263,7 @@ class ReportingSystem:
             "strategy_performance": {
                 "type": "bar",
                 "title": "Performance by Strategy",
-                "data": self._format_strategy_data(
-                    detailed_report.get("strategy_breakdown", {})
-                ),
+                "data": self._format_strategy_data(detailed_report.get("strategy_breakdown", {})),
                 "options": {
                     "yAxis": {"min": 0, "max": 100, "unit": "%"},
                     "colors": ["#007bff", "#28a745", "#ffc107", "#dc3545"],
@@ -300,9 +272,7 @@ class ReportingSystem:
             "daily_deployments": {
                 "type": "bar",
                 "title": "Daily Deployment Volume",
-                "data": self._format_daily_data(
-                    detailed_report.get("daily_statistics", {})
-                ),
+                "data": self._format_daily_data(detailed_report.get("daily_statistics", {})),
                 "options": {
                     "yAxis": {"min": 0, "unit": "deployments"},
                     "colors": ["#6c757d"],
@@ -318,33 +288,21 @@ class ReportingSystem:
 
         return [
             {
-                "x": point[0].strftime("%Y-%m-%d %H:%M")
-                if isinstance(point[0], datetime)
-                else str(point[0]),
+                "x": point[0].strftime("%Y-%m-%d %H:%M") if isinstance(point[0], datetime) else str(point[0]),
                 "y": point[1],
             }
             for point in time_series
         ]
 
-    def _format_strategy_data(
-        self, strategy_breakdown: Dict[str, Any]
-    ) -> List[Dict[str, Any]]:
+    def _format_strategy_data(self, strategy_breakdown: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Format strategy performance data"""
-        return [
-            {"label": strategy.replace("_", " ").title(), "value": data["success_rate"]}
-            for strategy, data in strategy_breakdown.items()
-        ]
+        return [{"label": strategy.replace("_", " ").title(), "value": data["success_rate"]} for strategy, data in strategy_breakdown.items()]
 
     def _format_daily_data(self, daily_stats: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Format daily statistics data"""
-        return [
-            {"x": date, "y": stats["total"]}
-            for date, stats in sorted(daily_stats.items())
-        ]
+        return [{"x": date, "y": stats["total"]} for date, stats in sorted(daily_stats.items())]
 
-    def _create_overview_section(
-        self, summary_report: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _create_overview_section(self, summary_report: Dict[str, Any]) -> Dict[str, Any]:
         """Create overview section"""
         success_metrics = summary_report["success_metrics"]
 
@@ -361,9 +319,7 @@ class ReportingSystem:
             },
         }
 
-    def _create_performance_section(
-        self, summary_report: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _create_performance_section(self, summary_report: Dict[str, Any]) -> Dict[str, Any]:
         """Create performance section"""
         performance_metrics = summary_report["performance_metrics"]
 
@@ -417,9 +373,7 @@ class ReportingSystem:
             "severity_breakdown": alert_stats.get("severity_breakdown", {}),
         }
 
-    def _create_recommendations_section(
-        self, summary_report: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _create_recommendations_section(self, summary_report: Dict[str, Any]) -> Dict[str, Any]:
         """Create recommendations section"""
         insights = summary_report.get("key_insights", [])
 
@@ -437,10 +391,7 @@ class ReportingSystem:
     def _save_dashboard(self, dashboard: Dict[str, Any]):
         """Save dashboard to storage"""
         try:
-            dashboard_file = (
-                self.reports_storage_path
-                / f"dashboard_{dashboard['dashboard_id']}.json"
-            )
+            dashboard_file = self.reports_storage_path / f"dashboard_{dashboard['dashboard_id']}.json"
 
             with open(dashboard_file, "w") as f:
                 json.dump(dashboard, f, indent=2, default=str)
@@ -512,9 +463,7 @@ class ReportingSystem:
             "top_insights": data.get("key_insights", [])[:3],  # Top 3 insights
         }
 
-    def _get_overall_status(
-        self, success_metrics: Dict[str, Any], performance_metrics: Dict[str, Any]
-    ) -> str:
+    def _get_overall_status(self, success_metrics: Dict[str, Any], performance_metrics: Dict[str, Any]) -> str:
         """Determine overall system status"""
         success_rate = success_metrics["success_rate"]
         avg_duration = performance_metrics["average_deployment_time"]
@@ -531,9 +480,7 @@ class ReportingSystem:
     def _save_report(self, report: Dict[str, Any]):
         """Save report to storage"""
         try:
-            report_file = (
-                self.reports_storage_path / f"report_{report['report_id']}.json"
-            )
+            report_file = self.reports_storage_path / f"report_{report['report_id']}.json"
 
             with open(report_file, "w") as f:
                 json.dump(report, f, indent=2, default=str)
@@ -548,9 +495,7 @@ class ReportingSystem:
         reports = []
 
         try:
-            for report_file in sorted(
-                self.reports_storage_path.glob("report_*.json"), reverse=True
-            )[:limit]:
+            for report_file in sorted(self.reports_storage_path.glob("report_*.json"), reverse=True)[:limit]:
                 with open(report_file, "r") as f:
                     report_data = json.load(f)
 

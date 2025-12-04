@@ -46,18 +46,12 @@ class CentOSStream10Plugin(QubiNodePlugin):
 
     def _initialize_plugin(self) -> None:
         """Initialize CentOS Stream 10 plugin"""
-        self.logger.info(
-            "Initializing CentOS Stream 10 plugin - Next-Generation Infrastructure Pioneer"
-        )
-        self.logger.info(
-            "🚀 NATIVE DEVELOPMENT ADVANTAGE: Running on actual target system!"
-        )
+        self.logger.info("Initializing CentOS Stream 10 plugin - Next-Generation Infrastructure Pioneer")
+        self.logger.info("🚀 NATIVE DEVELOPMENT ADVANTAGE: Running on actual target system!")
 
         # Validate we're running on CentOS Stream 10
         if not self._is_centos_stream10():
-            raise RuntimeError(
-                "CentOS Stream 10 plugin can only run on CentOS Stream 10 systems"
-            )
+            raise RuntimeError("CentOS Stream 10 plugin can only run on CentOS Stream 10 systems")
 
         # Validate x86_64-v3 microarchitecture (strict for production readiness)
         self._validate_x86_64_v3_microarchitecture()
@@ -66,13 +60,9 @@ class CentOSStream10Plugin(QubiNodePlugin):
         self._validate_python312_compatibility()
 
         # Set configuration constants for next-generation deployment
-        self.kvm_version = self.config.get(
-            "kvm_version", "latest"
-        )  # Always use latest version
+        self.kvm_version = self.config.get("kvm_version", "latest")  # Always use latest version
         self.ansible_safe_version = self.config.get("ansible_safe_version", "0.1.0")
-        self.git_repo = self.config.get(
-            "git_repo", "https://github.com/Qubinode/qubinode_navigator.git"
-        )
+        self.git_repo = self.config.get("git_repo", "https://github.com/Qubinode/qubinode_navigator.git")
 
         # Set packages optimized for CentOS Stream 10 / RHEL 10
         self.packages = self.config.get(
@@ -121,9 +111,7 @@ class CentOSStream10Plugin(QubiNodePlugin):
         try:
             with open("/etc/os-release", "r") as f:
                 content = f.read()
-                return ('ID="centos"' in content and 'VERSION_ID="10"' in content) or (
-                    "CentOS Stream release 10" in content
-                )
+                return ('ID="centos"' in content and 'VERSION_ID="10"' in content) or ("CentOS Stream release 10" in content)
         except FileNotFoundError:
             return False
 
@@ -154,35 +142,23 @@ class CentOSStream10Plugin(QubiNodePlugin):
                     missing_flags.append(flag)
 
             if missing_flags:
-                self.logger.warning(
-                    f"⚠️  Missing x86_64-v3 CPU flags: {', '.join(missing_flags)}"
-                )
-                self.logger.warning(
-                    "⚠️  System may not meet RHEL 10 hardware requirements"
-                )
+                self.logger.warning(f"⚠️  Missing x86_64-v3 CPU flags: {', '.join(missing_flags)}")
+                self.logger.warning("⚠️  System may not meet RHEL 10 hardware requirements")
                 # Don't fail in development mode, but log the issue
                 if self.config.get("strict_hardware_validation", False):
-                    raise RuntimeError(
-                        f"x86_64-v3 validation failed: missing {missing_flags}"
-                    )
+                    raise RuntimeError(f"x86_64-v3 validation failed: missing {missing_flags}")
             else:
-                self.logger.info(
-                    "✅ x86_64-v3 microarchitecture requirements satisfied"
-                )
+                self.logger.info("✅ x86_64-v3 microarchitecture requirements satisfied")
 
             # Additional architecture validation
             arch = platform.machine()
             if arch != "x86_64":
-                raise RuntimeError(
-                    f"Unsupported architecture: {arch}. RHEL 10 requires x86_64."
-                )
+                raise RuntimeError(f"Unsupported architecture: {arch}. RHEL 10 requires x86_64.")
 
             self.logger.info(f"✅ Architecture validation passed: {arch}")
 
         except FileNotFoundError:
-            self.logger.error(
-                "❌ Cannot read /proc/cpuinfo for architecture validation"
-            )
+            self.logger.error("❌ Cannot read /proc/cpuinfo for architecture validation")
             raise RuntimeError("CPU information not available for validation")
 
     def _validate_python312_compatibility(self) -> None:
@@ -192,27 +168,19 @@ class CentOSStream10Plugin(QubiNodePlugin):
         try:
             # Check current Python version
             python_version = sys.version_info
-            self.logger.info(
-                f"🎯 Native Python version: {python_version.major}.{python_version.minor}.{python_version.micro}"
-            )
+            self.logger.info(f"🎯 Native Python version: {python_version.major}.{python_version.minor}.{python_version.micro}")
 
             # Check if Python 3.12 is available
             try:
-                result = subprocess.run(
-                    ["python3.12", "--version"], capture_output=True, text=True
-                )
+                result = subprocess.run(["python3.12", "--version"], capture_output=True, text=True)
                 if result.returncode == 0:
                     version_str = result.stdout.strip()
                     self.logger.info(f"✅ Python 3.12 available: {version_str}")
                 else:
-                    self.logger.warning(
-                        "⚠️  Python 3.12 not available, checking alternatives..."
-                    )
+                    self.logger.warning("⚠️  Python 3.12 not available, checking alternatives...")
                     self._check_python_alternatives()
             except FileNotFoundError:
-                self.logger.warning(
-                    "⚠️  python3.12 command not found, checking alternatives..."
-                )
+                self.logger.warning("⚠️  python3.12 command not found, checking alternatives...")
                 self._check_python_alternatives()
 
             # Test Python 3.12 features that are important for RHEL 10
@@ -229,9 +197,7 @@ class CentOSStream10Plugin(QubiNodePlugin):
 
         for alt in alternatives:
             try:
-                result = subprocess.run(
-                    [alt, "--version"], capture_output=True, text=True
-                )
+                result = subprocess.run([alt, "--version"], capture_output=True, text=True)
                 if result.returncode == 0:
                     version_str = result.stdout.strip()
                     self.logger.info(f"📍 Found {alt}: {version_str}")
@@ -251,9 +217,7 @@ version = f"{sys.version_info.major}.{sys.version_info.minor}"
 print(f"Python version: {version}")
 """
 
-            result = subprocess.run(
-                [sys.executable, "-c", test_code], capture_output=True, text=True
-            )
+            result = subprocess.run([sys.executable, "-c", test_code], capture_output=True, text=True)
 
             if result.returncode == 0:
                 self.logger.info("✅ Python feature compatibility test passed")
@@ -269,18 +233,12 @@ print(f"Python version: {version}")
 
         try:
             # Check if dnf module commands are available (they shouldn't be in Stream 10)
-            result = subprocess.run(
-                ["dnf", "module", "list"], capture_output=True, text=True
-            )
+            result = subprocess.run(["dnf", "module", "list"], capture_output=True, text=True)
 
             if "No such command: module" in result.stderr or result.returncode != 0:
-                self.logger.info(
-                    "✅ DNF modularity removed as expected in CentOS Stream 10"
-                )
+                self.logger.info("✅ DNF modularity removed as expected in CentOS Stream 10")
             else:
-                self.logger.warning(
-                    "⚠️  DNF modularity still present - may be older system"
-                )
+                self.logger.warning("⚠️  DNF modularity still present - may be older system")
 
             # Test modern package management
             self._test_modern_package_management()
@@ -294,17 +252,13 @@ print(f"Python version: {version}")
 
         try:
             # Test basic dnf functionality
-            result = subprocess.run(
-                ["dnf", "--version"], capture_output=True, text=True
-            )
+            result = subprocess.run(["dnf", "--version"], capture_output=True, text=True)
             if result.returncode == 0:
                 dnf_version = result.stdout.strip().split("\n")[0]
                 self.logger.info(f"✅ DNF version: {dnf_version}")
 
             # Test package search (non-destructive)
-            result = subprocess.run(
-                ["dnf", "search", "python3"], capture_output=True, text=True
-            )
+            result = subprocess.run(["dnf", "search", "python3"], capture_output=True, text=True)
             if result.returncode == 0:
                 self.logger.info("✅ Package search functionality working")
             else:
@@ -339,18 +293,12 @@ print(f"Python version: {version}")
 
             if flags_line:
                 cpu_flags = flags_line.lower().split()
-                missing_flags = [
-                    flag for flag in required_flags if flag not in cpu_flags
-                ]
+                missing_flags = [flag for flag in required_flags if flag not in cpu_flags]
 
                 if missing_flags:
                     self.logger.warning(f"Missing x86_64-v3 CPU flags: {missing_flags}")
-                    self.logger.warning(
-                        "This system may not be fully compatible with production RHEL 10"
-                    )
-                    self.logger.info(
-                        "Continuing in compatibility mode for development/testing"
-                    )
+                    self.logger.warning("This system may not be fully compatible with production RHEL 10")
+                    self.logger.info("Continuing in compatibility mode for development/testing")
                 else:
                     self.logger.info("x86_64-v3 microarchitecture validation passed")
 
@@ -425,9 +373,7 @@ print(f"Python version: {version}")
 
             if missing_packages:
                 self._install_packages_no_modularity(list(missing_packages))
-                changes_made.append(
-                    f"Installed packages: {', '.join(missing_packages)}"
-                )
+                changes_made.append(f"Installed packages: {', '.join(missing_packages)}")
 
             # Configure firewall
             if not current_state.get("firewalld_enabled"):
@@ -439,9 +385,7 @@ print(f"Python version: {version}")
                 changes_made.append("Started firewalld service")
 
             # Create lab user if needed
-            if desired_state.get("lab_user_exists") and not current_state.get(
-                "lab_user_exists"
-            ):
+            if desired_state.get("lab_user_exists") and not current_state.get("lab_user_exists"):
                 self._create_lab_user()
                 changes_made.append("Created lab-user")
 
@@ -476,9 +420,7 @@ print(f"Python version: {version}")
     def _get_python_version(self) -> Tuple[int, int]:
         """Get Python version tuple"""
         try:
-            result = subprocess.run(
-                ["python3", "--version"], capture_output=True, text=True, check=True
-            )
+            result = subprocess.run(["python3", "--version"], capture_output=True, text=True, check=True)
             version_str = result.stdout.strip().split()[1]
             parts = version_str.split(".")
             return (int(parts[0]), int(parts[1]))
@@ -520,9 +462,7 @@ print(f"Python version: {version}")
     def _is_service_enabled(self, service: str) -> bool:
         """Check if service is enabled"""
         try:
-            result = subprocess.run(
-                ["systemctl", "is-enabled", service], capture_output=True, text=True
-            )
+            result = subprocess.run(["systemctl", "is-enabled", service], capture_output=True, text=True)
             return result.returncode == 0
         except subprocess.CalledProcessError:
             return False
@@ -530,9 +470,7 @@ print(f"Python version: {version}")
     def _is_service_active(self, service: str) -> bool:
         """Check if service is active"""
         try:
-            result = subprocess.run(
-                ["systemctl", "is-active", service], capture_output=True, text=True
-            )
+            result = subprocess.run(["systemctl", "is-active", service], capture_output=True, text=True)
             return result.stdout.strip() == "active"
         except subprocess.CalledProcessError:
             return False
@@ -556,9 +494,7 @@ print(f"Python version: {version}")
     def _create_lab_user(self) -> None:
         """Create lab-user with sudo privileges"""
         # Create user
-        subprocess.run(
-            ["sudo", "useradd", "-m", "-s", "/bin/bash", "lab-user"], check=True
-        )
+        subprocess.run(["sudo", "useradd", "-m", "-s", "/bin/bash", "lab-user"], check=True)
 
         # Add to sudo group
         subprocess.run(["sudo", "usermod", "-aG", "wheel", "lab-user"], check=True)

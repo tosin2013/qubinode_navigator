@@ -67,17 +67,13 @@ class AiderClient:
         self.auto_commit = auto_commit
         self._aider_available: Optional[bool] = None
 
-        logger.info(
-            f"AiderClient initialized: model={self.model}, dir={self.working_dir}"
-        )
+        logger.info(f"AiderClient initialized: model={self.model}, dir={self.working_dir}")
 
     def is_available(self) -> bool:
         """Check if Aider is available."""
         if self._aider_available is None:
             try:
-                result = subprocess.run(
-                    ["aider", "--version"], capture_output=True, timeout=5
-                )
+                result = subprocess.run(["aider", "--version"], capture_output=True, timeout=5)
                 self._aider_available = result.returncode == 0
                 if self._aider_available:
                     logger.info(f"Aider version: {result.stdout.decode().strip()}")
@@ -180,9 +176,7 @@ class AiderClient:
             except Exception:
                 pass
 
-    async def create_file(
-        self, instruction: str, file_path: str, context: Optional[str] = None
-    ) -> Dict[str, Any]:
+    async def create_file(self, instruction: str, file_path: str, context: Optional[str] = None) -> Dict[str, Any]:
         """
         Use Aider to create a new file.
 
@@ -195,11 +189,7 @@ class AiderClient:
             Dictionary with success status and output
         """
         # Ensure parent directory exists
-        full_path = (
-            file_path
-            if os.path.isabs(file_path)
-            else os.path.join(self.working_dir, file_path)
-        )
+        full_path = file_path if os.path.isabs(file_path) else os.path.join(self.working_dir, file_path)
         parent_dir = os.path.dirname(full_path)
         os.makedirs(parent_dir, exist_ok=True)
 
@@ -214,9 +204,7 @@ class AiderClient:
 
         return result
 
-    async def add_to_file(
-        self, file_path: str, content: str, position: str = "end"
-    ) -> Dict[str, Any]:
+    async def add_to_file(self, file_path: str, content: str, position: str = "end") -> Dict[str, Any]:
         """
         Add content to an existing file.
 
@@ -260,17 +248,11 @@ class AiderClient:
             "add_tests": f"Add unit tests for '{target}'",
         }
 
-        instruction = refactor_instructions.get(
-            refactor_type, f"Perform {refactor_type} refactoring on '{target}'"
-        )
+        instruction = refactor_instructions.get(refactor_type, f"Perform {refactor_type} refactoring on '{target}'")
 
-        return await self.modify_files(
-            instruction=instruction, files=files, context=context
-        )
+        return await self.modify_files(instruction=instruction, files=files, context=context)
 
-    async def fix_error(
-        self, file_path: str, error_message: str, error_context: Optional[str] = None
-    ) -> Dict[str, Any]:
+    async def fix_error(self, file_path: str, error_message: str, error_context: Optional[str] = None) -> Dict[str, Any]:
         """
         Use Aider to fix an error in code.
 
@@ -313,9 +295,7 @@ Error: {error_message}
         file_path = f"dags/{dag_name}.py"
 
         # Build task descriptions
-        task_desc = "\n".join(
-            [f"- {t.get('name', 'task')}: {t.get('description', '')}" for t in tasks]
-        )
+        task_desc = "\n".join([f"- {t.get('name', 'task')}: {t.get('description', '')}" for t in tasks])
 
         instruction = f"""Create an Airflow DAG named '{dag_name}' that:
 
@@ -417,9 +397,7 @@ class AiderBatchProcessor:
 
             except Exception as e:
                 failure_count += 1
-                self.results.append(
-                    {"operation": op, "result": {"success": False, "error": str(e)}}
-                )
+                self.results.append({"operation": op, "result": {"success": False, "error": str(e)}})
 
         return {
             "total": len(operations),

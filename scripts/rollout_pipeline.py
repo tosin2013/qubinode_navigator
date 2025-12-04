@@ -58,9 +58,7 @@ def print_pipeline_status(pipeline):
 
     print(f"\n{status_icon} Pipeline: {pipeline.pipeline_name}")
     print(f"   ID: {pipeline.pipeline_id}")
-    print(
-        f"   {strategy_icon} Strategy: {pipeline.strategy.value.replace('_', ' ').title()}"
-    )
+    print(f"   {strategy_icon} Strategy: {pipeline.strategy.value.replace('_', ' ').title()}")
     print(f"   Status: {pipeline.status.value.replace('_', ' ').title()}")
     print(f"   Created: {pipeline.created_at.strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"   Created by: {pipeline.created_by}")
@@ -153,17 +151,14 @@ async def create_command(args):
         # Get update plan (simplified - would normally come from AI analysis)
         if args.plan_file:
             with open(args.plan_file, "r") as f:
-                plan_data = json.load(f)
+                json.load(f)
             # Would deserialize UpdatePlan here
             print(f"📋 Loaded update plan from {args.plan_file}")
         else:
             # Create a sample plan for demonstration
             print("📋 Creating sample update plan...")
             update_result = await ai_manager.update_detector.run_full_update_check()
-            updates = [
-                UpdateInfo(**update_dict)
-                for update_dict in update_result.get("updates", [])[: args.max_updates]
-            ]
+            updates = [UpdateInfo(**update_dict) for update_dict in update_result.get("updates", [])[: args.max_updates]]
 
             if not updates:
                 print("✅ No updates available for pipeline creation")
@@ -177,9 +172,7 @@ async def create_command(args):
                 total_size=sum(getattr(u, "update_size", None) or 100 for u in updates),
                 estimated_duration=f"{len(updates) * 5} minutes",
                 risk_level="medium",
-                requires_reboot=any(
-                    getattr(u, "requires_reboot", False) for u in updates
-                ),
+                requires_reboot=any(getattr(u, "requires_reboot", False) for u in updates),
                 rollback_plan="Standard package rollback",
                 created_at=datetime.now(),
             )
@@ -390,9 +383,7 @@ Examples:
         help="Rollout strategy (default: rolling)",
     )
     create_parser.add_argument("--name", help="Pipeline name")
-    create_parser.add_argument(
-        "--created-by", default="cli-user", help="Pipeline creator (default: cli-user)"
-    )
+    create_parser.add_argument("--created-by", default="cli-user", help="Pipeline creator (default: cli-user)")
     create_parser.add_argument("--plan-file", help="JSON file containing update plan")
     create_parser.add_argument(
         "--max-updates",
@@ -428,12 +419,8 @@ Examples:
         ],
         help="Filter by pipeline status",
     )
-    list_parser.add_argument(
-        "--include-completed", action="store_true", help="Include completed pipelines"
-    )
-    list_parser.add_argument(
-        "--limit", type=int, default=10, help="Maximum pipelines to show (default: 10)"
-    )
+    list_parser.add_argument("--include-completed", action="store_true", help="Include completed pipelines")
+    list_parser.add_argument("--limit", type=int, default=10, help="Maximum pipelines to show (default: 10)")
 
     # Status command
     status_parser = subparsers.add_parser("status", help="Show pipeline status")
@@ -448,9 +435,7 @@ Examples:
     # Execute command
     execute_parser = subparsers.add_parser("execute", help="Execute rollout pipeline")
     execute_parser.add_argument("pipeline_id", help="Pipeline ID to execute")
-    execute_parser.add_argument(
-        "--force", action="store_true", help="Skip confirmation prompt"
-    )
+    execute_parser.add_argument("--force", action="store_true", help="Skip confirmation prompt")
 
     # Approve command
     approve_parser = subparsers.add_parser("approve", help="Process approval request")

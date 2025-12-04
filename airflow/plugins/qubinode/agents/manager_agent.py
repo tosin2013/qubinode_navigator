@@ -222,14 +222,10 @@ class ManagerAgent:
             provider_check = await self._check_provider(task, rag_context)
 
             # Step 4: Compute confidence score (Policy 1)
-            confidence = await self._compute_confidence(
-                task, rag_context, provider_check
-            )
+            confidence = await self._compute_confidence(task, rag_context, provider_check)
 
             # Step 5: Apply policies and determine action
-            return await self._apply_policies(
-                task, session, rag_context, provider_check, confidence, context
-            )
+            return await self._apply_policies(task, session, rag_context, provider_check, confidence, context)
 
         except Exception as e:
             logger.error(f"Task processing failed: {e}")
@@ -242,9 +238,7 @@ class ManagerAgent:
                 error=str(e),
             )
 
-    async def _handle_override(
-        self, task: str, override: str, session: SessionContext
-    ) -> TaskResult:
+    async def _handle_override(self, task: str, override: str, session: SessionContext) -> TaskResult:
         """
         Handle override from Calling LLM (Policy 4).
 
@@ -313,9 +307,7 @@ class ManagerAgent:
             )
 
             # Query for similar past errors/solutions
-            troubleshooting = await rag.search_similar_errors(
-                error_description=task, only_successful=True, limit=3
-            )
+            troubleshooting = await rag.search_similar_errors(error_description=task, only_successful=True, limit=3)
 
             # Record the query
             session.rag_queries.append(
@@ -330,18 +322,14 @@ class ManagerAgent:
             return {
                 "documents": docs,
                 "troubleshooting": troubleshooting,
-                "max_similarity": max(
-                    [d.get("similarity", 0) for d in docs], default=0
-                ),
+                "max_similarity": max([d.get("similarity", 0) for d in docs], default=0),
             }
 
         except Exception as e:
             logger.warning(f"RAG query failed: {e}")
             return {"documents": [], "troubleshooting": [], "error": str(e)}
 
-    async def _check_provider(
-        self, task: str, rag_context: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    async def _check_provider(self, task: str, rag_context: Dict[str, Any]) -> Dict[str, Any]:
         """
         Check if an Airflow provider exists for the task (Policy 2).
 
@@ -394,9 +382,7 @@ class ManagerAgent:
                 "system": detected_system,
             }
 
-    async def _compute_confidence(
-        self, task: str, rag_context: Dict[str, Any], provider_check: Dict[str, Any]
-    ) -> float:
+    async def _compute_confidence(self, task: str, rag_context: Dict[str, Any], provider_check: Dict[str, Any]) -> float:
         """
         Compute confidence score for the task (Policy 1).
 
@@ -456,21 +442,15 @@ class ManagerAgent:
 
         # Policy 2: Provider-First
         if provider_check.get("provider_exists"):
-            return await self._execute_with_provider(
-                task, session, provider_check, rag_context, confidence
-            )
+            return await self._execute_with_provider(task, session, provider_check, rag_context, confidence)
 
         # Policy 3: Missing Provider → Plan
         if provider_check.get("system") and not provider_check.get("provider_exists"):
-            return await self._generate_plan(
-                task, session, provider_check, rag_context, confidence
-            )
+            return await self._generate_plan(task, session, provider_check, rag_context, confidence)
 
         # Medium confidence → Execute with Developer Agent
         if confidence >= self.CONFIDENCE_MEDIUM:
-            return await self._delegate_to_developer(
-                task, session, rag_context, confidence
-            )
+            return await self._delegate_to_developer(task, session, rag_context, confidence)
 
         # Between LOW and MEDIUM → Request approval
         return await self._request_approval(task, session, confidence, rag_context)
@@ -512,9 +492,7 @@ class ManagerAgent:
             },
         )
 
-    def _build_escalation_message(
-        self, task: str, confidence: float, rag_context: Dict[str, Any], reason: str
-    ) -> str:
+    def _build_escalation_message(self, task: str, confidence: float, rag_context: Dict[str, Any], reason: str) -> str:
         """Build a helpful escalation message."""
         msg = f"""## Escalation Required
 
@@ -547,16 +525,10 @@ You can provide an override instruction to proceed anyway.
         """Generate suggestions for the Calling LLM."""
         suggestions = []
         if not rag_context.get("documents"):
-            suggestions.append(
-                "Ingest relevant documentation into RAG using ingest_to_rag()"
-            )
+            suggestions.append("Ingest relevant documentation into RAG using ingest_to_rag()")
         if not rag_context.get("troubleshooting"):
-            suggestions.append(
-                "Check if there are similar tasks in troubleshooting history"
-            )
-        suggestions.append(
-            "Provide an override instruction if you want to proceed anyway"
-        )
+            suggestions.append("Check if there are similar tasks in troubleshooting history")
+        suggestions.append("Provide an override instruction if you want to proceed anyway")
         return suggestions
 
     async def _execute_with_provider(
@@ -640,9 +612,7 @@ You can provide an override instruction to proceed anyway.
             },
         )
 
-    async def _generate_implementation_plan(
-        self, task: str, system: str, rag_context: Dict[str, Any]
-    ) -> str:
+    async def _generate_implementation_plan(self, task: str, system: str, rag_context: Dict[str, Any]) -> str:
         """Generate detailed implementation plan using LLM."""
         router = self._get_llm_router()
         if not router:
@@ -731,9 +701,7 @@ No official Airflow provider exists for {system}. A custom implementation is req
 
         developer = self._get_developer_agent()
         if developer:
-            result = await developer.execute_task(
-                task=task, rag_context=rag_context, session_id=session.session_id
-            )
+            result = await developer.execute_task(task=task, rag_context=rag_context, session_id=session.session_id)
             session.add_task_completion(task, result.get("output", ""), confidence)
             return TaskResult(
                 success=result.get("success", False),

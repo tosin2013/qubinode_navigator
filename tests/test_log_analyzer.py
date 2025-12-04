@@ -29,9 +29,7 @@ class TestLogAnalyzer:
         self.analyzer = LogAnalyzer(ai_assistant_url="http://test:8080")
 
         # Create temporary log file
-        self.temp_log = tempfile.NamedTemporaryFile(
-            mode="w+", delete=False, suffix=".log"
-        )
+        self.temp_log = tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".log")
 
         # Sample log entries
         self.sample_logs = [
@@ -158,9 +156,7 @@ class TestLogAnalyzer:
         entries = self.analyzer.parse_log_file(self.temp_log.name)
         session = self.analyzer.analyze_deployment_session(entries)
         error_patterns = self.analyzer.identify_error_patterns(session)
-        recommendations = self.analyzer.generate_resolution_recommendations(
-            session, error_patterns
-        )
+        recommendations = self.analyzer.generate_resolution_recommendations(session, error_patterns)
 
         assert len(recommendations) > 0
 
@@ -177,9 +173,7 @@ class TestLogAnalyzer:
 
         # Check resolution types
         resolution_types = [r.resolution_type for r in recommendations]
-        assert all(
-            rt in ["automated", "manual", "escalation"] for rt in resolution_types
-        )
+        assert all(rt in ["automated", "manual", "escalation"] for rt in resolution_types)
 
     @mock.patch("requests.post")
     def test_ai_analysis_integration(self, mock_post):
@@ -187,9 +181,7 @@ class TestLogAnalyzer:
         # Mock AI response
         mock_response = mock.MagicMock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "text": "Hardware virtualization is disabled. Enable VT-x in BIOS settings."
-        }
+        mock_response.json.return_value = {"text": "Hardware virtualization is disabled. Enable VT-x in BIOS settings."}
         mock_post.return_value = mock_response
 
         entries = self.analyzer.parse_log_file(self.temp_log.name)
@@ -199,9 +191,7 @@ class TestLogAnalyzer:
         # Test AI analysis (async function, so we need to run it)
         import asyncio
 
-        ai_analysis = asyncio.run(
-            self.analyzer.generate_ai_analysis(session, error_patterns)
-        )
+        ai_analysis = asyncio.run(self.analyzer.generate_ai_analysis(session, error_patterns))
 
         assert "Hardware virtualization" in ai_analysis
         mock_post.assert_called_once()
@@ -227,13 +217,9 @@ class TestLogAnalyzer:
         entries = self.analyzer.parse_log_file(self.temp_log.name)
         session = self.analyzer.analyze_deployment_session(entries)
         error_patterns = self.analyzer.identify_error_patterns(session)
-        recommendations = self.analyzer.generate_resolution_recommendations(
-            session, error_patterns
-        )
+        recommendations = self.analyzer.generate_resolution_recommendations(session, error_patterns)
 
-        report = self.analyzer.generate_analysis_report(
-            session, error_patterns, recommendations, "AI analysis text"
-        )
+        report = self.analyzer.generate_analysis_report(session, error_patterns, recommendations, "AI analysis text")
 
         # Check report structure
         assert "analysis_timestamp" in report
@@ -259,9 +245,7 @@ class TestLogAnalyzer:
     def test_severity_weighting(self):
         """Test severity weighting for recommendations"""
         # Test severity weights
-        assert (
-            self.analyzer._severity_weight("virtualization_disabled") == 4
-        )  # critical
+        assert self.analyzer._severity_weight("virtualization_disabled") == 4  # critical
         assert self.analyzer._severity_weight("kcli_install_failure") == 3  # high
         assert self.analyzer._severity_weight("firewall_service_down") == 2  # medium
         assert self.analyzer._severity_weight("nonexistent_pattern") == 0
@@ -301,15 +285,11 @@ class TestLogAnalyzer:
 
     def test_malformed_log_handling(self):
         """Test handling of malformed log entries"""
-        malformed_log = tempfile.NamedTemporaryFile(
-            mode="w+", delete=False, suffix=".log"
-        )
+        malformed_log = tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".log")
 
         # Write malformed JSON and valid entries
         malformed_log.write("invalid json line\n")
-        malformed_log.write(
-            '{"timestamp": "2025-11-08T10:00:00", "event_type": "test", "data": {}}\n'
-        )
+        malformed_log.write('{"timestamp": "2025-11-08T10:00:00", "event_type": "test", "data": {}}\n')
         malformed_log.write("another invalid line\n")
         malformed_log.close()
 
@@ -364,9 +344,7 @@ class TestLogAnalyzer:
         entries = self.analyzer.parse_log_file(self.temp_log.name)
         session = self.analyzer.analyze_deployment_session(entries)
         error_patterns = self.analyzer.identify_error_patterns(session)
-        recommendations = self.analyzer.generate_resolution_recommendations(
-            session, error_patterns
-        )
+        recommendations = self.analyzer.generate_resolution_recommendations(session, error_patterns)
 
         next_steps = self.analyzer._generate_next_steps(recommendations)
 
@@ -380,17 +358,12 @@ class TestLogAnalyzer:
         session = self.analyzer.analyze_deployment_session(entries)
         error_patterns = self.analyzer.identify_error_patterns(session)
 
-        prevention_measures = self.analyzer._generate_prevention_measures(
-            error_patterns
-        )
+        prevention_measures = self.analyzer._generate_prevention_measures(error_patterns)
 
         assert len(prevention_measures) > 0
         assert any("validation" in measure.lower() for measure in prevention_measures)
         # Check for either 'monitoring' or 'maintenance' since both are valid prevention measures
-        assert any(
-            "monitoring" in measure.lower() or "maintenance" in measure.lower()
-            for measure in prevention_measures
-        )
+        assert any("monitoring" in measure.lower() or "maintenance" in measure.lower() for measure in prevention_measures)
 
 
 class TestLogAnalyzerIntegration:

@@ -217,9 +217,7 @@ class ConfigManager:
                     parsed_value = value
 
                 self.set(key_path, parsed_value)
-                self.logger.debug(
-                    f"Applied environment override: {key_path} = {parsed_value}"
-                )
+                self.logger.debug(f"Applied environment override: {key_path} = {parsed_value}")
 
     def validate_config(self) -> List[str]:
         """
@@ -251,7 +249,6 @@ class ConfigManager:
             "loaded": self._loaded,
             "enabled_plugins": self.get_enabled_plugins(),
             "global_config_keys": list(self.get_global_config().keys()),
-            "plugin_count": len(self._config.get("plugins", {}))
-            - 1,  # Exclude 'enabled' key
+            "plugin_count": len(self._config.get("plugins", {})) - 1,  # Exclude 'enabled' key
             "validation_errors": self.validate_config(),
         }

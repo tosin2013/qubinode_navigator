@@ -559,9 +559,7 @@ def verify_rag_health(**context):
     ti = context["ti"]
     adr_result = ti.xcom_pull(key="adr_result", task_ids="ingest_adrs") or {}
     dag_result = ti.xcom_pull(key="dag_result", task_ids="ingest_dag_examples") or {}
-    provider_result = (
-        ti.xcom_pull(key="provider_result", task_ids="ingest_provider_docs") or {}
-    )
+    provider_result = ti.xcom_pull(key="provider_result", task_ids="ingest_provider_docs") or {}
     guides_result = ti.xcom_pull(key="guides_result", task_ids="ingest_guides") or {}
 
     health_report = {
@@ -571,9 +569,7 @@ def verify_rag_health(**context):
         "test_query": {
             "query": test_query,
             "results_count": len(test_results),
-            "top_similarity": test_results[0].get("similarity", 0)
-            if test_results
-            else 0,
+            "top_similarity": test_results[0].get("similarity", 0) if test_results else 0,
         },
         "ingestion_summary": {
             "adrs": adr_result.get("ingested", 0),

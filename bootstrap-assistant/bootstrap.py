@@ -102,7 +102,7 @@ class EnvironmentDetector:
                         if line.startswith("PRETTY_NAME="):
                             return line.split("=")[1].strip().strip('"')
             return platform.platform()
-        except:
+        except Exception:
             return platform.platform()
 
     def _check_virtualization_support(self) -> bool:
@@ -115,7 +115,7 @@ class EnvironmentDetector:
                 text=True,
             )
             return result.returncode == 0
-        except:
+        except Exception:
             return False
 
     def _detect_container_runtime(self) -> Optional[str]:
@@ -124,9 +124,7 @@ class EnvironmentDetector:
 
         for runtime in runtimes:
             try:
-                result = subprocess.run(
-                    [runtime, "--version"], capture_output=True, text=True
-                )
+                result = subprocess.run([runtime, "--version"], capture_output=True, text=True)
                 if result.returncode == 0:
                     return runtime
             except FileNotFoundError:
@@ -197,24 +195,18 @@ class LocalAI:
         # Check minimum requirements
         if env.total_memory_gb < 8:
             compatible = False
-            issues.append(
-                f"Insufficient memory: {env.total_memory_gb:.1f}GB (minimum 8GB required)"
-            )
+            issues.append(f"Insufficient memory: {env.total_memory_gb:.1f}GB (minimum 8GB required)")
 
         if env.cpu_cores < 2:
             compatible = False
-            issues.append(
-                f"Insufficient CPU cores: {env.cpu_cores} (minimum 2 required)"
-            )
+            issues.append(f"Insufficient CPU cores: {env.cpu_cores} (minimum 2 required)")
 
         if not env.virtualization_support:
             compatible = False
             issues.append("Virtualization support not detected (VT-x/AMD-V required)")
 
         if env.disk_space_gb < 50:
-            issues.append(
-                f"Low disk space: {env.disk_space_gb:.1f}GB (50GB+ recommended)"
-            )
+            issues.append(f"Low disk space: {env.disk_space_gb:.1f}GB (50GB+ recommended)")
 
         return {
             "compatible": compatible,
@@ -229,28 +221,20 @@ class LocalAI:
 
         # Memory recommendations
         if env.total_memory_gb < 16:
-            recommendations.append(
-                "Consider upgrading RAM to 16GB+ for better VM performance"
-            )
+            recommendations.append("Consider upgrading RAM to 16GB+ for better VM performance")
         elif env.total_memory_gb >= 32:
-            recommendations.append(
-                f"Excellent! {env.total_memory_gb:.1f}GB RAM allows for multiple VMs"
-            )
+            recommendations.append(f"Excellent! {env.total_memory_gb:.1f}GB RAM allows for multiple VMs")
 
         # Container runtime
         if not env.container_runtime:
             recommendations.append("Install Podman or Docker for container support")
         else:
-            recommendations.append(
-                f"Great! {env.container_runtime} detected for container orchestration"
-            )
+            recommendations.append(f"Great! {env.container_runtime} detected for container orchestration")
 
         # OS-specific recommendations
-        os_lower = env.os_name.lower()
+        env.os_name.lower()
         if "red hat" in env.os_version.lower() or "rhel" in env.os_version.lower():
-            recommendations.append(
-                "RHEL detected - ensure subscription is active for package updates"
-            )
+            recommendations.append("RHEL detected - ensure subscription is active for package updates")
         elif "centos" in env.os_version.lower():
             if "stream" in env.os_version.lower():
                 recommendations.append("CentOS Stream detected - using latest packages")
@@ -345,12 +329,7 @@ class LocalAI:
 
         if "ubuntu" in os_lower or "debian" in os_lower:
             return "sudo apt update && sudo apt upgrade -y"
-        elif (
-            "rhel" in os_lower
-            or "red hat" in os_lower
-            or "centos" in os_lower
-            or "fedora" in os_lower
-        ):
+        elif "rhel" in os_lower or "red hat" in os_lower or "centos" in os_lower or "fedora" in os_lower:
             return "sudo dnf update -y"
         else:
             return "# Please update your system packages manually"
@@ -361,12 +340,7 @@ class LocalAI:
 
         if "ubuntu" in os_lower or "debian" in os_lower:
             return "sudo apt install -y qemu-kvm libvirt-daemon-system virt-manager bridge-utils"
-        elif (
-            "rhel" in os_lower
-            or "red hat" in os_lower
-            or "centos" in os_lower
-            or "fedora" in os_lower
-        ):
+        elif "rhel" in os_lower or "red hat" in os_lower or "centos" in os_lower or "fedora" in os_lower:
             return "sudo dnf install -y qemu-kvm libvirt virt-manager virt-install bridge-utils"
         else:
             return "# Please install virtualization packages for your distribution"
@@ -380,14 +354,10 @@ class LocalAI:
             warnings.append("Low available memory - close unnecessary applications")
 
         if len(env.network_interfaces) < 2:
-            warnings.append(
-                "Only one network interface detected - consider adding bridge interface"
-            )
+            warnings.append("Only one network interface detected - consider adding bridge interface")
 
         if not env.container_runtime:
-            warnings.append(
-                "No container runtime detected - some features may be limited"
-            )
+            warnings.append("No container runtime detected - some features may be limited")
 
         return warnings
 
@@ -492,9 +462,7 @@ class BootstrapAssistant:
             # Validation
             if step.validation:
                 print(f"🔍 Validating: {step.validation}")
-                validation_success = await self._execute_command(
-                    step.validation, show_output=False
-                )
+                validation_success = await self._execute_command(step.validation, show_output=False)
                 if validation_success:
                     print("✅ Validation passed")
                 else:
@@ -507,9 +475,7 @@ class BootstrapAssistant:
             if show_output:
                 print(f"🔧 Executing: {command}")
 
-            process = await asyncio.create_subprocess_shell(
-                command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
-            )
+            process = await asyncio.create_subprocess_shell(command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
 
             stdout, stderr = await process.communicate()
 

@@ -32,7 +32,6 @@ try:
     from rich.spinner import Spinner
     from rich.text import Text
     from rich.theme import Theme
-    from rich.style import Style
     from prompt_toolkit import PromptSession
     from prompt_toolkit.history import FileHistory
     from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
@@ -73,9 +72,7 @@ class ConversationHistory:
         self.messages: list[dict] = []
 
     def add(self, role: str, content: str):
-        self.messages.append(
-            {"role": role, "content": content, "timestamp": datetime.now().isoformat()}
-        )
+        self.messages.append({"role": role, "content": content, "timestamp": datetime.now().isoformat()})
         # Keep only recent messages
         if len(self.messages) > self.max_turns * 2:
             self.messages = self.messages[-self.max_turns * 2 :]
@@ -117,9 +114,7 @@ class QuibinodeChatClient:
     def __init__(self, base_url: str = DEFAULT_AI_URL):
         self.base_url = base_url.rstrip("/")
         self.session = requests.Session()
-        self.session.headers.update(
-            {"Content-Type": "application/json", "Accept": "application/json"}
-        )
+        self.session.headers.update({"Content-Type": "application/json", "Accept": "application/json"})
 
     def check_health(self) -> tuple[bool, str]:
         """Check if AI Assistant is available."""
@@ -135,9 +130,7 @@ class QuibinodeChatClient:
         except Exception as e:
             return False, f"Error: {str(e)}"
 
-    def chat(
-        self, message: str, context: str = "", stream: bool = True
-    ) -> Generator[str, None, None]:
+    def chat(self, message: str, context: str = "", stream: bool = True) -> Generator[str, None, None]:
         """
         Send a chat message and yield response chunks.
 
@@ -151,9 +144,7 @@ class QuibinodeChatClient:
         try:
             # Try streaming first
             if stream:
-                response = self.session.post(
-                    f"{self.base_url}/chat", json=payload, stream=True, timeout=90
-                )
+                response = self.session.post(f"{self.base_url}/chat", json=payload, stream=True, timeout=90)
 
                 if response.status_code == 200:
                     # Check if response is actually streaming
@@ -178,11 +169,7 @@ class QuibinodeChatClient:
                         # Non-streaming JSON response
                         try:
                             result = response.json()
-                            text = (
-                                result.get("text")
-                                or result.get("response")
-                                or result.get("message", "")
-                            )
+                            text = result.get("text") or result.get("response") or result.get("message", "")
                             yield text
                         except json.JSONDecodeError:
                             yield response.text
@@ -190,18 +177,12 @@ class QuibinodeChatClient:
                     yield f"Error: HTTP {response.status_code}"
             else:
                 # Non-streaming request
-                response = self.session.post(
-                    f"{self.base_url}/chat", json=payload, timeout=90
-                )
+                response = self.session.post(f"{self.base_url}/chat", json=payload, timeout=90)
 
                 if response.status_code == 200:
                     try:
                         result = response.json()
-                        yield (
-                            result.get("text")
-                            or result.get("response")
-                            or result.get("message", "")
-                        )
+                        yield (result.get("text") or result.get("response") or result.get("message", ""))
                     except json.JSONDecodeError:
                         yield response.text
                 else:
@@ -303,11 +284,7 @@ class QuibinodeChat:
         console.print("\n[bold]Recent Conversation:[/bold]\n")
         for msg in self.history.messages[-10:]:
             role = msg["role"]
-            content = (
-                msg["content"][:100] + "..."
-                if len(msg["content"]) > 100
-                else msg["content"]
-            )
+            content = msg["content"][:100] + "..." if len(msg["content"]) > 100 else msg["content"]
 
             if role == "user":
                 console.print(f"[user]You:[/user] {content}")
@@ -317,9 +294,7 @@ class QuibinodeChat:
 
     def cmd_status(self, _=None):
         """Check AI Assistant status."""
-        with console.status(
-            "[bold cyan]Checking AI Assistant status...", spinner="dots"
-        ):
+        with console.status("[bold cyan]Checking AI Assistant status...", spinner="dots"):
             healthy, message = self.client.check_health()
 
         if healthy:
@@ -364,9 +339,7 @@ class QuibinodeChat:
                 self.commands[cmd](user_input)
                 return True
             else:
-                console.print(
-                    f"[warning]Unknown command: {cmd}. Type /help for available commands.[/warning]"
-                )
+                console.print(f"[warning]Unknown command: {cmd}. Type /help for available commands.[/warning]")
                 return True
 
         # Regular chat message
@@ -401,7 +374,6 @@ class QuibinodeChat:
                     )
                 )
 
-                first_chunk = True
                 for chunk in self.client.chat(message, context, stream=True):
                     response_text += chunk
 
@@ -424,8 +396,6 @@ class QuibinodeChat:
                                 border_style="magenta",
                             )
                         )
-
-                    first_chunk = False
 
         except KeyboardInterrupt:
             console.print("\n[warning]Response cancelled.[/warning]")
@@ -460,9 +430,7 @@ class QuibinodeChat:
 
         while True:
             try:
-                user_input = session.prompt(
-                    [("class:prompt", "You: ")], style=self.prompt_style
-                )
+                user_input = session.prompt([("class:prompt", "You: ")], style=self.prompt_style)
 
                 if not self.process_input(user_input):
                     break
@@ -511,9 +479,7 @@ Examples:
         help=f"AI Assistant URL (default: {DEFAULT_AI_URL})",
     )
 
-    parser.add_argument(
-        "--no-stream", action="store_true", help="Disable streaming responses"
-    )
+    parser.add_argument("--no-stream", action="store_true", help="Disable streaming responses")
 
     args = parser.parse_args()
 

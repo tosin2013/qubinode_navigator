@@ -33,12 +33,8 @@ class TestAIAssistantIntegration:
         try:
             # Clean up any existing container
             print("Cleaning up existing containers...")
-            subprocess.run(
-                ["docker", "stop", cls.container_name], check=False, capture_output=True
-            )
-            subprocess.run(
-                ["docker", "rm", cls.container_name], check=False, capture_output=True
-            )
+            subprocess.run(["docker", "stop", cls.container_name], check=False, capture_output=True)
+            subprocess.run(["docker", "rm", cls.container_name], check=False, capture_output=True)
 
             # Verify image exists
             print(f"Verifying image exists: {cls.image_name}")
@@ -93,9 +89,7 @@ class TestAIAssistantIntegration:
                 cls.image_name,
             ]
 
-            result = subprocess.run(
-                start_cmd, check=True, capture_output=True, text=True
-            )
+            result = subprocess.run(start_cmd, check=True, capture_output=True, text=True)
             container_id = result.stdout.strip()
             print(f"✅ Container started with ID: {container_id}")
 
@@ -135,9 +129,7 @@ class TestAIAssistantIntegration:
                         print(f"Health response: {health_data}")
                         return
                     elif response.status_code == 503:
-                        print(
-                            f"Service starting up (503), attempt {i+1}/{max_attempts}"
-                        )
+                        print(f"Service starting up (503), attempt {i+1}/{max_attempts}")
                     else:
                         print(f"Health check returned status {response.status_code}")
 
@@ -186,9 +178,7 @@ class TestAIAssistantIntegration:
             print("Container status:")
             print(status_result.stdout)
 
-            raise Exception(
-                f"Container failed to start within {max_attempts*5} seconds ({max_attempts*5//60} minutes)"
-            )
+            raise Exception(f"Container failed to start within {max_attempts*5} seconds ({max_attempts*5//60} minutes)")
 
         except subprocess.CalledProcessError as e:
             print(f"Failed to start container: {e}")
@@ -198,9 +188,7 @@ class TestAIAssistantIntegration:
         except Exception as e:
             print(f"Failed to start container: {e}")
             # Try to get logs if container exists
-            subprocess.run(
-                ["docker", "logs", "--tail", "50", cls.container_name], check=False
-            )
+            subprocess.run(["docker", "logs", "--tail", "50", cls.container_name], check=False)
             raise
 
     @classmethod
@@ -266,23 +254,17 @@ class TestAIAssistantIntegration:
         max_retries = 3
         for attempt in range(max_retries):
             try:
-                response = requests.get(
-                    f"{self.base_url}/diagnostics/tools", timeout=30
-                )
+                response = requests.get(f"{self.base_url}/diagnostics/tools", timeout=30)
 
                 if response.status_code == 200:
                     data = response.json()
                     # Accept various response formats
                     tools = data.get("available_tools", data.get("tools", []))
                     assert isinstance(tools, list)
-                    print(
-                        f"✅ Diagnostics endpoint test passed: {len(tools)} tools available"
-                    )
+                    print(f"✅ Diagnostics endpoint test passed: {len(tools)} tools available")
                     return
                 elif response.status_code == 503:
-                    print(
-                        f"Diagnostics endpoint not ready (503), attempt {attempt + 1}"
-                    )
+                    print(f"Diagnostics endpoint not ready (503), attempt {attempt + 1}")
                     if attempt < max_retries - 1:
                         time.sleep(15)
                         continue
@@ -308,9 +290,7 @@ class TestAIAssistantIntegration:
         }
 
         plugin = AIAssistantPlugin(config)
-        context = ExecutionContext(
-            inventory="localhost", environment="test", config={"test": True}
-        )
+        ExecutionContext(inventory="localhost", environment="test", config={"test": True})
 
         # Test plugin health check
         assert plugin.is_healthy(), "Plugin health check failed"

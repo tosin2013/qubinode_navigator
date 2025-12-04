@@ -53,9 +53,7 @@ class MarquezContextService:
         for host in self.DEFAULT_HOSTS:
             test_url = f"http://{host}:5001"
             try:
-                response = await self.client.get(
-                    f"{test_url}/api/v1/namespaces", timeout=3.0
-                )
+                response = await self.client.get(f"{test_url}/api/v1/namespaces", timeout=3.0)
                 if response.status_code == 200:
                     logger.info(f"Discovered Marquez at {test_url}")
                     self._discovered_url = test_url
@@ -139,9 +137,7 @@ class MarquezContextService:
     async def get_job_details(self, job_name: str) -> Optional[Dict[str, Any]]:
         """Get detailed information about a specific job."""
         try:
-            response = await self.client.get(
-                f"{self.marquez_url}/api/v1/namespaces/{self.namespace}/jobs/{job_name}"
-            )
+            response = await self.client.get(f"{self.marquez_url}/api/v1/namespaces/{self.namespace}/jobs/{job_name}")
             if response.status_code != 200:
                 return None
 
@@ -187,9 +183,7 @@ class MarquezContextService:
                 }
 
             # Get namespace info
-            ns_response = await self.client.get(
-                f"{self.marquez_url}/api/v1/namespaces/{self.namespace}"
-            )
+            await self.client.get(f"{self.marquez_url}/api/v1/namespaces/{self.namespace}")
 
             # Get jobs
             jobs_response = await self.client.get(
@@ -290,10 +284,7 @@ class MarquezContextService:
             # Job statistics
             stats = summary.get("job_stats", {})
             context_parts.append(
-                f"DAG Status: {stats.get('total', 0)} total jobs, "
-                f"{stats.get('running', 0)} running, "
-                f"{stats.get('completed', 0)} completed, "
-                f"{stats.get('failed', 0)} failed"
+                f"DAG Status: {stats.get('total', 0)} total jobs, " f"{stats.get('running', 0)} running, " f"{stats.get('completed', 0)} completed, " f"{stats.get('failed', 0)} failed"
             )
 
             # Recent failures (important for troubleshooting)
@@ -314,9 +305,7 @@ class MarquezContextService:
                     if matches:
                         context_parts.append(f"\nRelevant DAGs for '{keyword}':")
                         for m in matches[:3]:
-                            context_parts.append(
-                                f"  - {m['name']}: {m.get('latest_state', 'UNKNOWN')}"
-                            )
+                            context_parts.append(f"  - {m['name']}: {m.get('latest_state', 'UNKNOWN')}")
 
             context_parts.append("=== End Lineage Context ===\n")
 

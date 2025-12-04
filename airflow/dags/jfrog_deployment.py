@@ -203,7 +203,7 @@ check_prerequisites = BashOperator(
         echo "Checking Step-CA server..."
 
         STEP_CA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
-            "kcli info vm $STEP_CA_VM 2>/dev/null | grep 'ip:' | awk '{print \$2}' | head -1")
+            "kcli info vm $STEP_CA_VM 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
         if [ -z "$STEP_CA_IP" ] || [ "$STEP_CA_IP" == "None" ]; then
             echo "[WARN] Step-CA server not found: $STEP_CA_VM"
@@ -275,7 +275,7 @@ validate_environment = BashOperator(
     # Check FreeIPA for DNS
     echo "Checking FreeIPA..."
     FREEIPA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
-        "kcli info vm freeipa 2>/dev/null | grep 'ip:' | awk '{print \$2}' | head -1")
+        "kcli info vm freeipa 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     if [ -n "$FREEIPA_IP" ]; then
         echo "[OK] FreeIPA available at $FREEIPA_IP"
@@ -324,7 +324,7 @@ create_jfrog = BashOperator(
     # Prepare environment variables based on cert mode
     if [ "$CERT_MODE" == "step-ca" ]; then
         STEP_CA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
-            "kcli info vm $STEP_CA_VM 2>/dev/null | grep 'ip:' | awk '{print \$2}' | head -1")
+            "kcli info vm $STEP_CA_VM 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
         if [ -n "$STEP_CA_IP" ] && [ "$STEP_CA_IP" != "None" ]; then
             CA_URL="https://${STEP_CA_IP}:443"
@@ -392,7 +392,7 @@ wait_for_jfrog = BashOperator(
 
         # Get VM IP
         IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
-            "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \$2}' | head -1")
+            "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
         if [ -n "$IP" ] && [ "$IP" != "None" ]; then
             echo "VM IP: $IP"
@@ -429,7 +429,7 @@ validate_jfrog_health = BashOperator(
 
     # Get VM IP
     IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
-        "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \$2}' | head -1")
+        "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     if [ -z "$IP" ]; then
         echo "[ERROR] Could not get VM IP"
@@ -486,7 +486,7 @@ deployment_complete = BashOperator(
 
     # Get VM info
     IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
-        "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \$2}' | head -1")
+        "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     echo ""
     echo "JFrog Artifactory Details:"
@@ -526,7 +526,7 @@ health_check = BashOperator(
 
     # Get VM IP
     IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
-        "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \$2}' | head -1")
+        "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     if [ -z "$IP" ]; then
         echo "[ERROR] VM $VM_NAME not found or has no IP"
@@ -606,7 +606,7 @@ check_status = BashOperator(
 
     # Get IP and check health
     IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
-        "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \$2}' | head -1")
+        "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     if [ -n "$IP" ]; then
         echo ""

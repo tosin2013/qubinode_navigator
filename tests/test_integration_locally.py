@@ -14,9 +14,7 @@ import sys
 def run_command(cmd, check=True, capture_output=True, text=True):
     """Run command with error handling"""
     try:
-        result = subprocess.run(
-            cmd, check=check, capture_output=capture_output, text=text
-        )
+        result = subprocess.run(cmd, check=check, capture_output=capture_output, text=text)
         return result
     except subprocess.CalledProcessError as e:
         print(f"Command failed: {' '.join(cmd)}")
@@ -101,9 +99,7 @@ def test_container_integration():
             if i == max_attempts - 1:
                 print("❌ Container failed to become ready")
                 print("Container logs:")
-                run_command(
-                    ["docker", "logs", "--tail", "50", container_name], check=False
-                )
+                run_command(["docker", "logs", "--tail", "50", container_name], check=False)
                 return False
 
         # Test endpoints
@@ -135,9 +131,7 @@ def test_container_integration():
 
         # Test chat endpoint (may not work in test mode)
         try:
-            response = requests.post(
-                "http://localhost:8080/chat", json={"message": "test"}, timeout=30
-            )
+            response = requests.post("http://localhost:8080/chat", json={"message": "test"}, timeout=30)
             if response.status_code == 200:
                 print("✅ Chat endpoint test passed")
             elif response.status_code == 503:
@@ -149,9 +143,7 @@ def test_container_integration():
 
         # Test diagnostics endpoint
         try:
-            response = requests.get(
-                "http://localhost:8080/diagnostics/tools", timeout=20
-            )
+            response = requests.get("http://localhost:8080/diagnostics/tools", timeout=20)
             if response.status_code == 200:
                 print("✅ Diagnostics endpoint test passed")
                 data = response.json()

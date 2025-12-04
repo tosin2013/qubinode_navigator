@@ -5,11 +5,13 @@ Tests the AI integration with update management including analysis,
 risk assessment, and automated planning capabilities.
 """
 
-import pytest
-import unittest.mock as mock
-from pathlib import Path
-from datetime import datetime
 import sys
+import unittest.mock as mock
+from datetime import datetime
+from pathlib import Path
+
+import pytest
+import requests
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
@@ -101,9 +103,7 @@ class TestAIUpdateManager:
             """
         }
 
-        analysis = self.ai_manager._parse_ai_analysis(
-            "test_123", self.update_info, ai_response
-        )
+        analysis = self.ai_manager._parse_ai_analysis("test_123", self.update_info, ai_response)
 
         assert analysis.analysis_id == "test_123"
         assert analysis.component_name == "podman"
@@ -116,13 +116,9 @@ class TestAIUpdateManager:
 
     def test_parse_ai_analysis_text_response(self):
         """Test parsing AI response without JSON format"""
-        ai_response = {
-            "text": "This is a critical security update that should be applied immediately. The risk is high due to security vulnerabilities."
-        }
+        ai_response = {"text": "This is a critical security update that should be applied immediately. The risk is high due to security vulnerabilities."}
 
-        analysis = self.ai_manager._parse_ai_analysis(
-            "test_456", self.update_info, ai_response
-        )
+        analysis = self.ai_manager._parse_ai_analysis("test_456", self.update_info, ai_response)
 
         assert analysis.analysis_id == "test_456"
         assert analysis.component_name == "podman"
@@ -138,9 +134,7 @@ class TestAIUpdateManager:
         analysis_data = self.ai_manager._extract_analysis_from_text(text)
 
         assert analysis_data["risk_level"] == "high"
-        assert (
-            analysis_data["recommendation"] == "apply_with_testing"
-        )  # Default recommendation
+        assert analysis_data["recommendation"] == "apply_with_testing"  # Default recommendation
 
     def test_extract_analysis_from_text_minor(self):
         """Test extracting analysis from text with minor keywords"""
@@ -163,9 +157,7 @@ class TestAIUpdateManager:
             security_advisories=["CVE-2025-1234"],
         )
 
-        analysis = self.ai_manager._create_fallback_analysis(
-            "fallback_123", security_update
-        )
+        analysis = self.ai_manager._create_fallback_analysis("fallback_123", security_update)
 
         assert analysis.analysis_id == "fallback_123"
         assert analysis.component_name == "ansible"
@@ -237,9 +229,7 @@ class TestAIUpdateManager:
 
     @mock.patch.object(AIUpdateManager, "_call_ai_assistant")
     @mock.patch.object(AIUpdateManager, "compatibility_manager")
-    async def test_analyze_update_with_ai_success(
-        self, mock_compat_manager, mock_ai_call
-    ):
+    async def test_analyze_update_with_ai_success(self, mock_compat_manager, mock_ai_call):
         """Test successful AI update analysis"""
         # Mock compatibility manager
         mock_compat_manager.validate_compatibility.return_value = (
@@ -275,9 +265,7 @@ class TestAIUpdateManager:
         assert "Standard update" in analysis.reasoning
 
         # Check that analysis is cached
-        cache_key = (
-            f"{self.update_info.component_name}_{self.update_info.available_version}"
-        )
+        cache_key = f"{self.update_info.component_name}_{self.update_info.available_version}"
         assert cache_key in self.ai_manager.analysis_cache
 
     async def test_analyze_update_with_ai_disabled(self):
@@ -427,9 +415,7 @@ class TestAIUpdateManager:
             )
         }
 
-        phases = self.ai_manager._create_execution_phases(
-            batch, analyses, "maintenance_window"
-        )
+        phases = self.ai_manager._create_execution_phases(batch, analyses, "maintenance_window")
 
         assert len(phases) == 3
         assert phases[0]["phase_id"] == "maintenance_preparation"
@@ -481,9 +467,7 @@ class TestAIUpdateManager:
         assert any("rollback" in step.lower() for step in mitigation_steps)
 
         # Check component-specific mitigations
-        assert any(
-            "podman" in step and "high risk" in step for step in mitigation_steps
-        )
+        assert any("podman" in step and "high risk" in step for step in mitigation_steps)
         assert any("compatibility" in step.lower() for step in mitigation_steps)
         assert any("dependencies" in step.lower() for step in mitigation_steps)
 

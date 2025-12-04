@@ -101,18 +101,10 @@ class AnalyticsEngine:
         self.cache_ttl_minutes = self.config.get("cache_ttl_minutes", 15)
 
         # Data sources
-        self.pipeline_storage_path = Path(
-            self.config.get("pipeline_storage_path", "data/pipelines")
-        )
-        self.metrics_storage_path = Path(
-            self.config.get("metrics_storage_path", "data/metrics")
-        )
-        self.alerts_storage_path = Path(
-            self.config.get("alerts_storage_path", "data/alerts")
-        )
-        self.rollback_storage_path = Path(
-            self.config.get("rollback_storage_path", "data/rollbacks")
-        )
+        self.pipeline_storage_path = Path(self.config.get("pipeline_storage_path", "data/pipelines"))
+        self.metrics_storage_path = Path(self.config.get("metrics_storage_path", "data/metrics"))
+        self.alerts_storage_path = Path(self.config.get("alerts_storage_path", "data/alerts"))
+        self.rollback_storage_path = Path(self.config.get("rollback_storage_path", "data/rollbacks"))
 
         # Cache
         self._cache: Dict[str, Any] = {}
@@ -182,9 +174,7 @@ class AnalyticsEngine:
                     pipeline_data = json.load(f)
 
                     # Parse creation date
-                    created_at = datetime.fromisoformat(
-                        pipeline_data["created_at"].replace("T", " ").replace("Z", "")
-                    )
+                    created_at = datetime.fromisoformat(pipeline_data["created_at"].replace("T", " ").replace("Z", ""))
 
                     # Filter by time range
                     if range_start <= created_at <= range_end:
@@ -204,14 +194,8 @@ class AnalyticsEngine:
             "pipeline_name": data["pipeline_name"],
             "strategy": data["strategy"],
             "status": data["status"],
-            "created_at": datetime.fromisoformat(
-                data["created_at"].replace("T", " ").replace("Z", "")
-            ),
-            "completed_at": datetime.fromisoformat(
-                data["completed_at"].replace("T", " ").replace("Z", "")
-            )
-            if data.get("completed_at")
-            else None,
+            "created_at": datetime.fromisoformat(data["created_at"].replace("T", " ").replace("Z", "")),
+            "completed_at": datetime.fromisoformat(data["completed_at"].replace("T", " ").replace("Z", "")) if data.get("completed_at") else None,
             "total_duration": data.get("total_duration"),
             "phases": data.get("phases", []),
             "created_by": data.get("created_by"),
@@ -267,9 +251,7 @@ class AnalyticsEngine:
         durations = []
         for pipeline in pipelines:
             if pipeline["completed_at"] and pipeline["created_at"]:
-                duration = (
-                    pipeline["completed_at"] - pipeline["created_at"]
-                ).total_seconds() / 60
+                duration = (pipeline["completed_at"] - pipeline["created_at"]).total_seconds() / 60
                 durations.append(duration)
 
         avg_duration = statistics.mean(durations) if durations else 0
@@ -291,9 +273,7 @@ class AnalyticsEngine:
         self._set_cache(cache_key, result)
         return result
 
-    def calculate_performance_metrics(
-        self, time_range: TimeRange = TimeRange.LAST_30D
-    ) -> PerformanceMetrics:
+    def calculate_performance_metrics(self, time_range: TimeRange = TimeRange.LAST_30D) -> PerformanceMetrics:
         """Calculate deployment performance metrics"""
 
         cache_key = self._get_cache_key("performance", time_range=time_range.value)
@@ -307,9 +287,7 @@ class AnalyticsEngine:
         durations = []
         for pipeline in pipelines:
             if pipeline["completed_at"] and pipeline["created_at"]:
-                duration = (
-                    pipeline["completed_at"] - pipeline["created_at"]
-                ).total_seconds() / 60
+                duration = (pipeline["completed_at"] - pipeline["created_at"]).total_seconds() / 60
                 durations.append(duration)
 
         if not durations:
@@ -365,7 +343,7 @@ class AnalyticsEngine:
     def _get_resource_utilization(self) -> Dict[str, float]:
         """Get average resource utilization"""
         try:
-            metrics_summary = self.monitoring_manager.get_metrics_summary(hours=24)
+            self.monitoring_manager.get_metrics_summary(hours=24)
 
             # This would typically aggregate CPU, memory, disk usage metrics
             # For now, return sample data
@@ -379,14 +357,10 @@ class AnalyticsEngine:
             self.logger.error(f"Failed to get resource utilization: {e}")
             return {}
 
-    def analyze_trends(
-        self, metric_name: str, time_range: TimeRange = TimeRange.LAST_30D
-    ) -> TrendAnalysis:
+    def analyze_trends(self, metric_name: str, time_range: TimeRange = TimeRange.LAST_30D) -> TrendAnalysis:
         """Analyze trends for a specific metric"""
 
-        cache_key = self._get_cache_key(
-            "trends", metric=metric_name, time_range=time_range.value
-        )
+        cache_key = self._get_cache_key("trends", metric=metric_name, time_range=time_range.value)
         cached_result = self._get_cache(cache_key)
         if cached_result:
             return cached_result
@@ -418,11 +392,7 @@ class AnalyticsEngine:
         sum_x2 = sum(x * x for x in x_values)
 
         # Calculate slope and correlation
-        slope = (
-            (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x * sum_x)
-            if (n * sum_x2 - sum_x * sum_x) != 0
-            else 0
-        )
+        slope = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x * sum_x) if (n * sum_x2 - sum_x * sum_x) != 0 else 0
 
         # Determine trend direction
         if abs(slope) < 0.01:
@@ -450,9 +420,7 @@ class AnalyticsEngine:
         self._set_cache(cache_key, result)
         return result
 
-    def _get_metric_time_series(
-        self, metric_name: str, time_range: TimeRange
-    ) -> List[Tuple[datetime, float]]:
+    def _get_metric_time_series(self, metric_name: str, time_range: TimeRange) -> List[Tuple[datetime, float]]:
         """Get time series data for a metric"""
         # This would typically query the monitoring system
         # For now, generate sample time series data
@@ -491,9 +459,7 @@ class AnalyticsEngine:
 
         return time_series
 
-    def generate_summary_report(
-        self, time_range: TimeRange = TimeRange.LAST_30D
-    ) -> Dict[str, Any]:
+    def generate_summary_report(self, time_range: TimeRange = TimeRange.LAST_30D) -> Dict[str, Any]:
         """Generate comprehensive summary report"""
 
         cache_key = self._get_cache_key("summary_report", time_range=time_range.value)
@@ -527,9 +493,7 @@ class AnalyticsEngine:
                 "success_rate": asdict(success_trend),
                 "deployment_duration": asdict(duration_trend),
             },
-            "key_insights": self._generate_key_insights(
-                success_metrics, performance_metrics, alert_stats
-            ),
+            "key_insights": self._generate_key_insights(success_metrics, performance_metrics, alert_stats),
         }
 
         self._set_cache(cache_key, report)
@@ -546,17 +510,11 @@ class AnalyticsEngine:
 
         # Success rate insights
         if success_metrics.success_rate >= 95:
-            insights.append(
-                f"Excellent success rate of {success_metrics.success_rate}% indicates stable deployment process"
-            )
+            insights.append(f"Excellent success rate of {success_metrics.success_rate}% indicates stable deployment process")
         elif success_metrics.success_rate >= 85:
-            insights.append(
-                f"Good success rate of {success_metrics.success_rate}% with room for improvement"
-            )
+            insights.append(f"Good success rate of {success_metrics.success_rate}% with room for improvement")
         else:
-            insights.append(
-                f"Low success rate of {success_metrics.success_rate}% requires immediate attention"
-            )
+            insights.append(f"Low success rate of {success_metrics.success_rate}% requires immediate attention")
 
         # Performance insights
         if performance_metrics.average_deployment_time < 30:
@@ -566,9 +524,7 @@ class AnalyticsEngine:
 
         # Rollback insights
         if success_metrics.rollback_rate > 10:
-            insights.append(
-                f"High rollback rate of {success_metrics.rollback_rate}% suggests stability issues"
-            )
+            insights.append(f"High rollback rate of {success_metrics.rollback_rate}% suggests stability issues")
         elif success_metrics.rollback_rate < 2:
             insights.append("Low rollback rate indicates reliable deployments")
 
@@ -584,9 +540,7 @@ class AnalyticsEngine:
 
         return insights
 
-    def generate_detailed_report(
-        self, time_range: TimeRange = TimeRange.LAST_30D
-    ) -> Dict[str, Any]:
+    def generate_detailed_report(self, time_range: TimeRange = TimeRange.LAST_30D) -> Dict[str, Any]:
         """Generate detailed analytics report"""
 
         pipelines = self._load_pipelines(time_range)
@@ -607,9 +561,7 @@ class AnalyticsEngine:
         # Calculate success rates by strategy
         for strategy, stats in strategy_stats.items():
             if stats["total"] > 0:
-                stats["success_rate"] = round(
-                    (stats["successful"] / stats["total"]) * 100, 2
-                )
+                stats["success_rate"] = round((stats["successful"] / stats["total"]) * 100, 2)
             else:
                 stats["success_rate"] = 0.0
 
@@ -627,16 +579,12 @@ class AnalyticsEngine:
             "daily_statistics": daily_stats,
             "component_analysis": component_stats,
             "failure_analysis": self._analyze_failures(pipelines),
-            "recommendations": self._generate_recommendations(
-                strategy_stats, daily_stats
-            ),
+            "recommendations": self._generate_recommendations(strategy_stats, daily_stats),
         }
 
         return report
 
-    def _calculate_daily_statistics(
-        self, pipelines: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+    def _calculate_daily_statistics(self, pipelines: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Calculate daily deployment statistics"""
         daily_stats = {}
 
@@ -666,29 +614,21 @@ class AnalyticsEngine:
 
             # Add duration if available
             if pipeline["completed_at"] and pipeline["created_at"]:
-                duration = (
-                    pipeline["completed_at"] - pipeline["created_at"]
-                ).total_seconds() / 60
+                duration = (pipeline["completed_at"] - pipeline["created_at"]).total_seconds() / 60
                 stats["total_duration"] += duration
 
         # Calculate success rates
         for date, stats in daily_stats.items():
             if stats["total"] > 0:
-                stats["success_rate"] = round(
-                    (stats["successful"] / stats["total"]) * 100, 2
-                )
-                stats["average_duration"] = round(
-                    stats["total_duration"] / stats["total"], 2
-                )
+                stats["success_rate"] = round((stats["successful"] / stats["total"]) * 100, 2)
+                stats["average_duration"] = round(stats["total_duration"] / stats["total"], 2)
             else:
                 stats["success_rate"] = 0.0
                 stats["average_duration"] = 0.0
 
         return daily_stats
 
-    def _analyze_component_updates(
-        self, pipelines: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+    def _analyze_component_updates(self, pipelines: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Analyze updates by component type"""
         component_stats = {}
 
@@ -717,9 +657,7 @@ class AnalyticsEngine:
         # Calculate success rates
         for component, stats in component_stats.items():
             if stats["total_updates"] > 0:
-                stats["success_rate"] = round(
-                    (stats["successful_updates"] / stats["total_updates"]) * 100, 2
-                )
+                stats["success_rate"] = round((stats["successful_updates"] / stats["total_updates"]) * 100, 2)
 
         return component_stats
 
@@ -729,9 +667,7 @@ class AnalyticsEngine:
 
         failure_analysis = {
             "total_failures": len(failed_pipelines),
-            "failure_rate": round((len(failed_pipelines) / len(pipelines) * 100), 2)
-            if pipelines
-            else 0,
+            "failure_rate": round((len(failed_pipelines) / len(pipelines) * 100), 2) if pipelines else 0,
             "common_failure_patterns": [],
             "failure_by_strategy": {},
             "failure_recovery_time": 0.0,
@@ -746,36 +682,22 @@ class AnalyticsEngine:
 
         return failure_analysis
 
-    def _generate_recommendations(
-        self, strategy_stats: Dict[str, Any], daily_stats: Dict[str, Any]
-    ) -> List[str]:
+    def _generate_recommendations(self, strategy_stats: Dict[str, Any], daily_stats: Dict[str, Any]) -> List[str]:
         """Generate improvement recommendations"""
         recommendations = []
 
         # Strategy recommendations
-        best_strategy = (
-            max(strategy_stats.items(), key=lambda x: x[1]["success_rate"])
-            if strategy_stats
-            else None
-        )
+        best_strategy = max(strategy_stats.items(), key=lambda x: x[1]["success_rate"]) if strategy_stats else None
         if best_strategy and best_strategy[1]["success_rate"] > 90:
-            recommendations.append(
-                f"Consider using {best_strategy[0]} strategy more frequently (success rate: {best_strategy[1]['success_rate']}%)"
-            )
+            recommendations.append(f"Consider using {best_strategy[0]} strategy more frequently (success rate: {best_strategy[1]['success_rate']}%)")
 
         # Timing recommendations
         if daily_stats:
-            avg_daily_deployments = sum(
-                stats["total"] for stats in daily_stats.values()
-            ) / len(daily_stats)
+            avg_daily_deployments = sum(stats["total"] for stats in daily_stats.values()) / len(daily_stats)
             if avg_daily_deployments > 10:
-                recommendations.append(
-                    "High deployment frequency detected - consider batch optimization"
-                )
+                recommendations.append("High deployment frequency detected - consider batch optimization")
             elif avg_daily_deployments < 1:
-                recommendations.append(
-                    "Low deployment frequency - consider automation improvements"
-                )
+                recommendations.append("Low deployment frequency - consider automation improvements")
 
         # General recommendations
         recommendations.extend(

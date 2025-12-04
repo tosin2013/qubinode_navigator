@@ -109,12 +109,8 @@ class MonitoringManager:
         self.logger = logging.getLogger(__name__)
 
         # Configuration
-        self.metrics_storage_path = Path(
-            self.config.get("metrics_storage_path", "data/metrics")
-        )
-        self.alerts_storage_path = Path(
-            self.config.get("alerts_storage_path", "data/alerts")
-        )
+        self.metrics_storage_path = Path(self.config.get("metrics_storage_path", "data/metrics"))
+        self.alerts_storage_path = Path(self.config.get("alerts_storage_path", "data/alerts"))
         self.monitoring_enabled = self.config.get("monitoring_enabled", True)
         self.alert_channels = self.config.get("alert_channels", ["log", "email"])
 
@@ -247,9 +243,7 @@ class MonitoringManager:
                     else:
                         self.alert_history.append(alert)
 
-            self.logger.info(
-                f"Loaded {len(self.active_alerts)} active alerts and {len(self.alert_history)} resolved alerts"
-            )
+            self.logger.info(f"Loaded {len(self.active_alerts)} active alerts and {len(self.alert_history)} resolved alerts")
 
         except Exception as e:
             self.logger.error(f"Failed to load alerts: {e}")
@@ -294,9 +288,7 @@ class MonitoringManager:
             timestamp=datetime.fromisoformat(data["timestamp"]),
             metadata=data["metadata"],
             resolved=data["resolved"],
-            resolved_at=datetime.fromisoformat(data["resolved_at"])
-            if data.get("resolved_at")
-            else None,
+            resolved_at=datetime.fromisoformat(data["resolved_at"]) if data.get("resolved_at") else None,
             resolution_notes=data.get("resolution_notes"),
         )
 
@@ -419,11 +411,7 @@ class MonitoringManager:
 
             # Get recent metrics for this rule
             cutoff_time = datetime.now() - timedelta(seconds=rule.evaluation_window)
-            relevant_metrics = [
-                m
-                for m in self.metrics
-                if m.name == rule.metric_name and m.timestamp > cutoff_time
-            ]
+            relevant_metrics = [m for m in self.metrics if m.name == rule.metric_name and m.timestamp > cutoff_time]
 
             if not relevant_metrics:
                 continue
@@ -432,9 +420,7 @@ class MonitoringManager:
             if await self._evaluate_rule_condition(rule, relevant_metrics):
                 await self._trigger_rule_alert(rule, relevant_metrics)
 
-    async def _evaluate_rule_condition(
-        self, rule: MonitoringRule, metrics: List[Metric]
-    ) -> bool:
+    async def _evaluate_rule_condition(self, rule: MonitoringRule, metrics: List[Metric]) -> bool:
         """Evaluate if rule condition is met"""
         if not metrics:
             return False
@@ -508,9 +494,7 @@ class MonitoringManager:
         if not self.email_recipients:
             return
 
-        subject = (
-            f"[{alert.severity.value.upper()}] Qubinode Navigator Alert: {alert.title}"
-        )
+        subject = f"[{alert.severity.value.upper()}] Qubinode Navigator Alert: {alert.title}"
 
         body = f"""
 Alert Details:
@@ -582,9 +566,7 @@ Qubinode Navigator Monitoring System
         }
 
         async with asyncio.timeout(10):
-            response = await asyncio.get_event_loop().run_in_executor(
-                None, lambda: requests.post(self.slack_webhook_url, json=payload)
-            )
+            response = await asyncio.get_event_loop().run_in_executor(None, lambda: requests.post(self.slack_webhook_url, json=payload))
 
             if response.status_code != 200:
                 self.logger.error(f"Slack webhook failed: {response.status_code}")
@@ -607,14 +589,10 @@ Qubinode Navigator Monitoring System
         for webhook_url in self.webhook_urls:
             try:
                 async with asyncio.timeout(10):
-                    response = await asyncio.get_event_loop().run_in_executor(
-                        None, lambda: requests.post(webhook_url, json=payload)
-                    )
+                    response = await asyncio.get_event_loop().run_in_executor(None, lambda: requests.post(webhook_url, json=payload))
 
                     if response.status_code not in [200, 201, 202]:
-                        self.logger.error(
-                            f"Webhook {webhook_url} failed: {response.status_code}"
-                        )
+                        self.logger.error(f"Webhook {webhook_url} failed: {response.status_code}")
             except Exception as e:
                 self.logger.error(f"Webhook {webhook_url} error: {e}")
 
@@ -665,9 +643,7 @@ Qubinode Navigator Monitoring System
             )
 
             # Check for failures
-            failed_phases = [
-                p for p in pipeline.phases if p.stage == PipelineStage.FAILED
-            ]
+            failed_phases = [p for p in pipeline.phases if p.stage == PipelineStage.FAILED]
             if failed_phases:
                 await self.record_metric(
                     "update_failure_rate",
@@ -722,21 +698,11 @@ Qubinode Navigator Monitoring System
             # Memory usage
             with open("/proc/meminfo", "r") as f:
                 meminfo = f.read()
-                total_mem = int(
-                    [line for line in meminfo.split("\n") if "MemTotal" in line][
-                        0
-                    ].split()[1]
-                )
-                available_mem = int(
-                    [line for line in meminfo.split("\n") if "MemAvailable" in line][
-                        0
-                    ].split()[1]
-                )
+                total_mem = int([line for line in meminfo.split("\n") if "MemTotal" in line][0].split()[1])
+                available_mem = int([line for line in meminfo.split("\n") if "MemAvailable" in line][0].split()[1])
                 memory_usage = ((total_mem - available_mem) / total_mem) * 100
 
-            await self.record_metric(
-                "memory_usage", memory_usage, MetricType.GAUGE, unit="%"
-            )
+            await self.record_metric("memory_usage", memory_usage, MetricType.GAUGE, unit="%")
 
         except Exception as e:
             self.logger.error(f"Failed to collect system metrics: {e}")
@@ -760,14 +726,10 @@ Qubinode Navigator Monitoring System
         source_counts = {}
 
         for alert in all_alerts:
-            severity_counts[alert.severity.value] = (
-                severity_counts.get(alert.severity.value, 0) + 1
-            )
+            severity_counts[alert.severity.value] = severity_counts.get(alert.severity.value, 0) + 1
             source_counts[alert.source] = source_counts.get(alert.source, 0) + 1
 
-        resolution_rate = (
-            len(self.alert_history) / len(all_alerts) * 100 if all_alerts else 0
-        )
+        resolution_rate = len(self.alert_history) / len(all_alerts) * 100 if all_alerts else 0
 
         return {
             "total_alerts": len(all_alerts),
@@ -778,18 +740,12 @@ Qubinode Navigator Monitoring System
             "resolution_rate": round(resolution_rate, 1),
         }
 
-    def get_metrics_summary(
-        self, metric_name: str = None, hours: int = 24
-    ) -> Dict[str, Any]:
+    def get_metrics_summary(self, metric_name: str = None, hours: int = 24) -> Dict[str, Any]:
         """Get metrics summary"""
         cutoff_time = datetime.now() - timedelta(hours=hours)
 
         if metric_name:
-            metrics = [
-                m
-                for m in self.metrics
-                if m.name == metric_name and m.timestamp > cutoff_time
-            ]
+            metrics = [m for m in self.metrics if m.name == metric_name and m.timestamp > cutoff_time]
         else:
             metrics = [m for m in self.metrics if m.timestamp > cutoff_time]
 

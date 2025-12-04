@@ -97,9 +97,7 @@ class TestQubiNodeMonitoringCallback:
         # Verify AI Assistant was called
         mock_post.assert_called_once()
         call_args = mock_post.call_args
-        assert call_args[1]["json"]["message"].startswith(
-            "Analyze this Qubinode Navigator deployment event"
-        )
+        assert call_args[1]["json"]["message"].startswith("Analyze this Qubinode Navigator deployment event")
         assert "deployment_type" in call_args[1]["json"]["context"]
 
     @patch("requests.post")
@@ -283,9 +281,7 @@ class TestQubiNodeMonitoringCallback:
             self.callback.v2_runner_on_ok(mock_result)
 
         # Verify slow task warning was displayed
-        display_calls = [
-            call[0][0] for call in self.callback._display.display.call_args_list
-        ]
+        display_calls = [call[0][0] for call in self.callback._display.display.call_args_list]
         slow_task_warning = any("Slow task detected" in call for call in display_calls)
         assert slow_task_warning
 

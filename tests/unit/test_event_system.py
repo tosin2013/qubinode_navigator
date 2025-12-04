@@ -36,9 +36,7 @@ class TestEventSystem(unittest.TestCase):
         test_data = {"key": "value", "number": 42}
         timestamp = datetime.now()
 
-        event = Event(
-            name="test_event", data=test_data, timestamp=timestamp, source="test_source"
-        )
+        event = Event(name="test_event", data=test_data, timestamp=timestamp, source="test_source")
 
         self.assertEqual(event.name, "test_event")
         self.assertEqual(event.data, test_data)
@@ -221,9 +219,7 @@ class TestEventSystem(unittest.TestCase):
         self.event_system.emit("plugin.loaded", {"plugin": "test2"})
 
         # Get only plugin.loaded events
-        filtered_history = self.event_system.get_event_history(
-            event_name="plugin.loaded"
-        )
+        filtered_history = self.event_system.get_event_history(event_name="plugin.loaded")
 
         self.assertEqual(len(filtered_history), 2)
         self.assertEqual(filtered_history[0].name, "plugin.loaded")
@@ -269,9 +265,7 @@ class TestEventSystem(unittest.TestCase):
         # Create multiple threads that emit events
         threads = []
         for i in range(10):
-            thread = threading.Thread(
-                target=self.event_system.emit, args=("test_event", {"thread_id": i})
-            )
+            thread = threading.Thread(target=self.event_system.emit, args=("test_event", {"thread_id": i}))
             threads.append(thread)
 
         # Start all threads

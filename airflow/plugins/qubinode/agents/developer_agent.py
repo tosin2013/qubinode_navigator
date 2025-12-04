@@ -92,17 +92,13 @@ class DeveloperAgent:
         """Check if Aider is available."""
         if self._aider_available is None:
             try:
-                result = subprocess.run(
-                    ["aider", "--version"], capture_output=True, timeout=5
-                )
+                result = subprocess.run(["aider", "--version"], capture_output=True, timeout=5)
                 self._aider_available = result.returncode == 0
             except Exception:
                 self._aider_available = False
         return self._aider_available and AIDER_ENABLED
 
-    async def execute_task(
-        self, task: str, rag_context: Dict[str, Any], session_id: str
-    ) -> Dict[str, Any]:
+    async def execute_task(self, task: str, rag_context: Dict[str, Any], session_id: str) -> Dict[str, Any]:
         """
         Execute a development task with RAG augmentation.
 
@@ -153,9 +149,7 @@ class DeveloperAgent:
         else:
             return "general"
 
-    async def _create_dag(
-        self, task: str, rag_context: Dict[str, Any], session_id: str
-    ) -> Dict[str, Any]:
+    async def _create_dag(self, task: str, rag_context: Dict[str, Any], session_id: str) -> Dict[str, Any]:
         """Create a new DAG based on task and RAG context."""
         logger.info("Creating new DAG...")
 
@@ -254,25 +248,13 @@ Output only the Python code, no explanations.
         prompt += "\nGenerate a complete, production-ready DAG that follows the project patterns."
         return prompt
 
-    def _extract_dag_examples(
-        self, rag_context: Dict[str, Any]
-    ) -> List[Dict[str, Any]]:
+    def _extract_dag_examples(self, rag_context: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Extract DAG examples from RAG context."""
-        return [
-            doc
-            for doc in rag_context.get("documents", [])
-            if doc.get("doc_type") == "dag"
-        ]
+        return [doc for doc in rag_context.get("documents", []) if doc.get("doc_type") == "dag"]
 
-    def _extract_adr_guidance(
-        self, rag_context: Dict[str, Any]
-    ) -> List[Dict[str, Any]]:
+    def _extract_adr_guidance(self, rag_context: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Extract ADR guidance from RAG context."""
-        return [
-            doc
-            for doc in rag_context.get("documents", [])
-            if doc.get("doc_type") == "adr"
-        ]
+        return [doc for doc in rag_context.get("documents", []) if doc.get("doc_type") == "adr"]
 
     def _extract_code_from_response(self, response: str) -> str:
         """Extract Python code from LLM response."""
@@ -300,9 +282,7 @@ Output only the Python code, no explanations.
                 "has_dag_import": "from airflow" in code,
                 "has_dag_definition": "DAG(" in code or "dag=" in code.lower(),
                 "has_tasks": "task" in code.lower() or "operator" in code.lower(),
-                "has_dependencies": ">>" in code
-                or "<<" in code
-                or "set_downstream" in code,
+                "has_dependencies": ">>" in code or "<<" in code or "set_downstream" in code,
             }
 
             all_passed = all(checks.values())
@@ -314,9 +294,7 @@ Output only the Python code, no explanations.
         except SyntaxError as e:
             return {"valid": False, "checks": {}, "error": f"Syntax error: {e}"}
 
-    async def _modify_code(
-        self, task: str, rag_context: Dict[str, Any], session_id: str
-    ) -> Dict[str, Any]:
+    async def _modify_code(self, task: str, rag_context: Dict[str, Any], session_id: str) -> Dict[str, Any]:
         """Modify existing code using Aider or direct LLM."""
         logger.info("Modifying existing code...")
 
@@ -327,9 +305,7 @@ Output only the Python code, no explanations.
         # Fall back to LLM-based modification
         return await self._modify_with_llm(task, rag_context, session_id)
 
-    async def _modify_with_aider(
-        self, task: str, rag_context: Dict[str, Any], session_id: str
-    ) -> Dict[str, Any]:
+    async def _modify_with_aider(self, task: str, rag_context: Dict[str, Any], session_id: str) -> Dict[str, Any]:
         """Use Aider for code modifications."""
         logger.info("Using Aider for code modification...")
 
@@ -338,9 +314,7 @@ Output only the Python code, no explanations.
 
         try:
             # Run Aider in non-interactive mode
-            with tempfile.NamedTemporaryFile(
-                mode="w", suffix=".txt", delete=False
-            ) as f:
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
                 f.write(f"{context_str}\n\nTask: {task}")
                 prompt_file = f.name
 
@@ -372,9 +346,7 @@ Output only the Python code, no explanations.
             logger.error(f"Aider modification failed: {e}")
             return {"success": False, "output": "", "error": str(e)}
 
-    async def _modify_with_llm(
-        self, task: str, rag_context: Dict[str, Any], session_id: str
-    ) -> Dict[str, Any]:
+    async def _modify_with_llm(self, task: str, rag_context: Dict[str, Any], session_id: str) -> Dict[str, Any]:
         """Use LLM for code modifications."""
         router = self._get_llm_router()
         if not router:
@@ -421,17 +393,11 @@ Provide the modified code with clear comments explaining changes.
         # Add successful troubleshooting solutions
         for ts in rag_context.get("troubleshooting", [])[:2]:
             if ts.get("result") == "success":
-                context_parts.append(
-                    f"[Previous Solution]\n"
-                    f"Problem: {ts.get('error_message', 'N/A')}\n"
-                    f"Solution: {ts.get('attempted_solution', 'N/A')}"
-                )
+                context_parts.append(f"[Previous Solution]\n" f"Problem: {ts.get('error_message', 'N/A')}\n" f"Solution: {ts.get('attempted_solution', 'N/A')}")
 
         return "\n\n---\n\n".join(context_parts)
 
-    async def _troubleshoot(
-        self, task: str, rag_context: Dict[str, Any], session_id: str
-    ) -> Dict[str, Any]:
+    async def _troubleshoot(self, task: str, rag_context: Dict[str, Any], session_id: str) -> Dict[str, Any]:
         """Handle troubleshooting tasks."""
         logger.info("Troubleshooting...")
 
@@ -443,9 +409,7 @@ Provide the modified code with clear comments explaining changes.
             best_match = similar_solutions[0]
             return {
                 "success": True,
-                "output": self._format_troubleshooting_suggestion(
-                    best_match, similar_solutions
-                ),
+                "output": self._format_troubleshooting_suggestion(best_match, similar_solutions),
                 "type": "troubleshooting",
                 "from_history": True,
                 "confidence": best_match.get("similarity", 0),
@@ -454,9 +418,7 @@ Provide the modified code with clear comments explaining changes.
         # No history, use LLM to troubleshoot
         return await self._troubleshoot_with_llm(task, rag_context, session_id)
 
-    def _format_troubleshooting_suggestion(
-        self, best_match: Dict[str, Any], all_matches: List[Dict[str, Any]]
-    ) -> str:
+    def _format_troubleshooting_suggestion(self, best_match: Dict[str, Any], all_matches: List[Dict[str, Any]]) -> str:
         """Format troubleshooting suggestion from history."""
         output = "## Found Similar Issue in History\n\n"
 
@@ -471,9 +433,7 @@ Provide the modified code with clear comments explaining changes.
 
         return output
 
-    async def _troubleshoot_with_llm(
-        self, task: str, rag_context: Dict[str, Any], session_id: str
-    ) -> Dict[str, Any]:
+    async def _troubleshoot_with_llm(self, task: str, rag_context: Dict[str, Any], session_id: str) -> Dict[str, Any]:
         """Use LLM to troubleshoot when no history is available."""
         router = self._get_llm_router()
         if not router:
@@ -518,9 +478,7 @@ Provide:
         except Exception as e:
             return {"success": False, "output": "", "error": str(e)}
 
-    async def _generate_code(
-        self, task: str, rag_context: Dict[str, Any], session_id: str
-    ) -> Dict[str, Any]:
+    async def _generate_code(self, task: str, rag_context: Dict[str, Any], session_id: str) -> Dict[str, Any]:
         """Generate general code based on task."""
         router = self._get_llm_router()
         if not router:
@@ -613,9 +571,7 @@ Generate code that:
         except Exception as e:
             return {"success": False, "output": "", "error": str(e)}
 
-    async def execute_with_override(
-        self, override: str, session_id: str
-    ) -> Dict[str, Any]:
+    async def execute_with_override(self, override: str, session_id: str) -> Dict[str, Any]:
         """Execute an override instruction from Calling LLM."""
         logger.info(f"Executing override: {override[:100]}...")
 

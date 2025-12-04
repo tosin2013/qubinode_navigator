@@ -121,15 +121,9 @@ class SecurityManager:
         self.token_expiry_hours = self.config.get("token_expiry_hours", 24)
 
         # Storage paths
-        self.security_storage_path = Path(
-            self.config.get("security_storage_path", "data/security")
-        )
-        self.audit_log_path = Path(
-            self.config.get("audit_log_path", "data/security/audit.log")
-        )
-        self.credentials_path = Path(
-            self.config.get("credentials_path", "data/security/credentials")
-        )
+        self.security_storage_path = Path(self.config.get("security_storage_path", "data/security"))
+        self.audit_log_path = Path(self.config.get("audit_log_path", "data/security/audit.log"))
+        self.credentials_path = Path(self.config.get("credentials_path", "data/security/credentials"))
 
         # Initialize storage
         self.security_storage_path.mkdir(parents=True, exist_ok=True)
@@ -212,17 +206,13 @@ class SecurityManager:
             if vuln_file.exists():
                 with open(vuln_file, "r") as f:
                     vuln_data = json.load(f)
-                    self.security_vulnerabilities = [
-                        self._deserialize_vulnerability(v) for v in vuln_data
-                    ]
+                    self.security_vulnerabilities = [self._deserialize_vulnerability(v) for v in vuln_data]
 
             # Load audit logs (recent only)
             if self.audit_log_path.exists():
                 self._load_recent_audit_logs()
 
-            self.logger.info(
-                f"Loaded {len(self.security_vulnerabilities)} vulnerabilities and {len(self.audit_logs)} audit logs"
-            )
+            self.logger.info(f"Loaded {len(self.security_vulnerabilities)} vulnerabilities and {len(self.audit_logs)} audit logs")
 
         except Exception as e:
             self.logger.error(f"Failed to load security data: {e}")
@@ -248,9 +238,7 @@ class SecurityManager:
         try:
             # Save vulnerabilities
             vuln_file = self.security_storage_path / "vulnerabilities.json"
-            vuln_data = [
-                self._serialize_vulnerability(v) for v in self.security_vulnerabilities
-            ]
+            vuln_data = [self._serialize_vulnerability(v) for v in self.security_vulnerabilities]
             with open(vuln_file, "w") as f:
                 json.dump(vuln_data, f, indent=2, default=str)
 
@@ -280,9 +268,7 @@ class SecurityManager:
             remediation_steps=data["remediation_steps"],
             detected_at=datetime.fromisoformat(data["detected_at"]),
             resolved=data["resolved"],
-            resolved_at=datetime.fromisoformat(data["resolved_at"])
-            if data.get("resolved_at")
-            else None,
+            resolved_at=datetime.fromisoformat(data["resolved_at"]) if data.get("resolved_at") else None,
         )
 
     def _serialize_audit_log(self, log: SecurityAuditLog) -> Dict[str, Any]:
@@ -308,9 +294,7 @@ class SecurityManager:
 
     # Authentication and Authorization
 
-    def generate_access_token(
-        self, user_id: str, access_level: AccessLevel, permissions: List[str] = None
-    ) -> AccessToken:
+    def generate_access_token(self, user_id: str, access_level: AccessLevel, permissions: List[str] = None) -> AccessToken:
         """Generate access token for user"""
 
         token_id = secrets.token_urlsafe(32)
@@ -423,9 +407,7 @@ class SecurityManager:
 
     # Vulnerability Scanning
 
-    async def scan_for_vulnerabilities(
-        self, scan_paths: List[str] = None
-    ) -> List[SecurityVulnerability]:
+    async def scan_for_vulnerabilities(self, scan_paths: List[str] = None) -> List[SecurityVulnerability]:
         """Scan for security vulnerabilities"""
 
         vulnerabilities = []
@@ -444,9 +426,7 @@ class SecurityManager:
                 # Scan directory recursively
                 for file_path in path.rglob("*"):
                     if file_path.is_file() and not self._should_skip_file(file_path):
-                        file_vulns = await self._scan_file_for_vulnerabilities(
-                            file_path
-                        )
+                        file_vulns = await self._scan_file_for_vulnerabilities(file_path)
                         vulnerabilities.extend(file_vulns)
 
         # Scan for system vulnerabilities
@@ -455,24 +435,17 @@ class SecurityManager:
 
         # Add new vulnerabilities
         for vuln in vulnerabilities:
-            if not any(
-                v.vulnerability_id == vuln.vulnerability_id
-                for v in self.security_vulnerabilities
-            ):
+            if not any(v.vulnerability_id == vuln.vulnerability_id for v in self.security_vulnerabilities):
                 self.security_vulnerabilities.append(vuln)
 
         # Save vulnerabilities
         self._save_security_data()
 
-        self.logger.info(
-            f"Vulnerability scan completed: {len(vulnerabilities)} new vulnerabilities found"
-        )
+        self.logger.info(f"Vulnerability scan completed: {len(vulnerabilities)} new vulnerabilities found")
 
         return vulnerabilities
 
-    async def _scan_file_for_vulnerabilities(
-        self, file_path: Path
-    ) -> List[SecurityVulnerability]:
+    async def _scan_file_for_vulnerabilities(self, file_path: Path) -> List[SecurityVulnerability]:
         """Scan individual file for vulnerabilities"""
 
         vulnerabilities = []
@@ -487,9 +460,7 @@ class SecurityManager:
                 matches = re.finditer(pattern, content, re.MULTILINE | re.IGNORECASE)
 
                 for match in matches:
-                    vuln_id = (
-                        f"cred_exposure_{file_path.name}_{i}_{hash(match.group())}"
-                    )
+                    vuln_id = f"cred_exposure_{file_path.name}_{i}_{hash(match.group())}"
 
                     vulnerability = SecurityVulnerability(
                         vulnerability_id=vuln_id,
@@ -542,9 +513,7 @@ class SecurityManager:
 
         # Check for outdated packages (example for RHEL/CentOS)
         try:
-            result = subprocess.run(
-                ["dnf", "check-update"], capture_output=True, text=True, timeout=30
-            )
+            result = subprocess.run(["dnf", "check-update"], capture_output=True, text=True, timeout=30)
 
             if result.returncode == 100:  # Updates available
                 vuln_id = f"outdated_packages_{int(time.time())}"
@@ -711,31 +680,13 @@ class SecurityManager:
         # Count vulnerabilities by severity
         vuln_counts = {}
         for severity in SecurityLevel:
-            vuln_counts[severity.value] = len(
-                [
-                    v
-                    for v in self.security_vulnerabilities
-                    if v.severity == severity and not v.resolved
-                ]
-            )
+            vuln_counts[severity.value] = len([v for v in self.security_vulnerabilities if v.severity == severity and not v.resolved])
 
         # Recent security events
-        recent_events = len(
-            [
-                log
-                for log in self.audit_logs
-                if log.timestamp > datetime.now() - timedelta(hours=24)
-            ]
-        )
+        recent_events = len([log for log in self.audit_logs if log.timestamp > datetime.now() - timedelta(hours=24)])
 
         # Active tokens
-        active_token_count = len(
-            [
-                token
-                for token in self.active_tokens.values()
-                if not token.revoked and datetime.now() < token.expires_at
-            ]
-        )
+        active_token_count = len([token for token in self.active_tokens.values() if not token.revoked and datetime.now() < token.expires_at])
 
         return {
             "security_level": self.security_level.value,
@@ -743,9 +694,7 @@ class SecurityManager:
             "vulnerabilities": {
                 "total_active": sum(vuln_counts.values()),
                 "by_severity": vuln_counts,
-                "total_resolved": len(
-                    [v for v in self.security_vulnerabilities if v.resolved]
-                ),
+                "total_resolved": len([v for v in self.security_vulnerabilities if v.resolved]),
             },
             "authentication": {
                 "active_tokens": active_token_count,
@@ -762,17 +711,13 @@ class SecurityManager:
             },
         }
 
-    def get_vulnerability_report(
-        self, severity_filter: SecurityLevel = None
-    ) -> List[SecurityVulnerability]:
+    def get_vulnerability_report(self, severity_filter: SecurityLevel = None) -> List[SecurityVulnerability]:
         """Get vulnerability report"""
 
         vulnerabilities = self.security_vulnerabilities
 
         if severity_filter:
-            vulnerabilities = [
-                v for v in vulnerabilities if v.severity == severity_filter
-            ]
+            vulnerabilities = [v for v in vulnerabilities if v.severity == severity_filter]
 
         # Sort by severity and detection time
         severity_order = {
@@ -782,15 +727,11 @@ class SecurityManager:
             SecurityLevel.LOW: 3,
         }
 
-        vulnerabilities.sort(
-            key=lambda v: (severity_order[v.severity], v.detected_at), reverse=True
-        )
+        vulnerabilities.sort(key=lambda v: (severity_order[v.severity], v.detected_at), reverse=True)
 
         return vulnerabilities
 
-    def resolve_vulnerability(
-        self, vulnerability_id: str, resolution_notes: str = None
-    ) -> bool:
+    def resolve_vulnerability(self, vulnerability_id: str, resolution_notes: str = None) -> bool:
         """Mark vulnerability as resolved"""
 
         for vuln in self.security_vulnerabilities:
@@ -822,11 +763,7 @@ class SecurityManager:
         """Clean up expired tokens"""
 
         current_time = datetime.now()
-        expired_tokens = [
-            token_id
-            for token_id, token in self.active_tokens.items()
-            if current_time > token.expires_at
-        ]
+        expired_tokens = [token_id for token_id, token in self.active_tokens.items() if current_time > token.expires_at]
 
         for token_id in expired_tokens:
             del self.active_tokens[token_id]
@@ -834,9 +771,7 @@ class SecurityManager:
         if expired_tokens:
             self.logger.info(f"Cleaned up {len(expired_tokens)} expired tokens")
 
-    def get_audit_logs(
-        self, hours: int = 24, event_type: str = None
-    ) -> List[SecurityAuditLog]:
+    def get_audit_logs(self, hours: int = 24, event_type: str = None) -> List[SecurityAuditLog]:
         """Get audit logs for specified time period"""
 
         cutoff_time = datetime.now() - timedelta(hours=hours)

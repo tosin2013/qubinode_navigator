@@ -75,18 +75,12 @@ def print_update_summary(summary: Dict[str, Any]):
     print(f"   Total Batches: {summary['update_batches']}")
 
     for batch in summary["batches"]:
-        batch_icon = {"security": "🔒", "critical": "🚨", "maintenance": "🔧"}.get(
-            batch["batch_type"], "📦"
-        )
+        batch_icon = {"security": "🔒", "critical": "🚨", "maintenance": "🔧"}.get(batch["batch_type"], "📦")
 
         print(f"\n   {batch_icon} {batch['batch_type'].upper()} BATCH")
         print(f"      ID: {batch['batch_id']}")
         print(f"      Updates: {len(batch['updates'])}")
-        print(
-            f"      Size: {batch['total_size'] / 1024 / 1024:.1f} MB"
-            if batch["total_size"] > 0
-            else "      Size: Unknown"
-        )
+        print(f"      Size: {batch['total_size'] / 1024 / 1024:.1f} MB" if batch["total_size"] > 0 else "      Size: Unknown")
         print(f"      Duration: {batch['estimated_duration']}")
         print(f"      Risk: {batch['risk_level'].upper()}")
         print(f"      Reboot Required: {'Yes' if batch['requires_reboot'] else 'No'}")
@@ -138,9 +132,7 @@ def print_detailed_updates(updates: list):
             print(f"      Current: {update['current_version']}")
             print(f"      Available: {update['available_version']}")
             print(f"      Severity: {update['severity'].upper()}")
-            print(
-                f"      Compatibility: {compat_icon} {update['compatibility_status']}"
-            )
+            print(f"      Compatibility: {compat_icon} {update['compatibility_status']}")
             if update.get("description"):
                 print(f"      Description: {update['description']}")
             if update.get("changelog_url"):
@@ -187,9 +179,7 @@ async def check_updates_command(args):
 
         # Return appropriate exit code
         if summary["total_updates"] > 0:
-            if any(
-                u["severity"] in ["security", "critical"] for u in summary["updates"]
-            ):
+            if any(u["severity"] in ["security", "critical"] for u in summary["updates"]):
                 return 2  # Critical updates available
             else:
                 return 1  # Updates available
@@ -217,9 +207,7 @@ async def check_os_command(args):
             print(f"Found {len(updates)} OS package updates")
             if updates:
                 for update in updates[:10]:  # Show first 10
-                    print(
-                        f"  • {update.component_name}: {update.current_version} → {update.available_version}"
-                    )
+                    print(f"  • {update.component_name}: {update.current_version} → {update.available_version}")
                 if len(updates) > 10:
                     print(f"  ... and {len(updates) - 10} more")
 
@@ -246,9 +234,7 @@ async def check_software_command(args):
             print(f"Found {len(updates)} software updates")
             if updates:
                 for update in updates:
-                    print(
-                        f"  • {update.component_name}: {update.current_version} → {update.available_version}"
-                    )
+                    print(f"  • {update.component_name}: {update.current_version} → {update.available_version}")
 
         return 0 if len(updates) == 0 else 1
 
@@ -273,9 +259,7 @@ async def check_collections_command(args):
             print(f"Found {len(updates)} collection updates")
             if updates:
                 for update in updates:
-                    print(
-                        f"  • {update.component_name}: {update.current_version} → {update.available_version}"
-                    )
+                    print(f"  • {update.component_name}: {update.current_version} → {update.available_version}")
 
         return 0 if len(updates) == 0 else 1
 
@@ -349,9 +333,7 @@ Examples:
         default="summary",
         help="Output format (default: summary)",
     )
-    check_parser.add_argument(
-        "--detailed", action="store_true", help="Show detailed update information"
-    )
+    check_parser.add_argument("--detailed", action="store_true", help="Show detailed update information")
     check_parser.add_argument("--output", help="Save results to file")
     check_parser.add_argument(
         "--no-ai",
@@ -362,9 +344,7 @@ Examples:
     )
 
     # Check OS command
-    os_parser = subparsers.add_parser(
-        "check-os", help="Check for OS package updates only"
-    )
+    os_parser = subparsers.add_parser("check-os", help="Check for OS package updates only")
     os_parser.add_argument(
         "--format",
         choices=["summary", "json"],
@@ -373,9 +353,7 @@ Examples:
     )
 
     # Check software command
-    software_parser = subparsers.add_parser(
-        "check-software", help="Check for software updates only"
-    )
+    software_parser = subparsers.add_parser("check-software", help="Check for software updates only")
     software_parser.add_argument(
         "--format",
         choices=["summary", "json"],
@@ -384,9 +362,7 @@ Examples:
     )
 
     # Check collections command
-    collections_parser = subparsers.add_parser(
-        "check-collections", help="Check for Ansible collection updates only"
-    )
+    collections_parser = subparsers.add_parser("check-collections", help="Check for Ansible collection updates only")
     collections_parser.add_argument(
         "--format",
         choices=["summary", "json"],

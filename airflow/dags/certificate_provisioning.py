@@ -423,11 +423,7 @@ summary = BashOperator(
 )
 
 # Define task dependencies
-(
-    ensure_script
-    >> decide_operation_task
-    >> [request, renew, revoke, list, install_ca, bulk_request]
-)
+(ensure_script >> decide_operation_task >> [request, renew, revoke, list, install_ca, bulk_request])
 request >> summary
 renew >> summary
 revoke >> summary

@@ -41,12 +41,8 @@ def print_analysis_summary(report: Dict[str, Any]):
     print(f"   Session ID: {session['session_id']}")
     print(f"   Playbook: {session['playbook']}")
     print(f"   Duration: {session.get('end_time', 'In Progress')}")
-    print(
-        f"   Tasks: {session['successful_tasks']}/{session['total_tasks']} successful"
-    )
-    print(
-        f"   Failure Rate: {session['performance_metrics'].get('failure_rate', 0):.1f}%"
-    )
+    print(f"   Tasks: {session['successful_tasks']}/{session['total_tasks']} successful")
+    print(f"   Failure Rate: {session['performance_metrics'].get('failure_rate', 0):.1f}%")
 
     # Error Analysis
     error_analysis = report["error_analysis"]
@@ -72,13 +68,7 @@ def print_analysis_summary(report: Dict[str, Any]):
     print(f"\n💡 RESOLUTION RECOMMENDATIONS ({len(recommendations)} found)")
 
     for i, rec in enumerate(recommendations[:5], 1):  # Show top 5
-        confidence_icon = (
-            "🎯"
-            if rec["confidence"] > 0.8
-            else "📋"
-            if rec["confidence"] > 0.6
-            else "⚠️"
-        )
+        confidence_icon = "🎯" if rec["confidence"] > 0.8 else "📋" if rec["confidence"] > 0.6 else "⚠️"
 
         print(f"\n   {confidence_icon} Recommendation #{i}")
         print(f"      Type: {rec['resolution_type'].upper()}")
@@ -225,9 +215,7 @@ Examples:
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # Analyze command
-    analyze_parser = subparsers.add_parser(
-        "analyze", help="Analyze deployment log file"
-    )
+    analyze_parser = subparsers.add_parser("analyze", help="Analyze deployment log file")
     analyze_parser.add_argument("log_file", help="Path to deployment log file")
     analyze_parser.add_argument(
         "--format",
@@ -238,9 +226,7 @@ Examples:
     analyze_parser.add_argument("--output", help="Save analysis report to file")
 
     # Patterns command
-    patterns_parser = subparsers.add_parser(
-        "patterns", help="List known error patterns"
-    )
+    subparsers.add_parser("patterns", help="List known error patterns")
 
     args = parser.parse_args()
 

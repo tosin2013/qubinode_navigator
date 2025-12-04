@@ -19,9 +19,7 @@ except ImportError:
     sys.exit(1)
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("qubinode-mcp")
 
 
@@ -133,14 +131,10 @@ class QuibinodeAIMCPServer(Server):
 
         try:
             if name == "query_documents":
-                return await self._query_documents(
-                    arguments["query"], arguments.get("max_results", 5)
-                )
+                return await self._query_documents(arguments["query"], arguments.get("max_results", 5))
 
             elif name == "chat_with_context":
-                return await self._chat_with_context(
-                    arguments["message"], arguments.get("context", {})
-                )
+                return await self._chat_with_context(arguments["message"], arguments.get("context", {}))
 
             elif name == "get_project_status":
                 return await self._get_project_status()
@@ -178,11 +172,7 @@ class QuibinodeAIMCPServer(Server):
                 logger.info(f"Found {len(results)} results")
 
                 if not results:
-                    return [
-                        TextContent(
-                            type="text", text=f"No results found for query: '{query}'"
-                        )
-                    ]
+                    return [TextContent(type="text", text=f"No results found for query: '{query}'")]
 
                 text = "# Document Search Results\n\n"
                 text += f"Query: {query}\n"
@@ -209,14 +199,10 @@ class QuibinodeAIMCPServer(Server):
                     )
                 ]
             except Exception as e:
-                logger.error(
-                    f"Unexpected error querying documents: {str(e)}", exc_info=True
-                )
+                logger.error(f"Unexpected error querying documents: {str(e)}", exc_info=True)
                 return [TextContent(type="text", text=f"Unexpected error: {str(e)}")]
 
-    async def _chat_with_context(
-        self, message: str, context: dict
-    ) -> list[TextContent]:
+    async def _chat_with_context(self, message: str, context: dict) -> list[TextContent]:
         """Chat with AI assistant"""
         logger.info(f"Chat request: '{message[:50]}...' with context: {context}")
 
@@ -297,9 +283,7 @@ class QuibinodeAIMCPServer(Server):
                     )
                 ]
             except Exception as e:
-                logger.error(
-                    f"Unexpected error getting status: {str(e)}", exc_info=True
-                )
+                logger.error(f"Unexpected error getting status: {str(e)}", exc_info=True)
                 return [TextContent(type="text", text=f"Unexpected error: {str(e)}")]
 
     async def _ask_qubinode(
@@ -387,9 +371,7 @@ Provide your answer in clear, actionable markdown format."""
                     logger.info("Successfully generated Qubinode guidance")
                     return [TextContent(type="text", text=ai_answer)]
                 else:
-                    logger.warning(
-                        f"Chat endpoint returned status {chat_response.status_code}"
-                    )
+                    logger.warning(f"Chat endpoint returned status {chat_response.status_code}")
                     # Fallback: return documentation if AI service fails
                     if docs_context:
                         fallback_text = f"# Documentation Results for: {question}\n{docs_context}\n\n**Note:** AI-powered guidance unavailable, showing documentation instead."
@@ -407,9 +389,7 @@ Provide your answer in clear, actionable markdown format."""
                 error_msg = f"Error getting Qubinode guidance: {str(e)}\n\nThe AI Assistant service may not be running at {self.base_url}\n\nTry running: podman run -d --name qubinode-ai -p 8080:8080 localhost/qubinode-ai-assistant:latest"
                 return [TextContent(type="text", text=error_msg)]
             except Exception as e:
-                logger.error(
-                    f"Unexpected error in ask_qubinode: {str(e)}", exc_info=True
-                )
+                logger.error(f"Unexpected error in ask_qubinode: {str(e)}", exc_info=True)
                 return [TextContent(type="text", text=f"Unexpected error: {str(e)}")]
 
 
@@ -443,9 +423,7 @@ async def main():
         logger.info("Waiting for MCP client to connect...")
 
         async with stdio_server() as (read_stream, write_stream):
-            await server.run(
-                read_stream, write_stream, server.create_initialization_options()
-            )
+            await server.run(read_stream, write_stream, server.create_initialization_options())
 
     except ImportError as e:
         logger.error(f"Import error: {e}")

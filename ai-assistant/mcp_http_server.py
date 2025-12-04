@@ -11,11 +11,10 @@ from typing import Optional
 from datetime import datetime
 
 try:
-    from mcp.server import Server
     from mcp.server.sse import SseServerTransport
     from starlette.applications import Starlette
     from starlette.routing import Route
-    from starlette.responses import Response, JSONResponse
+    from starlette.responses import JSONResponse
     import uvicorn
 except ImportError as e:
     print(f"Error: Missing required dependencies: {e}", file=sys.stderr)
@@ -26,18 +25,14 @@ except ImportError as e:
 from mcp_server import QuibinodeAIMCPServer
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("mcp-http-server")
 
 
 class MCPHTTPServer:
     """HTTP/SSE server wrapper for MCP"""
 
-    def __init__(
-        self, host: str = "0.0.0.0", port: int = 8081, api_key: Optional[str] = None
-    ):
+    def __init__(self, host: str = "0.0.0.0", port: int = 8081, api_key: Optional[str] = None):
         self.host = host
         self.port = port
         self.api_key = api_key
@@ -48,9 +43,7 @@ class MCPHTTPServer:
         if not self.api_key:
             return True  # No auth required if no key set
 
-        auth_header = request.headers.get("X-API-Key") or request.headers.get(
-            "Authorization"
-        )
+        auth_header = request.headers.get("X-API-Key") or request.headers.get("Authorization")
         if not auth_header:
             return False
 
@@ -123,9 +116,7 @@ class MCPHTTPServer:
         app = self.create_app()
 
         # Use uvicorn Config + Server to avoid event loop conflicts
-        config = uvicorn.Config(
-            app, host=self.host, port=self.port, log_level="info", loop="asyncio"
-        )
+        config = uvicorn.Config(app, host=self.host, port=self.port, log_level="info", loop="asyncio")
         server = uvicorn.Server(config)
         server.run()
 
@@ -149,9 +140,7 @@ def main():
     api_key = os.getenv("MCP_API_KEY")
 
     if not api_key:
-        logger.warning(
-            "WARNING: No API key set! Server will be accessible without authentication"
-        )
+        logger.warning("WARNING: No API key set! Server will be accessible without authentication")
         logger.warning("Set MCP_API_KEY environment variable for security")
 
     # Create and run server

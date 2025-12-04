@@ -52,15 +52,11 @@ dag = DAG(
         ),
         "hostname": Param("", type="string", description="Hostname for DNS record"),
         "ip_address": Param("", type="string", description="IP address for A record"),
-        "create_ptr": Param(
-            True, type="boolean", description="Create reverse PTR record"
-        ),
+        "create_ptr": Param(True, type="boolean", description="Create reverse PTR record"),
         "ttl": Param(3600, type="integer", description="DNS TTL in seconds"),
         "domain": Param("example.com", type="string", description="DNS domain"),
         "cname_target": Param("", type="string", description="Target for CNAME record"),
-        "srv_service": Param(
-            "", type="string", description="SRV service name (e.g., _ldap._tcp)"
-        ),
+        "srv_service": Param("", type="string", description="SRV service name (e.g., _ldap._tcp)"),
         "srv_port": Param(0, type="integer", description="SRV port number"),
         "srv_priority": Param(10, type="integer", description="SRV priority"),
         "srv_weight": Param(100, type="integer", description="SRV weight"),

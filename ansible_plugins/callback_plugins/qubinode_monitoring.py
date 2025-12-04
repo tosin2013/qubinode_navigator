@@ -88,12 +88,8 @@ class CallbackModule(CallbackBase):
         super(CallbackModule, self).__init__()
 
         # Configuration
-        self.ai_assistant_url = os.getenv(
-            "QUBINODE_AI_ASSISTANT_URL", "http://localhost:8080"
-        )
-        self.enable_ai_analysis = (
-            os.getenv("QUBINODE_ENABLE_AI_ANALYSIS", "true").lower() == "true"
-        )
+        self.ai_assistant_url = os.getenv("QUBINODE_AI_ASSISTANT_URL", "http://localhost:8080")
+        self.enable_ai_analysis = os.getenv("QUBINODE_ENABLE_AI_ANALYSIS", "true").lower() == "true"
         self.log_file = os.getenv("QUBINODE_LOG_FILE", "/tmp/qubinode_deployment.log")
         self.alert_threshold = int(os.getenv("QUBINODE_ALERT_THRESHOLD", "3"))
 
@@ -115,9 +111,7 @@ class CallbackModule(CallbackBase):
             os.makedirs(os.path.dirname(self.log_file), exist_ok=True)
             with open(self.log_file, "a") as f:
                 f.write(f"\n{'='*80}\n")
-                f.write(
-                    f"Qubinode Navigator Deployment Log - {datetime.datetime.now()}\n"
-                )
+                f.write(f"Qubinode Navigator Deployment Log - {datetime.datetime.now()}\n")
                 f.write(f"{'='*80}\n")
         except Exception as e:
             self._display.warning(f"Failed to initialize log file {self.log_file}: {e}")
@@ -158,9 +152,7 @@ class CallbackModule(CallbackBase):
             }
 
             # Send to AI Assistant
-            response = requests.post(
-                f"{self.ai_assistant_url}/chat", json=analysis_request, timeout=10
-            )
+            response = requests.post(f"{self.ai_assistant_url}/chat", json=analysis_request, timeout=10)
 
             if response.status_code == 200:
                 ai_response = response.json()
@@ -192,9 +184,7 @@ class CallbackModule(CallbackBase):
 
             if response.status_code == 200:
                 diagnostics = response.json()
-                self._display.display(
-                    "🔧 Running diagnostic analysis...", color="yellow"
-                )
+                self._display.display("🔧 Running diagnostic analysis...", color="yellow")
 
                 # Log diagnostics results
                 self._log_event("diagnostics_run", diagnostics)
@@ -351,17 +341,11 @@ class CallbackModule(CallbackBase):
         )
 
         if self.failure_count > 0:
-            self._display.display(
-                f"⚠️  Total failures: {self.failure_count}", color="yellow"
-            )
+            self._display.display(f"⚠️  Total failures: {self.failure_count}", color="yellow")
 
         self._log_event("deployment_complete", deployment_summary)
 
         # Final AI analysis if there were issues
         if self.failure_count > 0 and self.enable_ai_analysis:
-            self._display.display(
-                "🤖 Running final deployment analysis...", color="cyan"
-            )
-            self._send_to_ai_assistant(
-                {"event_type": "deployment_summary", "data": deployment_summary}
-            )
+            self._display.display("🤖 Running final deployment analysis...", color="cyan")
+            self._send_to_ai_assistant({"event_type": "deployment_summary", "data": deployment_summary})

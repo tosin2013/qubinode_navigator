@@ -18,9 +18,7 @@ from pathlib import Path
 class CentOSStream10CollectionTester:
     def __init__(self):
         self.test_results = []
-        self.collection_path = Path(
-            "/root/qubinode_navigator/qubinode_kvmhost_setup_collection"
-        )
+        self.collection_path = Path("/root/qubinode_navigator/qubinode_kvmhost_setup_collection")
         self.role_path = self.collection_path / "roles" / "kvmhost_setup"
 
     def create_test_playbook(self):
@@ -32,9 +30,7 @@ class CentOSStream10CollectionTester:
             "tasks": [
                 {
                     "name": "Include RHEL version detection",
-                    "include_tasks": str(
-                        self.role_path / "tasks" / "rhel_version_detection.yml"
-                    ),
+                    "include_tasks": str(self.role_path / "tasks" / "rhel_version_detection.yml"),
                 },
                 {
                     "name": "Display detected OS facts",
@@ -74,11 +70,7 @@ class CentOSStream10CollectionTester:
                 cwd=str(self.collection_path),
             )
 
-            success = (
-                result.returncode == 0
-                and "is_centos_stream10" in result.stdout
-                and "centos_stream10" in result.stdout
-            )
+            success = result.returncode == 0 and "is_centos_stream10" in result.stdout and "centos_stream10" in result.stdout
 
             self.test_results.append(
                 {
@@ -89,9 +81,7 @@ class CentOSStream10CollectionTester:
                 }
             )
 
-            print(
-                f"   {'✅' if success else '❌'} OS Detection: {'PASSED' if success else 'FAILED'}"
-            )
+            print(f"   {'✅' if success else '❌'} OS Detection: {'PASSED' if success else 'FAILED'}")
             return success
 
         except Exception as e:
@@ -111,12 +101,7 @@ class CentOSStream10CollectionTester:
             with open(detection_file, "r") as f:
                 content = f.read()
 
-            success = (
-                "centos_stream10:" in content
-                and "python3.12" in content
-                and "podman" in content
-                and "kvmhost_is_centos_stream10" in content
-            )
+            success = "centos_stream10:" in content and "python3.12" in content and "podman" in content and "kvmhost_is_centos_stream10" in content
 
             self.test_results.append(
                 {
@@ -127,9 +112,7 @@ class CentOSStream10CollectionTester:
                 }
             )
 
-            print(
-                f"   {'✅' if success else '❌'} Package Configuration: {'PASSED' if success else 'FAILED'}"
-            )
+            print(f"   {'✅' if success else '❌'} Package Configuration: {'PASSED' if success else 'FAILED'}")
             return success
 
         except Exception as e:
@@ -146,11 +129,7 @@ class CentOSStream10CollectionTester:
             with open(detection_file, "r") as f:
                 content = f.read()
 
-            success = (
-                "centos_stream10:" in content
-                and "podman.socket" in content
-                and "kvmhost_services.centos_stream10" in content
-            )
+            success = "centos_stream10:" in content and "podman.socket" in content and "kvmhost_services.centos_stream10" in content
 
             self.test_results.append(
                 {
@@ -161,9 +140,7 @@ class CentOSStream10CollectionTester:
                 }
             )
 
-            print(
-                f"   {'✅' if success else '❌'} Service Configuration: {'PASSED' if success else 'FAILED'}"
-            )
+            print(f"   {'✅' if success else '❌'} Service Configuration: {'PASSED' if success else 'FAILED'}")
             return success
 
         except Exception as e:
@@ -192,9 +169,7 @@ class CentOSStream10CollectionTester:
                 }
             )
 
-            print(
-                f"   {'✅' if success else '❌'} Version Bump: {'PASSED' if success else 'FAILED'}"
-            )
+            print(f"   {'✅' if success else '❌'} Version Bump: {'PASSED' if success else 'FAILED'}")
             return success
 
         except Exception as e:
@@ -222,9 +197,7 @@ class CentOSStream10CollectionTester:
                 passed += 1
 
         print("\n" + "=" * 60)
-        print(
-            f"📊 Test Results: {passed}/{total} tests passed ({passed/total*100:.1f}%)"
-        )
+        print(f"📊 Test Results: {passed}/{total} tests passed ({passed/total*100:.1f}%)")
 
         if passed == total:
             print("🎉 All tests PASSED! CentOS Stream 10 support is ready.")

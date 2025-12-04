@@ -16,9 +16,7 @@ import hashlib
 class KcliDocsFetcher:
     """Fetches and prepares kcli documentation for RAG ingestion"""
 
-    def __init__(
-        self, output_dir: str = "/root/qubinode_navigator/ai-assistant/data/kcli-docs"
-    ):
+    def __init__(self, output_dir: str = "/root/qubinode_navigator/ai-assistant/data/kcli-docs"):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -117,9 +115,7 @@ class KcliDocsFetcher:
 
             for chunk in chunks:
                 rag_chunk = {
-                    "id": hashlib.md5(
-                        f"{doc['name']}-{chunk['title']}".encode()
-                    ).hexdigest(),
+                    "id": hashlib.md5(f"{doc['name']}-{chunk['title']}".encode()).hexdigest(),
                     "source": "kcli",
                     "doc_name": doc["name"],
                     "title": chunk["title"],
@@ -145,9 +141,7 @@ class KcliDocsFetcher:
         print("\n📊 Summary:")
         print(f"   Total chunks: {len(rag_chunks)}")
         print(f"   Total words: {total_words:,}")
-        print(
-            f"   Avg words per chunk: {total_words // len(rag_chunks) if rag_chunks else 0}"
-        )
+        print(f"   Avg words per chunk: {total_words // len(rag_chunks) if rag_chunks else 0}")
 
         return rag_chunks
 
@@ -176,9 +170,7 @@ class KcliDocsFetcher:
 
         # Save last chunk
         if current_content:
-            chunks.append(
-                {"title": current_title, "content": "\n".join(current_content).strip()}
-            )
+            chunks.append({"title": current_title, "content": "\n".join(current_content).strip()})
 
         return chunks
 

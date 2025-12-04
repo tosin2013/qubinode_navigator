@@ -42,9 +42,7 @@ class LogAnalysisPlugin(QubiNodePlugin):
         self.ai_assistant_url = config.get("ai_assistant_url", "http://localhost:8080")
         self.log_directory = config.get("log_directory", "/tmp")
         self.auto_analyze = config.get("auto_analyze", True)
-        self.report_directory = config.get(
-            "report_directory", "/tmp/log_analysis_reports"
-        )
+        self.report_directory = config.get("report_directory", "/tmp/log_analysis_reports")
 
         # Initialize log analyzer
         self.log_analyzer = LogAnalyzer(ai_assistant_url=self.ai_assistant_url)
@@ -72,15 +70,11 @@ class LogAnalysisPlugin(QubiNodePlugin):
             if response.status_code == 200:
                 self.logger.info("AI Assistant connection verified")
             else:
-                self.logger.warning(
-                    "AI Assistant not available - analysis will continue without AI insights"
-                )
+                self.logger.warning("AI Assistant not available - analysis will continue without AI insights")
         except Exception as e:
             self.logger.warning(f"AI Assistant not available: {e}")
 
-        self.logger.info(
-            f"Log Analysis Plugin initialized with {len(self.log_analyzer.error_patterns)} error patterns"
-        )
+        self.logger.info(f"Log Analysis Plugin initialized with {len(self.log_analyzer.error_patterns)} error patterns")
 
     def check_state(self) -> SystemState:
         """Check current system state for idempotency"""
@@ -104,9 +98,7 @@ class LogAnalysisPlugin(QubiNodePlugin):
             # Check if log directory exists and is accessible
             log_path = Path(self.log_directory)
             state_data["log_directory_exists"] = log_path.exists()
-            state_data["log_directory_is_dir"] = (
-                log_path.is_dir() if log_path.exists() else False
-            )
+            state_data["log_directory_is_dir"] = log_path.is_dir() if log_path.exists() else False
 
             if not log_path.exists():
                 state_data["status"] = "needs_configuration"
@@ -125,11 +117,7 @@ class LogAnalysisPlugin(QubiNodePlugin):
                 return SystemState(state_data)
 
             # Check if any logs need analysis
-            recent_logs = [
-                f
-                for f in log_files
-                if (datetime.now() - datetime.fromtimestamp(f.stat().st_mtime)).days < 1
-            ]
+            recent_logs = [f for f in log_files if (datetime.now() - datetime.fromtimestamp(f.stat().st_mtime)).days < 1]
             state_data["recent_logs_count"] = len(recent_logs)
 
             if recent_logs and self.auto_analyze:
@@ -221,9 +209,7 @@ class LogAnalysisPlugin(QubiNodePlugin):
                     old_report.unlink()
                     self.logger.debug(f"Removed old report: {old_report}")
                 except Exception as e:
-                    self.logger.warning(
-                        f"Failed to remove old report {old_report}: {e}"
-                    )
+                    self.logger.warning(f"Failed to remove old report {old_report}: {e}")
 
             return True
 
@@ -269,32 +255,23 @@ class LogAnalysisPlugin(QubiNodePlugin):
             report["file_metadata"] = {
                 "file_path": str(log_file),
                 "file_size": log_file.stat().st_size,
-                "modification_time": datetime.fromtimestamp(
-                    log_file.stat().st_mtime
-                ).isoformat(),
+                "modification_time": datetime.fromtimestamp(log_file.stat().st_mtime).isoformat(),
                 "analysis_time": datetime.now().isoformat(),
             }
 
             # Save individual report
-            report_file = (
-                Path(self.report_directory)
-                / f"analysis_{log_file.stem}_{int(datetime.now().timestamp())}.json"
-            )
+            report_file = Path(self.report_directory) / f"analysis_{log_file.stem}_{int(datetime.now().timestamp())}.json"
             with open(report_file, "w") as f:
                 json.dump(report, f, indent=2, default=str)
 
-            self.logger.info(
-                f"Analysis complete for {log_file}, report saved to {report_file}"
-            )
+            self.logger.info(f"Analysis complete for {log_file}, report saved to {report_file}")
             return report
 
         except Exception as e:
             self.logger.error(f"Failed to analyze {log_file}: {e}")
             return None
 
-    def _generate_summary_report(
-        self, analysis_results: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+    def _generate_summary_report(self, analysis_results: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Generate summary report from multiple analysis results"""
         summary = {
             "summary_timestamp": datetime.now().isoformat(),
@@ -333,23 +310,17 @@ class LogAnalysisPlugin(QubiNodePlugin):
                 {
                     "session_id": session_summary.get("session_id"),
                     "playbook": session_summary.get("playbook"),
-                    "failure_rate": session_summary.get("performance_metrics", {}).get(
-                        "failure_rate", 0
-                    ),
+                    "failure_rate": session_summary.get("performance_metrics", {}).get("failure_rate", 0),
                     "file_path": result.get("file_metadata", {}).get("file_path"),
                 }
             )
 
         # Generate common recommendations
-        summary["common_recommendations"] = self._extract_common_recommendations(
-            analysis_results
-        )
+        summary["common_recommendations"] = self._extract_common_recommendations(analysis_results)
 
         return summary
 
-    def _extract_common_recommendations(
-        self, analysis_results: List[Dict[str, Any]]
-    ) -> List[str]:
+    def _extract_common_recommendations(self, analysis_results: List[Dict[str, Any]]) -> List[str]:
         """Extract common recommendations across multiple analyses"""
         recommendation_counts = {}
 
@@ -363,9 +334,7 @@ class LogAnalysisPlugin(QubiNodePlugin):
 
         # Return most common recommendations
         common_recs = []
-        for pattern_id, count in sorted(
-            recommendation_counts.items(), key=lambda x: x[1], reverse=True
-        ):
+        for pattern_id, count in sorted(recommendation_counts.items(), key=lambda x: x[1], reverse=True):
             if count > 1:  # Appears in multiple analyses
                 if pattern_id in self.log_analyzer.error_patterns:
                     pattern = self.log_analyzer.error_patterns[pattern_id]
@@ -395,9 +364,7 @@ class LogAnalysisPlugin(QubiNodePlugin):
             "report_directory": self.report_directory,
             "auto_analyze": self.auto_analyze,
             "error_patterns_loaded": len(self.log_analyzer.error_patterns),
-            "last_analysis_time": self.last_analysis_time.isoformat()
-            if self.last_analysis_time
-            else None,
+            "last_analysis_time": self.last_analysis_time.isoformat() if self.last_analysis_time else None,
             "analysis_history_count": len(self.analysis_history),
         }
 

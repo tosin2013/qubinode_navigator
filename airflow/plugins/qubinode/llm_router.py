@@ -24,13 +24,9 @@ import yaml
 logger = logging.getLogger(__name__)
 
 # Configuration
-LITELLM_CONFIG_PATH = os.getenv(
-    "LITELLM_CONFIG_PATH", str(Path(__file__).parent / "litellm_config.yaml")
-)
+LITELLM_CONFIG_PATH = os.getenv("LITELLM_CONFIG_PATH", str(Path(__file__).parent / "litellm_config.yaml"))
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-ENVIRONMENT = os.getenv(
-    "QUBINODE_ENVIRONMENT", "disconnected"
-)  # disconnected, connected, development
+ENVIRONMENT = os.getenv("QUBINODE_ENVIRONMENT", "disconnected")  # disconnected, connected, development
 
 # Lazy-loaded router instance
 _router: Optional["LLMRouter"] = None
@@ -74,19 +70,13 @@ class LLMRouter:
                 self.model_aliases = self.config.get("model_aliases", {})
 
                 # Load environment-specific models
-                env_config = self.config.get("environments", {}).get(
-                    self.environment, {}
-                )
+                env_config = self.config.get("environments", {}).get(self.environment, {})
                 self.available_models = env_config.get("allowed_models", [])
                 self.default_model = env_config.get("default_model", "granite-instruct")
 
-                logger.info(
-                    f"LLM Router config loaded: {len(self.available_models)} models for {self.environment}"
-                )
+                logger.info(f"LLM Router config loaded: {len(self.available_models)} models for {self.environment}")
             else:
-                logger.warning(
-                    f"Config file not found: {self.config_path}, using defaults"
-                )
+                logger.warning(f"Config file not found: {self.config_path}, using defaults")
                 self._set_defaults()
         except Exception as e:
             logger.error(f"Failed to load config: {e}")
@@ -147,9 +137,7 @@ class LLMRouter:
             return model_or_alias
 
         # Fallback to default
-        logger.warning(
-            f"Model '{model_or_alias}' not found, using default: {self.default_model}"
-        )
+        logger.warning(f"Model '{model_or_alias}' not found, using default: {self.default_model}")
         return self.default_model
 
     def get_model_config(self, model_name: str) -> Dict[str, Any]:
@@ -366,9 +354,7 @@ class LLMRouter:
                     "name": model_name,
                     "description": model_info.get("description", ""),
                     "context_window": model_info.get("context_window", 0),
-                    "supports_function_calling": model_info.get(
-                        "supports_function_calling", False
-                    ),
+                    "supports_function_calling": model_info.get("supports_function_calling", False),
                 }
             )
         return models
@@ -382,9 +368,7 @@ def get_router() -> LLMRouter:
     return _router
 
 
-async def complete(
-    model: str, messages: List[Dict[str, str]], **kwargs
-) -> Dict[str, Any]:
+async def complete(model: str, messages: List[Dict[str, str]], **kwargs) -> Dict[str, Any]:
     """
     Convenience function to complete using the default router.
 

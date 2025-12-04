@@ -111,9 +111,7 @@ system:
 
     @patch("core.PluginManager")
     @patch("core.ConfigManager")
-    def test_execute_plugins_success(
-        self, mock_config_manager_class, mock_plugin_manager_class
-    ):
+    def test_execute_plugins_success(self, mock_config_manager_class, mock_plugin_manager_class):
         """Test successful plugin execution"""
         # Setup mocks
         mock_plugin_manager = Mock()
@@ -131,9 +129,7 @@ system:
         mock_config_manager_class.return_value = mock_config_manager
 
         with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
-            qubinode_cli.execute_plugins(
-                mock_plugin_manager, mock_config_manager, plugin_names=["test_plugin"]
-            )
+            qubinode_cli.execute_plugins(mock_plugin_manager, mock_config_manager, plugin_names=["test_plugin"])
             output = mock_stdout.getvalue()
 
             self.assertIn("test_plugin", output)
@@ -141,9 +137,7 @@ system:
 
     @patch("core.PluginManager")
     @patch("core.ConfigManager")
-    def test_execute_plugins_failure(
-        self, mock_config_manager_class, mock_plugin_manager_class
-    ):
+    def test_execute_plugins_failure(self, mock_config_manager_class, mock_plugin_manager_class):
         """Test plugin execution failure"""
         # Setup mocks
         mock_plugin_manager = Mock()
@@ -161,9 +155,7 @@ system:
         mock_config_manager_class.return_value = mock_config_manager
 
         with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
-            qubinode_cli.execute_plugins(
-                mock_plugin_manager, mock_config_manager, plugin_names=["test_plugin"]
-            )
+            qubinode_cli.execute_plugins(mock_plugin_manager, mock_config_manager, plugin_names=["test_plugin"])
             output = mock_stdout.getvalue()
 
             self.assertIn("test_plugin", output)
@@ -187,9 +179,7 @@ system:
     @patch("sys.argv", ["qubinode_cli.py", "execute", "--plugins", "test_plugin"])
     @patch("core.PluginManager")
     @patch("core.ConfigManager")
-    def test_main_execute_command(
-        self, mock_config_manager_class, mock_plugin_manager_class
-    ):
+    def test_main_execute_command(self, mock_config_manager_class, mock_plugin_manager_class):
         """Test main function with execute command"""
         mock_plugin_manager = Mock()
         mock_config_manager = Mock()
@@ -336,9 +326,7 @@ system:
 
     @patch("core.PluginManager")
     @patch("core.ConfigManager")
-    def test_dry_run_functionality(
-        self, mock_config_manager_class, mock_plugin_manager_class
-    ):
+    def test_dry_run_functionality(self, mock_config_manager_class, mock_plugin_manager_class):
         """Test dry run functionality"""
         mock_plugin_manager = Mock()
         mock_config_manager = Mock()
@@ -355,7 +343,7 @@ system:
         mock_config_manager_class.return_value = mock_config_manager
 
         # Test dry run execution
-        with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+        with patch("sys.stdout", new_callable=StringIO):
             qubinode_cli.execute_plugins(
                 mock_plugin_manager,
                 mock_config_manager,
@@ -366,7 +354,7 @@ system:
             # Verify execution context includes dry run
             mock_plugin_manager.execute_plugin.assert_called()
             call_args = mock_plugin_manager.execute_plugin.call_args
-            context = call_args[0][1]  # Second argument is the context
+            call_args[0][1]  # Second argument is the context
             # Note: This test assumes the CLI supports dry run mode
 
     def test_inventory_parameter(self):

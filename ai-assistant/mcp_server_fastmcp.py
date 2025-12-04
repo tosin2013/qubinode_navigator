@@ -12,9 +12,7 @@ import httpx
 from fastmcp import FastMCP
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("fastmcp-ai-assistant")
 
 # Configuration from environment
@@ -47,9 +45,7 @@ async def query_documents(query: str, max_results: int = 5) -> str:
     Returns:
         Formatted search results with content, scores, and sources
     """
-    logger.info(
-        f"Tool called: query_documents(query='{query}', max_results={max_results})"
-    )
+    logger.info(f"Tool called: query_documents(query='{query}', max_results={max_results})")
 
     # Validate input
     if not query or not query.strip():
@@ -137,9 +133,7 @@ async def chat_with_context(
 
     async with httpx.AsyncClient(timeout=90.0) as client:
         try:
-            response = await client.post(
-                f"{AI_SERVICE_URL}/chat", json={"message": message, "context": context}
-            )
+            response = await client.post(f"{AI_SERVICE_URL}/chat", json={"message": message, "context": context})
             response.raise_for_status()
             data = response.json()
 
@@ -212,9 +206,7 @@ async def get_project_status() -> str:
 
 
 @mcp.tool()
-async def ask_qubinode(
-    question: str, topic: Optional[str] = None, skill_level: Optional[str] = None
-) -> str:
+async def ask_qubinode(question: str, topic: Optional[str] = None, skill_level: Optional[str] = None) -> str:
     """
     Ask Qubinode Navigator for help understanding features, usage patterns,
     and best practices. Perfect for LLMs to learn how to work with Qubinode.
@@ -309,16 +301,12 @@ Provide your answer in clear, actionable markdown format."""
                 logger.info("Successfully generated Qubinode guidance")
                 return ai_answer
             else:
-                logger.warning(
-                    f"Chat endpoint returned status {chat_response.status_code}"
-                )
+                logger.warning(f"Chat endpoint returned status {chat_response.status_code}")
                 # Fallback: return documentation if AI service fails
                 if docs_context:
                     return f"# Documentation Results for: {question}\n{docs_context}\n\n**Note:** AI-powered guidance unavailable, showing documentation instead."
                 else:
-                    return (
-                        f"Could not find documentation or AI guidance for: {question}"
-                    )
+                    return f"Could not find documentation or AI guidance for: {question}"
 
         except httpx.HTTPError as e:
             error_msg = f"Error getting Qubinode guidance: {str(e)}\n\nThe AI Assistant service may not be running at {AI_SERVICE_URL}\n\nTry running: podman run -d --name qubinode-ai -p 8080:8080 localhost/qubinode-ai-assistant:latest"
@@ -343,9 +331,7 @@ def main():
     logger.info("Starting FastMCP AI Assistant Server")
     logger.info(f"Host: {MCP_SERVER_HOST}")
     logger.info(f"Port: {MCP_SERVER_PORT}")
-    logger.info(
-        "Tools: query_documents, chat_with_context, get_project_status, ask_qubinode"
-    )
+    logger.info("Tools: query_documents, chat_with_context, get_project_status, ask_qubinode")
     logger.info("=" * 60)
 
     # FastMCP handles everything: SSE, HTTP, stdio, auth, errors!

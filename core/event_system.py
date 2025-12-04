@@ -35,9 +35,7 @@ class EventSystem:
         self._event_history: List[Event] = []
         self._lock = threading.RLock()
 
-    def emit(
-        self, event_name: str, data: Dict[str, Any] = None, source: str = "system"
-    ) -> None:
+    def emit(self, event_name: str, data: Dict[str, Any] = None, source: str = "system") -> None:
         """
         Emit an event to all registered listeners
 
@@ -47,9 +45,7 @@ class EventSystem:
             source: Source of the event
         """
         data = data or {}
-        event = Event(
-            name=event_name, data=data, timestamp=datetime.now(), source=source
-        )
+        event = Event(name=event_name, data=data, timestamp=datetime.now(), source=source)
 
         with self._lock:
             # Store event in history
@@ -61,9 +57,7 @@ class EventSystem:
                     try:
                         callback(event)
                     except Exception as e:
-                        self.logger.error(
-                            f"Error in event callback for {event_name}: {e}"
-                        )
+                        self.logger.error(f"Error in event callback for {event_name}: {e}")
 
         self.logger.debug(f"Emitted event: {event_name} from {source}")
 
@@ -109,9 +103,7 @@ class EventSystem:
         with self._lock:
             return self._subscribers.get(event_name, []).copy()
 
-    def get_event_history(
-        self, event_name: str = None, limit: int = 100
-    ) -> List[Event]:
+    def get_event_history(self, event_name: str = None, limit: int = 100) -> List[Event]:
         """
         Get event history
 
@@ -148,8 +140,5 @@ class EventSystem:
                 "unique_event_types": len(set(e.name for e in self._event_history)),
                 "active_subscriptions": len(self._subscribers),
                 "event_counts": event_counts,
-                "subscribers_by_event": {
-                    event_name: len(callbacks)
-                    for event_name, callbacks in self._subscribers.items()
-                },
+                "subscribers_by_event": {event_name: len(callbacks) for event_name, callbacks in self._subscribers.items()},
             }

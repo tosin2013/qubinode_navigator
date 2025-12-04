@@ -38,9 +38,7 @@ class RHEL9Plugin(QubiNodePlugin):
 
     def _initialize_plugin(self) -> None:
         """Initialize RHEL 9 plugin"""
-        self.logger.info(
-            "Initializing RHEL 9 plugin - Modern Enterprise Infrastructure Specialist"
-        )
+        self.logger.info("Initializing RHEL 9 plugin - Modern Enterprise Infrastructure Specialist")
 
         # Validate we're running on RHEL 9
         if not self._is_rhel9():
@@ -49,9 +47,7 @@ class RHEL9Plugin(QubiNodePlugin):
         # Set configuration constants for modern enterprise deployment
         self.kvm_version = self.config.get("kvm_version", "latest")
         self.ansible_safe_version = self.config.get("ansible_safe_version", "0.0.9")
-        self.git_repo = self.config.get(
-            "git_repo", "https://github.com/Qubinode/qubinode_navigator.git"
-        )
+        self.git_repo = self.config.get("git_repo", "https://github.com/Qubinode/qubinode_navigator.git")
 
         # Set default packages for RHEL 9 modern deployment
         self.packages = self.config.get(
@@ -91,9 +87,7 @@ class RHEL9Plugin(QubiNodePlugin):
         # Validate vault configuration if enabled
         if self.use_hashicorp_vault.lower() == "true":
             if not all([os.getenv("VAULT_ADDRESS"), os.getenv("SECRET_PATH")]):
-                raise RuntimeError(
-                    "Vault environment variables not properly configured"
-                )
+                raise RuntimeError("Vault environment variables not properly configured")
 
     def _is_rhel9(self) -> bool:
         """Check if running on RHEL 9"""
@@ -160,9 +154,7 @@ class RHEL9Plugin(QubiNodePlugin):
 
             if missing_packages:
                 self._install_packages(list(missing_packages))
-                changes_made.append(
-                    f"Installed packages: {', '.join(missing_packages)}"
-                )
+                changes_made.append(f"Installed packages: {', '.join(missing_packages)}")
 
             # Configure firewall
             if not current_state.get("firewalld_enabled"):
@@ -174,9 +166,7 @@ class RHEL9Plugin(QubiNodePlugin):
                 changes_made.append("Started firewalld service")
 
             # Create lab user if needed
-            if desired_state.get("lab_user_exists") and not current_state.get(
-                "lab_user_exists"
-            ):
+            if desired_state.get("lab_user_exists") and not current_state.get("lab_user_exists"):
                 self._create_lab_user()
                 changes_made.append("Created lab-user")
 
@@ -220,9 +210,7 @@ class RHEL9Plugin(QubiNodePlugin):
     def _is_service_enabled(self, service: str) -> bool:
         """Check if service is enabled"""
         try:
-            result = subprocess.run(
-                ["systemctl", "is-enabled", service], capture_output=True, text=True
-            )
+            result = subprocess.run(["systemctl", "is-enabled", service], capture_output=True, text=True)
             return result.returncode == 0
         except subprocess.CalledProcessError:
             return False
@@ -230,9 +218,7 @@ class RHEL9Plugin(QubiNodePlugin):
     def _is_service_active(self, service: str) -> bool:
         """Check if service is active"""
         try:
-            result = subprocess.run(
-                ["systemctl", "is-active", service], capture_output=True, text=True
-            )
+            result = subprocess.run(["systemctl", "is-active", service], capture_output=True, text=True)
             return result.stdout.strip() == "active"
         except subprocess.CalledProcessError:
             return False
@@ -248,12 +234,8 @@ class RHEL9Plugin(QubiNodePlugin):
     def _get_python_version(self) -> tuple:
         """Get Python version tuple"""
         try:
-            result = subprocess.run(
-                ["python3", "--version"], capture_output=True, text=True, check=True
-            )
-            version_str = result.stdout.strip().split()[
-                1
-            ]  # "Python 3.9.16" -> "3.9.16"
+            result = subprocess.run(["python3", "--version"], capture_output=True, text=True, check=True)
+            version_str = result.stdout.strip().split()[1]  # "Python 3.9.16" -> "3.9.16"
             parts = version_str.split(".")
             return (int(parts[0]), int(parts[1]))
         except (subprocess.CalledProcessError, ValueError, IndexError):
@@ -270,9 +252,7 @@ class RHEL9Plugin(QubiNodePlugin):
     def _create_lab_user(self) -> None:
         """Create lab-user with sudo privileges"""
         # Create user
-        subprocess.run(
-            ["sudo", "useradd", "-m", "-s", "/bin/bash", "lab-user"], check=True
-        )
+        subprocess.run(["sudo", "useradd", "-m", "-s", "/bin/bash", "lab-user"], check=True)
 
         # Add to sudo group
         subprocess.run(["sudo", "usermod", "-aG", "wheel", "lab-user"], check=True)

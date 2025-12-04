@@ -33,9 +33,7 @@ class OSMatrixTester:
             "strict_python_validation": False,
         }
 
-    def test_plugin_basic_functionality(
-        self, plugin_class, plugin_name: str
-    ) -> Dict[str, bool]:
+    def test_plugin_basic_functionality(self, plugin_class, plugin_name: str) -> Dict[str, bool]:
         """Test basic plugin functionality"""
         print(f"\n🧪 Testing {plugin_name} Plugin")
         print("=" * 50)
@@ -74,9 +72,7 @@ class OSMatrixTester:
                     results["desired_state"] = True
                     print(f"✅ {plugin_name} desired state: PASSED")
                 else:
-                    print(
-                        f"❌ {plugin_name} desired state: FAILED - Invalid state type"
-                    )
+                    print(f"❌ {plugin_name} desired state: FAILED - Invalid state type")
             except Exception as e:
                 print(f"❌ {plugin_name} desired state: FAILED - {e}")
 
@@ -97,9 +93,7 @@ class OSMatrixTester:
                     results["health_status"] = True
                     print(f"✅ {plugin_name} health status: PASSED")
                 else:
-                    print(
-                        f"❌ {plugin_name} health status: FAILED - Invalid health format"
-                    )
+                    print(f"❌ {plugin_name} health status: FAILED - Invalid health format")
             except Exception as e:
                 print(f"❌ {plugin_name} health status: FAILED - {e}")
 
@@ -192,19 +186,13 @@ class OSMatrixTester:
             # Check current state
             current_state = plugin.check_state()
             print(f"✅ Current OS: {current_state.get('os_version', 'Unknown')}")
-            print(
-                f"✅ Python Version: {current_state.get('python_version', 'Unknown')}"
-            )
-            print(
-                f"✅ Kernel Version: {current_state.get('kernel_version', 'Unknown')}"
-            )
+            print(f"✅ Python Version: {current_state.get('python_version', 'Unknown')}")
+            print(f"✅ Kernel Version: {current_state.get('kernel_version', 'Unknown')}")
 
             # Get desired state
             context = ExecutionContext(config={"create_lab_user": False})
             desired_state = plugin.get_desired_state(context)
-            print(
-                f"✅ Desired Python: {desired_state.get('python_version', 'Unknown')}"
-            )
+            print(f"✅ Desired Python: {desired_state.get('python_version', 'Unknown')}")
 
             # Test health status
             health = plugin.get_health_status()
@@ -236,9 +224,7 @@ class OSMatrixTester:
         plugin_results = {}
         for plugin_class, plugin_name in plugin_tests:
             try:
-                plugin_results[plugin_name] = self.test_plugin_basic_functionality(
-                    plugin_class, plugin_name
-                )
+                plugin_results[plugin_name] = self.test_plugin_basic_functionality(plugin_class, plugin_name)
             except Exception as e:
                 print(f"❌ {plugin_name} testing failed: {e}")
                 plugin_results[plugin_name] = {
@@ -305,19 +291,13 @@ class OSMatrixTester:
         print(f"\n🎯 Native Environment Test: {native_status}")
 
         if overall_success_rate >= 90:
-            print(
-                f"\n🎉 EXCELLENT! OS matrix testing achieved {overall_success_rate:.1f}% success rate!"
-            )
+            print(f"\n🎉 EXCELLENT! OS matrix testing achieved {overall_success_rate:.1f}% success rate!")
             print("✅ All OS plugins are ready for production deployment!")
         elif overall_success_rate >= 80:
-            print(
-                f"\n✅ GOOD! OS matrix testing achieved {overall_success_rate:.1f}% success rate!"
-            )
+            print(f"\n✅ GOOD! OS matrix testing achieved {overall_success_rate:.1f}% success rate!")
             print("⚠️  Minor issues detected but plugins are functional.")
         else:
-            print(
-                f"\n⚠️  OS matrix testing achieved {overall_success_rate:.1f}% success rate."
-            )
+            print(f"\n⚠️  OS matrix testing achieved {overall_success_rate:.1f}% success rate.")
             print("❌ Significant issues detected that need attention.")
 
         return {

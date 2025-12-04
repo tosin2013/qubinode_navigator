@@ -44,9 +44,7 @@ class QubinodeAICLI:
     async def diagnostics(self, system_info: dict = None) -> dict:
         """Run system diagnostics."""
         try:
-            response = await self.client.post(
-                f"{self.base_url}/diagnostics", json=system_info or {}
-            )
+            response = await self.client.post(f"{self.base_url}/diagnostics", json=system_info or {})
             response.raise_for_status()
             return response.json()
 
@@ -106,13 +104,7 @@ class QubinodeAICLI:
                         print(f"❌ Error: {result['error']}")
                     else:
                         status = result.get("status", "unknown")
-                        emoji = (
-                            "✅"
-                            if status == "healthy"
-                            else "⚠️"
-                            if status == "degraded"
-                            else "❌"
-                        )
+                        emoji = "✅" if status == "healthy" else "⚠️" if status == "degraded" else "❌"
                         print(f"{emoji} Health Status: {status}")
                     continue
 
@@ -186,17 +178,11 @@ Examples:
         help="AI assistant service URL (default: http://localhost:8080)",
     )
 
-    parser.add_argument(
-        "--message", "-m", help="Send a single message to the AI assistant"
-    )
+    parser.add_argument("--message", "-m", help="Send a single message to the AI assistant")
 
-    parser.add_argument(
-        "--diagnostics", "-d", action="store_true", help="Run system diagnostics"
-    )
+    parser.add_argument("--diagnostics", "-d", action="store_true", help="Run system diagnostics")
 
-    parser.add_argument(
-        "--health", action="store_true", help="Check AI assistant health"
-    )
+    parser.add_argument("--health", action="store_true", help="Check AI assistant health")
 
     parser.add_argument("--json", action="store_true", help="Output in JSON format")
 
@@ -216,13 +202,7 @@ Examples:
                     sys.exit(1)
                 else:
                     status = result.get("status", "unknown")
-                    emoji = (
-                        "✅"
-                        if status == "healthy"
-                        else "⚠️"
-                        if status == "degraded"
-                        else "❌"
-                    )
+                    emoji = "✅" if status == "healthy" else "⚠️" if status == "degraded" else "❌"
                     print(f"{emoji} AI Assistant Status: {status}")
 
         elif args.diagnostics:

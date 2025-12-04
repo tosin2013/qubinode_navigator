@@ -34,9 +34,7 @@ async def test_env_substitution():
     try:
         model_manager = ModelManager(config_manager.config)
         print(f"  Model type: {model_manager.model_type}")
-        print(
-            f"  GPU layers: {model_manager.gpu_layers} (type: {type(model_manager.gpu_layers)})"
-        )
+        print(f"  GPU layers: {model_manager.gpu_layers} (type: {type(model_manager.gpu_layers)})")
         print(f"  Use GPU: {model_manager.use_gpu}")
         print(f"  Threads: {model_manager.threads}")
         print("  ✓ ModelManager initialized successfully")
@@ -56,9 +54,7 @@ async def test_env_substitution():
     try:
         model_manager2 = ModelManager(config_manager2.config)
         print(f"  Model type: {model_manager2.model_type}")
-        print(
-            f"  GPU layers: {model_manager2.gpu_layers} (type: {type(model_manager2.gpu_layers)})"
-        )
+        print(f"  GPU layers: {model_manager2.gpu_layers} (type: {type(model_manager2.gpu_layers)})")
         print(f"  Use GPU: {model_manager2.use_gpu}")
         print(f"  Threads: {model_manager2.threads}")
         print("  ✓ ModelManager with env vars initialized successfully")

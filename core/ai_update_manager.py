@@ -100,9 +100,7 @@ class AIUpdateManager:
         self.logger = logging.getLogger(__name__)
 
         # Configuration
-        self.ai_assistant_url = self.config.get(
-            "ai_assistant_url", "http://localhost:8080"
-        )
+        self.ai_assistant_url = self.config.get("ai_assistant_url", "http://localhost:8080")
         self.ai_timeout = self.config.get("ai_timeout", 30)
         self.enable_ai_analysis = self.config.get("enable_ai_analysis", True)
         self.risk_threshold = self.config.get("risk_threshold", "medium")
@@ -130,9 +128,7 @@ class AIUpdateManager:
         if cache_key in self.analysis_cache:
             cached_analysis, timestamp = self.analysis_cache[cache_key]
             if time.time() - timestamp < self.cache_ttl:
-                self.logger.info(
-                    f"Using cached AI analysis for {update_info.component_name}"
-                )
+                self.logger.info(f"Using cached AI analysis for {update_info.component_name}")
                 return cached_analysis
 
         if not self.enable_ai_analysis:
@@ -150,9 +146,7 @@ class AIUpdateManager:
             )
 
             # Prepare AI prompt
-            prompt = self._create_analysis_prompt(
-                update_info, compatibility_level, compatibility_reason
-            )
+            prompt = self._create_analysis_prompt(update_info, compatibility_level, compatibility_reason)
 
             # Call AI Assistant
             ai_response = await self._call_ai_assistant(prompt)
@@ -166,15 +160,11 @@ class AIUpdateManager:
             # Store analysis
             self.ai_analyses[analysis_id] = analysis
 
-            self.logger.info(
-                f"AI analysis completed for {update_info.component_name}: {analysis.risk_level.value}"
-            )
+            self.logger.info(f"AI analysis completed for {update_info.component_name}: {analysis.risk_level.value}")
             return analysis
 
         except Exception as e:
-            self.logger.error(
-                f"AI analysis failed for {update_info.component_name}: {e}"
-            )
+            self.logger.error(f"AI analysis failed for {update_info.component_name}: {e}")
             return self._create_fallback_analysis(analysis_id, update_info)
 
     def _create_analysis_prompt(
@@ -268,9 +258,7 @@ Respond in JSON format with these exact field names:
         except Exception as e:
             raise Exception(f"AI Assistant call failed: {e}")
 
-    def _parse_ai_analysis(
-        self, analysis_id: str, update_info: UpdateInfo, ai_response: Dict[str, Any]
-    ) -> AIAnalysis:
+    def _parse_ai_analysis(self, analysis_id: str, update_info: UpdateInfo, ai_response: Dict[str, Any]) -> AIAnalysis:
         """Parse AI response into AIAnalysis object"""
         try:
             # Extract AI response text
@@ -292,24 +280,16 @@ Respond in JSON format with these exact field names:
                 component_name=update_info.component_name,
                 component_version=update_info.available_version,
                 risk_level=RiskLevel(ai_data.get("risk_level", "medium")),
-                recommendation=UpdateRecommendation(
-                    ai_data.get("recommendation", "apply_with_testing")
-                ),
+                recommendation=UpdateRecommendation(ai_data.get("recommendation", "apply_with_testing")),
                 confidence_score=float(ai_data.get("confidence_score", 0.7)),
                 reasoning=ai_data.get("reasoning", "AI analysis completed"),
-                security_impact=ai_data.get(
-                    "security_impact", "No specific security impact identified"
-                ),
+                security_impact=ai_data.get("security_impact", "No specific security impact identified"),
                 compatibility_concerns=ai_data.get("compatibility_concerns", []),
                 testing_recommendations=ai_data.get("testing_recommendations", []),
-                rollback_strategy=ai_data.get(
-                    "rollback_strategy", "Standard rollback procedure"
-                ),
+                rollback_strategy=ai_data.get("rollback_strategy", "Standard rollback procedure"),
                 estimated_downtime=ai_data.get("estimated_downtime"),
                 dependencies_impact=ai_data.get("dependencies_impact", []),
-                business_impact=ai_data.get(
-                    "business_impact", "Minimal business impact expected"
-                ),
+                business_impact=ai_data.get("business_impact", "Minimal business impact expected"),
             )
 
         except Exception as e:
@@ -345,9 +325,7 @@ Respond in JSON format with these exact field names:
 
         return analysis
 
-    def _create_fallback_analysis(
-        self, analysis_id: str, update_info: UpdateInfo
-    ) -> AIAnalysis:
+    def _create_fallback_analysis(self, analysis_id: str, update_info: UpdateInfo) -> AIAnalysis:
         """Create fallback analysis when AI is unavailable"""
         # Determine risk level based on update severity
         risk_mapping = {
@@ -376,9 +354,7 @@ Respond in JSON format with these exact field names:
             recommendation=recommendation,
             confidence_score=0.6,  # Lower confidence for fallback
             reasoning=f"Fallback analysis based on severity: {update_info.severity}",
-            security_impact="Security impact assessed based on advisories"
-            if update_info.security_advisories
-            else "No security advisories",
+            security_impact="Security impact assessed based on advisories" if update_info.security_advisories else "No security advisories",
             compatibility_concerns=["Compatibility not verified by AI"],
             testing_recommendations=[
                 "Perform standard validation tests",
@@ -394,9 +370,7 @@ Respond in JSON format with these exact field names:
         """Analyze an entire update batch with AI"""
         batch_analyses = {}
 
-        self.logger.info(
-            f"Starting AI analysis for batch {batch.batch_id} with {len(batch.updates)} updates"
-        )
+        self.logger.info(f"Starting AI analysis for batch {batch.batch_id} with {len(batch.updates)} updates")
 
         # Analyze each update in the batch
         for update in batch.updates:
@@ -410,17 +384,13 @@ Respond in JSON format with these exact field names:
             except Exception as e:
                 self.logger.error(f"Failed to analyze {update.component_name}: {e}")
                 # Create fallback analysis
-                fallback = self._create_fallback_analysis(
-                    f"fallback_{update.component_name}_{int(time.time())}", update
-                )
+                fallback = self._create_fallback_analysis(f"fallback_{update.component_name}_{int(time.time())}", update)
                 batch_analyses[update.component_name] = fallback
 
         self.logger.info(f"Completed AI analysis for batch {batch.batch_id}")
         return batch_analyses
 
-    async def create_update_plan(
-        self, batch: UpdateBatch, analyses: Dict[str, AIAnalysis]
-    ) -> UpdatePlan:
+    async def create_update_plan(self, batch: UpdateBatch, analyses: Dict[str, AIAnalysis]) -> UpdatePlan:
         """Create AI-guided update execution plan"""
         plan_id = f"plan_{batch.batch_id}_{int(time.time())}"
 
@@ -440,14 +410,8 @@ Respond in JSON format with these exact field names:
             approval_required = False
 
         # Calculate confidence score
-        confidence_scores = [
-            analysis.confidence_score for analysis in analyses.values()
-        ]
-        avg_confidence = (
-            sum(confidence_scores) / len(confidence_scores)
-            if confidence_scores
-            else 0.5
-        )
+        confidence_scores = [analysis.confidence_score for analysis in analyses.values()]
+        avg_confidence = sum(confidence_scores) / len(confidence_scores) if confidence_scores else 0.5
 
         # Create execution phases
         phases = self._create_execution_phases(batch, analyses, execution_strategy)
@@ -479,15 +443,11 @@ Respond in JSON format with these exact field names:
         )
 
         self.update_plans[plan_id] = plan
-        self.logger.info(
-            f"Created update plan {plan_id} with strategy: {execution_strategy}"
-        )
+        self.logger.info(f"Created update plan {plan_id} with strategy: {execution_strategy}")
 
         return plan
 
-    def _create_execution_phases(
-        self, batch: UpdateBatch, analyses: Dict[str, AIAnalysis], strategy: str
-    ) -> List[Dict[str, Any]]:
+    def _create_execution_phases(self, batch: UpdateBatch, analyses: Dict[str, AIAnalysis], strategy: str) -> List[Dict[str, Any]]:
         """Create execution phases based on strategy and risk analysis"""
         phases = []
 
@@ -507,12 +467,7 @@ Respond in JSON format with these exact field names:
         elif strategy == "staged":
             # Multiple phases for medium-risk updates
             # Phase 1: Low-risk updates
-            low_risk_updates = [
-                update.component_name
-                for update in batch.updates
-                if analyses[update.component_name].risk_level
-                in [RiskLevel.VERY_LOW, RiskLevel.LOW]
-            ]
+            low_risk_updates = [update.component_name for update in batch.updates if analyses[update.component_name].risk_level in [RiskLevel.VERY_LOW, RiskLevel.LOW]]
 
             if low_risk_updates:
                 phases.append(
@@ -528,12 +483,7 @@ Respond in JSON format with these exact field names:
                 )
 
             # Phase 2: Medium and high-risk updates
-            higher_risk_updates = [
-                update.component_name
-                for update in batch.updates
-                if analyses[update.component_name].risk_level
-                in [RiskLevel.MEDIUM, RiskLevel.HIGH]
-            ]
+            higher_risk_updates = [update.component_name for update in batch.updates if analyses[update.component_name].risk_level in [RiskLevel.MEDIUM, RiskLevel.HIGH]]
 
             if higher_risk_updates:
                 phases.append(
@@ -592,9 +542,7 @@ Respond in JSON format with these exact field names:
 
         return phases
 
-    def _generate_risk_mitigation_steps(
-        self, analyses: Dict[str, AIAnalysis]
-    ) -> List[str]:
+    def _generate_risk_mitigation_steps(self, analyses: Dict[str, AIAnalysis]) -> List[str]:
         """Generate risk mitigation steps based on analyses"""
         mitigation_steps = [
             "Create system backup before starting updates",
@@ -605,23 +553,17 @@ Respond in JSON format with these exact field names:
         # Add component-specific mitigations
         for component_name, analysis in analyses.items():
             if analysis.risk_level in [RiskLevel.HIGH, RiskLevel.CRITICAL]:
-                mitigation_steps.append(
-                    f"Extra validation for {component_name} due to high risk"
-                )
+                mitigation_steps.append(f"Extra validation for {component_name} due to high risk")
 
             if analysis.compatibility_concerns:
-                mitigation_steps.append(
-                    f"Address compatibility concerns for {component_name}"
-                )
+                mitigation_steps.append(f"Address compatibility concerns for {component_name}")
 
             if analysis.dependencies_impact:
                 mitigation_steps.append(f"Monitor dependencies for {component_name}")
 
         return mitigation_steps
 
-    def _create_rollback_plan(
-        self, batch: UpdateBatch, analyses: Dict[str, AIAnalysis]
-    ) -> Dict[str, Any]:
+    def _create_rollback_plan(self, batch: UpdateBatch, analyses: Dict[str, AIAnalysis]) -> Dict[str, Any]:
         """Create comprehensive rollback plan"""
         return {
             "rollback_strategy": "Sequential rollback in reverse order of application",
@@ -647,9 +589,7 @@ Respond in JSON format with these exact field names:
             ],
         }
 
-    def _define_monitoring_points(
-        self, batch: UpdateBatch, analyses: Dict[str, AIAnalysis]
-    ) -> List[str]:
+    def _define_monitoring_points(self, batch: UpdateBatch, analyses: Dict[str, AIAnalysis]) -> List[str]:
         """Define monitoring points for update execution"""
         monitoring_points = [
             "System resource utilization (CPU, memory, disk)",
@@ -700,9 +640,7 @@ Respond in JSON format with these exact field names:
             minutes = total_minutes % 60
             return f"{hours}h {minutes}m"
 
-    async def get_update_recommendations(
-        self, updates: List[UpdateInfo]
-    ) -> Dict[str, Dict[str, Any]]:
+    async def get_update_recommendations(self, updates: List[UpdateInfo]) -> Dict[str, Dict[str, Any]]:
         """Get AI recommendations for a list of updates"""
         recommendations = {}
 
@@ -727,9 +665,7 @@ Respond in JSON format with these exact field names:
                 }
 
             except Exception as e:
-                self.logger.error(
-                    f"Failed to get recommendation for {update.component_name}: {e}"
-                )
+                self.logger.error(f"Failed to get recommendation for {update.component_name}: {e}")
                 recommendations[update.component_name] = {
                     "recommendation": "apply_with_testing",
                     "risk_level": "medium",
@@ -748,12 +684,7 @@ Respond in JSON format with these exact field names:
         plan = self.update_plans[batch_id]
 
         # Get analyses for this batch
-        batch_analyses = {
-            analysis.component_name: analysis
-            for analysis in self.ai_analyses.values()
-            if analysis.analysis_id.startswith("ai_analysis_")
-            and batch_id in analysis.analysis_id
-        }
+        batch_analyses = {analysis.component_name: analysis for analysis in self.ai_analyses.values() if analysis.analysis_id.startswith("ai_analysis_") and batch_id in analysis.analysis_id}
 
         report = {
             "report_id": f"report_{batch_id}_{int(time.time())}",
@@ -767,16 +698,8 @@ Respond in JSON format with these exact field names:
             },
             "risk_assessment": {
                 "overall_risk": self._calculate_overall_risk(batch_analyses),
-                "high_risk_components": [
-                    name
-                    for name, analysis in batch_analyses.items()
-                    if analysis.risk_level in [RiskLevel.HIGH, RiskLevel.CRITICAL]
-                ],
-                "security_updates": [
-                    name
-                    for name, analysis in batch_analyses.items()
-                    if "security" in analysis.security_impact.lower()
-                ],
+                "high_risk_components": [name for name, analysis in batch_analyses.items() if analysis.risk_level in [RiskLevel.HIGH, RiskLevel.CRITICAL]],
+                "security_updates": [name for name, analysis in batch_analyses.items() if "security" in analysis.security_impact.lower()],
             },
             "recommendations": {
                 name: {

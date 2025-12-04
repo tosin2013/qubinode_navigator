@@ -41,9 +41,7 @@ class HetznerPlugin(QubiNodePlugin):
         )
 
         # Cloud-specific packages
-        self.cloud_packages = self.config.get(
-            "cloud_packages", ["curl", "wget", "jq", "cloud-init", "cloud-utils"]
-        )
+        self.cloud_packages = self.config.get("cloud_packages", ["curl", "wget", "jq", "cloud-init", "cloud-utils"])
 
     def check_state(self) -> SystemState:
         """Check current Hetzner cloud configuration state"""
@@ -105,9 +103,7 @@ class HetznerPlugin(QubiNodePlugin):
         try:
             # Verify we're on Hetzner cloud
             if not current_state.get("is_hetzner_cloud"):
-                self.logger.warning(
-                    "Not running on Hetzner Cloud - some optimizations may not apply"
-                )
+                self.logger.warning("Not running on Hetzner Cloud - some optimizations may not apply")
 
             # Install missing cloud packages
             current_packages = set(current_state.get("cloud_packages_installed", []))
@@ -116,35 +112,25 @@ class HetznerPlugin(QubiNodePlugin):
 
             if missing_packages:
                 self._install_packages(list(missing_packages))
-                changes_made.append(
-                    f"Installed cloud packages: {', '.join(missing_packages)}"
-                )
+                changes_made.append(f"Installed cloud packages: {', '.join(missing_packages)}")
 
             # Install Hetzner CLI if needed
-            if not current_state.get("hetzner_cli_installed") and desired_state.get(
-                "hetzner_cli_installed"
-            ):
+            if not current_state.get("hetzner_cli_installed") and desired_state.get("hetzner_cli_installed"):
                 self._install_hetzner_cli()
                 changes_made.append("Installed Hetzner CLI tools")
 
             # Configure cloud-init if needed
-            if not current_state.get("cloud_init_configured") and desired_state.get(
-                "cloud_init_configured"
-            ):
+            if not current_state.get("cloud_init_configured") and desired_state.get("cloud_init_configured"):
                 self._configure_cloud_init()
                 changes_made.append("Configured cloud-init")
 
             # Optimize network if needed
-            if not current_state.get("network_optimized") and desired_state.get(
-                "network_optimized"
-            ):
+            if not current_state.get("network_optimized") and desired_state.get("network_optimized"):
                 self._optimize_network()
                 changes_made.append("Optimized network configuration")
 
             # Optimize storage if needed
-            if not current_state.get("storage_optimized") and desired_state.get(
-                "storage_optimized"
-            ):
+            if not current_state.get("storage_optimized") and desired_state.get("storage_optimized"):
                 self._optimize_storage()
                 changes_made.append("Optimized storage configuration")
 
@@ -237,9 +223,7 @@ class HetznerPlugin(QubiNodePlugin):
         """Install Hetzner CLI"""
         try:
             # Download and install hcloud CLI
-            arch = subprocess.run(
-                ["uname", "-m"], capture_output=True, text=True, check=True
-            ).stdout.strip()
+            arch = subprocess.run(["uname", "-m"], capture_output=True, text=True, check=True).stdout.strip()
             if arch == "x86_64":
                 arch = "amd64"
             elif arch == "aarch64":
@@ -263,13 +247,9 @@ class HetznerPlugin(QubiNodePlugin):
             # Download and install
             download_url = f"https://github.com/hetznercloud/cli/releases/download/v{version}/hcloud-linux-{arch}.tar.gz"
 
-            subprocess.run(
-                ["curl", "-L", "-o", "/tmp/hcloud.tar.gz", download_url], check=True
-            )
+            subprocess.run(["curl", "-L", "-o", "/tmp/hcloud.tar.gz", download_url], check=True)
 
-            subprocess.run(
-                ["tar", "-xzf", "/tmp/hcloud.tar.gz", "-C", "/tmp"], check=True
-            )
+            subprocess.run(["tar", "-xzf", "/tmp/hcloud.tar.gz", "-C", "/tmp"], check=True)
 
             subprocess.run(["sudo", "mv", "/tmp/hcloud", "/usr/local/bin/"], check=True)
 
@@ -285,9 +265,7 @@ class HetznerPlugin(QubiNodePlugin):
 
     def _is_cloud_init_configured(self) -> bool:
         """Check if cloud-init is properly configured"""
-        return os.path.exists("/etc/cloud/cloud.cfg") and os.path.exists(
-            "/var/lib/cloud"
-        )
+        return os.path.exists("/etc/cloud/cloud.cfg") and os.path.exists("/var/lib/cloud")
 
     def _configure_cloud_init(self) -> None:
         """Configure cloud-init for Hetzner Cloud"""
@@ -351,9 +329,7 @@ cloud_final_modules:
         with open("/tmp/cloud.cfg", "w") as f:
             f.write(cloud_cfg)
 
-        subprocess.run(
-            ["sudo", "mv", "/tmp/cloud.cfg", "/etc/cloud/cloud.cfg"], check=True
-        )
+        subprocess.run(["sudo", "mv", "/tmp/cloud.cfg", "/etc/cloud/cloud.cfg"], check=True)
 
         # Enable cloud-init services
         services = ["cloud-init-local", "cloud-init", "cloud-config", "cloud-final"]
@@ -388,9 +364,7 @@ net.ipv4.tcp_congestion_control = bbr
         with open("/tmp/99-hetzner-network.conf", "w") as f:
             f.write(network_tuning)
 
-        subprocess.run(
-            ["sudo", "mv", "/tmp/99-hetzner-network.conf", "/etc/sysctl.d/"], check=True
-        )
+        subprocess.run(["sudo", "mv", "/tmp/99-hetzner-network.conf", "/etc/sysctl.d/"], check=True)
 
         # Apply settings
         subprocess.run(["sudo", "sysctl", "--system"], check=True)
@@ -426,9 +400,7 @@ ACTION=="add|change", KERNEL=="nvme[0-9]*", ATTR{queue/scheduler}="none"
         with open("/tmp/99-hetzner-io.rules", "w") as f:
             f.write(io_scheduler_config)
 
-        subprocess.run(
-            ["sudo", "mv", "/tmp/99-hetzner-io.rules", "/etc/udev/rules.d/"], check=True
-        )
+        subprocess.run(["sudo", "mv", "/tmp/99-hetzner-io.rules", "/etc/udev/rules.d/"], check=True)
 
         self.logger.info("Optimized storage configuration for Hetzner Cloud")
 

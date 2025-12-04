@@ -32,9 +32,7 @@ except ImportError:
         "Warning: fastmcp not installed. MCP server will not be available.",
         file=sys.stderr,
     )
-    print(
-        "Install with: pip install mcp starlette uvicorn sse-starlette", file=sys.stderr
-    )
+    print("Install with: pip install mcp starlette uvicorn sse-starlette", file=sys.stderr)
     # Exit early if not running as main script (being imported by plugins)
     if __name__ != "__main__":
         raise SystemExit(0)
@@ -47,9 +45,7 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("fastmcp-airflow")
 
 # Configuration
@@ -85,8 +81,7 @@ except ImportError:
 RAG_AVAILABLE = False
 rag_store = None
 try:
-    from qubinode.rag_store import RAGStore, get_rag_store
-    from qubinode.embedding_service import get_embedding_service
+    from qubinode.rag_store import get_rag_store
 
     RAG_AVAILABLE = True
     logger.info("RAG components available")
@@ -106,7 +101,7 @@ def get_session_id() -> str:
     return _current_session_id
 
 
-def get_rag() -> Optional["RAGStore"]:
+def get_rag():
     """Get RAG store singleton, initializing if needed."""
     global rag_store
     if RAG_AVAILABLE and rag_store is None:
@@ -318,9 +313,7 @@ async def preflight_vm_creation(
     # Check 2: Image availability
     output += "## 2. Image Availability\n"
     try:
-        result = subprocess.run(
-            ["kcli", "list", "images"], capture_output=True, text=True, timeout=30
-        )
+        result = subprocess.run(["kcli", "list", "images"], capture_output=True, text=True, timeout=30)
         if result.returncode == 0:
             if image in result.stdout:
                 output += f"✅ **PASS**: Image '{image}' is available\n\n"
@@ -339,9 +332,7 @@ async def preflight_vm_creation(
     # Check 3: Available memory
     output += "## 3. Host Memory\n"
     try:
-        result = subprocess.run(
-            ["free", "-m"], capture_output=True, text=True, timeout=5
-        )
+        result = subprocess.run(["free", "-m"], capture_output=True, text=True, timeout=5)
         if result.returncode == 0:
             lines = result.stdout.strip().split("\n")
             for line in lines:
@@ -352,9 +343,7 @@ async def preflight_vm_creation(
                         output += f"✅ **PASS**: {available_mb}MB available (need {memory}MB + buffer)\n\n"
                     else:
                         output += f"❌ **FAIL**: Only {available_mb}MB available, need {memory}MB + 1GB buffer\n"
-                        output += (
-                            "   Fix: Stop unused VMs or reduce requested memory\n\n"
-                        )
+                        output += "   Fix: Stop unused VMs or reduce requested memory\n\n"
                         all_passed = False
                         fixes_needed.append("Stop unused VMs or reduce memory request")
                     break
@@ -548,9 +537,7 @@ async def create_vm(
     Returns:
         Success message with VM details, or error if creation failed
     """
-    logger.info(
-        f"Tool called: create_vm(name='{name}', image='{image}', memory={memory}, cpus={cpus}, disk_size={disk_size})"
-    )
+    logger.info(f"Tool called: create_vm(name='{name}', image='{image}', memory={memory}, cpus={cpus}, disk_size={disk_size})")
 
     if READ_ONLY:
         return "Error: Cannot create VM in read-only mode"
@@ -913,9 +900,7 @@ If something fails:
 
 
 @mcp.tool()
-async def manage_rag_documents(
-    operation: str, params: Optional[Dict[str, Any]] = None
-) -> str:
+async def manage_rag_documents(operation: str, params: Optional[Dict[str, Any]] = None) -> str:
     """
     Manage RAG document ingestion and vector database operations.
 
@@ -944,9 +929,7 @@ async def manage_rag_documents(
         - Check progress: manage_rag_documents('status')
         - Scan directory: manage_rag_documents('scan', {'doc_dir': '/opt/documents/incoming'})
     """
-    logger.info(
-        f"Tool called: manage_rag_documents(operation='{operation}', params={params})"
-    )
+    logger.info(f"Tool called: manage_rag_documents(operation='{operation}', params={params})")
 
     if READ_ONLY and operation in ["ingest"]:
         return f"Error: '{operation}' operation requires write access but read-only mode is enabled"
@@ -1136,12 +1119,7 @@ def _rag_list_processed(limit: int = 10) -> str:
             return output
 
         # Sort by timestamp (newest first)
-        if (
-            isinstance(docs, list)
-            and docs
-            and isinstance(docs[0], dict)
-            and "timestamp" in docs[0]
-        ):
+        if isinstance(docs, list) and docs and isinstance(docs[0], dict) and "timestamp" in docs[0]:
             docs = sorted(docs, key=lambda x: x.get("timestamp", ""), reverse=True)
 
         output += f"## {len(docs)} document(s) processed\n\n"
@@ -1188,9 +1166,7 @@ def _rag_estimate_chunks(doc_dir: str) -> str:
                 if ext.lower() in supported_exts:
                     file_path = os.path.join(root, fname)
                     try:
-                        with open(
-                            file_path, "r", encoding="utf-8", errors="ignore"
-                        ) as f:
+                        with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
                             content = f.read()
                             total_words += len(content.split())
                             total_size += len(content)
@@ -1215,12 +1191,8 @@ def _rag_estimate_chunks(doc_dir: str) -> str:
         output += "- **Embedding Dimension:** 384-d\n\n"
 
         output += "## Storage Requirements\n"
-        output += (
-            f"- **Vector DB Size (estimated):** ~{round(estimated_db_size_mb, 2)} MB\n"
-        )
-        output += (
-            f"- **Including Metadata:** ~{round(estimated_db_size_mb * 1.5, 2)} MB\n\n"
-        )
+        output += f"- **Vector DB Size (estimated):** ~{round(estimated_db_size_mb, 2)} MB\n"
+        output += f"- **Including Metadata:** ~{round(estimated_db_size_mb * 1.5, 2)} MB\n\n"
 
         output += "## Quality Metrics\n"
         output += "- **Documents Ready:** ✅ Yes (>0 documents found)\n"
@@ -1291,20 +1263,14 @@ async def query_rag(
         query_rag("SSH operator usage", doc_types=["provider_doc", "dag"])
         query_rag("connection refused", threshold=0.5)  # Broader error search
     """
-    logger.info(
-        f"Tool called: query_rag(query='{query[:50]}...', doc_types={doc_types}, limit={limit})"
-    )
+    logger.info(f"Tool called: query_rag(query='{query[:50]}...', doc_types={doc_types}, limit={limit})")
 
     store = get_rag()
     if store is None:
-        return (
-            "Error: RAG store not available. Ensure PgVector is configured and running."
-        )
+        return "Error: RAG store not available. Ensure PgVector is configured and running."
 
     try:
-        results = store.search_documents(
-            query=query, doc_types=doc_types, limit=limit, threshold=threshold
-        )
+        results = store.search_documents(query=query, doc_types=doc_types, limit=limit, threshold=threshold)
 
         if not results:
             output = "# No Results Found\n\n"
@@ -1384,9 +1350,7 @@ async def ingest_to_rag(
 
     store = get_rag()
     if store is None:
-        return (
-            "Error: RAG store not available. Ensure PgVector is configured and running."
-        )
+        return "Error: RAG store not available. Ensure PgVector is configured and running."
 
     valid_types = [
         "adr",
@@ -1461,9 +1425,7 @@ async def get_troubleshooting_history(
         - get_troubleshooting_history(error_pattern="DNS resolution failed")
         - get_troubleshooting_history(component="freeipa", only_successful=True)
     """
-    logger.info(
-        f"Tool called: get_troubleshooting_history(error_pattern='{error_pattern}', component='{component}')"
-    )
+    logger.info(f"Tool called: get_troubleshooting_history(error_pattern='{error_pattern}', component='{component}')")
 
     store = get_rag()
     if store is None:
@@ -1491,13 +1453,7 @@ async def get_troubleshooting_history(
 
             for i, r in enumerate(results, 1):
                 similarity_pct = int(r["similarity"] * 100)
-                result_emoji = (
-                    "✅"
-                    if r["result"] == "success"
-                    else "❌"
-                    if r["result"] == "failed"
-                    else "⚠️"
-                )
+                result_emoji = "✅" if r["result"] == "success" else "❌" if r["result"] == "failed" else "⚠️"
 
                 output += f"## {i}. {result_emoji} Similarity: {similarity_pct}%\n"
                 output += f"**Error:** {r.get('error_message', 'N/A')}\n"
@@ -1519,13 +1475,7 @@ async def get_troubleshooting_history(
                 return output
 
             for h in history:
-                result_emoji = (
-                    "✅"
-                    if h["result"] == "success"
-                    else "❌"
-                    if h["result"] == "failed"
-                    else "⚠️"
-                )
+                result_emoji = "✅" if h["result"] == "success" else "❌" if h["result"] == "failed" else "⚠️"
                 output += f"### Attempt {h['sequence_num']} {result_emoji}\n"
                 output += f"**Task:** {h['task_description']}\n"
                 if h.get("error_message"):
@@ -1579,9 +1529,7 @@ async def log_troubleshooting_attempt(
             component="freeipa"
           )
     """
-    logger.info(
-        f"Tool called: log_troubleshooting_attempt(task='{task[:30]}...', result='{result}')"
-    )
+    logger.info(f"Tool called: log_troubleshooting_attempt(task='{task[:30]}...', result='{result}')")
 
     if READ_ONLY:
         return "Error: Cannot log attempts in read-only mode"
@@ -1605,9 +1553,7 @@ async def log_troubleshooting_attempt(
             agent="calling_llm",  # Logged by calling LLM
         )
 
-        result_emoji = (
-            "✅" if result == "success" else "❌" if result == "failed" else "⚠️"
-        )
+        result_emoji = "✅" if result == "success" else "❌" if result == "failed" else "⚠️"
 
         output = f"# Troubleshooting Attempt Logged {result_emoji}\n\n"
         output += f"**ID:** {attempt_id[:8]}...\n"
@@ -1688,9 +1634,7 @@ async def check_provider_exists(system_name: str) -> str:
             if result.get("documentation_url"):
                 output += f"**Docs:** {result['documentation_url']}\n"
             output += "\n## Provider-First Rule\n"
-            output += (
-                "You MUST use this provider's operators instead of BashOperator.\n"
-            )
+            output += "You MUST use this provider's operators instead of BashOperator.\n"
             output += "Query RAG for usage examples: `query_rag('azure operator examples', doc_types=['dag', 'provider_doc'])`"
             return output
         else:
@@ -1713,9 +1657,7 @@ async def check_provider_exists(system_name: str) -> str:
 
 
 @mcp.tool()
-async def compute_confidence_score(
-    task_description: str, doc_types: Optional[List[str]] = None
-) -> str:
+async def compute_confidence_score(task_description: str, doc_types: Optional[List[str]] = None) -> str:
     """
     Compute confidence score for a task based on RAG knowledge.
 
@@ -1732,9 +1674,7 @@ async def compute_confidence_score(
     Returns:
         Confidence assessment with recommendation.
     """
-    logger.info(
-        f"Tool called: compute_confidence_score(task='{task_description[:50]}...')"
-    )
+    logger.info(f"Tool called: compute_confidence_score(task='{task_description[:50]}...')")
 
     store = get_rag()
     if store is None:
@@ -1742,9 +1682,7 @@ async def compute_confidence_score(
 
     try:
         # Search RAG for relevant documents
-        results = store.search_documents(
-            query=task_description, doc_types=doc_types, limit=10, threshold=0.5
-        )
+        results = store.search_documents(query=task_description, doc_types=doc_types, limit=10, threshold=0.5)
 
         # Compute confidence factors
         rag_hit_count = len(results)
@@ -1760,18 +1698,11 @@ async def compute_confidence_score(
                     break
 
         # Check for similar DAGs
-        dag_results = store.search_documents(
-            query=task_description, doc_types=["dag"], limit=3, threshold=0.6
-        )
+        dag_results = store.search_documents(query=task_description, doc_types=["dag"], limit=3, threshold=0.6)
         similar_dag_exists = len(dag_results) > 0
 
         # Compute score
-        confidence = (
-            0.4 * rag_max_similarity
-            + 0.3 * min(rag_hit_count / 5.0, 1.0)
-            + 0.2 * (1.0 if provider_exists else 0.0)
-            + 0.1 * (1.0 if similar_dag_exists else 0.0)
-        )
+        confidence = 0.4 * rag_max_similarity + 0.3 * min(rag_hit_count / 5.0, 1.0) + 0.2 * (1.0 if provider_exists else 0.0) + 0.1 * (1.0 if similar_dag_exists else 0.0)
 
         # Determine recommendation
         if confidence >= 0.8:
@@ -1856,9 +1787,7 @@ async def get_rag_stats() -> str:
             total = sum(stats["troubleshooting"].values())
             output += f"- **Total:** {total}\n"
             for result, count in stats["troubleshooting"].items():
-                emoji = (
-                    "✅" if result == "success" else "❌" if result == "failed" else "⚠️"
-                )
+                emoji = "✅" if result == "success" else "❌" if result == "failed" else "⚠️"
                 output += f"- {emoji} **{result}:** {count}\n"
         else:
             output += "No troubleshooting attempts logged yet.\n"
@@ -1889,7 +1818,7 @@ async def get_rag_stats() -> str:
 LINEAGE_AVAILABLE = False
 lineage_service = None
 try:
-    from qubinode.lineage_service import LineageService, get_lineage_service
+    from qubinode.lineage_service import get_lineage_service
 
     LINEAGE_AVAILABLE = True
     logger.info("Lineage service available")
@@ -1963,9 +1892,7 @@ async def get_dag_lineage(dag_id: str, depth: int = 5) -> str:
 
                 latest_run = task.get("latest_run")
                 if latest_run:
-                    output += (
-                        f"- **Latest Run:** {latest_run.get('state', 'unknown')}\n"
-                    )
+                    output += f"- **Latest Run:** {latest_run.get('state', 'unknown')}\n"
         else:
             output += "No tasks found. DAG may not have run yet.\n"
 
@@ -2017,9 +1944,7 @@ async def get_failure_blast_radius(dag_id: str, task_id: Optional[str] = None) -
     Returns:
         Impact analysis with severity rating and recommendations.
     """
-    logger.info(
-        f"Tool called: get_failure_blast_radius(dag_id={dag_id}, task_id={task_id})"
-    )
+    logger.info(f"Tool called: get_failure_blast_radius(dag_id={dag_id}, task_id={task_id})")
 
     service = get_lineage()
     if service is None:
@@ -2047,9 +1972,7 @@ async def get_failure_blast_radius(dag_id: str, task_id: Optional[str] = None) -
 
         output += "\n## Impact Assessment\n"
         severity = result.get("severity", "unknown")
-        severity_emoji = {"none": "✅", "low": "🟡", "medium": "🟠", "high": "🔴"}.get(
-            severity, "❓"
-        )
+        severity_emoji = {"none": "✅", "low": "🟡", "medium": "🟠", "high": "🔴"}.get(severity, "❓")
         output += f"**Severity:** {severity_emoji} {severity.upper()}\n\n"
 
         output += f"- **Downstream Jobs Affected:** {impact.get('job_count', 0)}\n"
@@ -2326,9 +2249,7 @@ WORKFLOW_TEMPLATES = {
 
 
 @mcp.tool()
-async def get_workflow_guide(
-    workflow_type: str = "", goal_description: str = ""
-) -> str:
+async def get_workflow_guide(workflow_type: str = "", goal_description: str = "") -> str:
     """
     Get step-by-step guidance for multi-step infrastructure workflows.
 
@@ -2368,9 +2289,7 @@ async def get_workflow_guide(
     - If a step fails, check get_troubleshooting_history()
     - After completion, call log_troubleshooting_attempt() to record success
     """
-    logger.info(
-        f"Tool called: get_workflow_guide(workflow_type='{workflow_type}', goal='{goal_description}')"
-    )
+    logger.info(f"Tool called: get_workflow_guide(workflow_type='{workflow_type}', goal='{goal_description}')")
 
     output = "# Workflow Orchestration Guide\n\n"
 
@@ -2396,10 +2315,7 @@ async def get_workflow_guide(
             workflow_type = "create_openshift_cluster"
         elif any(term in goal_lower for term in ["freeipa", "idm", "identity", "dns"]):
             workflow_type = "setup_freeipa"
-        elif any(
-            term in goal_lower
-            for term in ["troubleshoot", "fix", "error", "problem", "issue"]
-        ):
+        elif any(term in goal_lower for term in ["troubleshoot", "fix", "error", "problem", "issue"]):
             workflow_type = "troubleshoot_vm"
         elif any(term in goal_lower for term in ["vm", "virtual", "create", "deploy"]):
             workflow_type = "deploy_vm_basic"
@@ -2428,9 +2344,7 @@ async def get_workflow_guide(
     output += f"## {workflow['name']}\n\n"
     output += f"**Description:** {workflow['description']}\n"
     output += f"**Estimated Duration:** {workflow['estimated_duration']}\n"
-    output += (
-        f"**Minimum Confidence Required:** {workflow['confidence_threshold']:.0%}\n\n"
-    )
+    output += f"**Minimum Confidence Required:** {workflow['confidence_threshold']:.0%}\n\n"
 
     output += "---\n\n"
     output += "## Step-by-Step Execution Plan\n\n"
@@ -2478,9 +2392,7 @@ async def get_workflow_guide(
 
         elif step["tool"] == "get_troubleshooting_history":
             output += "```python\n"
-            output += (
-                "result = get_troubleshooting_history(only_successful=True, limit=5)\n"
-            )
+            output += "result = get_troubleshooting_history(only_successful=True, limit=5)\n"
             output += "```\n\n"
 
         elif step["tool"] == "list_vms":
@@ -2500,9 +2412,7 @@ async def get_workflow_guide(
 
         elif step["tool"] == "get_dag_info":
             output += "```python\n"
-            output += (
-                f"result = get_dag_info(dag_id='{step.get('dag_id', 'your_dag_id')}')\n"
-            )
+            output += f"result = get_dag_info(dag_id='{step.get('dag_id', 'your_dag_id')}')\n"
             output += "# Check last_run_state for completion\n"
             output += "```\n\n"
 
@@ -2511,9 +2421,7 @@ async def get_workflow_guide(
 
         # Failure guidance
         output += "**If this step fails:**\n"
-        output += (
-            "1. Call `get_troubleshooting_history(error_pattern='<error message>')`\n"
-        )
+        output += "1. Call `get_troubleshooting_history(error_pattern='<error message>')`\n"
         output += "2. Call `query_rag(query='<error message> solution')`\n"
         if required:
             output += "3. **DO NOT proceed** until this step succeeds\n"
@@ -2582,9 +2490,7 @@ async def diagnose_issue(
     - When you find the cause, apply the suggested fix
     - Call log_troubleshooting_attempt() with the solution that worked
     """
-    logger.info(
-        f"Tool called: diagnose_issue(symptom='{symptom}', component='{component}')"
-    )
+    logger.info(f"Tool called: diagnose_issue(symptom='{symptom}', component='{component}')")
 
     output = "# Structured Diagnostic Analysis\n\n"
     output += f"**Symptom:** {symptom}\n"
@@ -2653,9 +2559,7 @@ async def diagnose_issue(
         output += "### Common VM Issues & Fixes\n\n"
         output += "| Symptom | Likely Cause | Fix |\n"
         output += "|---------|--------------|-----|\n"
-        output += (
-            "| Won't start | Insufficient memory | Free up RAM or reduce VM memory |\n"
-        )
+        output += "| Won't start | Insufficient memory | Free up RAM or reduce VM memory |\n"
         output += "| No network | libvirt network down | `virsh net-start default` |\n"
         output += "| Boot fails | Corrupt image | Recreate VM with fresh image |\n"
         output += "| Stuck shutting off | Zombie process | `virsh destroy <vm>` |\n\n"
@@ -2673,9 +2577,7 @@ async def diagnose_issue(
 
         output += "**Check 3: DAG Lineage (Upstream Failures)**\n"
         if affected_resource:
-            output += (
-                f"```python\nget_dag_lineage(dag_id='{affected_resource}')\n```\n\n"
-            )
+            output += f"```python\nget_dag_lineage(dag_id='{affected_resource}')\n```\n\n"
         output += "Check if upstream DAGs failed first.\n\n"
 
         output += "**Check 4: Task Logs**\n"
@@ -2687,13 +2589,9 @@ async def diagnose_issue(
         output += "| Stuck queued | Worker overload | Scale workers or wait |\n"
         output += "| Import error | Syntax/dep issue | Check DAG file syntax |\n"
         output += "| Task timeout | Long-running op | Increase timeout or optimize |\n"
-        output += (
-            "| Sensor timeout | Upstream stuck | Check sensor's poke_interval |\n\n"
-        )
+        output += "| Sensor timeout | Upstream stuck | Check sensor's poke_interval |\n\n"
 
-    elif component == "network" or any(
-        term in symptom.lower() for term in ["dns", "network", "connect", "resolve"]
-    ):
+    elif component == "network" or any(term in symptom.lower() for term in ["dns", "network", "connect", "resolve"]):
         output += "### Network-Specific Diagnostics\n\n"
         output += "**Check 1: DNS Resolution**\n"
         output += "```bash\nnslookup <hostname>\ndig <hostname>\n```\n\n"
@@ -2710,9 +2608,7 @@ async def diagnose_issue(
         output += "**Check 5: FreeIPA DNS (if applicable)**\n"
         output += "```python\nquery_rag(query='freeipa dns troubleshooting')\n```\n\n"
 
-    elif component == "storage" or any(
-        term in symptom.lower() for term in ["disk", "storage", "space", "full"]
-    ):
+    elif component == "storage" or any(term in symptom.lower() for term in ["disk", "storage", "space", "full"]):
         output += "### Storage-Specific Diagnostics\n\n"
         output += "**Check 1: Disk Space**\n"
         output += "```bash\ndf -h\ndf -i  # inodes\n```\n\n"
@@ -2770,9 +2666,7 @@ def main():
     logger.info("Starting FastMCP Airflow Server (ADR-0049)")
     logger.info(f"Host: {MCP_HOST}")
     logger.info(f"Port: {MCP_PORT}")
-    logger.info(
-        "Tools: DAGs(3), VMs(5), RAG(6), Troubleshooting(2), Lineage(4), Status(2), Orchestration(2)"
-    )
+    logger.info("Tools: DAGs(3), VMs(5), RAG(6), Troubleshooting(2), Lineage(4), Status(2), Orchestration(2)")
     logger.info(f"RAG Available: {RAG_AVAILABLE}")
     logger.info(f"Lineage Available: {LINEAGE_AVAILABLE}")
     logger.info("=" * 60)

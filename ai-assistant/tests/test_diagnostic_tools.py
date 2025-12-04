@@ -456,9 +456,7 @@ class TestIntegration:
         assert len(tool_results) == summary["total_tools"]
 
         # Check that we got meaningful data
-        successful_tools = [
-            name for name, result in tool_results.items() if result["success"]
-        ]
+        successful_tools = [name for name, result in tool_results.items() if result["success"]]
 
         # Most tools should succeed in a normal environment
         assert len(successful_tools) >= 4  # At least 4 out of 6 should work

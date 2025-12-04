@@ -99,9 +99,7 @@ class ConfigManager:
     def _substitute_env_vars(self, config):
         """Recursively substitute environment variables in configuration."""
         if isinstance(config, dict):
-            return {
-                key: self._substitute_env_vars(value) for key, value in config.items()
-            }
+            return {key: self._substitute_env_vars(value) for key, value in config.items()}
         elif isinstance(config, list):
             return [self._substitute_env_vars(item) for item in config]
         elif isinstance(config, str):
@@ -162,9 +160,7 @@ class ConfigManager:
                     self.config[section] = {}
                 self.config[section][key] = value
 
-                logger.debug(
-                    f"Environment override: {env_var} -> {section}.{key} = {value}"
-                )
+                logger.debug(f"Environment override: {env_var} -> {section}.{key} = {value}")
 
     def _validate_config(self):
         """Validate configuration values."""

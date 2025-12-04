@@ -18,9 +18,7 @@ try:
     CHROMADB_AVAILABLE = True
 except ImportError as e:
     CHROMADB_AVAILABLE = False
-    logging.warning(
-        f"ChromaDB or sentence-transformers not available: {e}. RAG functionality will be limited."
-    )
+    logging.warning(f"ChromaDB or sentence-transformers not available: {e}. RAG functionality will be limited.")
 except RuntimeError as e:
     CHROMADB_AVAILABLE = False
     logging.warning(f"ChromaDB runtime error: {e}. Using mock RAG service.")
@@ -118,13 +116,9 @@ class RAGService:
                 await self._add_batch_to_collection(batch)
 
                 if i % 500 == 0:
-                    self.logger.info(
-                        f"Processed {i + len(batch)}/{len(chunks)} documents"
-                    )
+                    self.logger.info(f"Processed {i + len(batch)}/{len(chunks)} documents")
 
-            self.logger.info(
-                f"Successfully loaded {len(chunks)} documents into vector database"
-            )
+            self.logger.info(f"Successfully loaded {len(chunks)} documents into vector database")
             self.documents_loaded = True
 
         except Exception as e:
@@ -151,9 +145,7 @@ class RAGService:
                         "source_file": chunk.get("source_file", ""),
                         "chunk_type": chunk.get("chunk_type", ""),
                         "word_count": chunk.get("word_count", 0),
-                        "document_type": chunk.get("metadata", {}).get(
-                            "document_type", ""
-                        ),
+                        "document_type": chunk.get("metadata", {}).get("document_type", ""),
                         "created_at": chunk.get("created_at", ""),
                     }
                 )
@@ -174,9 +166,7 @@ class RAGService:
         except Exception as e:
             self.logger.error(f"Failed to add batch to collection: {e}")
 
-    async def search_documents(
-        self, query: str, n_results: int = 5, document_types: Optional[List[str]] = None
-    ) -> List[RetrievalResult]:
+    async def search_documents(self, query: str, n_results: int = 5, document_types: Optional[List[str]] = None) -> List[RetrievalResult]:
         """Search for relevant documents"""
         if not self.documents_loaded or not self.collection:
             self.logger.warning("RAG service not properly initialized")
@@ -201,9 +191,7 @@ class RAGService:
             if results["documents"] and results["documents"][0]:
                 for i, doc in enumerate(results["documents"][0]):
                     metadata = results["metadatas"][0][i]
-                    distance = (
-                        results["distances"][0][i] if results.get("distances") else 0.0
-                    )
+                    distance = results["distances"][0][i] if results.get("distances") else 0.0
 
                     # Convert distance to similarity score (lower distance = higher similarity)
                     score = max(0.0, 1.0 - distance)
@@ -218,9 +206,7 @@ class RAGService:
                     )
                     retrieval_results.append(result)
 
-            self.logger.info(
-                f"Retrieved {len(retrieval_results)} documents for query: {query[:50]}..."
-            )
+            self.logger.info(f"Retrieved {len(retrieval_results)} documents for query: {query[:50]}...")
             return retrieval_results
 
         except Exception as e:
@@ -279,7 +265,7 @@ class RAGService:
         if self.collection:
             try:
                 status["document_count"] = self.collection.count()
-            except:
+            except Exception:
                 pass
 
         if self.embeddings_model:
@@ -287,25 +273,17 @@ class RAGService:
 
         return status
 
-    async def search_by_document_type(
-        self, query: str, doc_type: str, n_results: int = 3
-    ) -> List[RetrievalResult]:
+    async def search_by_document_type(self, query: str, doc_type: str, n_results: int = 3) -> List[RetrievalResult]:
         """Search for documents of a specific type"""
-        return await self.search_documents(
-            query, n_results=n_results, document_types=[doc_type]
-        )
+        return await self.search_documents(query, n_results=n_results, document_types=[doc_type])
 
     async def get_adr_context(self, query: str) -> Tuple[str, List[str]]:
         """Get ADR-specific context for architectural questions"""
-        return await self.get_context_for_query(
-            query, document_types=["adr"], max_context_length=3000
-        )
+        return await self.get_context_for_query(query, document_types=["adr"], max_context_length=3000)
 
     async def get_config_context(self, query: str) -> Tuple[str, List[str]]:
         """Get configuration-specific context"""
-        return await self.get_context_for_query(
-            query, document_types=["config"], max_context_length=2000
-        )
+        return await self.get_context_for_query(query, document_types=["config"], max_context_length=2000)
 
 
 # Mock RAG service for when ChromaDB is not available
@@ -319,9 +297,7 @@ class MockRAGService:
     async def initialize(self) -> bool:
         return True
 
-    async def search_documents(
-        self, query: str, n_results: int = 5, document_types: Optional[List[str]] = None
-    ) -> List[RetrievalResult]:
+    async def search_documents(self, query: str, n_results: int = 5, document_types: Optional[List[str]] = None) -> List[RetrievalResult]:
         # Return mock results
         return [
             RetrievalResult(
@@ -352,9 +328,7 @@ class MockRAGService:
             "embeddings_model": "mock",
         }
 
-    async def search_by_document_type(
-        self, query: str, doc_type: str, n_results: int = 3
-    ) -> List[RetrievalResult]:
+    async def search_by_document_type(self, query: str, doc_type: str, n_results: int = 3) -> List[RetrievalResult]:
         return await self.search_documents(query, n_results)
 
     async def get_adr_context(self, query: str) -> Tuple[str, List[str]]:

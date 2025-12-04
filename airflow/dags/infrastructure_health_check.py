@@ -40,12 +40,8 @@ dag = DAG(
         "check_stepca": Param(True, type="boolean", description="Check Step-CA"),
         "check_vyos": Param(True, type="boolean", description="Check VyOS router"),
         "check_vault": Param(True, type="boolean", description="Check Vault"),
-        "check_certificates": Param(
-            True, type="boolean", description="Check certificate expiry"
-        ),
-        "cert_warn_days": Param(
-            14, type="integer", description="Warn if cert expires within N days"
-        ),
+        "check_certificates": Param(True, type="boolean", description="Check certificate expiry"),
+        "cert_warn_days": Param(14, type="integer", description="Warn if cert expires within N days"),
     },
     doc_md="""
     # Infrastructure Health Check DAG

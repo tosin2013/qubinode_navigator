@@ -24,9 +24,7 @@ class KcliHook(BaseHook):
         super().__init__(**kwargs)
         self.kcli_conn_id = kcli_conn_id
 
-    def run_kcli_command(
-        self, command: List[str], check: bool = True
-    ) -> Dict[str, Any]:
+    def run_kcli_command(self, command: List[str], check: bool = True) -> Dict[str, Any]:
         """
         Run a kcli command and return the result
 
@@ -41,9 +39,7 @@ class KcliHook(BaseHook):
         self.log.info(f"Running kcli command: {' '.join(full_command)}")
 
         try:
-            result = subprocess.run(
-                full_command, capture_output=True, text=True, check=check
-            )
+            result = subprocess.run(full_command, capture_output=True, text=True, check=check)
 
             return {
                 "returncode": result.returncode,
@@ -156,12 +152,8 @@ class QuibinodeAIAssistantHook(BaseHook):
         Returns:
             AI guidance dictionary
         """
-        question = (
-            f"How do I use kcli to {task_description}? Provide a step-by-step guide."
-        )
-        return self.ask_ai(
-            question, context={"tool": "kcli", "task_type": "vm_provisioning"}
-        )
+        question = f"How do I use kcli to {task_description}? Provide a step-by-step guide."
+        return self.ask_ai(question, context={"tool": "kcli", "task_type": "vm_provisioning"})
 
     def analyze_workflow_results(self, workflow_results: Dict) -> Dict[str, Any]:
         """

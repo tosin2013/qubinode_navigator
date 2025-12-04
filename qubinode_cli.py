@@ -154,9 +154,7 @@ def ask_ai(question: str, ai_port: int = 8080):
                 print(response.text)
                 print("=" * 60)
         else:
-            print(
-                f"❌ Failed to get response from AI Assistant (HTTP {response.status_code})"
-            )
+            print(f"❌ Failed to get response from AI Assistant (HTTP {response.status_code})")
 
     except requests.exceptions.ConnectionError:
         print("❌ Cannot connect to AI Assistant. Is it running?")
@@ -188,13 +186,9 @@ def show_status(plugin_manager: PluginManager):
 
 def main():
     """Main CLI entry point"""
-    parser = argparse.ArgumentParser(
-        description="Qubinode Navigator Plugin Framework CLI"
-    )
+    parser = argparse.ArgumentParser(description="Qubinode Navigator Plugin Framework CLI")
 
-    parser.add_argument(
-        "--config", default="config/plugins.yml", help="Configuration file path"
-    )
+    parser.add_argument("--config", default="config/plugins.yml", help="Configuration file path")
 
     parser.add_argument(
         "--log-level",
@@ -215,29 +209,19 @@ def main():
         nargs="+",
         help="Specific plugins to execute (default: all enabled)",
     )
-    exec_parser.add_argument(
-        "--inventory", default="localhost", help="Ansible inventory to use"
-    )
+    exec_parser.add_argument("--inventory", default="localhost", help="Ansible inventory to use")
 
     # Status command
     subparsers.add_parser("status", help="Show plugin manager status")
 
     # Ask AI command (single question)
     ask_parser = subparsers.add_parser("ask", help="Ask the AI Assistant a question")
-    ask_parser.add_argument(
-        "question", nargs="+", help="Question to ask the AI Assistant"
-    )
-    ask_parser.add_argument(
-        "--port", type=int, default=8080, help="AI Assistant port (default: 8080)"
-    )
+    ask_parser.add_argument("question", nargs="+", help="Question to ask the AI Assistant")
+    ask_parser.add_argument("--port", type=int, default=8080, help="AI Assistant port (default: 8080)")
 
     # Chat command (interactive mode)
-    chat_parser = subparsers.add_parser(
-        "chat", help="Start interactive chat with AI Assistant"
-    )
-    chat_parser.add_argument(
-        "--port", type=int, default=8080, help="AI Assistant port (default: 8080)"
-    )
+    chat_parser = subparsers.add_parser("chat", help="Start interactive chat with AI Assistant")
+    chat_parser.add_argument("--port", type=int, default=8080, help="AI Assistant port (default: 8080)")
 
     args = parser.parse_args()
 
@@ -265,9 +249,7 @@ def main():
 
         event_system = EventSystem()
         plugin_manager = PluginManager(
-            plugin_directories=config_manager.get(
-                "global.plugin_directories", ["plugins"]
-            ),
+            plugin_directories=config_manager.get("global.plugin_directories", ["plugins"]),
             event_system=event_system,
         )
 
@@ -279,9 +261,7 @@ def main():
         if args.command == "list":
             list_plugins(plugin_manager)
         elif args.command == "execute":
-            execute_plugins(
-                plugin_manager, config_manager, args.plugins, args.inventory
-            )
+            execute_plugins(plugin_manager, config_manager, args.plugins, args.inventory)
         elif args.command == "status":
             show_status(plugin_manager)
 

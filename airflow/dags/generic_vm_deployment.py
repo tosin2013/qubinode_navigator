@@ -134,7 +134,7 @@ validate_environment = BashOperator(
     # Check FreeIPA for DNS registration
     echo "Checking FreeIPA..."
     FREEIPA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
-        "kcli info vm freeipa 2>/dev/null | grep 'ip:' | awk '{print \$2}' | head -1")
+        "kcli info vm freeipa 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     if [ -n "$FREEIPA_IP" ]; then
         echo "[OK] FreeIPA available at $FREEIPA_IP"
@@ -253,7 +253,7 @@ wait_for_vm = BashOperator(
     if [ -z "$VM_NAME" ]; then
         # Try to find the VM by profile
         VM_NAME=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
-            "kcli list vm | grep $VM_PROFILE | tail -1 | awk '{print \$2}'" 2>/dev/null)
+            "kcli list vm | grep $VM_PROFILE | tail -1 | awk '{print \\$2}'" 2>/dev/null)
     fi
 
     if [ -z "$VM_NAME" ]; then
@@ -272,7 +272,7 @@ wait_for_vm = BashOperator(
 
         # Get VM IP
         IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
-            "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \$2}' | head -1")
+            "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
         if [ -n "$IP" ] && [ "$IP" != "None" ]; then
             echo "VM IP: $IP"
@@ -313,7 +313,7 @@ validate_deployment = BashOperator(
 
     if [ -z "$VM_NAME" ]; then
         VM_NAME=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
-            "kcli list vm | grep $VM_PROFILE | tail -1 | awk '{print \$2}'" 2>/dev/null)
+            "kcli list vm | grep $VM_PROFILE | tail -1 | awk '{print \\$2}'" 2>/dev/null)
     fi
 
     if [ -z "$VM_NAME" ]; then
@@ -327,7 +327,7 @@ validate_deployment = BashOperator(
         "kcli info vm $VM_NAME"
 
     IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
-        "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \$2}' | head -1")
+        "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     echo ""
     echo "========================================"
@@ -405,13 +405,6 @@ check_status = BashOperator(
 )
 
 # Define task dependencies
-(
-    decide_action_task
-    >> validate_environment
-    >> configure_profile
-    >> create_vm
-    >> wait_for_vm
-    >> validate_deployment
-)
+(decide_action_task >> validate_environment >> configure_profile >> create_vm >> wait_for_vm >> validate_deployment)
 decide_action_task >> delete_vm
 decide_action_task >> check_status

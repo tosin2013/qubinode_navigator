@@ -15,9 +15,10 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from airflow import DAG
+from airflow.models.param import Param
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator
-from airflow.models.param import Param
+from airflow.utils.trigger_rule import TriggerRule
 
 # Configuration
 AGENT_INSTALL_DIR = "/root/openshift-agent-install"
@@ -649,8 +650,6 @@ cleanup_temp = BashOperator(
 # =============================================================================
 # Task: Cleanup VM on Failure (CI/CD style - auto cleanup for retry)
 # =============================================================================
-from airflow.utils.trigger_rule import TriggerRule
-
 cleanup_vm_on_failure = BashOperator(
     task_id="cleanup_vm_on_failure",
     bash_command="""

@@ -95,14 +95,10 @@ class PerformanceOptimizer:
         self.logger = logging.getLogger(__name__)
 
         # Configuration
-        self.optimization_level = OptimizationLevel(
-            self.config.get("optimization_level", "balanced")
-        )
+        self.optimization_level = OptimizationLevel(self.config.get("optimization_level", "balanced"))
         self.monitoring_interval = self.config.get("monitoring_interval", 30)  # seconds
         self.metrics_retention_hours = self.config.get("metrics_retention_hours", 24)
-        self.auto_optimization_enabled = self.config.get(
-            "auto_optimization_enabled", True
-        )
+        self.auto_optimization_enabled = self.config.get("auto_optimization_enabled", True)
 
         # Resource limits
         self.resource_limits = self._initialize_resource_limits()
@@ -113,12 +109,8 @@ class PerformanceOptimizer:
 
         # Async components
         self.session_pool: Optional[aiohttp.ClientSession] = None
-        self.thread_pool = ThreadPoolExecutor(
-            max_workers=self.config.get("thread_pool_size", 4)
-        )
-        self.process_pool = ProcessPoolExecutor(
-            max_workers=self.config.get("process_pool_size", 2)
-        )
+        self.thread_pool = ThreadPoolExecutor(max_workers=self.config.get("thread_pool_size", 4))
+        self.process_pool = ProcessPoolExecutor(max_workers=self.config.get("process_pool_size", 2))
 
         # Monitoring task
         self._monitoring_task: Optional[asyncio.Task] = None
@@ -138,8 +130,8 @@ class PerformanceOptimizer:
         """Initialize default resource limits"""
 
         # Get system information
-        cpu_count = psutil.cpu_count()
-        memory_total = psutil.virtual_memory().total / (1024**3)  # GB
+        psutil.cpu_count()
+        psutil.virtual_memory().total / (1024**3)  # GB
 
         # Calculate limits based on optimization level
         if self.optimization_level == OptimizationLevel.CONSERVATIVE:
@@ -201,9 +193,7 @@ class PerformanceOptimizer:
                 use_dns_cache=True,
             )
             timeout = aiohttp.ClientTimeout(total=self.connection_timeout)
-            self.session_pool = aiohttp.ClientSession(
-                connector=connector, timeout=timeout
-            )
+            self.session_pool = aiohttp.ClientSession(connector=connector, timeout=timeout)
 
     async def stop_monitoring(self):
         """Stop performance monitoring"""
@@ -288,9 +278,7 @@ class PerformanceOptimizer:
         process_count = len(psutil.pids())
 
         # Load average
-        load_avg = (
-            psutil.getloadavg() if hasattr(psutil, "getloadavg") else [0.0, 0.0, 0.0]
-        )
+        load_avg = psutil.getloadavg() if hasattr(psutil, "getloadavg") else [0.0, 0.0, 0.0]
 
         # Response times (placeholder - would be populated by actual measurements)
         response_times = {
@@ -319,8 +307,7 @@ class PerformanceOptimizer:
 
         # Calculate network usage (simplified)
         network_usage = min(
-            (metrics.network_io["bytes_sent"] + metrics.network_io["bytes_recv"])
-            / (1024**2),  # MB
+            (metrics.network_io["bytes_sent"] + metrics.network_io["bytes_recv"]) / (1024**2),  # MB
             100.0,
         )
         self.resource_limits[ResourceType.NETWORK].current_usage = network_usage
@@ -328,9 +315,7 @@ class PerformanceOptimizer:
     def _cleanup_old_metrics(self):
         """Remove old performance metrics"""
         cutoff_time = datetime.now() - timedelta(hours=self.metrics_retention_hours)
-        self.performance_history = [
-            m for m in self.performance_history if m.timestamp > cutoff_time
-        ]
+        self.performance_history = [m for m in self.performance_history if m.timestamp > cutoff_time]
 
     async def _evaluate_optimization_opportunities(self, metrics: PerformanceMetrics):
         """Evaluate current metrics for optimization opportunities"""
@@ -358,18 +343,13 @@ class PerformanceOptimizer:
             )
 
         # Memory optimization
-        if (
-            metrics.memory_usage
-            > self.resource_limits[ResourceType.MEMORY].threshold_warning
-        ):
+        if metrics.memory_usage > self.resource_limits[ResourceType.MEMORY].threshold_warning:
             recommendations.append(
                 OptimizationRecommendation(
                     recommendation_id=f"mem_opt_{int(time.time())}",
                     resource_type=ResourceType.MEMORY,
                     current_value=metrics.memory_usage,
-                    recommended_value=self.resource_limits[
-                        ResourceType.MEMORY
-                    ].soft_limit,
+                    recommended_value=self.resource_limits[ResourceType.MEMORY].soft_limit,
                     impact_level="high" if metrics.memory_usage > 85 else "medium",
                     description="High memory usage detected - consider memory optimization",
                     implementation_steps=[
@@ -383,18 +363,13 @@ class PerformanceOptimizer:
             )
 
         # Disk optimization
-        if (
-            metrics.disk_usage
-            > self.resource_limits[ResourceType.DISK].threshold_warning
-        ):
+        if metrics.disk_usage > self.resource_limits[ResourceType.DISK].threshold_warning:
             recommendations.append(
                 OptimizationRecommendation(
                     recommendation_id=f"disk_opt_{int(time.time())}",
                     resource_type=ResourceType.DISK,
                     current_value=metrics.disk_usage,
-                    recommended_value=self.resource_limits[
-                        ResourceType.DISK
-                    ].soft_limit,
+                    recommended_value=self.resource_limits[ResourceType.DISK].soft_limit,
                     impact_level="medium",
                     description="High disk usage detected - consider cleanup and optimization",
                     implementation_steps=[
@@ -413,9 +388,7 @@ class PerformanceOptimizer:
         # Log critical recommendations
         for rec in recommendations:
             if rec.impact_level == "high":
-                self.logger.warning(
-                    f"High impact optimization opportunity: {rec.description}"
-                )
+                self.logger.warning(f"High impact optimization opportunity: {rec.description}")
 
     # Performance optimization decorators and utilities
 
@@ -429,15 +402,11 @@ class PerformanceOptimizer:
                 try:
                     result = await func(*args, **kwargs)
                     duration = time.time() - start_time
-                    self.logger.debug(
-                        f"Operation {operation_name} completed in {duration:.3f}s"
-                    )
+                    self.logger.debug(f"Operation {operation_name} completed in {duration:.3f}s")
                     return result
                 except Exception as e:
                     duration = time.time() - start_time
-                    self.logger.error(
-                        f"Operation {operation_name} failed after {duration:.3f}s: {e}"
-                    )
+                    self.logger.error(f"Operation {operation_name} failed after {duration:.3f}s: {e}")
                     raise
 
             @wraps(func)
@@ -446,15 +415,11 @@ class PerformanceOptimizer:
                 try:
                     result = func(*args, **kwargs)
                     duration = time.time() - start_time
-                    self.logger.debug(
-                        f"Operation {operation_name} completed in {duration:.3f}s"
-                    )
+                    self.logger.debug(f"Operation {operation_name} completed in {duration:.3f}s")
                     return result
                 except Exception as e:
                     duration = time.time() - start_time
-                    self.logger.error(
-                        f"Operation {operation_name} failed after {duration:.3f}s: {e}"
-                    )
+                    self.logger.error(f"Operation {operation_name} failed after {duration:.3f}s: {e}")
                     raise
 
             return async_wrapper if asyncio.iscoroutinefunction(func) else sync_wrapper
@@ -471,16 +436,12 @@ class PerformanceOptimizer:
                     return await func(*args, **kwargs)
 
                 # Create cache key with parameters
-                cache_key = (
-                    f"{cache_key_prefix}_{hash((args, tuple(sorted(kwargs.items()))))}"
-                )
+                cache_key = f"{cache_key_prefix}_{hash((args, tuple(sorted(kwargs.items()))))}"
 
                 # Check cache
                 if cache_key in self._cache:
                     cache_time = self._cache_timestamps.get(cache_key)
-                    if cache_time and (datetime.now() - cache_time).seconds < (
-                        ttl or self.cache_ttl
-                    ):
+                    if cache_time and (datetime.now() - cache_time).seconds < (ttl or self.cache_ttl):
                         self.logger.debug(f"Cache hit for {cache_key}")
                         return self._cache[cache_key]
 
@@ -497,16 +458,12 @@ class PerformanceOptimizer:
                     return func(*args, **kwargs)
 
                 # Create cache key with parameters
-                cache_key = (
-                    f"{cache_key_prefix}_{hash((args, tuple(sorted(kwargs.items()))))}"
-                )
+                cache_key = f"{cache_key_prefix}_{hash((args, tuple(sorted(kwargs.items()))))}"
 
                 # Check cache
                 if cache_key in self._cache:
                     cache_time = self._cache_timestamps.get(cache_key)
-                    if cache_time and (datetime.now() - cache_time).seconds < (
-                        ttl or self.cache_ttl
-                    ):
+                    if cache_time and (datetime.now() - cache_time).seconds < (ttl or self.cache_ttl):
                         self.logger.debug(f"Cache hit for {cache_key}")
                         return self._cache[cache_key]
 
@@ -521,15 +478,11 @@ class PerformanceOptimizer:
 
         return decorator
 
-    async def optimize_concurrent_operations(
-        self, operations: List[Callable], max_concurrency: int = None
-    ) -> List[Any]:
+    async def optimize_concurrent_operations(self, operations: List[Callable], max_concurrency: int = None) -> List[Any]:
         """Optimize concurrent execution of operations"""
 
         if max_concurrency is None:
-            max_concurrency = min(
-                len(operations), self.config.get("max_concurrency", 5)
-            )
+            max_concurrency = min(len(operations), self.config.get("max_concurrency", 5))
 
         semaphore = asyncio.Semaphore(max_concurrency)
 
@@ -543,15 +496,11 @@ class PerformanceOptimizer:
 
         # Log performance
         successful = sum(1 for r in results if not isinstance(r, Exception))
-        self.logger.info(
-            f"Concurrent operations: {successful}/{len(operations)} successful"
-        )
+        self.logger.info(f"Concurrent operations: {successful}/{len(operations)} successful")
 
         return results
 
-    async def optimize_file_operations(
-        self, file_path: Path, operation: str, data: Any = None
-    ) -> Any:
+    async def optimize_file_operations(self, file_path: Path, operation: str, data: Any = None) -> Any:
         """Optimize file I/O operations"""
 
         try:
@@ -590,14 +539,10 @@ class PerformanceOptimizer:
                 headers = request_config.get("headers", {})
                 data = request_config.get("data")
 
-                async with self.session_pool.request(
-                    method, url, headers=headers, json=data
-                ) as response:
+                async with self.session_pool.request(method, url, headers=headers, json=data) as response:
                     return {
                         "status": response.status,
-                        "data": await response.json()
-                        if response.content_type == "application/json"
-                        else await response.text(),
+                        "data": await response.json() if response.content_type == "application/json" else await response.text(),
                         "headers": dict(response.headers),
                     }
             except Exception as e:
@@ -644,13 +589,7 @@ class PerformanceOptimizer:
                 }
                 for rt, limit in self.resource_limits.items()
             },
-            "active_recommendations": len(
-                [
-                    r
-                    for r in self.optimization_recommendations
-                    if r.impact_level == "high"
-                ]
-            ),
+            "active_recommendations": len([r for r in self.optimization_recommendations if r.impact_level == "high"]),
             "total_recommendations": len(self.optimization_recommendations),
             "cache_stats": {
                 "enabled": self.cache_enabled,
@@ -668,17 +607,11 @@ class PerformanceOptimizer:
         else:
             return "normal"
 
-    def get_optimization_recommendations(
-        self, filter_by_impact: str = None
-    ) -> List[OptimizationRecommendation]:
+    def get_optimization_recommendations(self, filter_by_impact: str = None) -> List[OptimizationRecommendation]:
         """Get optimization recommendations"""
 
         if filter_by_impact:
-            return [
-                r
-                for r in self.optimization_recommendations
-                if r.impact_level == filter_by_impact
-            ]
+            return [r for r in self.optimization_recommendations if r.impact_level == filter_by_impact]
 
         return self.optimization_recommendations.copy()
 
@@ -686,18 +619,12 @@ class PerformanceOptimizer:
         """Apply an optimization recommendation"""
 
         recommendation = next(
-            (
-                r
-                for r in self.optimization_recommendations
-                if r.recommendation_id == recommendation_id
-            ),
+            (r for r in self.optimization_recommendations if r.recommendation_id == recommendation_id),
             None,
         )
 
         if not recommendation:
-            self.logger.error(
-                f"Optimization recommendation {recommendation_id} not found"
-            )
+            self.logger.error(f"Optimization recommendation {recommendation_id} not found")
             return False
 
         try:
@@ -708,11 +635,7 @@ class PerformanceOptimizer:
             await asyncio.sleep(1)
 
             # Remove applied recommendation
-            self.optimization_recommendations = [
-                r
-                for r in self.optimization_recommendations
-                if r.recommendation_id != recommendation_id
-            ]
+            self.optimization_recommendations = [r for r in self.optimization_recommendations if r.recommendation_id != recommendation_id]
 
             self.logger.info(f"Successfully applied optimization {recommendation_id}")
             return True

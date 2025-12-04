@@ -48,9 +48,7 @@ class TestAIAssistantPlugin:
         }
 
         self.plugin = AIAssistantPlugin(self.config)
-        self.context = ExecutionContext(
-            inventory="localhost", environment="test", config={"test": True}
-        )
+        self.context = ExecutionContext(inventory="localhost", environment="test", config={"test": True})
 
     def test_plugin_initialization(self):
         """Test plugin initialization"""
@@ -96,9 +94,7 @@ class TestAIAssistantPlugin:
         """Test container exists check - positive case"""
         mock_result = MagicMock()
         mock_result.returncode = 0
-        mock_result.stdout = json.dumps(
-            [{"Names": ["test-ai-assistant"], "State": "running"}]
-        )
+        mock_result.stdout = json.dumps([{"Names": ["test-ai-assistant"], "State": "running"}])
         mock_subprocess.return_value = mock_result
 
         # Initialize plugin to set up attributes
@@ -124,9 +120,7 @@ class TestAIAssistantPlugin:
         """Test container running check - positive case"""
         mock_result = MagicMock()
         mock_result.returncode = 0
-        mock_result.stdout = json.dumps(
-            [{"Names": ["test-ai-assistant"], "State": "running"}]
-        )
+        mock_result.stdout = json.dumps([{"Names": ["test-ai-assistant"], "State": "running"}])
         mock_subprocess.return_value = mock_result
 
         # Initialize plugin to set up attributes
@@ -178,9 +172,7 @@ class TestAIAssistantPlugin:
         """Test RAG system loaded check - positive case"""
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "ai_service": {"components": {"rag_service": {"documents_loaded": True}}}
-        }
+        mock_response.json.return_value = {"ai_service": {"components": {"rag_service": {"documents_loaded": True}}}}
         mock_get.return_value = mock_response
 
         # Initialize plugin to set up attributes
@@ -203,17 +195,9 @@ class TestAIAssistantPlugin:
 
     def test_check_state(self):
         """Test system state checking"""
-        with patch.object(
-            self.plugin, "_container_exists", return_value=True
-        ), patch.object(
-            self.plugin, "_container_running", return_value=True
-        ), patch.object(
+        with patch.object(self.plugin, "_container_exists", return_value=True), patch.object(self.plugin, "_container_running", return_value=True), patch.object(
             self.plugin, "_ai_service_healthy", return_value=True
-        ), patch.object(
-            self.plugin, "_rag_system_loaded", return_value=True
-        ), patch.object(
-            self.plugin, "_diagnostic_tools_available", return_value=True
-        ), patch("os.path.exists", return_value=True):
+        ), patch.object(self.plugin, "_rag_system_loaded", return_value=True), patch.object(self.plugin, "_diagnostic_tools_available", return_value=True), patch("os.path.exists", return_value=True):
             state = self.plugin.check_state()
 
             assert isinstance(state, SystemState)
@@ -252,9 +236,7 @@ class TestAIAssistantPlugin:
         desired_state = current_state
 
         # Mock the execute method to return skipped result
-        with patch.object(
-            self.plugin, "check_state", return_value=current_state
-        ), patch.object(self.plugin, "get_desired_state", return_value=desired_state):
+        with patch.object(self.plugin, "check_state", return_value=current_state), patch.object(self.plugin, "get_desired_state", return_value=desired_state):
             result = self.plugin.execute(self.context)
 
             assert isinstance(result, PluginResult)
@@ -280,9 +262,7 @@ class TestAIAssistantPlugin:
     @patch.object(AIAssistantPlugin, "_build_container")
     @patch.object(AIAssistantPlugin, "_start_container")
     @patch.object(AIAssistantPlugin, "_wait_for_health")
-    def test_apply_changes_development_build_flow(
-        self, mock_wait_health, mock_start, mock_build, mock_exists
-    ):
+    def test_apply_changes_development_build_flow(self, mock_wait_health, mock_start, mock_build, mock_exists):
         """Test apply changes flow for development mode with building"""
         mock_exists.return_value = True
         mock_build.return_value = True
@@ -326,9 +306,7 @@ class TestAIAssistantPlugin:
     @patch.object(AIAssistantPlugin, "_pull_container")
     @patch.object(AIAssistantPlugin, "_start_container")
     @patch.object(AIAssistantPlugin, "_wait_for_health")
-    def test_apply_changes_production_pull_flow(
-        self, mock_wait_health, mock_start, mock_pull, mock_exists
-    ):
+    def test_apply_changes_production_pull_flow(self, mock_wait_health, mock_start, mock_pull, mock_exists):
         """Test apply changes flow for production mode with pulling"""
         mock_exists.return_value = True
         mock_pull.return_value = True
@@ -408,9 +386,7 @@ class TestAIAssistantPlugin:
         """Test running diagnostics - success case"""
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "diagnostics": {"summary": {"successful_tools": 6, "total_tools": 6}}
-        }
+        mock_response.json.return_value = {"diagnostics": {"summary": {"successful_tools": 6, "total_tools": 6}}}
         mock_post.return_value = mock_response
 
         # Initialize plugin to set up attributes
@@ -426,9 +402,7 @@ class TestAIAssistantPlugin:
         """Test running specific diagnostic tool"""
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "tool_result": {"success": True, "data": {"hostname": "test-host"}}
-        }
+        mock_response.json.return_value = {"tool_result": {"success": True, "data": {"hostname": "test-host"}}}
         mock_post.return_value = mock_response
 
         # Initialize plugin to set up attributes
@@ -586,9 +560,7 @@ class TestAIAssistantDeploymentStrategy:
     @patch("os.path.exists")
     @patch("os.chdir")
     @patch("os.getcwd")
-    def test_build_container_development_mode(
-        self, mock_getcwd, mock_chdir, mock_exists, mock_subprocess
-    ):
+    def test_build_container_development_mode(self, mock_getcwd, mock_chdir, mock_exists, mock_subprocess):
         """Test container building in development mode"""
         mock_getcwd.return_value = "/current/dir"
         mock_exists.return_value = True
@@ -606,9 +578,7 @@ class TestAIAssistantDeploymentStrategy:
         result = plugin._build_container()
 
         assert result is True
-        mock_subprocess.assert_called_once_with(
-            ["./scripts/build.sh"], capture_output=True, text=True, timeout=300
-        )
+        mock_subprocess.assert_called_once_with(["./scripts/build.sh"], capture_output=True, text=True, timeout=300)
 
     def test_build_container_production_mode_error(self):
         """Test that building is not allowed in production mode"""
@@ -839,9 +809,7 @@ class TestAIAssistantVersionManagement:
 
     def test_auto_version_strategy_with_stable_version(self):
         """Test auto version strategy with stable version available"""
-        with patch.object(
-            AIAssistantPlugin, "_get_latest_stable_version", return_value="1.8.0"
-        ):
+        with patch.object(AIAssistantPlugin, "_get_latest_stable_version", return_value="1.8.0"):
             config = {
                 "deployment_mode": "production",
                 "version_strategy": "auto",
@@ -853,9 +821,7 @@ class TestAIAssistantVersionManagement:
 
     def test_auto_version_strategy_fallback_to_latest(self):
         """Test auto version strategy fallback to latest"""
-        with patch.object(
-            AIAssistantPlugin, "_get_latest_stable_version", return_value="latest"
-        ):
+        with patch.object(AIAssistantPlugin, "_get_latest_stable_version", return_value="latest"):
             config = {
                 "deployment_mode": "production",
                 "version_strategy": "auto",

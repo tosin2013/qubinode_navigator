@@ -66,26 +66,18 @@ class QdrantRAGService:
 
             # Check if collection exists
             collections = self.client.get_collections()
-            collection_exists = any(
-                col.name == self.collection_name for col in collections.collections
-            )
+            collection_exists = any(col.name == self.collection_name for col in collections.collections)
 
             if collection_exists:
-                self.logger.info(
-                    f"✅ Found existing collection: {self.collection_name}"
-                )
+                self.logger.info(f"✅ Found existing collection: {self.collection_name}")
                 collection_info = self.client.get_collection(self.collection_name)
                 self.documents_loaded = collection_info.points_count > 0
-                self.logger.info(
-                    f"Collection has {collection_info.points_count} documents"
-                )
+                self.logger.info(f"Collection has {collection_info.points_count} documents")
             else:
                 # Build new collection from documents
                 await self._build_collection_from_documents()
 
-            self.logger.info(
-                f"🎉 Qdrant+FastEmbed RAG service ready with {self._get_document_count()} documents"
-            )
+            self.logger.info(f"🎉 Qdrant+FastEmbed RAG service ready with {self._get_document_count()} documents")
             return True
 
         except Exception as e:
@@ -98,7 +90,7 @@ class QdrantRAGService:
             if self.client and self.documents_loaded:
                 collection_info = self.client.get_collection(self.collection_name)
                 return collection_info.points_count
-        except:
+        except Exception:
             pass
         return 0
 
@@ -137,9 +129,7 @@ class QdrantRAGService:
                     distance=models.Distance.COSINE,
                 ),
             )
-            self.logger.info(
-                f"✅ Created collection with {self.client.get_embedding_size(self.model_name)}D embeddings"
-            )
+            self.logger.info(f"✅ Created collection with {self.client.get_embedding_size(self.model_name)}D embeddings")
 
             # Prepare documents for upload
             documents = []
@@ -180,21 +170,15 @@ class QdrantRAGService:
                     ids=batch_ids,
                 )
 
-                self.logger.info(
-                    f"Uploaded batch {i//batch_size + 1}/{(len(documents) + batch_size - 1)//batch_size}"
-                )
+                self.logger.info(f"Uploaded batch {i//batch_size + 1}/{(len(documents) + batch_size - 1)//batch_size}")
 
             self.documents_loaded = True
-            self.logger.info(
-                f"🎉 Successfully built collection with {len(documents)} documents"
-            )
+            self.logger.info(f"🎉 Successfully built collection with {len(documents)} documents")
 
         except Exception as e:
             self.logger.error(f"Failed to build collection: {e}")
 
-    async def search_documents(
-        self, query: str, n_results: int = 5, document_types: Optional[List[str]] = None
-    ) -> List[RetrievalResult]:
+    async def search_documents(self, query: str, n_results: int = 5, document_types: Optional[List[str]] = None) -> List[RetrievalResult]:
         """Search for relevant documents using Qdrant+FastEmbed"""
         if not self.documents_loaded or not self.client:
             self.logger.warning("Qdrant RAG service not properly initialized")
@@ -229,9 +213,7 @@ class QdrantRAGService:
 
                 result = RetrievalResult(
                     chunk_id=payload.get("original_id", str(point.id)),
-                    content=payload.get(
-                        "content", ""
-                    ),  # This will be empty, we need to get it differently
+                    content=payload.get("content", ""),  # This will be empty, we need to get it differently
                     title=payload.get("title", ""),
                     source_file=payload.get("source_file", ""),
                     score=point.score,
@@ -248,18 +230,14 @@ class QdrantRAGService:
             # This is a limitation of the current approach - let's fix it
             results = await self._enrich_results_with_content(results)
 
-            self.logger.info(
-                f"Retrieved {len(results)} documents for query: {query[:50]}..."
-            )
+            self.logger.info(f"Retrieved {len(results)} documents for query: {query[:50]}...")
             return results
 
         except Exception as e:
             self.logger.error(f"Failed to search documents: {e}")
             return []
 
-    async def _enrich_results_with_content(
-        self, results: List[RetrievalResult]
-    ) -> List[RetrievalResult]:
+    async def _enrich_results_with_content(self, results: List[RetrievalResult]) -> List[RetrievalResult]:
         """Enrich results with actual content from original chunks"""
         try:
             # Load original chunks to get content
@@ -338,33 +316,23 @@ class QdrantRAGService:
         if self.client:
             try:
                 # Get embedding size
-                status["embedding_size"] = self.client.get_embedding_size(
-                    self.model_name
-                )
-            except:
+                status["embedding_size"] = self.client.get_embedding_size(self.model_name)
+            except Exception:
                 pass
 
         return status
 
-    async def search_by_document_type(
-        self, query: str, doc_type: str, n_results: int = 3
-    ) -> List[RetrievalResult]:
+    async def search_by_document_type(self, query: str, doc_type: str, n_results: int = 3) -> List[RetrievalResult]:
         """Search for documents of a specific type"""
-        return await self.search_documents(
-            query, n_results=n_results, document_types=[doc_type]
-        )
+        return await self.search_documents(query, n_results=n_results, document_types=[doc_type])
 
     async def get_adr_context(self, query: str) -> Tuple[str, List[str]]:
         """Get ADR-specific context for architectural questions"""
-        return await self.get_context_for_query(
-            query, document_types=["adr"], max_context_length=3000
-        )
+        return await self.get_context_for_query(query, document_types=["adr"], max_context_length=3000)
 
     async def get_config_context(self, query: str) -> Tuple[str, List[str]]:
         """Get configuration-specific context"""
-        return await self.get_context_for_query(
-            query, document_types=["config"], max_context_length=2000
-        )
+        return await self.get_context_for_query(query, document_types=["config"], max_context_length=2000)
 
 
 # Mock RAG service for when Qdrant is not available
@@ -378,9 +346,7 @@ class MockRAGService:
     async def initialize(self) -> bool:
         return True
 
-    async def search_documents(
-        self, query: str, n_results: int = 5, document_types: Optional[List[str]] = None
-    ) -> List[RetrievalResult]:
+    async def search_documents(self, query: str, n_results: int = 5, document_types: Optional[List[str]] = None) -> List[RetrievalResult]:
         # Return mock results based on query
         mock_content = f"""Mock documentation content for query: "{query}"
 
@@ -438,9 +404,7 @@ and system configuration.
             "vector_db_type": "Mock Service",
         }
 
-    async def search_by_document_type(
-        self, query: str, doc_type: str, n_results: int = 3
-    ) -> List[RetrievalResult]:
+    async def search_by_document_type(self, query: str, doc_type: str, n_results: int = 3) -> List[RetrievalResult]:
         return await self.search_documents(query, n_results)
 
     async def get_adr_context(self, query: str) -> Tuple[str, List[str]]:

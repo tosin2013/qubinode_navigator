@@ -39,11 +39,7 @@ class ModernizedSetupTester:
 
         result = self.run_bash_function("get_os_version", setup_env=False)
 
-        success = (
-            result.returncode == 0
-            and "CENTOS10" in result.stdout
-            and "CentOSStream10Plugin" in result.stdout
-        )
+        success = result.returncode == 0 and "CENTOS10" in result.stdout and "CentOSStream10Plugin" in result.stdout
 
         self.test_results.append(
             {
@@ -54,9 +50,7 @@ class ModernizedSetupTester:
             }
         )
 
-        print(
-            f"   {'✅' if success else '❌'} OS Detection: {'PASSED' if success else 'FAILED'}"
-        )
+        print(f"   {'✅' if success else '❌'} OS Detection: {'PASSED' if success else 'FAILED'}")
         return success
 
     def test_cloud_detection(self):
@@ -65,12 +59,7 @@ class ModernizedSetupTester:
 
         result = self.run_bash_function("detect_cloud_provider", setup_env=False)
 
-        success = result.returncode == 0 and (
-            "Red Hat Demo Environment" in result.stdout
-            or "REDHAT_DEMO" in result.stdout
-            or "BARE_METAL" in result.stdout
-            or "Bare Metal" in result.stdout
-        )
+        success = result.returncode == 0 and ("Red Hat Demo Environment" in result.stdout or "REDHAT_DEMO" in result.stdout or "BARE_METAL" in result.stdout or "Bare Metal" in result.stdout)
 
         self.test_results.append(
             {
@@ -81,9 +70,7 @@ class ModernizedSetupTester:
             }
         )
 
-        print(
-            f"   {'✅' if success else '❌'} Cloud Detection: {'PASSED' if success else 'FAILED'}"
-        )
+        print(f"   {'✅' if success else '❌'} Cloud Detection: {'PASSED' if success else 'FAILED'}")
         return success
 
     def test_plugin_selection(self):
@@ -103,9 +90,7 @@ class ModernizedSetupTester:
             }
         )
 
-        print(
-            f"   {'✅' if success else '❌'} Plugin Selection: {'PASSED' if success else 'FAILED'}"
-        )
+        print(f"   {'✅' if success else '❌'} Plugin Selection: {'PASSED' if success else 'FAILED'}")
         return success
 
     def test_plugin_framework_setup(self):
@@ -125,9 +110,7 @@ class ModernizedSetupTester:
             }
         )
 
-        print(
-            f"   {'✅' if success else '❌'} Plugin Framework Setup: {'PASSED' if success else 'FAILED'}"
-        )
+        print(f"   {'✅' if success else '❌'} Plugin Framework Setup: {'PASSED' if success else 'FAILED'}")
         return success
 
     def test_cli_integration(self):
@@ -142,11 +125,7 @@ class ModernizedSetupTester:
             cwd="/root/qubinode_navigator",
         )
 
-        success = (
-            result.returncode == 0
-            and "CentOSStream10Plugin" in result.stdout
-            and "Available Plugins" in result.stdout
-        )
+        success = result.returncode == 0 and "CentOSStream10Plugin" in result.stdout and "Available Plugins" in result.stdout
 
         self.test_results.append(
             {
@@ -157,9 +136,7 @@ class ModernizedSetupTester:
             }
         )
 
-        print(
-            f"   {'✅' if success else '❌'} CLI Integration: {'PASSED' if success else 'FAILED'}"
-        )
+        print(f"   {'✅' if success else '❌'} CLI Integration: {'PASSED' if success else 'FAILED'}")
         return success
 
     def test_configuration_validation(self):
@@ -182,9 +159,7 @@ class ModernizedSetupTester:
             }
         )
 
-        print(
-            f"   {'✅' if success else '❌'} Configuration Validation: {'PASSED' if success else 'FAILED'}"
-        )
+        print(f"   {'✅' if success else '❌'} Configuration Validation: {'PASSED' if success else 'FAILED'}")
         return success
 
     def test_environment_compatibility(self):
@@ -192,9 +167,7 @@ class ModernizedSetupTester:
         print("🖥️ Testing Environment Compatibility...")
 
         # Check Python version
-        python_result = subprocess.run(
-            ["python3", "--version"], capture_output=True, text=True
-        )
+        python_result = subprocess.run(["python3", "--version"], capture_output=True, text=True)
 
         # Check required packages
         packages_result = subprocess.run(
@@ -207,11 +180,7 @@ class ModernizedSetupTester:
             text=True,
         )
 
-        success = (
-            python_result.returncode == 0
-            and "Python 3.12" in python_result.stdout
-            and packages_result.returncode == 0
-        )
+        success = python_result.returncode == 0 and "Python 3.12" in python_result.stdout and packages_result.returncode == 0
 
         self.test_results.append(
             {
@@ -222,9 +191,7 @@ class ModernizedSetupTester:
             }
         )
 
-        print(
-            f"   {'✅' if success else '❌'} Environment Compatibility: {'PASSED' if success else 'FAILED'}"
-        )
+        print(f"   {'✅' if success else '❌'} Environment Compatibility: {'PASSED' if success else 'FAILED'}")
         return success
 
     def run_all_tests(self):
@@ -250,9 +217,7 @@ class ModernizedSetupTester:
                 passed += 1
 
         print("\n" + "=" * 60)
-        print(
-            f"📊 Test Results: {passed}/{total} tests passed ({passed/total*100:.1f}%)"
-        )
+        print(f"📊 Test Results: {passed}/{total} tests passed ({passed/total*100:.1f}%)")
 
         if passed == total:
             print("🎉 All tests PASSED! Modernized setup is ready for deployment.")

@@ -133,15 +133,9 @@ class RolloutPipelineManager:
         self.logger = logging.getLogger(__name__)
 
         # Configuration
-        self.pipeline_storage_path = Path(
-            self.config.get("pipeline_storage_path", "data/pipelines")
-        )
-        self.approval_timeout_default = self.config.get(
-            "approval_timeout_default", 240
-        )  # 4 hours
-        self.auto_progression_enabled = self.config.get(
-            "auto_progression_enabled", True
-        )
+        self.pipeline_storage_path = Path(self.config.get("pipeline_storage_path", "data/pipelines"))
+        self.approval_timeout_default = self.config.get("approval_timeout_default", 240)  # 4 hours
+        self.auto_progression_enabled = self.config.get("auto_progression_enabled", True)
         self.notification_enabled = self.config.get("notification_enabled", True)
 
         # State
@@ -172,9 +166,7 @@ class RolloutPipelineManager:
                     else:
                         self.pipeline_history.append(pipeline)
 
-            self.logger.info(
-                f"Loaded {len(self.active_pipelines)} active pipelines and {len(self.pipeline_history)} completed pipelines"
-            )
+            self.logger.info(f"Loaded {len(self.active_pipelines)} active pipelines and {len(self.pipeline_history)} completed pipelines")
 
         except Exception as e:
             self.logger.error(f"Failed to load pipelines: {e}")
@@ -182,9 +174,7 @@ class RolloutPipelineManager:
     def _save_pipeline(self, pipeline: RolloutPipeline):
         """Save pipeline to storage"""
         try:
-            pipeline_file = (
-                self.pipeline_storage_path / f"pipeline_{pipeline.pipeline_id}.json"
-            )
+            pipeline_file = self.pipeline_storage_path / f"pipeline_{pipeline.pipeline_id}.json"
             pipeline_data = self._serialize_pipeline(pipeline)
 
             def json_serializer(obj):
@@ -216,9 +206,7 @@ class RolloutPipelineManager:
             "created_by": pipeline.created_by,
             "status": pipeline.status.value,
             "current_phase": pipeline.current_phase,
-            "completed_at": pipeline.completed_at.isoformat()
-            if pipeline.completed_at
-            else None,
+            "completed_at": pipeline.completed_at.isoformat() if pipeline.completed_at else None,
             "total_duration": pipeline.total_duration,
         }
 
@@ -235,13 +223,9 @@ class RolloutPipelineManager:
             phase_copy = phase_data.copy()
             phase_copy["stage"] = PipelineStage(phase_copy["stage"])
             if phase_copy.get("started_at"):
-                phase_copy["started_at"] = datetime.fromisoformat(
-                    phase_copy["started_at"]
-                )
+                phase_copy["started_at"] = datetime.fromisoformat(phase_copy["started_at"])
             if phase_copy.get("completed_at"):
-                phase_copy["completed_at"] = datetime.fromisoformat(
-                    phase_copy["completed_at"]
-                )
+                phase_copy["completed_at"] = datetime.fromisoformat(phase_copy["completed_at"])
             phases.append(RolloutPhase(**phase_copy))
 
         # Deserialize approval gates
@@ -253,17 +237,13 @@ class RolloutPipelineManager:
             gate_copy["created_at"] = datetime.fromisoformat(gate_copy["created_at"])
             gate_copy["expires_at"] = datetime.fromisoformat(gate_copy["expires_at"])
             if gate_copy.get("approved_at"):
-                gate_copy["approved_at"] = datetime.fromisoformat(
-                    gate_copy["approved_at"]
-                )
+                gate_copy["approved_at"] = datetime.fromisoformat(gate_copy["approved_at"])
             approval_gates.append(ApprovalGate(**gate_copy))
 
         # Deserialize update plan (simplified)
         update_plan_data = data["update_plan"].copy()
         if isinstance(update_plan_data["created_at"], str):
-            update_plan_data["created_at"] = datetime.fromisoformat(
-                update_plan_data["created_at"]
-            )
+            update_plan_data["created_at"] = datetime.fromisoformat(update_plan_data["created_at"])
         update_plan = UpdatePlan(**update_plan_data)
 
         return RolloutPipeline(
@@ -280,9 +260,7 @@ class RolloutPipelineManager:
             created_by=data["created_by"],
             status=status,
             current_phase=data.get("current_phase"),
-            completed_at=datetime.fromisoformat(data["completed_at"])
-            if data.get("completed_at")
-            else None,
+            completed_at=datetime.fromisoformat(data["completed_at"]) if data.get("completed_at") else None,
             total_duration=data.get("total_duration"),
         )
 
@@ -299,9 +277,7 @@ class RolloutPipelineManager:
         if not pipeline_name:
             pipeline_name = f"Rollout for {update_plan.batch_id}"
 
-        self.logger.info(
-            f"Creating rollout pipeline {pipeline_id} with strategy {strategy.value}"
-        )
+        self.logger.info(f"Creating rollout pipeline {pipeline_id} with strategy {strategy.value}")
 
         # Generate phases based on strategy and update plan
         phases = await self._generate_rollout_phases(update_plan, strategy)
@@ -333,15 +309,11 @@ class RolloutPipelineManager:
         self.active_pipelines[pipeline_id] = pipeline
         self._save_pipeline(pipeline)
 
-        self.logger.info(
-            f"Created rollout pipeline {pipeline_id} with {len(phases)} phases and {len(approval_gates)} approval gates"
-        )
+        self.logger.info(f"Created rollout pipeline {pipeline_id} with {len(phases)} phases and {len(approval_gates)} approval gates")
 
         return pipeline
 
-    async def _generate_rollout_phases(
-        self, update_plan: UpdatePlan, strategy: RolloutStrategy
-    ) -> List[RolloutPhase]:
+    async def _generate_rollout_phases(self, update_plan: UpdatePlan, strategy: RolloutStrategy) -> List[RolloutPhase]:
         """Generate rollout phases based on strategy"""
         phases = []
 
@@ -472,9 +444,7 @@ class RolloutPipelineManager:
             created_at=datetime.now(),
         )
 
-    def _generate_approval_gates(
-        self, phases: List[RolloutPhase], update_plan: UpdatePlan
-    ) -> List[ApprovalGate]:
+    def _generate_approval_gates(self, phases: List[RolloutPhase], update_plan: UpdatePlan) -> List[ApprovalGate]:
         """Generate approval gates for phases"""
         gates = []
 
@@ -488,15 +458,12 @@ class RolloutPipelineManager:
                 approval_timeout=self.approval_timeout_default,
                 auto_approve_conditions={
                     "ai_confidence": update_plan.ai_confidence,
-                    "risk_level": "low"
-                    if update_plan.ai_confidence > 0.8
-                    else "medium",
+                    "risk_level": "low" if update_plan.ai_confidence > 0.8 else "medium",
                 },
                 status=ApprovalStatus.PENDING,
                 approvals=[],
                 created_at=datetime.now(),
-                expires_at=datetime.now()
-                + timedelta(minutes=self.approval_timeout_default),
+                expires_at=datetime.now() + timedelta(minutes=self.approval_timeout_default),
             )
         )
 
@@ -514,8 +481,7 @@ class RolloutPipelineManager:
                     status=ApprovalStatus.PENDING,
                     approvals=[],
                     created_at=datetime.now(),
-                    expires_at=datetime.now()
-                    + timedelta(minutes=self.approval_timeout_default),
+                    expires_at=datetime.now() + timedelta(minutes=self.approval_timeout_default),
                 )
             )
 

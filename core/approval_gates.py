@@ -54,12 +54,8 @@ class ApprovalGateManager:
 
         # Configuration
         self.auto_approval_enabled = self.config.get("auto_approval_enabled", True)
-        self.approval_timeout_buffer = self.config.get(
-            "approval_timeout_buffer", 30
-        )  # minutes
-        self.notification_channels = self.config.get(
-            "notification_channels", ["email", "slack"]
-        )
+        self.approval_timeout_buffer = self.config.get("approval_timeout_buffer", 30)  # minutes
+        self.notification_channels = self.config.get("notification_channels", ["email", "slack"])
 
         # State
         self.pending_approvals: Dict[str, ApprovalRequest] = {}
@@ -130,10 +126,7 @@ class ApprovalGateManager:
 
             # Check confidence threshold
             if "ai_confidence" in conditions:
-                if (
-                    conditions["ai_confidence"]
-                    < self.auto_approval_rules["low_risk_threshold"]
-                ):
+                if conditions["ai_confidence"] < self.auto_approval_rules["low_risk_threshold"]:
                     return False
 
             # Check risk level
@@ -143,26 +136,18 @@ class ApprovalGateManager:
 
             # Check security updates
             if "has_security_updates" in conditions:
-                if (
-                    conditions["has_security_updates"]
-                    and not self.auto_approval_rules["security_update_auto_approve"]
-                ):
+                if conditions["has_security_updates"] and not self.auto_approval_rules["security_update_auto_approve"]:
                     return False
 
             # Check update count
             if "update_count" in conditions:
-                if (
-                    conditions["update_count"]
-                    > self.auto_approval_rules["max_update_count"]
-                ):
+                if conditions["update_count"] > self.auto_approval_rules["max_update_count"]:
                     return False
 
             # Check component types
             if "components" in conditions:
                 allowed_components = self.auto_approval_rules["allowed_components"]
-                if not all(
-                    comp in allowed_components for comp in conditions["components"]
-                ):
+                if not all(comp in allowed_components for comp in conditions["components"]):
                     return False
 
             # Check business hours
@@ -176,24 +161,17 @@ class ApprovalGateManager:
 
             # Check maintenance window
             if "maintenance_window" in conditions:
-                if (
-                    conditions["maintenance_window"]
-                    and self.auto_approval_rules["maintenance_window_auto"]
-                ):
+                if conditions["maintenance_window"] and self.auto_approval_rules["maintenance_window_auto"]:
                     return True
 
             # All conditions passed
             return True
 
         except Exception as e:
-            self.logger.error(
-                f"Auto-approval check failed for gate {gate.gate_id}: {e}"
-            )
+            self.logger.error(f"Auto-approval check failed for gate {gate.gate_id}: {e}")
             return False
 
-    async def request_approval(
-        self, gate: ApprovalGate, pipeline_id: str, message: str = None
-    ) -> List[ApprovalRequest]:
+    async def request_approval(self, gate: ApprovalGate, pipeline_id: str, message: str = None) -> List[ApprovalRequest]:
         """Send approval requests to required approvers"""
 
         requests = []
@@ -217,14 +195,10 @@ class ApprovalGateManager:
             # Send notification
             await self._send_approval_notification(request, gate)
 
-        self.logger.info(
-            f"Sent {len(requests)} approval requests for gate {gate.gate_id}"
-        )
+        self.logger.info(f"Sent {len(requests)} approval requests for gate {gate.gate_id}")
         return requests
 
-    async def _send_approval_notification(
-        self, request: ApprovalRequest, gate: ApprovalGate
-    ):
+    async def _send_approval_notification(self, request: ApprovalRequest, gate: ApprovalGate):
         """Send approval notification to approver"""
         try:
             notification_data = {
@@ -244,9 +218,7 @@ class ApprovalGateManager:
                 elif channel == "slack":
                     await self._send_slack_notification(notification_data)
 
-            self.logger.debug(
-                f"Sent approval notification for request {request.request_id}"
-            )
+            self.logger.debug(f"Sent approval notification for request {request.request_id}")
 
         except Exception as e:
             self.logger.error(f"Failed to send approval notification: {e}")
@@ -254,20 +226,14 @@ class ApprovalGateManager:
     async def _send_email_notification(self, data: Dict[str, Any]):
         """Send email approval notification"""
         # Placeholder for email integration
-        self.logger.info(
-            f"Email notification sent to {data['approver']} for {data['gate_name']}"
-        )
+        self.logger.info(f"Email notification sent to {data['approver']} for {data['gate_name']}")
 
     async def _send_slack_notification(self, data: Dict[str, Any]):
         """Send Slack approval notification"""
         # Placeholder for Slack integration
-        self.logger.info(
-            f"Slack notification sent to {data['approver']} for {data['gate_name']}"
-        )
+        self.logger.info(f"Slack notification sent to {data['approver']} for {data['gate_name']}")
 
-    async def process_approval_response(
-        self, request_id: str, response: str, approver: str, comments: str = None
-    ) -> bool:
+    async def process_approval_response(self, request_id: str, response: str, approver: str, comments: str = None) -> bool:
         """Process approval response from approver"""
 
         if request_id not in self.pending_approvals:
@@ -281,9 +247,7 @@ class ApprovalGateManager:
 
         # Validate response
         if response not in ["approved", "rejected"]:
-            raise ValueError(
-                f"Invalid response {response}. Must be 'approved' or 'rejected'"
-            )
+            raise ValueError(f"Invalid response {response}. Must be 'approved' or 'rejected'")
 
         # Update request
         request.responded_at = datetime.now()
@@ -294,15 +258,11 @@ class ApprovalGateManager:
         self.approval_history.append(request)
         del self.pending_approvals[request_id]
 
-        self.logger.info(
-            f"Processed approval response: {response} from {approver} for request {request_id}"
-        )
+        self.logger.info(f"Processed approval response: {response} from {approver} for request {request_id}")
 
         return response == "approved"
 
-    async def check_gate_approval_status(
-        self, gate: ApprovalGate
-    ) -> Tuple[ApprovalStatus, str]:
+    async def check_gate_approval_status(self, gate: ApprovalGate) -> Tuple[ApprovalStatus, str]:
         """Check overall approval status for a gate"""
 
         # Check if already approved/rejected
@@ -349,9 +309,7 @@ class ApprovalGateManager:
             f"Waiting for {required_count - approvals} more approval(s)",
         )
 
-    async def update_gate_approvals(
-        self, gate: ApprovalGate, request_id: str, response: str, approver: str
-    ):
+    async def update_gate_approvals(self, gate: ApprovalGate, request_id: str, response: str, approver: str):
         """Update gate with approval response"""
 
         approval_data = {
@@ -380,9 +338,7 @@ class ApprovalGateManager:
         expired_requests = []
         for request_id, request in self.pending_approvals.items():
             # Find corresponding gate expiration (simplified lookup)
-            if current_time > (
-                request.created_at + timedelta(hours=24)
-            ):  # 24-hour cleanup
+            if current_time > (request.created_at + timedelta(hours=24)):  # 24-hour cleanup
                 expired_requests.append(request_id)
 
         for request_id in expired_requests:
@@ -410,35 +366,25 @@ class ApprovalGateManager:
         """Get approval system statistics"""
 
         total_requests = len(self.pending_approvals) + len(self.approval_history)
-        approved_count = len(
-            [r for r in self.approval_history if r.response == "approved"]
-        )
-        rejected_count = len(
-            [r for r in self.approval_history if r.response == "rejected"]
-        )
+        approved_count = len([r for r in self.approval_history if r.response == "approved"])
+        rejected_count = len([r for r in self.approval_history if r.response == "rejected"])
         pending_count = len(self.pending_approvals)
 
         # Calculate average response time
         response_times = []
         for request in self.approval_history:
             if request.responded_at and request.created_at:
-                response_time = (
-                    request.responded_at - request.created_at
-                ).total_seconds() / 60  # minutes
+                response_time = (request.responded_at - request.created_at).total_seconds() / 60  # minutes
                 response_times.append(response_time)
 
-        avg_response_time = (
-            sum(response_times) / len(response_times) if response_times else 0
-        )
+        avg_response_time = sum(response_times) / len(response_times) if response_times else 0
 
         return {
             "total_requests": total_requests,
             "approved": approved_count,
             "rejected": rejected_count,
             "pending": pending_count,
-            "approval_rate": (approved_count / total_requests * 100)
-            if total_requests > 0
-            else 0,
+            "approval_rate": (approved_count / total_requests * 100) if total_requests > 0 else 0,
             "average_response_time_minutes": round(avg_response_time, 2),
             "auto_approval_rules": self.auto_approval_rules,
         }

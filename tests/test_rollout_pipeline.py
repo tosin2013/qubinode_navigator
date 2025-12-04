@@ -97,10 +97,7 @@ class TestRolloutPipelineManager:
         )
 
         assert pipeline.strategy == RolloutStrategy.BLUE_GREEN
-        assert (
-            "green" in str(pipeline.phases).lower()
-            or "blue" in str(pipeline.phases).lower()
-        )
+        assert "green" in str(pipeline.phases).lower() or "blue" in str(pipeline.phases).lower()
 
     async def test_create_rollout_pipeline_rolling(self):
         """Test creating rolling rollout pipeline"""
@@ -462,18 +459,14 @@ class TestPipelineExecutor:
 
         criteria = {"min_test_pass_rate": 0.75}
 
-        result = await self.executor._check_success_criteria(
-            criteria, validation_results
-        )
+        result = await self.executor._check_success_criteria(criteria, validation_results)
 
         # 3 out of 4 tests passed = 75% pass rate
         assert result is True
 
         # Test with higher threshold
         criteria = {"min_test_pass_rate": 0.9}
-        result = await self.executor._check_success_criteria(
-            criteria, validation_results
-        )
+        result = await self.executor._check_success_criteria(criteria, validation_results)
 
         assert result is False
 

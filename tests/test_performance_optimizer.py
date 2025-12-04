@@ -246,11 +246,7 @@ class TestPerformanceOptimizer:
         assert len(self.optimizer.optimization_recommendations) > 0
 
         # Check for CPU recommendation
-        cpu_recs = [
-            r
-            for r in self.optimizer.optimization_recommendations
-            if r.resource_type == ResourceType.CPU
-        ]
+        cpu_recs = [r for r in self.optimizer.optimization_recommendations if r.resource_type == ResourceType.CPU]
         assert len(cpu_recs) > 0
         assert cpu_recs[0].impact_level == "high"
         assert cpu_recs[0].current_value == 95.0
@@ -311,9 +307,7 @@ class TestPerformanceOptimizer:
         operations = [lambda: sample_operation(0.01) for _ in range(5)]
 
         # Execute with concurrency limit
-        results = await self.optimizer.optimize_concurrent_operations(
-            operations, max_concurrency=3
-        )
+        results = await self.optimizer.optimize_concurrent_operations(operations, max_concurrency=3)
 
         # All operations should complete
         assert len(results) == 5
@@ -325,16 +319,12 @@ class TestPerformanceOptimizer:
         test_data = {"test": "data", "number": 42}
 
         # Test write operation
-        result = await self.optimizer.optimize_file_operations(
-            test_file, "write_json", test_data
-        )
+        result = await self.optimizer.optimize_file_operations(test_file, "write_json", test_data)
         assert result is True
         assert test_file.exists()
 
         # Test read operation
-        read_data = await self.optimizer.optimize_file_operations(
-            test_file, "read_json"
-        )
+        read_data = await self.optimizer.optimize_file_operations(test_file, "read_json")
         assert read_data == test_data
 
         # Test regular write/read
@@ -356,9 +346,7 @@ class TestPerformanceOptimizer:
             mock_response.headers = {"Content-Type": "application/json"}
 
             mock_session_instance = mock.AsyncMock()
-            mock_session_instance.request.return_value.__aenter__.return_value = (
-                mock_response
-            )
+            mock_session_instance.request.return_value.__aenter__.return_value = mock_response
             mock_session.return_value = mock_session_instance
 
             # Manually set session pool

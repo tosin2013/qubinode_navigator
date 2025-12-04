@@ -46,10 +46,7 @@ default_args = {
 def check_vault_available(**context):
     """Check if Vault operators are available."""
     if not VAULT_AVAILABLE:
-        raise ImportError(
-            "Vault operators not available. Install apache-airflow-providers-hashicorp "
-            "and ensure qubinode.vault plugin is loaded."
-        )
+        raise ImportError("Vault operators not available. Install apache-airflow-providers-hashicorp " "and ensure qubinode.vault plugin is loaded.")
     return True
 
 

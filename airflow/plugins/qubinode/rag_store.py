@@ -75,9 +75,7 @@ def _get_connection_pool():
     global _connection_pool
     if _connection_pool is None:
         psycopg2 = _get_psycopg2()
-        _connection_pool = psycopg2.pool.ThreadedConnectionPool(
-            minconn=1, maxconn=10, dsn=PSYCOPG2_URL
-        )
+        _connection_pool = psycopg2.pool.ThreadedConnectionPool(minconn=1, maxconn=10, dsn=PSYCOPG2_URL)
         logger.info("Database connection pool created")
     return _connection_pool
 
@@ -194,9 +192,7 @@ class RAGStore:
                         (
                             doc_id,
                             chunk,
-                            content_hash
-                            if i == 0
-                            else None,  # Only first chunk gets hash
+                            content_hash if i == 0 else None,  # Only first chunk gets hash
                             embedding,
                             doc_type,
                             source_path,
@@ -302,9 +298,7 @@ class RAGStore:
         logger.info(f"Found {len(results)} documents matching query")
         return results
 
-    def list_documents(
-        self, doc_type: Optional[str] = None, limit: int = 100, offset: int = 0
-    ) -> List[Dict[str, Any]]:
+    def list_documents(self, doc_type: Optional[str] = None, limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
         """
         List documents in the store.
 
@@ -370,9 +364,7 @@ class RAGStore:
         with self.get_connection() as conn:
             with conn.cursor() as cur:
                 # Delete chunks if this is a parent
-                cur.execute(
-                    "DELETE FROM rag_documents WHERE parent_doc_id = %s", (doc_id,)
-                )
+                cur.execute("DELETE FROM rag_documents WHERE parent_doc_id = %s", (doc_id,))
 
                 # Delete the document itself
                 cur.execute("DELETE FROM rag_documents WHERE id = %s", (doc_id,))
@@ -640,14 +632,10 @@ class RAGStore:
                     ),
                 )
 
-        logger.info(
-            f"Logged {agent} decision: {decision_type} (confidence: {confidence})"
-        )
+        logger.info(f"Logged {agent} decision: {decision_type} (confidence: {confidence})")
         return decision_id
 
-    def update_decision_outcome(
-        self, decision_id: str, outcome: str, outcome_details: Optional[str] = None
-    ) -> bool:
+    def update_decision_outcome(self, decision_id: str, outcome: str, outcome_details: Optional[str] = None) -> bool:
         """
         Update the outcome of a decision.
 

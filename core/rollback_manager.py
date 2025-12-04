@@ -100,23 +100,15 @@ class RollbackManager:
         self.logger = logging.getLogger(__name__)
 
         # Configuration
-        self.rollback_storage_path = Path(
-            self.config.get("rollback_storage_path", "data/rollbacks")
-        )
+        self.rollback_storage_path = Path(self.config.get("rollback_storage_path", "data/rollbacks"))
         self.auto_rollback_enabled = self.config.get("auto_rollback_enabled", True)
         self.rollback_timeout_minutes = self.config.get("rollback_timeout_minutes", 60)
-        self.validation_timeout_minutes = self.config.get(
-            "validation_timeout_minutes", 15
-        )
+        self.validation_timeout_minutes = self.config.get("validation_timeout_minutes", 15)
 
         # Trigger thresholds
         self.error_rate_threshold = self.config.get("error_rate_threshold", 0.05)  # 5%
-        self.performance_degradation_threshold = self.config.get(
-            "performance_degradation_threshold", 0.3
-        )  # 30%
-        self.service_unavailable_threshold = self.config.get(
-            "service_unavailable_threshold", 300
-        )  # 5 minutes
+        self.performance_degradation_threshold = self.config.get("performance_degradation_threshold", 0.3)  # 30%
+        self.service_unavailable_threshold = self.config.get("service_unavailable_threshold", 300)  # 5 minutes
 
         # State
         self.active_rollbacks: Dict[str, RollbackPlan] = {}
@@ -145,9 +137,7 @@ class RollbackManager:
                     else:
                         self.rollback_history.append(rollback)
 
-            self.logger.info(
-                f"Loaded {len(self.active_rollbacks)} active rollbacks and {len(self.rollback_history)} completed rollbacks"
-            )
+            self.logger.info(f"Loaded {len(self.active_rollbacks)} active rollbacks and {len(self.rollback_history)} completed rollbacks")
 
         except Exception as e:
             self.logger.error(f"Failed to load rollbacks: {e}")
@@ -155,9 +145,7 @@ class RollbackManager:
     def _save_rollback(self, rollback: RollbackPlan):
         """Save rollback to storage"""
         try:
-            rollback_file = (
-                self.rollback_storage_path / f"rollback_{rollback.plan_id}.json"
-            )
+            rollback_file = self.rollback_storage_path / f"rollback_{rollback.plan_id}.json"
             rollback_data = self._serialize_rollback(rollback)
 
             def json_serializer(obj):
@@ -181,19 +169,13 @@ class RollbackManager:
             "phase_id": rollback.phase_id,
             "trigger": rollback.trigger.value,
             "trigger_details": rollback.trigger_details,
-            "rollback_actions": [
-                asdict(action) for action in rollback.rollback_actions
-            ],
+            "rollback_actions": [asdict(action) for action in rollback.rollback_actions],
             "estimated_duration": rollback.estimated_duration,
             "created_at": rollback.created_at.isoformat(),
             "created_by": rollback.created_by,
             "status": rollback.status.value,
-            "started_at": rollback.started_at.isoformat()
-            if rollback.started_at
-            else None,
-            "completed_at": rollback.completed_at.isoformat()
-            if rollback.completed_at
-            else None,
+            "started_at": rollback.started_at.isoformat() if rollback.started_at else None,
+            "completed_at": rollback.completed_at.isoformat() if rollback.completed_at else None,
             "error_message": rollback.error_message,
             "validation_results": rollback.validation_results,
         }
@@ -220,19 +202,13 @@ class RollbackManager:
             created_at=datetime.fromisoformat(data["created_at"]),
             created_by=data["created_by"],
             status=status,
-            started_at=datetime.fromisoformat(data["started_at"])
-            if data.get("started_at")
-            else None,
-            completed_at=datetime.fromisoformat(data["completed_at"])
-            if data.get("completed_at")
-            else None,
+            started_at=datetime.fromisoformat(data["started_at"]) if data.get("started_at") else None,
+            completed_at=datetime.fromisoformat(data["completed_at"]) if data.get("completed_at") else None,
             error_message=data.get("error_message"),
             validation_results=data.get("validation_results", {}),
         )
 
-    async def monitor_pipeline_health(
-        self, pipeline: RolloutPipeline
-    ) -> Optional[RollbackTrigger]:
+    async def monitor_pipeline_health(self, pipeline: RolloutPipeline) -> Optional[RollbackTrigger]:
         """Monitor pipeline health and detect rollback triggers"""
 
         try:
@@ -259,9 +235,7 @@ class RollbackManager:
             return None
 
         except Exception as e:
-            self.logger.error(
-                f"Health monitoring failed for pipeline {pipeline.pipeline_id}: {e}"
-            )
+            self.logger.error(f"Health monitoring failed for pipeline {pipeline.pipeline_id}: {e}")
             return None
 
     async def _check_critical_system_failure(self, pipeline: RolloutPipeline) -> bool:
@@ -306,14 +280,10 @@ class RollbackManager:
 
         plan_id = f"rollback_{int(time.time())}"
 
-        self.logger.info(
-            f"Creating rollback plan {plan_id} for pipeline {pipeline.pipeline_id} due to {trigger.value}"
-        )
+        self.logger.info(f"Creating rollback plan {plan_id} for pipeline {pipeline.pipeline_id} due to {trigger.value}")
 
         # Generate rollback actions based on pipeline and trigger
-        rollback_actions = await self._generate_rollback_actions(
-            pipeline, trigger, phase_id
-        )
+        rollback_actions = await self._generate_rollback_actions(pipeline, trigger, phase_id)
 
         # Estimate duration
         estimated_duration = self._estimate_rollback_duration(rollback_actions)
@@ -336,9 +306,7 @@ class RollbackManager:
         self.active_rollbacks[plan_id] = rollback_plan
         self._save_rollback(rollback_plan)
 
-        self.logger.info(
-            f"Created rollback plan {plan_id} with {len(rollback_actions)} actions"
-        )
+        self.logger.info(f"Created rollback plan {plan_id} with {len(rollback_actions)} actions")
 
         return rollback_plan
 
@@ -368,11 +336,7 @@ class RollbackManager:
                     phases_to_rollback.append(phase)
         else:
             # Rollback all completed/failed phases
-            phases_to_rollback = [
-                p
-                for p in pipeline.phases
-                if p.stage in [PipelineStage.COMPLETED, PipelineStage.FAILED]
-            ]
+            phases_to_rollback = [p for p in pipeline.phases if p.stage in [PipelineStage.COMPLETED, PipelineStage.FAILED]]
 
         # Reverse order for rollback
         phases_to_rollback.reverse()
@@ -388,9 +352,7 @@ class RollbackManager:
 
         return actions
 
-    async def _generate_phase_rollback_actions(
-        self, phase: RolloutPhase, sequence: int
-    ) -> List[RollbackAction]:
+    async def _generate_phase_rollback_actions(self, phase: RolloutPhase, sequence: int) -> List[RollbackAction]:
         """Generate rollback actions for a specific phase"""
 
         actions = []
@@ -433,10 +395,7 @@ class RollbackManager:
                 validation_command="test -f /etc/qubinode.conf",
                 timeout_seconds=60,
                 retry_count=2,
-                dependencies=[
-                    f"rollback_package_{update.component_name}_{sequence}"
-                    for update in phase.update_batch.updates
-                ],
+                dependencies=[f"rollback_package_{update.component_name}_{sequence}" for update in phase.update_batch.updates],
             )
         )
 
@@ -456,9 +415,7 @@ class RollbackManager:
 
         return actions
 
-    async def _generate_global_rollback_actions(
-        self, pipeline: RolloutPipeline, trigger: RollbackTrigger
-    ) -> List[RollbackAction]:
+    async def _generate_global_rollback_actions(self, pipeline: RolloutPipeline, trigger: RollbackTrigger) -> List[RollbackAction]:
         """Generate global rollback actions"""
 
         actions = []
@@ -507,14 +464,10 @@ class RollbackManager:
         """Execute rollback plan"""
 
         if not self.auto_rollback_enabled:
-            self.logger.warning(
-                f"Auto-rollback disabled, skipping execution of {rollback_plan.plan_id}"
-            )
+            self.logger.warning(f"Auto-rollback disabled, skipping execution of {rollback_plan.plan_id}")
             return False
 
-        self.logger.info(
-            f"Starting rollback execution for plan {rollback_plan.plan_id}"
-        )
+        self.logger.info(f"Starting rollback execution for plan {rollback_plan.plan_id}")
 
         try:
             # Update status
@@ -533,9 +486,7 @@ class RollbackManager:
                         continue
 
                     # Check if dependencies are satisfied
-                    dependencies_met = all(
-                        dep in executed_actions for dep in action.dependencies
-                    )
+                    dependencies_met = all(dep in executed_actions for dep in action.dependencies)
 
                     if dependencies_met:
                         success = await self._execute_rollback_action(action)
@@ -543,14 +494,10 @@ class RollbackManager:
                             executed_actions.add(action.action_id)
                             progress_made = True
                         else:
-                            raise Exception(
-                                f"Rollback action {action.action_id} failed"
-                            )
+                            raise Exception(f"Rollback action {action.action_id} failed")
 
                 if not progress_made:
-                    raise Exception(
-                        "Rollback execution stuck - circular dependencies or all remaining actions failed"
-                    )
+                    raise Exception("Rollback execution stuck - circular dependencies or all remaining actions failed")
 
             # Validate rollback success
             validation_success = await self._validate_rollback_success(rollback_plan)
@@ -558,9 +505,7 @@ class RollbackManager:
             if validation_success:
                 rollback_plan.status = RollbackStatus.COMPLETED
                 rollback_plan.completed_at = datetime.now()
-                self.logger.info(
-                    f"Rollback {rollback_plan.plan_id} completed successfully"
-                )
+                self.logger.info(f"Rollback {rollback_plan.plan_id} completed successfully")
                 result = True
             else:
                 rollback_plan.status = RollbackStatus.FAILED
@@ -591,9 +536,7 @@ class RollbackManager:
     async def _execute_rollback_action(self, action: RollbackAction) -> bool:
         """Execute individual rollback action"""
 
-        self.logger.info(
-            f"Executing rollback action {action.action_id}: {action.action_type}"
-        )
+        self.logger.info(f"Executing rollback action {action.action_id}: {action.action_type}")
 
         for attempt in range(action.retry_count):
             try:
@@ -609,21 +552,15 @@ class RollbackManager:
                     # Simulate validation
                     await asyncio.sleep(0.5)
 
-                self.logger.info(
-                    f"Rollback action {action.action_id} completed successfully"
-                )
+                self.logger.info(f"Rollback action {action.action_id} completed successfully")
                 return True
 
             except Exception as e:
-                self.logger.warning(
-                    f"Rollback action {action.action_id} attempt {attempt + 1} failed: {e}"
-                )
+                self.logger.warning(f"Rollback action {action.action_id} attempt {attempt + 1} failed: {e}")
                 if attempt < action.retry_count - 1:
                     await asyncio.sleep(5)  # Wait before retry
                 else:
-                    self.logger.error(
-                        f"Rollback action {action.action_id} failed after {action.retry_count} attempts"
-                    )
+                    self.logger.error(f"Rollback action {action.action_id} failed after {action.retry_count} attempts")
                     return False
 
         return False
@@ -632,9 +569,7 @@ class RollbackManager:
         """Validate that rollback was successful"""
 
         try:
-            self.logger.info(
-                f"Validating rollback success for plan {rollback_plan.plan_id}"
-            )
+            self.logger.info(f"Validating rollback success for plan {rollback_plan.plan_id}")
 
             validation_results = {}
 
@@ -642,18 +577,13 @@ class RollbackManager:
             validation_results["system_health"] = await self._check_system_health()
 
             # Service availability check
-            validation_results[
-                "service_availability"
-            ] = await self._check_service_health()
+            validation_results["service_availability"] = await self._check_service_health()
 
             # Performance check
             validation_results["performance"] = await self._check_performance_metrics()
 
             # Overall validation
-            all_checks_passed = all(
-                result.get("status") == "passed"
-                for result in validation_results.values()
-            )
+            all_checks_passed = all(result.get("status") == "passed" for result in validation_results.values())
 
             rollback_plan.validation_results = validation_results
 
@@ -747,9 +677,7 @@ class RollbackManager:
             rollback = self.active_rollbacks[plan_id]
         else:
             # Check history
-            rollback = next(
-                (r for r in self.rollback_history if r.plan_id == plan_id), None
-            )
+            rollback = next((r for r in self.rollback_history if r.plan_id == plan_id), None)
 
         if not rollback:
             return None
@@ -760,12 +688,8 @@ class RollbackManager:
             "status": rollback.status.value,
             "trigger": rollback.trigger.value,
             "created_at": rollback.created_at.isoformat(),
-            "started_at": rollback.started_at.isoformat()
-            if rollback.started_at
-            else None,
-            "completed_at": rollback.completed_at.isoformat()
-            if rollback.completed_at
-            else None,
+            "started_at": rollback.started_at.isoformat() if rollback.started_at else None,
+            "completed_at": rollback.completed_at.isoformat() if rollback.completed_at else None,
             "estimated_duration": rollback.estimated_duration,
             "actions_count": len(rollback.rollback_actions),
             "error_message": rollback.error_message,
@@ -787,24 +711,16 @@ class RollbackManager:
             }
 
         # Calculate statistics
-        completed_rollbacks = [
-            r for r in all_rollbacks if r.status == RollbackStatus.COMPLETED
-        ]
-        failed_rollbacks = [
-            r for r in all_rollbacks if r.status == RollbackStatus.FAILED
-        ]
+        completed_rollbacks = [r for r in all_rollbacks if r.status == RollbackStatus.COMPLETED]
+        failed_rollbacks = [r for r in all_rollbacks if r.status == RollbackStatus.FAILED]
 
-        success_rate = (
-            len(completed_rollbacks) / len(all_rollbacks) * 100 if all_rollbacks else 0
-        )
+        success_rate = len(completed_rollbacks) / len(all_rollbacks) * 100 if all_rollbacks else 0
 
         # Calculate average duration for completed rollbacks
         durations = []
         for rollback in completed_rollbacks:
             if rollback.started_at and rollback.completed_at:
-                duration = (
-                    rollback.completed_at - rollback.started_at
-                ).total_seconds() / 60
+                duration = (rollback.completed_at - rollback.started_at).total_seconds() / 60
                 durations.append(duration)
 
         average_duration = sum(durations) / len(durations) if durations else 0

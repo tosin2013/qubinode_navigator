@@ -95,9 +95,7 @@ class QubiNodePlugin(ABC):
 
     def __init__(self, config: Dict[str, Any]):
         self.config = config
-        self.logger = logging.getLogger(
-            f"{self.__class__.__module__}.{self.__class__.__name__}"
-        )
+        self.logger = logging.getLogger(f"{self.__class__.__module__}.{self.__class__.__name__}")
         self._initialized = False
 
     @property

@@ -35,9 +35,7 @@ class TestUpdateDetector:
         self.temp_cache_dir = tempfile.mkdtemp()
 
         # Create temporary compatibility file
-        self.temp_compat_file = tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yml", delete=False
-        )
+        self.temp_compat_file = tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False)
         self.temp_compat_file.write(
             """
 podman:
@@ -97,9 +95,7 @@ podman:
         """Test OS information detection"""
         # Mock os-release file content
         mock_run.return_value.returncode = 0
-        mock_run.return_value.stdout = (
-            'ID="centos"\nVERSION_ID="10"\nNAME="CentOS Stream"'
-        )
+        mock_run.return_value.stdout = 'ID="centos"\nVERSION_ID="10"\nNAME="CentOS Stream"'
 
         os_info = await self.detector._get_os_info()
 
@@ -118,9 +114,7 @@ podman.x86_64                    5.0.1-1.el10                     appstream
         """
 
         # Mock current version queries
-        with mock.patch.object(
-            self.detector, "_get_rpm_current_version"
-        ) as mock_version:
+        with mock.patch.object(self.detector, "_get_rpm_current_version") as mock_version:
             mock_version.side_effect = ["6.12.0-1.el10", "4.9.0-1.el10"]
 
             updates = await self.detector._detect_rpm_updates()
@@ -144,9 +138,7 @@ podman.x86_64                    5.0.1-1.el10                     appstream
         ]
 
         # Mock current version query
-        with mock.patch.object(
-            self.detector, "_get_apt_current_version"
-        ) as mock_version:
+        with mock.patch.object(self.detector, "_get_apt_current_version") as mock_version:
             mock_version.return_value = "5.15.0-90"
 
             updates = await self.detector._detect_apt_updates()
@@ -164,9 +156,7 @@ podman.x86_64                    5.0.1-1.el10                     appstream
         mock_run.return_value.stdout = "podman version 4.9.0"
 
         # Mock GitHub API response
-        with mock.patch.object(
-            self.detector, "_get_github_latest_release"
-        ) as mock_github:
+        with mock.patch.object(self.detector, "_get_github_latest_release") as mock_github:
             mock_github.return_value = "5.0.1"
 
             updates = await self.detector._check_podman_updates()
@@ -210,9 +200,7 @@ podman.x86_64                    5.0.1-1.el10                     appstream
         mock_run.return_value.stdout = json.dumps(collections_json)
 
         # Mock Galaxy API responses
-        with mock.patch.object(
-            self.detector, "_get_galaxy_latest_version"
-        ) as mock_galaxy:
+        with mock.patch.object(self.detector, "_get_galaxy_latest_version") as mock_galaxy:
             mock_galaxy.side_effect = ["8.0.0", "1.6.0"]
 
             updates = await self.detector.detect_collection_updates()
@@ -235,9 +223,7 @@ podman.x86_64                    5.0.1-1.el10                     appstream
         version = await self.detector._get_github_latest_release("containers/podman")
 
         assert version == "5.0.1"
-        mock_get.assert_called_once_with(
-            "https://api.github.com/repos/containers/podman/releases/latest", timeout=10
-        )
+        mock_get.assert_called_once_with("https://api.github.com/repos/containers/podman/releases/latest", timeout=10)
 
     @mock.patch("requests.get")
     async def test_get_pypi_latest_version(self, mock_get):
@@ -251,9 +237,7 @@ podman.x86_64                    5.0.1-1.el10                     appstream
         version = await self.detector._get_pypi_latest_version("ansible")
 
         assert version == "2.16.0"
-        mock_get.assert_called_once_with(
-            "https://pypi.org/pypi/ansible/json", timeout=10
-        )
+        mock_get.assert_called_once_with("https://pypi.org/pypi/ansible/json", timeout=10)
 
     @mock.patch("requests.get")
     async def test_get_galaxy_latest_version(self, mock_get):
@@ -317,9 +301,7 @@ podman.x86_64                    5.0.1-1.el10                     appstream
         # Mock AI response
         mock_response = mock.MagicMock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "text": "This update is compatible with your system."
-        }
+        mock_response.json.return_value = {"text": "This update is compatible with your system."}
         mock_post.return_value = mock_response
 
         update = UpdateInfo(
@@ -390,9 +372,7 @@ podman.x86_64                    5.0.1-1.el10                     appstream
     @mock.patch.object(UpdateDetector, "detect_software_updates")
     @mock.patch.object(UpdateDetector, "detect_collection_updates")
     @mock.patch.object(UpdateDetector, "check_compatibility")
-    async def test_run_full_update_check(
-        self, mock_compat, mock_collections, mock_software, mock_os
-    ):
+    async def test_run_full_update_check(self, mock_compat, mock_collections, mock_software, mock_os):
         """Test full update check workflow"""
         # Mock update detection methods
         os_update = UpdateInfo(

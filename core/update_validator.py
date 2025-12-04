@@ -111,20 +111,12 @@ class UpdateValidator:
         self.logger = logging.getLogger(__name__)
 
         # Configuration
-        self.test_environment_dir = Path(
-            self.config.get("test_environment_dir", "/tmp/update_validation")
-        )
+        self.test_environment_dir = Path(self.config.get("test_environment_dir", "/tmp/update_validation"))
         self.container_runtime = self.config.get("container_runtime", "podman")
-        self.base_image = self.config.get(
-            "base_image", "quay.io/centos/centos:stream10"
-        )
-        self.ai_assistant_url = self.config.get(
-            "ai_assistant_url", "http://localhost:8080"
-        )
+        self.base_image = self.config.get("base_image", "quay.io/centos/centos:stream10")
+        self.ai_assistant_url = self.config.get("ai_assistant_url", "http://localhost:8080")
         self.parallel_tests = self.config.get("parallel_tests", 3)
-        self.validation_timeout = self.config.get(
-            "validation_timeout", 1800
-        )  # 30 minutes
+        self.validation_timeout = self.config.get("validation_timeout", 1800)  # 30 minutes
 
         # State
         self.validation_suites: Dict[str, ValidationSuite] = {}
@@ -199,16 +191,12 @@ class UpdateValidator:
 
         return suite
 
-    async def _generate_tests_for_update(
-        self, update_info: UpdateInfo
-    ) -> List[ValidationTest]:
+    async def _generate_tests_for_update(self, update_info: UpdateInfo) -> List[ValidationTest]:
         """Generate validation tests for a specific update"""
         tests = []
 
         # Add standard pre-update tests
-        tests.extend(
-            self._create_standard_tests(update_info, ValidationStage.PRE_UPDATE_TESTS)
-        )
+        tests.extend(self._create_standard_tests(update_info, ValidationStage.PRE_UPDATE_TESTS))
 
         # Add component-specific tests
         if update_info.component_name == "podman":
@@ -217,15 +205,11 @@ class UpdateValidator:
             tests.extend(self._create_ansible_tests(update_info))
 
         # Add standard post-update tests
-        tests.extend(
-            self._create_standard_tests(update_info, ValidationStage.POST_UPDATE_TESTS)
-        )
+        tests.extend(self._create_standard_tests(update_info, ValidationStage.POST_UPDATE_TESTS))
 
         return tests
 
-    def _create_standard_tests(
-        self, update_info: UpdateInfo, stage: ValidationStage
-    ) -> List[ValidationTest]:
+    def _create_standard_tests(self, update_info: UpdateInfo, stage: ValidationStage) -> List[ValidationTest]:
         """Create standard validation tests"""
         tests = []
 
@@ -348,9 +332,7 @@ class UpdateValidator:
                 "/usr/sbin/init",
             ]
 
-            result = subprocess.run(
-                create_cmd, capture_output=True, text=True, timeout=120
-            )
+            result = subprocess.run(create_cmd, capture_output=True, text=True, timeout=120)
 
             if result.returncode != 0:
                 raise Exception(f"Failed to create container: {result.stderr}")
@@ -369,9 +351,7 @@ class UpdateValidator:
                 await self._cleanup_container(container_name)
             raise
 
-    async def execute_validation_test(
-        self, test: ValidationTest, container_name: str
-    ) -> ValidationExecution:
+    async def execute_validation_test(self, test: ValidationTest, container_name: str) -> ValidationExecution:
         """Execute a single validation test"""
         execution_id = f"exec_{test.test_id}_{int(time.time())}"
 
@@ -394,14 +374,10 @@ class UpdateValidator:
             ]
 
             # Execute test with timeout
-            result = subprocess.run(
-                exec_cmd, capture_output=True, text=True, timeout=test.timeout
-            )
+            result = subprocess.run(exec_cmd, capture_output=True, text=True, timeout=test.timeout)
 
             execution.end_time = datetime.now()
-            execution.duration = (
-                execution.end_time - execution.start_time
-            ).total_seconds()
+            execution.duration = (execution.end_time - execution.start_time).total_seconds()
             execution.output = result.stdout
             execution.exit_code = result.returncode
 
@@ -424,9 +400,7 @@ class UpdateValidator:
 
         except Exception as e:
             execution.end_time = datetime.now()
-            execution.duration = (
-                execution.end_time - execution.start_time
-            ).total_seconds()
+            execution.duration = (execution.end_time - execution.start_time).total_seconds()
             execution.status = ValidationResult.ERROR
             execution.error_message = str(e)
 
@@ -438,20 +412,14 @@ class UpdateValidator:
         self.logger.info(f"Test {test.test_id} completed: {execution.status.value}")
         return execution
 
-    def _evaluate_test_result(
-        self, test: ValidationTest, stdout: str, stderr: str
-    ) -> bool:
+    def _evaluate_test_result(self, test: ValidationTest, stdout: str, stderr: str) -> bool:
         """Evaluate if test result matches expected outcome"""
         expected = test.expected_result
 
         if expected == "exit_code_0":
             return True  # Already checked exit code
         elif expected == "version_match":
-            return any(
-                word in stdout.lower() for word in ["version", "v."]
-            ) and not any(
-                word in stdout.lower() for word in ["without", "command", "output"]
-            )
+            return any(word in stdout.lower() for word in ["version", "v."]) and not any(word in stdout.lower() for word in ["without", "command", "output"])
         elif expected == "hello_world_output":
             return "hello" in stdout.lower()
         elif expected == "ansible_facts":
@@ -525,9 +493,7 @@ class UpdateValidator:
                 if not stage_tests:
                     continue
 
-                self.logger.info(
-                    f"Running {stage.value} stage with {len(stage_tests)} tests"
-                )
+                self.logger.info(f"Running {stage.value} stage with {len(stage_tests)} tests")
 
                 stage_results = []
                 stage_passed = True
@@ -541,9 +507,7 @@ class UpdateValidator:
                             "test_id": execution.test_id,
                             "status": execution.status.value,
                             "duration": execution.duration,
-                            "output": execution.output[:200]
-                            if execution.output
-                            else None,
+                            "output": execution.output[:200] if execution.output else None,
                             "error": execution.error_message,
                         }
                     )
@@ -563,9 +527,7 @@ class UpdateValidator:
 
                 # Stop if critical stage failed
                 if not stage_passed and stage == ValidationStage.PRE_UPDATE_TESTS:
-                    self.logger.warning(
-                        f"Critical stage {stage.value} failed, stopping validation"
-                    )
+                    self.logger.warning(f"Critical stage {stage.value} failed, stopping validation")
                     break
 
         finally:
@@ -573,17 +535,12 @@ class UpdateValidator:
             await self._cleanup_container(container_name)
 
         results["end_time"] = datetime.now().isoformat()
-        results["duration"] = (
-            datetime.fromisoformat(results["end_time"])
-            - datetime.fromisoformat(results["start_time"])
-        ).total_seconds()
+        results["duration"] = (datetime.fromisoformat(results["end_time"]) - datetime.fromisoformat(results["start_time"])).total_seconds()
 
         # Determine overall result
         results["overall_result"] = self._determine_overall_result(results)
 
-        self.logger.info(
-            f"Validation suite {suite_id} completed: {results['overall_result']}"
-        )
+        self.logger.info(f"Validation suite {suite_id} completed: {results['overall_result']}")
         return results
 
     def _determine_overall_result(self, results: Dict[str, Any]) -> str:
@@ -635,9 +592,7 @@ class UpdateValidator:
         try:
             # Validate each update in the batch
             for update in batch.updates:
-                self.logger.info(
-                    f"Validating update: {update.component_name} {update.available_version}"
-                )
+                self.logger.info(f"Validating update: {update.component_name} {update.available_version}")
 
                 # Create validation suite
                 suite = await self.create_validation_suite(update)
@@ -648,10 +603,7 @@ class UpdateValidator:
                 batch_results["update_results"][update.component_name] = result
 
             # Determine batch result
-            all_passed = all(
-                result["overall_result"] == "passed"
-                for result in batch_results["update_results"].values()
-            )
+            all_passed = all(result["overall_result"] == "passed" for result in batch_results["update_results"].values())
 
             batch_results["overall_status"] = "passed" if all_passed else "failed"
 

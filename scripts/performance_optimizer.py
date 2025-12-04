@@ -52,46 +52,30 @@ Examples:
 
     # Status command
     status_parser = subparsers.add_parser("status", help="Show performance status")
-    status_parser.add_argument(
-        "--format", choices=["summary", "json"], default="summary", help="Output format"
-    )
+    status_parser.add_argument("--format", choices=["summary", "json"], default="summary", help="Output format")
 
     # Monitor command
-    monitor_parser = subparsers.add_parser(
-        "monitor", help="Start performance monitoring"
-    )
-    monitor_parser.add_argument(
-        "--duration", type=int, default=60, help="Monitoring duration in seconds"
-    )
+    monitor_parser = subparsers.add_parser("monitor", help="Start performance monitoring")
+    monitor_parser.add_argument("--duration", type=int, default=60, help="Monitoring duration in seconds")
     monitor_parser.add_argument(
         "--optimization-level",
         choices=["conservative", "balanced", "aggressive"],
         default="balanced",
         help="Optimization level",
     )
-    monitor_parser.add_argument(
-        "--interval", type=int, default=30, help="Monitoring interval in seconds"
-    )
+    monitor_parser.add_argument("--interval", type=int, default=30, help="Monitoring interval in seconds")
 
     # Recommendations command
-    rec_parser = subparsers.add_parser(
-        "recommendations", help="Get optimization recommendations"
-    )
-    rec_parser.add_argument(
-        "--impact", choices=["low", "medium", "high"], help="Filter by impact level"
-    )
-    rec_parser.add_argument(
-        "--format", choices=["table", "json"], default="table", help="Output format"
-    )
+    rec_parser = subparsers.add_parser("recommendations", help="Get optimization recommendations")
+    rec_parser.add_argument("--impact", choices=["low", "medium", "high"], help="Filter by impact level")
+    rec_parser.add_argument("--format", choices=["table", "json"], default="table", help="Output format")
 
     # Optimize command
     opt_parser = subparsers.add_parser("optimize", help="Apply optimization")
-    opt_parser.add_argument(
-        "--recommendation-id", required=True, help="Recommendation ID to apply"
-    )
+    opt_parser.add_argument("--recommendation-id", required=True, help="Recommendation ID to apply")
 
     # Clear cache command
-    cache_parser = subparsers.add_parser("clear-cache", help="Clear performance cache")
+    subparsers.add_parser("clear-cache", help="Clear performance cache")
 
     # Test command
     test_parser = subparsers.add_parser("test", help="Test performance optimization")
@@ -104,12 +88,8 @@ Examples:
 
     # Metrics command
     metrics_parser = subparsers.add_parser("metrics", help="Show performance metrics")
-    metrics_parser.add_argument(
-        "--hours", type=int, default=1, help="Hours of metrics to show"
-    )
-    metrics_parser.add_argument(
-        "--format", choices=["summary", "json"], default="summary", help="Output format"
-    )
+    metrics_parser.add_argument("--hours", type=int, default=1, help="Hours of metrics to show")
+    metrics_parser.add_argument("--format", choices=["summary", "json"], default="summary", help="Output format")
 
     args = parser.parse_args()
 
@@ -183,9 +163,7 @@ async def handle_status_command(optimizer: PerformanceOptimizer, args):
                         "warning": "⚠",
                         "critical": "✗",
                     }.get(limits["status"], "•")
-                    print(
-                        f"  {status_symbol} {resource.upper()}: {limits['current']}% (limit: {limits['soft_limit']}%/{limits['hard_limit']}%)"
-                    )
+                    print(f"  {status_symbol} {resource.upper()}: {limits['current']}% (limit: {limits['soft_limit']}%/{limits['hard_limit']}%)")
 
                 print("\n=== Optimization Recommendations ===")
                 print(f"Active High-Impact: {summary['active_recommendations']}")
@@ -241,9 +219,7 @@ async def handle_monitor_command(optimizer: PerformanceOptimizer, args):
             print("\n=== High-Impact Optimization Opportunities ===")
             for rec in recommendations[:3]:  # Show top 3
                 print(f"• {rec.description}")
-                print(
-                    f"  Current: {rec.current_value}, Recommended: {rec.recommended_value}"
-                )
+                print(f"  Current: {rec.current_value}, Recommended: {rec.recommended_value}")
                 print(f"  Estimated Improvement: {rec.estimated_improvement}%")
 
     except Exception as e:
@@ -282,15 +258,12 @@ async def handle_recommendations_command(optimizer: PerformanceOptimizer, args):
                 return
 
             print("=== Optimization Recommendations ===")
-            print(
-                f"{'ID':<20} {'Resource':<10} {'Impact':<8} {'Current':<10} {'Recommended':<12} {'Improvement':<12}"
-            )
+            print(f"{'ID':<20} {'Resource':<10} {'Impact':<8} {'Current':<10} {'Recommended':<12} {'Improvement':<12}")
             print("-" * 85)
 
             for rec in recommendations:
                 print(
-                    f"{rec.recommendation_id:<20} {rec.resource_type.value:<10} {rec.impact_level:<8} "
-                    f"{rec.current_value:<10.1f} {rec.recommended_value:<12.1f} {rec.estimated_improvement:<12.1f}%"
+                    f"{rec.recommendation_id:<20} {rec.resource_type.value:<10} {rec.impact_level:<8} " f"{rec.current_value:<10.1f} {rec.recommended_value:<12.1f} {rec.estimated_improvement:<12.1f}%"
                 )
 
             print(f"\nTotal recommendations: {len(recommendations)}")
@@ -398,9 +371,7 @@ async def handle_metrics_command(optimizer: PerformanceOptimizer, args):
 
         if args.format == "json":
             metrics_data = []
-            for metric in optimizer.performance_history[
-                -args.hours * 2 :
-            ]:  # Approximate
+            for metric in optimizer.performance_history[-args.hours * 2 :]:  # Approximate
                 metrics_data.append(
                     {
                         "timestamp": metric.timestamp.isoformat(),
@@ -421,17 +392,12 @@ async def handle_metrics_command(optimizer: PerformanceOptimizer, args):
                 recent = optimizer.performance_history[-5:]  # Last 5 measurements
 
                 print("\nRecent Measurements:")
-                print(
-                    f"{'Time':<20} {'CPU%':<8} {'Memory%':<10} {'Disk%':<8} {'Processes':<10}"
-                )
+                print(f"{'Time':<20} {'CPU%':<8} {'Memory%':<10} {'Disk%':<8} {'Processes':<10}")
                 print("-" * 60)
 
                 for metric in recent:
                     time_str = metric.timestamp.strftime("%H:%M:%S")
-                    print(
-                        f"{time_str:<20} {metric.cpu_usage:<8.1f} {metric.memory_usage:<10.1f} "
-                        f"{metric.disk_usage:<8.1f} {metric.process_count:<10}"
-                    )
+                    print(f"{time_str:<20} {metric.cpu_usage:<8.1f} {metric.memory_usage:<10.1f} " f"{metric.disk_usage:<8.1f} {metric.process_count:<10}")
 
                 # Calculate averages
                 avg_cpu = sum(m.cpu_usage for m in recent) / len(recent)
@@ -439,9 +405,7 @@ async def handle_metrics_command(optimizer: PerformanceOptimizer, args):
                 avg_disk = sum(m.disk_usage for m in recent) / len(recent)
 
                 print("\nAverages:")
-                print(
-                    f"CPU: {avg_cpu:.1f}%, Memory: {avg_mem:.1f}%, Disk: {avg_disk:.1f}%"
-                )
+                print(f"CPU: {avg_cpu:.1f}%, Memory: {avg_mem:.1f}%, Disk: {avg_disk:.1f}%")
             else:
                 print("No metrics data available")
 

@@ -96,15 +96,9 @@ class CompatibilityManager:
         self.logger = logging.getLogger(__name__)
 
         # Configuration
-        self.matrix_file = self.config.get(
-            "matrix_file", "config/compatibility_matrix.yml"
-        )
-        self.test_results_dir = Path(
-            self.config.get("test_results_dir", "/tmp/compatibility_tests")
-        )
-        self.ai_assistant_url = self.config.get(
-            "ai_assistant_url", "http://localhost:8080"
-        )
+        self.matrix_file = self.config.get("matrix_file", "config/compatibility_matrix.yml")
+        self.test_results_dir = Path(self.config.get("test_results_dir", "/tmp/compatibility_tests"))
+        self.ai_assistant_url = self.config.get("ai_assistant_url", "http://localhost:8080")
         self.auto_update = self.config.get("auto_update", True)
         self.test_timeout = self.config.get("test_timeout", 300)  # 5 minutes
 
@@ -136,18 +130,12 @@ class CompatibilityManager:
                         supported_versions=data.get("supported_versions", {}),
                         known_issues=data.get("known_issues", []),
                         test_results=data.get("test_results", {}),
-                        last_updated=datetime.fromisoformat(
-                            data.get("last_updated", datetime.now().isoformat())
-                        ),
+                        last_updated=datetime.fromisoformat(data.get("last_updated", datetime.now().isoformat())),
                     )
 
-                self.logger.info(
-                    f"Loaded {len(self.compatibility_matrices)} compatibility matrices"
-                )
+                self.logger.info(f"Loaded {len(self.compatibility_matrices)} compatibility matrices")
             else:
-                self.logger.warning(
-                    f"Compatibility matrix file not found: {matrix_file}"
-                )
+                self.logger.warning(f"Compatibility matrix file not found: {matrix_file}")
 
         except Exception as e:
             self.logger.error(f"Failed to load compatibility matrices: {e}")
@@ -178,9 +166,7 @@ class CompatibilityManager:
                         )
                         self.test_results[component].append(result)
 
-                self.logger.info(
-                    f"Loaded test results for {len(self.test_results)} components"
-                )
+                self.logger.info(f"Loaded test results for {len(self.test_results)} components")
 
         except Exception as e:
             self.logger.error(f"Failed to load test results: {e}")
@@ -203,22 +189,16 @@ class CompatibilityManager:
                         severity=rule_data["severity"],
                         description=rule_data["description"],
                         created_at=datetime.fromisoformat(rule_data["created_at"]),
-                        last_validated=datetime.fromisoformat(
-                            rule_data.get("last_validated", rule_data["created_at"])
-                        ),
+                        last_validated=datetime.fromisoformat(rule_data.get("last_validated", rule_data["created_at"])),
                     )
                     self.compatibility_rules.append(rule)
 
-                self.logger.info(
-                    f"Loaded {len(self.compatibility_rules)} compatibility rules"
-                )
+                self.logger.info(f"Loaded {len(self.compatibility_rules)} compatibility rules")
 
         except Exception as e:
             self.logger.error(f"Failed to load compatibility rules: {e}")
 
-    async def validate_compatibility(
-        self, component: str, version: str, os_version: str
-    ) -> Tuple[CompatibilityLevel, str]:
+    async def validate_compatibility(self, component: str, version: str, os_version: str) -> Tuple[CompatibilityLevel, str]:
         """Validate compatibility of a component version"""
         try:
             # Check existing matrix
@@ -253,9 +233,7 @@ class CompatibilityManager:
                             )
 
             # Check recent test results
-            recent_results = self._get_recent_test_results(
-                component, version, os_version
-            )
+            recent_results = self._get_recent_test_results(component, version, os_version)
             if recent_results:
                 passed = sum(1 for r in recent_results if r.status == TestStatus.PASSED)
                 total = len(recent_results)
@@ -276,9 +254,7 @@ class CompatibilityManager:
             )
 
         except Exception as e:
-            self.logger.error(
-                f"Failed to validate compatibility for {component} {version}: {e}"
-            )
+            self.logger.error(f"Failed to validate compatibility for {component} {version}: {e}")
             return CompatibilityLevel.UNKNOWN, f"Validation error: {str(e)}"
 
     def _evaluate_rule(self, rule: CompatibilityRule, version: str) -> bool:
@@ -309,9 +285,7 @@ class CompatibilityManager:
                             return False
                     elif condition.startswith("=="):
                         exact_version = condition[2:].strip()
-                        if pkg_version.parse(version) != pkg_version.parse(
-                            exact_version
-                        ):
+                        if pkg_version.parse(version) != pkg_version.parse(exact_version):
                             return False
                 return True
 
@@ -329,9 +303,7 @@ class CompatibilityManager:
             self.logger.error(f"Failed to evaluate rule {rule.rule_id}: {e}")
             return False
 
-    def _get_recent_test_results(
-        self, component: str, version: str, os_version: str, days: int = 30
-    ) -> List[TestResult]:
+    def _get_recent_test_results(self, component: str, version: str, os_version: str, days: int = 30) -> List[TestResult]:
         """Get recent test results for a component version"""
         if component not in self.test_results:
             return []
@@ -340,18 +312,12 @@ class CompatibilityManager:
         recent_results = []
 
         for result in self.test_results[component]:
-            if (
-                result.component_version == version
-                and result.os_version == os_version
-                and result.timestamp >= cutoff_date
-            ):
+            if result.component_version == version and result.os_version == os_version and result.timestamp >= cutoff_date:
                 recent_results.append(result)
 
         return recent_results
 
-    async def run_compatibility_test(
-        self, component: str, version: str, os_version: str, test_type: str = "smoke"
-    ) -> TestResult:
+    async def run_compatibility_test(self, component: str, version: str, os_version: str, test_type: str = "smoke") -> TestResult:
         """Run a compatibility test for a component version"""
         test_id = f"{component}_{version}_{os_version}_{test_type}_{int(time.time())}"
 
@@ -377,18 +343,14 @@ class CompatibilityManager:
             elif component == "git":
                 success, logs = await self._test_git_compatibility(version)
             else:
-                success, logs = await self._test_generic_compatibility(
-                    component, version
-                )
+                success, logs = await self._test_generic_compatibility(component, version)
 
             test_result.duration = time.time() - start_time
             test_result.status = TestStatus.PASSED if success else TestStatus.FAILED
             test_result.logs = logs
 
             if not success:
-                test_result.error_message = (
-                    f"Compatibility test failed for {component} {version}"
-                )
+                test_result.error_message = f"Compatibility test failed for {component} {version}"
 
         except asyncio.TimeoutError:
             test_result.duration = time.time() - start_time
@@ -417,9 +379,7 @@ class CompatibilityManager:
         """Test Podman compatibility"""
         try:
             # Basic functionality test
-            result = subprocess.run(
-                ["podman", "--version"], capture_output=True, text=True, timeout=30
-            )
+            result = subprocess.run(["podman", "--version"], capture_output=True, text=True, timeout=30)
             if result.returncode != 0:
                 return False, f"Version check failed: {result.stderr}"
 
@@ -444,9 +404,7 @@ class CompatibilityManager:
         """Test Ansible compatibility"""
         try:
             # Version check
-            result = subprocess.run(
-                ["ansible", "--version"], capture_output=True, text=True, timeout=30
-            )
+            result = subprocess.run(["ansible", "--version"], capture_output=True, text=True, timeout=30)
             if result.returncode != 0:
                 return False, f"Version check failed: {result.stderr}"
 
@@ -461,9 +419,7 @@ class CompatibilityManager:
         msg: "Ansible compatibility test"
             """
 
-            playbook_file = (
-                self.test_results_dir / f"test_playbook_{int(time.time())}.yml"
-            )
+            playbook_file = self.test_results_dir / f"test_playbook_{int(time.time())}.yml"
             with open(playbook_file, "w") as f:
                 f.write(test_playbook)
 
@@ -490,9 +446,7 @@ class CompatibilityManager:
         """Test Git compatibility"""
         try:
             # Version check
-            result = subprocess.run(
-                ["git", "--version"], capture_output=True, text=True, timeout=30
-            )
+            result = subprocess.run(["git", "--version"], capture_output=True, text=True, timeout=30)
             if result.returncode != 0:
                 return False, f"Version check failed: {result.stderr}"
 
@@ -537,15 +491,11 @@ class CompatibilityManager:
         except Exception as e:
             return False, f"Git test error: {e}"
 
-    async def _test_generic_compatibility(
-        self, component: str, version: str
-    ) -> Tuple[bool, str]:
+    async def _test_generic_compatibility(self, component: str, version: str) -> Tuple[bool, str]:
         """Generic compatibility test"""
         try:
             # Try basic version check
-            result = subprocess.run(
-                [component, "--version"], capture_output=True, text=True, timeout=30
-            )
+            result = subprocess.run([component, "--version"], capture_output=True, text=True, timeout=30)
             if result.returncode == 0:
                 return True, f"Generic compatibility test passed for {component}"
             else:
@@ -583,13 +533,8 @@ class CompatibilityManager:
                 if test_result.os_version not in matrix.supported_versions:
                     matrix.supported_versions[test_result.os_version] = []
 
-                if (
-                    test_result.component_version
-                    not in matrix.supported_versions[test_result.os_version]
-                ):
-                    matrix.supported_versions[test_result.os_version].append(
-                        test_result.component_version
-                    )
+                if test_result.component_version not in matrix.supported_versions[test_result.os_version]:
+                    matrix.supported_versions[test_result.os_version].append(test_result.component_version)
 
             elif test_result.status == TestStatus.FAILED:
                 matrix.test_results[test_result.component_version] = "failed"
@@ -628,9 +573,7 @@ class CompatibilityManager:
             with open(self.matrix_file, "w") as f:
                 yaml.dump(matrix_data, f, default_flow_style=False, sort_keys=True)
 
-            self.logger.info(
-                f"Saved {len(self.compatibility_matrices)} compatibility matrices"
-            )
+            self.logger.info(f"Saved {len(self.compatibility_matrices)} compatibility matrices")
 
         except Exception as e:
             self.logger.error(f"Failed to save compatibility matrices: {e}")
@@ -652,9 +595,7 @@ class CompatibilityManager:
             with open(results_file, "w") as f:
                 json.dump(results_data, f, indent=2, default=str)
 
-            self.logger.info(
-                f"Saved test results for {len(self.test_results)} components"
-            )
+            self.logger.info(f"Saved test results for {len(self.test_results)} components")
 
         except Exception as e:
             self.logger.error(f"Failed to save test results: {e}")
@@ -664,9 +605,7 @@ class CompatibilityManager:
         report = {
             "report_timestamp": datetime.now().isoformat(),
             "total_components": len(self.compatibility_matrices),
-            "total_test_results": sum(
-                len(results) for results in self.test_results.values()
-            ),
+            "total_test_results": sum(len(results) for results in self.test_results.values()),
             "total_rules": len(self.compatibility_rules),
             "components": {},
             "summary": {

@@ -486,16 +486,7 @@ deployment_summary = BashOperator(
 # 6. Push TAR to local registry
 # 7. Build appliance (using local registry with mirrored content)
 # 8. Summary
-(
-    validate_environment
-    >> provision_registry_vm
-    >> setup_certificates
-    >> setup_registry
-    >> download_to_tar
-    >> push_to_registry
-    >> build_appliance
-    >> deployment_summary
-)
+(validate_environment >> provision_registry_vm >> setup_certificates >> setup_registry >> download_to_tar >> push_to_registry >> build_appliance >> deployment_summary)
 
 # ============================================================================
 # DAG Documentation

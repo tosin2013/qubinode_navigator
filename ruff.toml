@@ -1,0 +1,23 @@
+# Ruff configuration for Qubinode Navigator
+# See: https://docs.astral.sh/ruff/configuration/
+
+# Set a reasonable line length
+line-length = 200
+
+[lint]
+# Enable common linting rules
+select = ["E", "F", "W"]
+
+# Ignore specific rules globally
+ignore = [
+    "E501",  # Line too long - handled by formatter
+]
+
+[lint.per-file-ignores]
+# Allow module-level imports after sys.path manipulation in scripts and tests
+"scripts/*.py" = ["E402"]
+"tests/*.py" = ["E402"]
+"tests/**/*.py" = ["E402"]
+"ai-assistant/test-env-vars.py" = ["E402"]
+"ai-assistant/tests/*.py" = ["E402"]
+"qubinode_cli.py" = ["E402"]

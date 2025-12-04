@@ -49,35 +49,23 @@ Examples:
 
     # Status command
     status_parser = subparsers.add_parser("status", help="Show rollback system status")
-    status_parser.add_argument(
-        "--format", choices=["summary", "json"], default="summary", help="Output format"
-    )
+    status_parser.add_argument("--format", choices=["summary", "json"], default="summary", help="Output format")
 
     # Statistics command
     stats_parser = subparsers.add_parser("stats", help="Show rollback statistics")
-    stats_parser.add_argument(
-        "--format", choices=["summary", "json"], default="summary", help="Output format"
-    )
+    stats_parser.add_argument("--format", choices=["summary", "json"], default="summary", help="Output format")
 
     # Trigger command
     trigger_parser = subparsers.add_parser("trigger", help="Trigger manual rollback")
-    trigger_parser.add_argument(
-        "--pipeline-id", required=True, help="Pipeline ID to rollback"
-    )
+    trigger_parser.add_argument("--pipeline-id", required=True, help="Pipeline ID to rollback")
     trigger_parser.add_argument("--reason", required=True, help="Reason for rollback")
-    trigger_parser.add_argument(
-        "--phase-id", help="Specific phase ID to rollback (optional)"
-    )
-    trigger_parser.add_argument(
-        "--requested-by", default="cli-user", help="User requesting rollback"
-    )
+    trigger_parser.add_argument("--phase-id", help="Specific phase ID to rollback (optional)")
+    trigger_parser.add_argument("--requested-by", default="cli-user", help="User requesting rollback")
 
     # Details command
     details_parser = subparsers.add_parser("details", help="Get rollback plan details")
     details_parser.add_argument("--plan-id", required=True, help="Rollback plan ID")
-    details_parser.add_argument(
-        "--format", choices=["summary", "json"], default="summary", help="Output format"
-    )
+    details_parser.add_argument("--format", choices=["summary", "json"], default="summary", help="Output format")
 
     # List command
     list_parser = subparsers.add_parser("list", help="List all rollbacks")
@@ -87,9 +75,7 @@ Examples:
         default="all",
         help="Filter by status",
     )
-    list_parser.add_argument(
-        "--format", choices=["table", "json"], default="table", help="Output format"
-    )
+    list_parser.add_argument("--format", choices=["table", "json"], default="table", help="Output format")
 
     # Test command
     test_parser = subparsers.add_parser("test", help="Test rollback system")
@@ -154,9 +140,7 @@ async def handle_status_command(rollback_manager: RollbackManager, args):
             if stats["active_rollbacks"] > 0:
                 print(f"\nActive Rollbacks: {stats['active_rollbacks']}")
                 for plan_id, rollback in rollback_manager.active_rollbacks.items():
-                    print(
-                        f"  {plan_id}: {rollback.status.value} ({rollback.trigger.value})"
-                    )
+                    print(f"  {plan_id}: {rollback.status.value} ({rollback.trigger.value})")
 
     except Exception as e:
         print(f"Error getting rollback status: {e}", file=sys.stderr)
@@ -183,11 +167,7 @@ async def handle_stats_command(rollback_manager: RollbackManager, args):
             if stats["trigger_breakdown"]:
                 print("\nTrigger Breakdown:")
                 for trigger, count in sorted(stats["trigger_breakdown"].items()):
-                    percentage = (
-                        (count / stats["total_rollbacks"] * 100)
-                        if stats["total_rollbacks"] > 0
-                        else 0
-                    )
+                    percentage = (count / stats["total_rollbacks"] * 100) if stats["total_rollbacks"] > 0 else 0
                     print(f"  {trigger}: {count} ({percentage:.1f}%)")
 
     except Exception as e:
@@ -322,20 +302,12 @@ async def handle_list_command(rollback_manager: RollbackManager, args):
                 return
 
             print("=== Rollback Plans ===")
-            print(
-                f"{'Plan ID':<20} {'Pipeline ID':<20} {'Status':<12} {'Trigger':<25} {'Created':<20}"
-            )
+            print(f"{'Plan ID':<20} {'Pipeline ID':<20} {'Status':<12} {'Trigger':<25} {'Created':<20}")
             print("-" * 100)
 
-            for rollback in sorted(
-                all_rollbacks, key=lambda x: x["created_at"], reverse=True
-            ):
-                created_date = datetime.fromisoformat(rollback["created_at"]).strftime(
-                    "%Y-%m-%d %H:%M"
-                )
-                print(
-                    f"{rollback['plan_id']:<20} {rollback['pipeline_id']:<20} {rollback['status']:<12} {rollback['trigger']:<25} {created_date:<20}"
-                )
+            for rollback in sorted(all_rollbacks, key=lambda x: x["created_at"], reverse=True):
+                created_date = datetime.fromisoformat(rollback["created_at"]).strftime("%Y-%m-%d %H:%M")
+                print(f"{rollback['plan_id']:<20} {rollback['pipeline_id']:<20} {rollback['status']:<12} {rollback['trigger']:<25} {created_date:<20}")
 
     except Exception as e:
         print(f"Error listing rollbacks: {e}", file=sys.stderr)

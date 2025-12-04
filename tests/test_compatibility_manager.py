@@ -36,9 +36,7 @@ class TestCompatibilityManager:
         self.temp_test_dir = tempfile.mkdtemp()
 
         # Create temporary matrix file
-        self.temp_matrix_file = tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yml", delete=False
-        )
+        self.temp_matrix_file = tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False)
         matrix_data = {
             "podman": {
                 "supported_versions": {
@@ -109,36 +107,28 @@ class TestCompatibilityManager:
 
     async def test_validate_compatibility_supported_version(self):
         """Test compatibility validation for supported version"""
-        level, reason = await self.manager.validate_compatibility(
-            "podman", "4.9.0", "10"
-        )
+        level, reason = await self.manager.validate_compatibility("podman", "4.9.0", "10")
 
         assert level == CompatibilityLevel.COMPATIBLE
         assert "supported versions" in reason.lower()
 
     async def test_validate_compatibility_test_passed(self):
         """Test compatibility validation for version that passed tests"""
-        level, reason = await self.manager.validate_compatibility(
-            "ansible", "2.16.0", "9"
-        )
+        level, reason = await self.manager.validate_compatibility("ansible", "2.16.0", "9")
 
         assert level == CompatibilityLevel.COMPATIBLE
         assert "passed" in reason.lower()
 
     async def test_validate_compatibility_test_failed(self):
         """Test compatibility validation for version that failed tests"""
-        level, reason = await self.manager.validate_compatibility(
-            "podman", "4.8.0", "10"
-        )
+        level, reason = await self.manager.validate_compatibility("podman", "4.8.0", "10")
 
         assert level == CompatibilityLevel.INCOMPATIBLE
         assert "failed" in reason.lower()
 
     async def test_validate_compatibility_needs_testing(self):
         """Test compatibility validation for untested version"""
-        level, reason = await self.manager.validate_compatibility(
-            "podman", "5.1.0", "10"
-        )
+        level, reason = await self.manager.validate_compatibility("podman", "5.1.0", "10")
 
         assert level == CompatibilityLevel.NEEDS_TESTING
         assert "no compatibility information" in reason.lower()
@@ -222,9 +212,7 @@ class TestCompatibilityManager:
         """Test successful Podman compatibility test"""
         # Mock successful subprocess calls
         mock_run.side_effect = [
-            mock.MagicMock(
-                returncode=0, stdout="podman version 5.0.0"
-            ),  # version check
+            mock.MagicMock(returncode=0, stdout="podman version 5.0.0"),  # version check
             mock.MagicMock(returncode=0, stdout="Hello from Docker!"),  # container test
         ]
 
@@ -249,9 +237,7 @@ class TestCompatibilityManager:
         """Test successful Ansible compatibility test"""
         # Mock successful subprocess calls
         mock_run.side_effect = [
-            mock.MagicMock(
-                returncode=0, stdout="ansible [core 2.16.0]"
-            ),  # version check
+            mock.MagicMock(returncode=0, stdout="ansible [core 2.16.0]"),  # version check
             mock.MagicMock(returncode=0, stdout="PLAY RECAP"),  # playbook test
         ]
 
@@ -279,13 +265,9 @@ class TestCompatibilityManager:
     async def test_test_generic_compatibility_success(self, mock_run):
         """Test successful generic compatibility test"""
         # Mock successful version check
-        mock_run.return_value = mock.MagicMock(
-            returncode=0, stdout="test-app version 1.0.0"
-        )
+        mock_run.return_value = mock.MagicMock(returncode=0, stdout="test-app version 1.0.0")
 
-        success, logs = await self.manager._test_generic_compatibility(
-            "test-app", "1.0.0"
-        )
+        success, logs = await self.manager._test_generic_compatibility("test-app", "1.0.0")
 
         assert success is True
         assert "passed" in logs.lower()
@@ -299,9 +281,7 @@ class TestCompatibilityManager:
             mock.MagicMock(returncode=0, stdout="Hello from Docker!"),
         ]
 
-        result = await self.manager.run_compatibility_test(
-            "podman", "5.0.0", "10", "smoke"
-        )
+        result = await self.manager.run_compatibility_test("podman", "5.0.0", "10", "smoke")
 
         assert result.component_name == "podman"
         assert result.component_version == "5.0.0"
@@ -321,9 +301,7 @@ class TestCompatibilityManager:
         # Mock failed test
         mock_run.return_value = mock.MagicMock(returncode=1, stderr="Test failed")
 
-        result = await self.manager.run_compatibility_test(
-            "podman", "5.0.0", "10", "smoke"
-        )
+        result = await self.manager.run_compatibility_test("podman", "5.0.0", "10", "smoke")
 
         assert result.status == TestStatus.FAILED
         assert result.error_message is not None
@@ -371,9 +349,7 @@ class TestCompatibilityManager:
         assert matrix.test_results["5.1.0"] == "failed"
 
         # Check that known issue was added
-        new_issues = [
-            issue for issue in matrix.known_issues if issue.get("version") == "5.1.0"
-        ]
+        new_issues = [issue for issue in matrix.known_issues if issue.get("version") == "5.1.0"]
         assert len(new_issues) > 0
         assert "incompatibility" in new_issues[0]["issue"]
 

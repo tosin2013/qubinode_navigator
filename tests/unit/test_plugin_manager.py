@@ -50,9 +50,7 @@ class MockPlugin(QubiNodePlugin):
         context: ExecutionContext,
     ) -> PluginResult:
         """Apply mock changes"""
-        return PluginResult(
-            changed=True, message="Mock changes applied", status=PluginStatus.COMPLETED
-        )
+        return PluginResult(changed=True, message="Mock changes applied", status=PluginStatus.COMPLETED)
 
 
 class TestPluginManager(unittest.TestCase):
@@ -65,9 +63,7 @@ class TestPluginManager(unittest.TestCase):
         os.makedirs(self.plugin_dir)
 
         self.event_system = EventSystem()
-        self.plugin_manager = PluginManager(
-            plugin_directories=[self.plugin_dir], event_system=self.event_system
-        )
+        self.plugin_manager = PluginManager(plugin_directories=[self.plugin_dir], event_system=self.event_system)
 
     def tearDown(self):
         """Clean up test fixtures"""
@@ -119,9 +115,7 @@ class TestPlugin(QubiNodePlugin):
                 mock_mod.TestPlugin = MockPlugin
 
                 self.plugin_manager.discover_plugins()
-                self.assertGreaterEqual(
-                    len(self.plugin_manager._discovered_plugins), 0
-                )  # May find other plugins too
+                self.assertGreaterEqual(len(self.plugin_manager._discovered_plugins), 0)  # May find other plugins too
 
     def test_load_plugin_success(self):
         """Test successful plugin loading"""
@@ -141,9 +135,7 @@ class TestPlugin(QubiNodePlugin):
         result = self.plugin_manager.load_plugin("mock_plugin")
         self.assertIsNotNone(result)
         self.assertIn("mock_plugin", self.plugin_manager._loaded_plugins)
-        self.assertIsInstance(
-            self.plugin_manager._loaded_plugins["mock_plugin"], MockPlugin
-        )
+        self.assertIsInstance(self.plugin_manager._loaded_plugins["mock_plugin"], MockPlugin)
 
     def test_load_plugin_not_found(self):
         """Test loading non-existent plugin"""
@@ -252,12 +244,8 @@ class TestPlugin(QubiNodePlugin):
         """Test simple dependency resolution"""
         # Create plugins with dependencies
         plugin_a = PluginInfo("plugin_a", "A", "path", MockPlugin, [], "1.0.0")
-        plugin_b = PluginInfo(
-            "plugin_b", "B", "path", MockPlugin, ["plugin_a"], "1.0.0"
-        )
-        plugin_c = PluginInfo(
-            "plugin_c", "C", "path", MockPlugin, ["plugin_b"], "1.0.0"
-        )
+        plugin_b = PluginInfo("plugin_b", "B", "path", MockPlugin, ["plugin_a"], "1.0.0")
+        plugin_c = PluginInfo("plugin_c", "C", "path", MockPlugin, ["plugin_b"], "1.0.0")
 
         self.plugin_manager._discovered_plugins = {
             "plugin_a": plugin_a,
@@ -270,12 +258,8 @@ class TestPlugin(QubiNodePlugin):
 
     def test_resolve_dependencies_circular(self):
         """Test circular dependency detection"""
-        plugin_a = PluginInfo(
-            "plugin_a", "A", "path", MockPlugin, ["plugin_b"], "1.0.0"
-        )
-        plugin_b = PluginInfo(
-            "plugin_b", "B", "path", MockPlugin, ["plugin_a"], "1.0.0"
-        )
+        plugin_a = PluginInfo("plugin_a", "A", "path", MockPlugin, ["plugin_b"], "1.0.0")
+        plugin_b = PluginInfo("plugin_b", "B", "path", MockPlugin, ["plugin_a"], "1.0.0")
 
         self.plugin_manager._discovered_plugins = {
             "plugin_a": plugin_a,

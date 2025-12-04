@@ -159,8 +159,7 @@ class KcliVMListOperator(BaseOperator):
             return {
                 "status": "success",
                 "output": result["stdout"],
-                "vm_count": result["stdout"].count("\n")
-                - 2,  # Rough count excluding header
+                "vm_count": result["stdout"].count("\n") - 2,  # Rough count excluding header
             }
         else:
             self.log.error(f"❌ Failed to list VMs: {result['stderr']}")

@@ -87,9 +87,7 @@ def update_inventory(username=None, domain_name=None, dnf_forwarder=None):
 
     if username is None:
         # Check environment variables first
-        username = os.environ.get("QUBINODE_ADMIN_USER") or os.environ.get(
-            "ENV_USERNAME"
-        )
+        username = os.environ.get("QUBINODE_ADMIN_USER") or os.environ.get("ENV_USERNAME")
 
         if username is None:
             # Fall back to interactive prompt
@@ -145,9 +143,7 @@ def get_interface_ips(configure_bridge=None, interface=None):
         else:
             # Fall back to original logic
             if os.geteuid() == 0:
-                print(
-                    "Error: Cannot set configure_bridge to True when running as root."
-                )
+                print("Error: Cannot set configure_bridge to True when running as root.")
                 configure_bridge = False
                 print("configure_bridge is set to", configure_bridge)
             else:
@@ -158,11 +154,7 @@ def get_interface_ips(configure_bridge=None, interface=None):
     interfaces = netifaces.interfaces()
 
     # Filter out loopback interfaces and any that don't have an IPv4 address
-    interfaces = [
-        i
-        for i in interfaces
-        if i != "lo" and netifaces.AF_INET in netifaces.ifaddresses(i)
-    ]
+    interfaces = [i for i in interfaces if i != "lo" and netifaces.AF_INET in netifaces.ifaddresses(i)]
 
     if interface is None:
         # Check environment variables first
@@ -188,9 +180,7 @@ def get_interface_ips(configure_bridge=None, interface=None):
     macaddr = addrs[netifaces.AF_LINK][0]["addr"]
 
     # Calculate the network address and prefix length from the netmask
-    netaddr = ".".join(
-        str(int(x) & int(y)) for x, y in zip(ip.split("."), netmask.split("."))
-    )
+    ".".join(str(int(x) & int(y)) for x, y in zip(ip.split("."), netmask.split(".")))
     prefix_len = sum(bin(int(x)).count("1") for x in netmask.split("."))
 
     # Prepare the configuration for the inventory
@@ -206,9 +196,7 @@ def get_interface_ips(configure_bridge=None, interface=None):
     print(config)
 
     # Update YAML file
-    inventory_path = (
-        "inventories/" + str(inventory_env) + "/group_vars/control/kvm_host.yml"
-    )
+    inventory_path = "inventories/" + str(inventory_env) + "/group_vars/control/kvm_host.yml"
     with open(inventory_path, "r") as f:
         inventory = yaml.safe_load(f)
 
@@ -248,11 +236,7 @@ def select_disk(disk=None):
             for partition in psutil.disk_partitions():
                 disk_name = partition.device.split("/")[-1]
                 # Skip loop devices, ram disks, and the root partition
-                if (
-                    not disk_name.startswith("loop")
-                    and not disk_name.startswith("ram")
-                    and disk_name != "sda"
-                ):
+                if not disk_name.startswith("loop") and not disk_name.startswith("ram") and disk_name != "sda":
                     disks.append(partition.device)
 
             disks = list(set(disks))
@@ -307,9 +291,7 @@ def select_disk(disk=None):
             use_root_disk = True
 
     # Update YAML file with selected disk
-    inventory_path = (
-        "inventories/" + str(inventory_env) + "/group_vars/control/kvm_host.yml"
-    )
+    inventory_path = "inventories/" + str(inventory_env) + "/group_vars/control/kvm_host.yml"
     with open(inventory_path, "r") as f:
         inventory = yaml.safe_load(f)
 

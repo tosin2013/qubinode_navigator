@@ -40,13 +40,9 @@ def _get_local_model():
 
             logger.info(f"Loading local embedding model: {EMBEDDING_MODEL}")
             _local_model = SentenceTransformer(EMBEDDING_MODEL)
-            logger.info(
-                f"Model loaded successfully. Dimensions: {_local_model.get_sentence_embedding_dimension()}"
-            )
+            logger.info(f"Model loaded successfully. Dimensions: {_local_model.get_sentence_embedding_dimension()}")
         except ImportError:
-            logger.error(
-                "sentence-transformers not installed. Run: pip install sentence-transformers"
-            )
+            logger.error("sentence-transformers not installed. Run: pip install sentence-transformers")
             raise
         except Exception as e:
             logger.error(f"Failed to load embedding model: {e}")
@@ -104,9 +100,7 @@ class EmbeddingService:
         self.model = model or EMBEDDING_MODEL
         self.dimensions = dimensions or EMBEDDING_DIMENSIONS
 
-        logger.info(
-            f"EmbeddingService initialized: provider={self.provider}, model={self.model}"
-        )
+        logger.info(f"EmbeddingService initialized: provider={self.provider}, model={self.model}")
 
     def embed(self, text: str) -> List[float]:
         """
@@ -175,9 +169,7 @@ class EmbeddingService:
         embedding = model.encode(text, convert_to_numpy=True)
         return embedding.tolist()
 
-    def _embed_batch_local(
-        self, texts: List[str], batch_size: int
-    ) -> List[List[float]]:
+    def _embed_batch_local(self, texts: List[str], batch_size: int) -> List[List[float]]:
         """Generate batch embeddings using local model."""
         model = _get_local_model()
         embeddings = model.encode(texts, batch_size=batch_size, convert_to_numpy=True)
@@ -189,9 +181,7 @@ class EmbeddingService:
         response = client.embeddings.create(model="text-embedding-ada-002", input=text)
         return response.data[0].embedding
 
-    def _embed_batch_openai(
-        self, texts: List[str], batch_size: int
-    ) -> List[List[float]]:
+    def _embed_batch_openai(self, texts: List[str], batch_size: int) -> List[List[float]]:
         """Generate batch embeddings using OpenAI API."""
         client = _get_openai_client()
         results = []
@@ -199,9 +189,7 @@ class EmbeddingService:
         # OpenAI has limits, process in batches
         for i in range(0, len(texts), batch_size):
             batch = texts[i : i + batch_size]
-            response = client.embeddings.create(
-                model="text-embedding-ada-002", input=batch
-            )
+            response = client.embeddings.create(model="text-embedding-ada-002", input=batch)
             results.extend([d.embedding for d in response.data])
 
         return results
@@ -267,9 +255,7 @@ def embed_texts(texts: List[str]) -> List[List[float]]:
 # =============================================================================
 
 
-def chunk_text(
-    text: str, chunk_size: int = 500, chunk_overlap: int = 50, separator: str = "\n\n"
-) -> List[str]:
+def chunk_text(text: str, chunk_size: int = 500, chunk_overlap: int = 50, separator: str = "\n\n") -> List[str]:
     """
     Split text into overlapping chunks for embedding.
 

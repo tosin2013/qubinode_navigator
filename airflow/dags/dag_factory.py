@@ -114,9 +114,7 @@ def validate_registry_entry(config: Dict[str, Any]) -> List[str]:
     # Category validation
     category = config.get("category", "")
     if category and category not in VALID_CATEGORIES:
-        errors.append(
-            f"Invalid category '{category}'. Must be one of: {VALID_CATEGORIES}"
-        )
+        errors.append(f"Invalid category '{category}'. Must be one of: {VALID_CATEGORIES}")
 
     # Tags validation
     tags = config.get("tags", [])

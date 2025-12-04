@@ -33,12 +33,8 @@ class TestAIAssistantIntegration:
         try:
             # Clean up any existing container
             print("Cleaning up existing containers...")
-            subprocess.run(
-                ["docker", "stop", cls.container_name], check=False, capture_output=True
-            )
-            subprocess.run(
-                ["docker", "rm", cls.container_name], check=False, capture_output=True
-            )
+            subprocess.run(["docker", "stop", cls.container_name], check=False, capture_output=True)
+            subprocess.run(["docker", "rm", cls.container_name], check=False, capture_output=True)
 
             # Verify image exists
             print(f"Verifying image exists: {cls.image_name}")
@@ -85,9 +81,7 @@ class TestAIAssistantIntegration:
                 cls.image_name,
             ]
 
-            result = subprocess.run(
-                start_cmd, check=True, capture_output=True, text=True
-            )
+            result = subprocess.run(start_cmd, check=True, capture_output=True, text=True)
             container_id = result.stdout.strip()
             print(f"✅ Container started with ID: {container_id}")
 
@@ -114,16 +108,10 @@ class TestAIAssistantIntegration:
                     if status_check.returncode == 0:
                         container_status = status_check.stdout.strip()
                         if container_status != "running":
-                            print(
-                                f"❌ Container stopped with status: {container_status}"
-                            )
+                            print(f"❌ Container stopped with status: {container_status}")
                             # Show logs and exit
-                            subprocess.run(
-                                ["docker", "logs", cls.container_name], check=False
-                            )
-                            raise Exception(
-                                f"Container stopped unexpectedly: {container_status}"
-                            )
+                            subprocess.run(["docker", "logs", cls.container_name], check=False)
+                            raise Exception(f"Container stopped unexpectedly: {container_status}")
 
                     # Try health endpoint
                     response = requests.get(f"{cls.base_url}/health", timeout=10)
@@ -140,34 +128,20 @@ class TestAIAssistantIntegration:
                             # Check if it's just RAG documents not loaded (acceptable for testing)
                             if isinstance(error_data, dict) and "detail" in error_data:
                                 detail = error_data["detail"]
-                                if (
-                                    isinstance(detail, dict)
-                                    and detail.get("status") == "degraded"
-                                ):
+                                if isinstance(detail, dict) and detail.get("status") == "degraded":
                                     # Check if it's only RAG documents causing degraded status
                                     ai_service = detail.get("ai_service", {})
                                     warnings = ai_service.get("warnings", [])
-                                    if (
-                                        len(warnings) == 1
-                                        and "RAG documents not loaded" in warnings[0]
-                                    ):
-                                        print(
-                                            f"✅ Container ready after {(i+1)*5} seconds (degraded due to RAG)"
-                                        )
-                                        print(
-                                            f"Health response: {health_data if 'health_data' in locals() else detail}"
-                                        )
+                                    if len(warnings) == 1 and "RAG documents not loaded" in warnings[0]:
+                                        print(f"✅ Container ready after {(i+1)*5} seconds (degraded due to RAG)")
+                                        print(f"Health response: {health_data if 'health_data' in locals() else detail}")
                                         return
 
-                            print(
-                                f"Service starting up (503), attempt {i+1}/{max_attempts}"
-                            )
+                            print(f"Service starting up (503), attempt {i+1}/{max_attempts}")
                             if i % 6 == 0:  # Every 30 seconds, show details
                                 print(f"Health check details: {error_data}")
-                        except:
-                            print(
-                                f"Service starting up (503), attempt {i+1}/{max_attempts}"
-                            )
+                        except Exception:
+                            print(f"Service starting up (503), attempt {i+1}/{max_attempts}")
                     else:
                         print(f"Health check returned status {response.status_code}")
                         if i % 6 == 0:  # Every 30 seconds, show response
@@ -219,9 +193,7 @@ class TestAIAssistantIntegration:
             print("Container status:")
             print(status_result.stdout)
 
-            raise Exception(
-                f"Container failed to start within {max_attempts*5} seconds ({max_attempts*5//60} minutes)"
-            )
+            raise Exception(f"Container failed to start within {max_attempts*5} seconds ({max_attempts*5//60} minutes)")
 
         except subprocess.CalledProcessError as e:
             print(f"Failed to start container: {e}")
@@ -231,9 +203,7 @@ class TestAIAssistantIntegration:
         except Exception as e:
             print(f"Failed to start container: {e}")
             # Try to get logs if container exists
-            subprocess.run(
-                ["docker", "logs", "--tail", "50", cls.container_name], check=False
-            )
+            subprocess.run(["docker", "logs", "--tail", "50", cls.container_name], check=False)
             raise
 
     @classmethod
@@ -272,30 +242,17 @@ class TestAIAssistantIntegration:
                         warnings = ai_service.get("warnings", [])
 
                         # Check if degraded status is only due to RAG documents
-                        if (
-                            len(warnings) == 1
-                            and "RAG documents not loaded" in warnings[0]
-                        ):
-                            print(
-                                "✅ Health endpoint test passed - service is degraded only due to RAG documents"
-                            )
+                        if len(warnings) == 1 and "RAG documents not loaded" in warnings[0]:
+                            print("✅ Health endpoint test passed - service is degraded only due to RAG documents")
                             print("This is acceptable for integration tests")
                         else:
-                            print(
-                                "⚠️ Health endpoint returned degraded status with other issues"
-                            )
+                            print("⚠️ Health endpoint returned degraded status with other issues")
                             print(f"Warnings: {warnings}")
                     else:
-                        print(
-                            "⚠️ Health endpoint returned 503 - service is starting or has issues"
-                        )
-                        print(
-                            "This may be acceptable for integration tests depending on timing"
-                        )
+                        print("⚠️ Health endpoint returned 503 - service is starting or has issues")
+                        print("This may be acceptable for integration tests depending on timing")
                 else:
-                    print(
-                        "⚠️ Health endpoint returned 503 - service is starting or degraded"
-                    )
+                    print("⚠️ Health endpoint returned 503 - service is starting or degraded")
                     print("This is acceptable for integration tests")
 
         except json.JSONDecodeError:
@@ -308,9 +265,7 @@ class TestAIAssistantIntegration:
         print("Testing root endpoint...")
 
         response = requests.get(f"{self.base_url}/", timeout=15)
-        assert (
-            response.status_code == 200
-        ), f"Root endpoint failed: {response.status_code}"
+        assert response.status_code == 200, f"Root endpoint failed: {response.status_code}"
 
         data = response.json()
         assert "service" in data
@@ -328,27 +283,19 @@ class TestAIAssistantIntegration:
             tools = data.get("available_tools", data.get("tools", []))
             print(f"✅ Diagnostics endpoint test passed: {len(tools)} tools available")
         elif response.status_code == 503:
-            print(
-                "⚠️ Diagnostics endpoint not ready (503) - acceptable for integration test"
-            )
+            print("⚠️ Diagnostics endpoint not ready (503) - acceptable for integration test")
         elif response.status_code == 500:
-            print(
-                "⚠️ Diagnostics endpoint has implementation issues (500) - acceptable for integration test"
-            )
+            print("⚠️ Diagnostics endpoint has implementation issues (500) - acceptable for integration test")
             print(f"Response: {response.text}")
         else:
-            pytest.fail(
-                f"Unexpected diagnostics endpoint status: {response.status_code}"
-            )
+            pytest.fail(f"Unexpected diagnostics endpoint status: {response.status_code}")
 
     def test_chat_endpoint_basic(self):
         """Test chat endpoint with basic connectivity (may not work if AI not fully loaded)"""
         print("Testing chat endpoint basic connectivity...")
 
         try:
-            response = requests.post(
-                f"{self.base_url}/chat", json={"message": "test"}, timeout=30
-            )
+            response = requests.post(f"{self.base_url}/chat", json={"message": "test"}, timeout=30)
 
             if response.status_code == 200:
                 data = response.json()
@@ -358,9 +305,7 @@ class TestAIAssistantIntegration:
                 print("⚠️ Chat endpoint not ready (503) - AI model may still be loading")
                 print("This is acceptable for integration tests")
             else:
-                print(
-                    f"⚠️ Chat endpoint returned unexpected status: {response.status_code}"
-                )
+                print(f"⚠️ Chat endpoint returned unexpected status: {response.status_code}")
                 print(f"Response: {response.text}")
 
         except requests.exceptions.RequestException as e:

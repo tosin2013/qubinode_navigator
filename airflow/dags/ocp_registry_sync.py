@@ -683,14 +683,7 @@ cleanup_on_failure = BashOperator(
 # =============================================================================
 # Task Dependencies
 # =============================================================================
-(
-    setup_credentials
-    >> preflight_checks
-    >> health_check_registry
-    >> download_images
-    >> push_to_registry
-    >> sync_report
-)
+(setup_credentials >> preflight_checks >> health_check_registry >> download_images >> push_to_registry >> sync_report)
 
 # Cleanup runs on any failure
 [

@@ -73,20 +73,14 @@ class DocumentationAnalyzer:
                         "path": str(rel_path),
                         "type": doc_type,
                         "size": file_path.stat().st_size,
-                        "modified": datetime.fromtimestamp(
-                            file_path.stat().st_mtime
-                        ).isoformat(),
+                        "modified": datetime.fromtimestamp(file_path.stat().st_mtime).isoformat(),
                     }
 
                     analysis["file_list"].append(file_info)
-                    analysis["by_type"][doc_type] = (
-                        analysis["by_type"].get(doc_type, 0) + 1
-                    )
+                    analysis["by_type"][doc_type] = analysis["by_type"].get(doc_type, 0) + 1
 
                     dir_name = str(rel_path.parent)
-                    analysis["by_directory"][dir_name] = (
-                        analysis["by_directory"].get(dir_name, 0) + 1
-                    )
+                    analysis["by_directory"][dir_name] = analysis["by_directory"].get(dir_name, 0) + 1
 
         analysis["total_files"] = len(analysis["file_list"])
         return analysis
@@ -139,9 +133,7 @@ class DocumentationAnalyzer:
                 if len(section_content.strip()) < 50:  # Skip very short sections
                     continue
 
-                chunk_id = hashlib.md5(f"{rel_path}_{i}_{title}".encode()).hexdigest()[
-                    :12
-                ]
+                chunk_id = hashlib.md5(f"{rel_path}_{i}_{title}".encode()).hexdigest()[:12]
 
                 metadata = {
                     "section_index": i,
@@ -206,7 +198,7 @@ class DocumentationAnalyzer:
             try:
                 yaml_data = yaml.safe_load(content)
                 description = self._extract_yaml_description(yaml_data, file_path)
-            except:
+            except Exception:
                 description = f"Configuration file: {file_path.name}"
 
             chunk_id = hashlib.md5(str(rel_path).encode()).hexdigest()[:12]
@@ -276,9 +268,7 @@ class DocumentationAnalyzer:
                 self.chunks.extend(chunks)
 
         # Process YAML files
-        yaml_files = list(self.project_root.rglob("*.yml")) + list(
-            self.project_root.rglob("*.yaml")
-        )
+        yaml_files = list(self.project_root.rglob("*.yml")) + list(self.project_root.rglob("*.yaml"))
         for yaml_file in yaml_files:
             if self._should_include_file(yaml_file):
                 chunks = self.process_yaml_file(yaml_file)
@@ -318,14 +308,7 @@ class DocumentationAnalyzer:
             "processed_at": datetime.now().isoformat(),
             "output_files": {
                 "all_chunks": str(chunks_file.relative_to(self.project_root)),
-                "by_type": {
-                    k: str(
-                        (self.output_dir / f"chunks_{k}.json").relative_to(
-                            self.project_root
-                        )
-                    )
-                    for k in by_type.keys()
-                },
+                "by_type": {k: str((self.output_dir / f"chunks_{k}.json").relative_to(self.project_root)) for k in by_type.keys()},
             },
         }
 
@@ -334,9 +317,7 @@ class DocumentationAnalyzer:
             json.dump(summary, f, indent=2, ensure_ascii=False)
 
         print(f"✅ Saved {len(self.chunks)} chunks to {self.output_dir}")
-        print(
-            f"📊 Summary: {summary['total_words']} total words across {len(by_type)} document types"
-        )
+        print(f"📊 Summary: {summary['total_words']} total words across {len(by_type)} document types")
 
 
 def main():

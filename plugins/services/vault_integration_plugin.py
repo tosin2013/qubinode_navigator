@@ -32,9 +32,7 @@ class VaultIntegrationPlugin(QubiNodePlugin):
         self.logger.info("Initializing Vault Integration plugin")
 
         # Set default configuration
-        self.vault_packages = self.config.get(
-            "vault_packages", ["python3-pip", "python3-requests", "python3-hvac"]
-        )
+        self.vault_packages = self.config.get("vault_packages", ["python3-pip", "python3-requests", "python3-hvac"])
 
         self.vault_url = self.config.get("vault_url", "http://localhost:8200")
         self.vault_token_file = self.config.get("vault_token_file", "~/.vault_token")
@@ -99,39 +97,29 @@ class VaultIntegrationPlugin(QubiNodePlugin):
 
         try:
             # Install vault packages if needed
-            if not current_state.get("vault_packages_installed") and desired_state.get(
-                "vault_packages_installed"
-            ):
+            if not current_state.get("vault_packages_installed") and desired_state.get("vault_packages_installed"):
                 self._install_vault_packages()
                 changes_made.append("Installed Vault integration packages")
 
             # Configure environment file if needed
-            if not current_state.get("env_file_configured") and desired_state.get(
-                "env_file_configured"
-            ):
+            if not current_state.get("env_file_configured") and desired_state.get("env_file_configured"):
                 self._configure_env_file()
                 changes_made.append("Configured environment file for Vault")
 
             # Set up vault token if needed (and vault is available)
-            if not current_state.get("vault_token_exists") and desired_state.get(
-                "vault_token_exists"
-            ):
+            if not current_state.get("vault_token_exists") and desired_state.get("vault_token_exists"):
                 if self._is_vault_server_available():
                     self._setup_vault_token()
                     changes_made.append("Configured Vault authentication token")
                 else:
-                    self.logger.warning(
-                        "Vault server not available - skipping token setup"
-                    )
+                    self.logger.warning("Vault server not available - skipping token setup")
 
             # Test vault connectivity
             if desired_state.get("vault_connectivity"):
                 if self._test_vault_connectivity():
                     changes_made.append("Validated Vault connectivity")
                 else:
-                    self.logger.warning(
-                        "Vault connectivity test failed - check configuration"
-                    )
+                    self.logger.warning("Vault connectivity test failed - check configuration")
 
             return PluginResult(
                 changed=len(changes_made) > 0,
@@ -155,14 +143,10 @@ class VaultIntegrationPlugin(QubiNodePlugin):
         """Check if vault-related packages are installed"""
         try:
             # Check for hvac (HashiCorp Vault API client)
-            subprocess.run(
-                ["python3", "-c", "import hvac"], check=True, capture_output=True
-            )
+            subprocess.run(["python3", "-c", "import hvac"], check=True, capture_output=True)
 
             # Check for requests
-            subprocess.run(
-                ["python3", "-c", "import requests"], check=True, capture_output=True
-            )
+            subprocess.run(["python3", "-c", "import requests"], check=True, capture_output=True)
 
             return True
         except subprocess.CalledProcessError:
@@ -256,9 +240,7 @@ QUBINODE_VAULT_PATH=secret/qubinode
         os.chmod(token_path, 0o600)  # Secure permissions
 
         self.logger.info(f"Created vault token file template: {token_path}")
-        self.logger.warning(
-            "Please replace the placeholder token with your actual Vault token"
-        )
+        self.logger.warning("Please replace the placeholder token with your actual Vault token")
 
     def _is_vault_server_available(self) -> bool:
         """Check if Vault server is available"""
@@ -289,9 +271,7 @@ health = client.sys.read_health_status()
 print("Vault connectivity: OK")
 """
 
-            result = subprocess.run(
-                ["python3", "-c", test_script], capture_output=True, text=True
-            )
+            result = subprocess.run(["python3", "-c", test_script], capture_output=True, text=True)
 
             return result.returncode == 0
 
@@ -331,9 +311,7 @@ else:
     exit(1)
 """
 
-            result = subprocess.run(
-                ["python3", "-c", test_script], capture_output=True, text=True
-            )
+            result = subprocess.run(["python3", "-c", test_script], capture_output=True, text=True)
 
             return result.returncode == 0
 

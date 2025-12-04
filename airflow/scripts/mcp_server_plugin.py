@@ -38,9 +38,7 @@ class AirflowMCPServer:
 
         self.enabled = os.getenv("AIRFLOW_MCP_ENABLED", "false").lower() == "true"
         self.api_key = os.getenv("AIRFLOW_MCP_API_KEY")
-        self.read_only = (
-            os.getenv("AIRFLOW_MCP_TOOLS_READ_ONLY", "false").lower() == "true"
-        )
+        self.read_only = os.getenv("AIRFLOW_MCP_TOOLS_READ_ONLY", "false").lower() == "true"
         self.dag_bag = DagBag()
 
         logger.info("Initializing Airflow MCP Server")
@@ -48,9 +46,7 @@ class AirflowMCPServer:
         logger.info(f"Read-only mode: {self.read_only}")
 
         if self.enabled and not self.api_key:
-            raise ValueError(
-                "AIRFLOW_MCP_API_KEY required when AIRFLOW_MCP_ENABLED=true"
-            )
+            raise ValueError("AIRFLOW_MCP_API_KEY required when AIRFLOW_MCP_ENABLED=true")
 
     def get_tools(self) -> List[dict]:
         """Get list of available tools based on configuration"""
@@ -248,15 +244,11 @@ class AirflowMCPServer:
             elif name == "get_dag_info":
                 return await self._get_dag_info(arguments["dag_id"])
             elif name == "get_dag_runs":
-                return await self._get_dag_runs(
-                    arguments["dag_id"], arguments.get("limit", 5)
-                )
+                return await self._get_dag_runs(arguments["dag_id"], arguments.get("limit", 5))
             elif name == "trigger_dag":
                 if self.read_only:
                     return "Error: Cannot trigger DAG in read-only mode"
-                return await self._trigger_dag(
-                    arguments["dag_id"], arguments.get("conf")
-                )
+                return await self._trigger_dag(arguments["dag_id"], arguments.get("conf"))
             elif name == "list_vms":
                 return await self._list_vms()
             elif name == "get_vm_info":
@@ -324,13 +316,7 @@ class AirflowMCPServer:
         from airflow.utils.session import create_session
 
         with create_session() as session:
-            dag_runs = (
-                session.query(DagRun)
-                .filter(DagRun.dag_id == dag_id)
-                .order_by(DagRun.execution_date.desc())
-                .limit(limit)
-                .all()
-            )
+            dag_runs = session.query(DagRun).filter(DagRun.dag_id == dag_id).order_by(DagRun.execution_date.desc()).limit(limit).all()
 
         if not dag_runs:
             return f"No runs found for DAG '{dag_id}'"
@@ -454,9 +440,7 @@ class AirflowMCPServer:
         except Exception as e:
             return f"Error: {str(e)}"
 
-    async def _get_task_logs(
-        self, dag_id: str, task_id: str, execution_date: Optional[str] = None
-    ) -> str:
+    async def _get_task_logs(self, dag_id: str, task_id: str, execution_date: Optional[str] = None) -> str:
         """Get task logs"""
         # This is a simplified version
         # In production, you'd read from the Airflow log files or database

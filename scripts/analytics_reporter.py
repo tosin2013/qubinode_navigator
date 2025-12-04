@@ -52,46 +52,34 @@ Examples:
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # Dashboard command
-    dashboard_parser = subparsers.add_parser(
-        "dashboard", help="Generate analytics dashboard"
-    )
+    dashboard_parser = subparsers.add_parser("dashboard", help="Generate analytics dashboard")
     dashboard_parser.add_argument(
         "--time-range",
         choices=["last_24h", "last_7d", "last_30d", "last_90d"],
         default="last_7d",
         help="Time range for dashboard",
     )
-    dashboard_parser.add_argument(
-        "--format", choices=["json", "summary"], default="json", help="Output format"
-    )
+    dashboard_parser.add_argument("--format", choices=["json", "summary"], default="json", help="Output format")
 
     # Success rates command
-    success_parser = subparsers.add_parser(
-        "success-rates", help="Calculate deployment success rates"
-    )
+    success_parser = subparsers.add_parser("success-rates", help="Calculate deployment success rates")
     success_parser.add_argument(
         "--time-range",
         choices=["last_24h", "last_7d", "last_30d", "last_90d"],
         default="last_30d",
         help="Time range for analysis",
     )
-    success_parser.add_argument(
-        "--format", choices=["json", "summary"], default="summary", help="Output format"
-    )
+    success_parser.add_argument("--format", choices=["json", "summary"], default="summary", help="Output format")
 
     # Performance command
-    performance_parser = subparsers.add_parser(
-        "performance", help="Analyze deployment performance"
-    )
+    performance_parser = subparsers.add_parser("performance", help="Analyze deployment performance")
     performance_parser.add_argument(
         "--time-range",
         choices=["last_24h", "last_7d", "last_30d", "last_90d"],
         default="last_30d",
         help="Time range for analysis",
     )
-    performance_parser.add_argument(
-        "--format", choices=["json", "summary"], default="summary", help="Output format"
-    )
+    performance_parser.add_argument("--format", choices=["json", "summary"], default="summary", help="Output format")
 
     # Trends command
     trends_parser = subparsers.add_parser("trends", help="Analyze metric trends")
@@ -107,14 +95,10 @@ Examples:
         default="last_30d",
         help="Time range for trend analysis",
     )
-    trends_parser.add_argument(
-        "--format", choices=["json", "summary"], default="summary", help="Output format"
-    )
+    trends_parser.add_argument("--format", choices=["json", "summary"], default="summary", help="Output format")
 
     # Report command
-    report_parser = subparsers.add_parser(
-        "report", help="Generate specific report type"
-    )
+    report_parser = subparsers.add_parser("report", help="Generate specific report type")
     report_parser.add_argument(
         "--type",
         required=True,
@@ -132,33 +116,21 @@ Examples:
         default="last_30d",
         help="Time range for report",
     )
-    report_parser.add_argument(
-        "--format", choices=["json", "summary"], default="json", help="Output format"
-    )
+    report_parser.add_argument("--format", choices=["json", "summary"], default="json", help="Output format")
 
     # List reports command
     list_parser = subparsers.add_parser("list-reports", help="List recent reports")
-    list_parser.add_argument(
-        "--limit", type=int, default=10, help="Number of reports to list"
-    )
-    list_parser.add_argument(
-        "--format", choices=["table", "json"], default="table", help="Output format"
-    )
+    list_parser.add_argument("--limit", type=int, default=10, help="Number of reports to list")
+    list_parser.add_argument("--format", choices=["table", "json"], default="table", help="Output format")
 
     # Get report command
     get_parser = subparsers.add_parser("get-report", help="Get specific report")
     get_parser.add_argument("--report-id", required=True, help="Report ID to retrieve")
-    get_parser.add_argument(
-        "--format", choices=["json", "summary"], default="json", help="Output format"
-    )
+    get_parser.add_argument("--format", choices=["json", "summary"], default="json", help="Output format")
 
     # Export HTML command
-    export_parser = subparsers.add_parser(
-        "export-html", help="Export dashboard as HTML"
-    )
-    export_parser.add_argument(
-        "--dashboard-id", help="Dashboard ID to export (latest if not specified)"
-    )
+    export_parser = subparsers.add_parser("export-html", help="Export dashboard as HTML")
+    export_parser.add_argument("--dashboard-id", help="Dashboard ID to export (latest if not specified)")
     export_parser.add_argument("--output-file", help="Output HTML file path")
 
     # Test command
@@ -238,9 +210,7 @@ async def handle_dashboard_command(reporting_system: ReportingSystem, args):
                     "stable": "→",
                     "neutral": "•",
                 }.get(kpi_data["trend"], "•")
-                print(
-                    f"  {status_symbol} {kpi_name.replace('_', ' ').title()}: {kpi_data['value']}{kpi_data['unit']} {trend_symbol}"
-                )
+                print(f"  {status_symbol} {kpi_name.replace('_', ' ').title()}: {kpi_data['value']}{kpi_data['unit']} {trend_symbol}")
 
             print("\n=== Overview ===")
             overview = dashboard["sections"]["overview"]
@@ -266,9 +236,7 @@ async def handle_success_rates_command(analytics_engine: AnalyticsEngine, args):
             print(json.dumps(success_metrics.__dict__, indent=2))
         else:
             print("=== Deployment Success Rates ===")
-            print(
-                f"Time Period: {success_metrics.time_period.replace('_', ' ').title()}"
-            )
+            print(f"Time Period: {success_metrics.time_period.replace('_', ' ').title()}")
             print(f"Total Deployments: {success_metrics.total_deployments}")
             print(f"Successful: {success_metrics.successful_deployments}")
             print(f"Failed: {success_metrics.failed_deployments}")
@@ -296,23 +264,13 @@ async def handle_performance_command(analytics_engine: AnalyticsEngine, args):
         else:
             print("=== Deployment Performance Metrics ===")
             print(f"Time Period: {time_range.value.replace('_', ' ').title()}")
-            print(
-                f"Average Deployment Time: {performance_metrics.average_deployment_time} minutes"
-            )
-            print(
-                f"Median Deployment Time: {performance_metrics.median_deployment_time} minutes"
-            )
-            print(
-                f"Fastest Deployment: {performance_metrics.fastest_deployment} minutes"
-            )
-            print(
-                f"Slowest Deployment: {performance_metrics.slowest_deployment} minutes"
-            )
+            print(f"Average Deployment Time: {performance_metrics.average_deployment_time} minutes")
+            print(f"Median Deployment Time: {performance_metrics.median_deployment_time} minutes")
+            print(f"Fastest Deployment: {performance_metrics.fastest_deployment} minutes")
+            print(f"Slowest Deployment: {performance_metrics.slowest_deployment} minutes")
             print(f"95th Percentile: {performance_metrics.p95_deployment_time} minutes")
             print(f"99th Percentile: {performance_metrics.p99_deployment_time} minutes")
-            print(
-                f"Throughput: {performance_metrics.throughput_per_day} deployments/day"
-            )
+            print(f"Throughput: {performance_metrics.throughput_per_day} deployments/day")
 
             if performance_metrics.resource_utilization:
                 print("\n=== Resource Utilization ===")
@@ -347,14 +305,8 @@ async def handle_trends_command(analytics_engine: AnalyticsEngine, args):
 
             if trend_analysis.time_series:
                 print("Recent Values:")
-                for timestamp, value in trend_analysis.time_series[
-                    -5:
-                ]:  # Last 5 points
-                    time_str = (
-                        timestamp.strftime("%Y-%m-%d %H:%M")
-                        if hasattr(timestamp, "strftime")
-                        else str(timestamp)
-                    )
+                for timestamp, value in trend_analysis.time_series[-5:]:  # Last 5 points
+                    time_str = timestamp.strftime("%Y-%m-%d %H:%M") if hasattr(timestamp, "strftime") else str(timestamp)
                     print(f"  {time_str}: {value}")
 
     except Exception as e:
@@ -413,18 +365,12 @@ async def handle_list_reports_command(reporting_system: ReportingSystem, args):
                 return
 
             print("=== Recent Reports ===")
-            print(
-                f"{'Report ID':<20} {'Name':<30} {'Type':<20} {'Time Range':<15} {'Generated':<20}"
-            )
+            print(f"{'Report ID':<20} {'Name':<30} {'Type':<20} {'Time Range':<15} {'Generated':<20}")
             print("-" * 110)
 
             for report in reports:
-                generated_date = datetime.fromisoformat(
-                    report["generated_at"]
-                ).strftime("%Y-%m-%d %H:%M")
-                print(
-                    f"{report['report_id']:<20} {report['report_name'][:29]:<30} {report['report_type']:<20} {report['time_range']:<15} {generated_date:<20}"
-                )
+                generated_date = datetime.fromisoformat(report["generated_at"]).strftime("%Y-%m-%d %H:%M")
+                print(f"{report['report_id']:<20} {report['report_name'][:29]:<30} {report['report_type']:<20} {report['time_range']:<15} {generated_date:<20}")
 
     except Exception as e:
         print(f"Error listing reports: {e}", file=sys.stderr)
@@ -489,9 +435,7 @@ async def handle_export_html_command(reporting_system: ReportingSystem, args):
         sys.exit(1)
 
 
-async def handle_test_command(
-    analytics_engine: AnalyticsEngine, reporting_system: ReportingSystem, args
-):
+async def handle_test_command(analytics_engine: AnalyticsEngine, reporting_system: ReportingSystem, args):
     """Handle test command"""
 
     try:
@@ -501,32 +445,22 @@ async def handle_test_command(
             print("✓ Testing analytics engine...")
 
             # Test success rate calculation
-            success_metrics = analytics_engine.calculate_success_rates(
-                TimeRange.LAST_7D
-            )
+            success_metrics = analytics_engine.calculate_success_rates(TimeRange.LAST_7D)
             print(f"  Success rate calculation: {success_metrics.success_rate}%")
 
             # Test performance metrics
-            performance_metrics = analytics_engine.calculate_performance_metrics(
-                TimeRange.LAST_7D
-            )
-            print(
-                f"  Performance metrics: {performance_metrics.average_deployment_time} min avg"
-            )
+            performance_metrics = analytics_engine.calculate_performance_metrics(TimeRange.LAST_7D)
+            print(f"  Performance metrics: {performance_metrics.average_deployment_time} min avg")
 
             # Test trend analysis
-            trend_analysis = analytics_engine.analyze_trends(
-                "success_rate", TimeRange.LAST_7D
-            )
+            trend_analysis = analytics_engine.analyze_trends("success_rate", TimeRange.LAST_7D)
             print(f"  Trend analysis: {trend_analysis.trend_direction}")
 
         elif args.component == "reporting":
             print("✓ Testing reporting system...")
 
             # Test report generation
-            report = reporting_system.generate_report(
-                "executive_summary", TimeRange.LAST_7D
-            )
+            report = reporting_system.generate_report("executive_summary", TimeRange.LAST_7D)
             print(f"  Report generation: {report['report_id']}")
 
             # Test report listing

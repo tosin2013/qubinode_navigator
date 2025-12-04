@@ -30,9 +30,7 @@ class ModelManager:
         self.threads = int(self._get_config_value("threads", "4"))
 
         # Model paths and URLs
-        self.model_path = self._get_config_value(
-            "model_path", "/app/models/granite-4.0-micro.gguf"
-        )
+        self.model_path = self._get_config_value("model_path", "/app/models/granite-4.0-micro.gguf")
         self.model_url = self._get_config_value("model_url", None)
 
         # Server configuration
@@ -100,9 +98,7 @@ class ModelManager:
             if "gpu_layers" in preset and self.gpu_layers == 0:
                 self.gpu_layers = preset.get("gpu_layers", 0)
 
-            logger.info(
-                f"Applied preset for {self.model_type}: {preset.get('recommended_for', 'N/A')}"
-            )
+            logger.info(f"Applied preset for {self.model_type}: {preset.get('recommended_for', 'N/A')}")
 
     def detect_hardware_capabilities(self) -> Dict[str, Any]:
         """Detect available hardware capabilities"""
@@ -130,9 +126,7 @@ class ModelManager:
                 gpu_memory_mb = int(result.stdout.strip())
                 capabilities["gpu_available"] = True
                 capabilities["gpu_memory_gb"] = gpu_memory_mb / 1024
-                logger.info(
-                    f"NVIDIA GPU detected: {capabilities['gpu_memory_gb']:.1f}GB VRAM"
-                )
+                logger.info(f"NVIDIA GPU detected: {capabilities['gpu_memory_gb']:.1f}GB VRAM")
         except (subprocess.TimeoutExpired, FileNotFoundError, ValueError):
             logger.info("No NVIDIA GPU detected or nvidia-smi not available")
 
@@ -257,9 +251,7 @@ class ModelManager:
                 break
 
         if not server_executable:
-            raise FileNotFoundError(
-                f"llama-server executable not found in any of these locations: {server_paths}"
-            )
+            raise FileNotFoundError(f"llama-server executable not found in any of these locations: {server_paths}")
 
         logger.info(f"Using llama-server executable: {server_executable}")
 
@@ -287,9 +279,7 @@ class ModelManager:
         logger.info(f"Starting llama.cpp server: {' '.join(cmd)}")
 
         # Start server process
-        process = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-        )
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
         # Wait for server to start
         max_wait = 30
@@ -333,9 +323,7 @@ class ModelManager:
 
         # Check model file
         if not Path(self.model_path).exists() and not self.model_url:
-            validation["errors"].append(
-                f"Model file not found and no download URL: {self.model_path}"
-            )
+            validation["errors"].append(f"Model file not found and no download URL: {self.model_path}")
             validation["valid"] = False
 
         # Check GPU configuration
@@ -343,15 +331,11 @@ class ModelManager:
             try:
                 subprocess.run(["nvidia-smi"], capture_output=True, timeout=5)
             except (subprocess.TimeoutExpired, FileNotFoundError):
-                validation["warnings"].append(
-                    "GPU acceleration requested but nvidia-smi not available"
-                )
+                validation["warnings"].append("GPU acceleration requested but nvidia-smi not available")
 
         # Check memory requirements
         if self.model_type == "granite-7b" and self.threads > 8:
-            validation["warnings"].append(
-                "High thread count with large model may cause memory issues"
-            )
+            validation["warnings"].append("High thread count with large model may cause memory issues")
 
         return validation
 

@@ -37,9 +37,7 @@ class RockyLinuxPlugin(QubiNodePlugin):
 
     def _initialize_plugin(self) -> None:
         """Initialize Rocky Linux plugin"""
-        self.logger.info(
-            "Initializing Rocky Linux plugin - Cloud Infrastructure Specialist"
-        )
+        self.logger.info("Initializing Rocky Linux plugin - Cloud Infrastructure Specialist")
 
         # Validate we're running on Rocky Linux
         if not self._is_rocky_linux():
@@ -48,9 +46,7 @@ class RockyLinuxPlugin(QubiNodePlugin):
         # Set configuration constants for cloud deployment
         self.kvm_version = self.config.get("kvm_version", "latest")
         self.ansible_safe_version = self.config.get("ansible_safe_version", "0.0.9")
-        self.git_repo = self.config.get(
-            "git_repo", "https://github.com/Qubinode/qubinode_navigator.git"
-        )
+        self.git_repo = self.config.get("git_repo", "https://github.com/Qubinode/qubinode_navigator.git")
 
         # Set default packages for Rocky Linux cloud deployment
         self.packages = self.config.get(
@@ -98,9 +94,7 @@ class RockyLinuxPlugin(QubiNodePlugin):
         # Validate HashiCorp Vault configuration if enabled
         if self.use_hashicorp_vault.lower() == "true":
             if not all([self.vault_addr, self.vault_token, self.secret_path]):
-                raise RuntimeError(
-                    "HashiCorp Vault environment variables not properly configured"
-                )
+                raise RuntimeError("HashiCorp Vault environment variables not properly configured")
 
     def _is_rocky_linux(self) -> bool:
         """Check if running on Rocky Linux"""
@@ -137,9 +131,7 @@ class RockyLinuxPlugin(QubiNodePlugin):
         state_data["groups_configured"] = self._are_groups_configured()
 
         # Check Ansible Navigator configuration
-        state_data[
-            "ansible_navigator_configured"
-        ] = self._is_ansible_navigator_configured()
+        state_data["ansible_navigator_configured"] = self._is_ansible_navigator_configured()
 
         return SystemState(state_data)
 
@@ -159,9 +151,7 @@ class RockyLinuxPlugin(QubiNodePlugin):
 
         # SSH should be configured
         desired_data["ssh_configured"] = True
-        desired_data["ssh_password_auth"] = context.config.get(
-            "enable_ssh_password_auth", True
-        )
+        desired_data["ssh_password_auth"] = context.config.get("enable_ssh_password_auth", True)
 
         # Lab user should exist if configured
         create_lab_user = context.config.get("create_lab_user", True)
@@ -192,21 +182,15 @@ class RockyLinuxPlugin(QubiNodePlugin):
 
             if missing_packages:
                 self._install_packages(list(missing_packages))
-                changes_made.append(
-                    f"Installed packages: {', '.join(missing_packages)}"
-                )
+                changes_made.append(f"Installed packages: {', '.join(missing_packages)}")
 
             # Configure Python if needed
-            if not current_state.get("python_configured") and desired_state.get(
-                "python_configured"
-            ):
+            if not current_state.get("python_configured") and desired_state.get("python_configured"):
                 self._configure_python()
                 changes_made.append("Configured Python environment")
 
             # Configure SSH if needed
-            if not current_state.get("ssh_configured") and desired_state.get(
-                "ssh_configured"
-            ):
+            if not current_state.get("ssh_configured") and desired_state.get("ssh_configured"):
                 self._configure_ssh()
                 changes_made.append("Configured SSH keys")
 
@@ -233,23 +217,17 @@ class RockyLinuxPlugin(QubiNodePlugin):
                 changes_made.append("Started and configured firewalld")
 
             # Create lab user if needed
-            if desired_state.get("lab_user_exists") and not current_state.get(
-                "lab_user_exists"
-            ):
+            if desired_state.get("lab_user_exists") and not current_state.get("lab_user_exists"):
                 self._create_lab_user()
                 changes_made.append("Created lab-user")
 
             # Configure groups if needed
-            if not current_state.get("groups_configured") and desired_state.get(
-                "groups_configured"
-            ):
+            if not current_state.get("groups_configured") and desired_state.get("groups_configured"):
                 self._configure_groups()
                 changes_made.append("Configured user groups")
 
             # Configure Ansible Navigator if needed
-            if not current_state.get(
-                "ansible_navigator_configured"
-            ) and desired_state.get("ansible_navigator_configured"):
+            if not current_state.get("ansible_navigator_configured") and desired_state.get("ansible_navigator_configured"):
                 self._configure_ansible_navigator()
                 changes_made.append("Configured Ansible Navigator")
 
@@ -293,9 +271,7 @@ class RockyLinuxPlugin(QubiNodePlugin):
     def _get_python_version(self) -> tuple:
         """Get Python version tuple"""
         try:
-            result = subprocess.run(
-                ["python3", "--version"], capture_output=True, text=True, check=True
-            )
+            result = subprocess.run(["python3", "--version"], capture_output=True, text=True, check=True)
             version_str = result.stdout.strip().split()[1]
             parts = version_str.split(".")
             return (int(parts[0]), int(parts[1]))
@@ -318,9 +294,7 @@ class RockyLinuxPlugin(QubiNodePlugin):
         subprocess.run(["sudo", "dnf", "install", "-y", "python3-pip"], check=True)
 
         # Update pip
-        subprocess.run(
-            ["python3", "-m", "pip", "install", "--upgrade", "pip"], check=True
-        )
+        subprocess.run(["python3", "-m", "pip", "install", "--upgrade", "pip"], check=True)
 
         self.logger.info("Configured Python environment")
 
@@ -412,9 +386,7 @@ class RockyLinuxPlugin(QubiNodePlugin):
     def _are_groups_configured(self) -> bool:
         """Check if required groups are configured"""
         try:
-            result = subprocess.run(
-                ["getent", "group", "lab-user"], capture_output=True
-            )
+            result = subprocess.run(["getent", "group", "lab-user"], capture_output=True)
             return result.returncode == 0
         except subprocess.CalledProcessError:
             return False
@@ -423,9 +395,7 @@ class RockyLinuxPlugin(QubiNodePlugin):
         """Configure required groups"""
         try:
             # Check if lab-user group exists
-            result = subprocess.run(
-                ["getent", "group", "lab-user"], capture_output=True
-            )
+            result = subprocess.run(["getent", "group", "lab-user"], capture_output=True)
             if result.returncode != 0:
                 subprocess.run(["sudo", "groupadd", "lab-user"], check=True)
                 self.logger.info("Created lab-user group")
@@ -437,9 +407,7 @@ class RockyLinuxPlugin(QubiNodePlugin):
     def _is_service_enabled(self, service: str) -> bool:
         """Check if service is enabled"""
         try:
-            result = subprocess.run(
-                ["systemctl", "is-enabled", service], capture_output=True, text=True
-            )
+            result = subprocess.run(["systemctl", "is-enabled", service], capture_output=True, text=True)
             return result.returncode == 0
         except subprocess.CalledProcessError:
             return False
@@ -447,9 +415,7 @@ class RockyLinuxPlugin(QubiNodePlugin):
     def _is_service_active(self, service: str) -> bool:
         """Check if service is active"""
         try:
-            result = subprocess.run(
-                ["systemctl", "is-active", service], capture_output=True, text=True
-            )
+            result = subprocess.run(["systemctl", "is-active", service], capture_output=True, text=True)
             return result.stdout.strip() == "active"
         except subprocess.CalledProcessError:
             return False
@@ -466,9 +432,7 @@ class RockyLinuxPlugin(QubiNodePlugin):
         """Configure firewalld for cloud environment"""
         try:
             # Basic firewall configuration for cloud deployment
-            subprocess.run(
-                ["sudo", "firewall-cmd", "--permanent", "--add-service=ssh"], check=True
-            )
+            subprocess.run(["sudo", "firewall-cmd", "--permanent", "--add-service=ssh"], check=True)
             subprocess.run(
                 ["sudo", "firewall-cmd", "--permanent", "--add-service=http"],
                 check=True,
@@ -538,9 +502,7 @@ ansible-navigator:
             )
 
             # Install cloud development tools
-            subprocess.run(
-                ["sudo", "dnf", "groupinstall", "-y", "Development Tools"], check=True
-            )
+            subprocess.run(["sudo", "dnf", "groupinstall", "-y", "Development Tools"], check=True)
 
             # Update system
             subprocess.run(["sudo", "dnf", "update", "-y"], check=True)
@@ -564,16 +526,12 @@ ansible-navigator:
                     self.logger.info("Running vault-integrated setup in CI/CD mode")
                     subprocess.run([vault_script], check=True, cwd=nav_dir)
                 else:
-                    self.logger.info(
-                        "Running vault-integrated setup in interactive mode"
-                    )
+                    self.logger.info("Running vault-integrated setup in interactive mode")
                     subprocess.run([vault_script], check=True, cwd=nav_dir)
 
                 self.logger.info("Vault-integrated setup completed successfully")
             else:
-                self.logger.warning(
-                    "vault-integrated-setup.sh not found, skipping vault configuration"
-                )
+                self.logger.warning("vault-integrated-setup.sh not found, skipping vault configuration")
 
         except subprocess.CalledProcessError as e:
             self.logger.error(f"Vault-integrated setup failed: {e}")
@@ -590,9 +548,7 @@ ansible-navigator:
                 subprocess.run(["git", "-C", nav_dir, "pull"], check=True)
             else:
                 self.logger.info("Cloning Qubinode Navigator repository")
-                subprocess.run(
-                    ["git", "clone", self.git_repo], cwd=home_dir, check=True
-                )
+                subprocess.run(["git", "clone", self.git_repo], cwd=home_dir, check=True)
 
                 # Create symlink for cloud deployment
                 if not os.path.exists("/opt/qubinode_navigator"):
@@ -609,9 +565,7 @@ ansible-navigator:
             # Use enhanced load variables for cloud template processing
             enhanced_script = f"{nav_dir}/enhanced_load_variables.py"
             if os.path.exists(enhanced_script):
-                self.logger.info(
-                    "Using enhanced load variables for cloud template processing"
-                )
+                self.logger.info("Using enhanced load variables for cloud template processing")
 
             self.logger.info("Qubinode Navigator cloud setup completed")
 

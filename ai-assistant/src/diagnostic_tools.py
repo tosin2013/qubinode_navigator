@@ -101,9 +101,7 @@ class ResourceUsageTool(DiagnosticTool):
     """Tool for monitoring system resource usage"""
 
     def __init__(self):
-        super().__init__(
-            "resource_usage", "Monitor CPU, memory, disk, and network usage"
-        )
+        super().__init__("resource_usage", "Monitor CPU, memory, disk, and network usage")
 
     async def execute(self, **kwargs) -> ToolResult:
         """Get current resource usage statistics"""
@@ -115,9 +113,7 @@ class ResourceUsageTool(DiagnosticTool):
                 "usage_percent": psutil.cpu_percent(interval=1),
                 "count_logical": psutil.cpu_count(logical=True),
                 "count_physical": psutil.cpu_count(logical=False),
-                "load_average": list(psutil.getloadavg())
-                if hasattr(psutil, "getloadavg")
-                else None,
+                "load_average": list(psutil.getloadavg()) if hasattr(psutil, "getloadavg") else None,
                 "per_cpu_usage": psutil.cpu_percent(interval=1, percpu=True),
             }
 
@@ -170,9 +166,7 @@ class ResourceUsageTool(DiagnosticTool):
             }
 
             execution_time = time.time() - start_time
-            return self._create_result(
-                True, resource_data, execution_time=execution_time
-            )
+            return self._create_result(True, resource_data, execution_time=execution_time)
 
         except Exception as e:
             execution_time = time.time() - start_time
@@ -186,9 +180,7 @@ class ServiceStatusTool(DiagnosticTool):
     def __init__(self):
         super().__init__("service_status", "Check status of system services")
 
-    async def execute(
-        self, services: Optional[List[str]] = None, **kwargs
-    ) -> ToolResult:
+    async def execute(self, services: Optional[List[str]] = None, **kwargs) -> ToolResult:
         """Check status of specified services or common services"""
         start_time = time.time()
 
@@ -259,9 +251,7 @@ class ServiceStatusTool(DiagnosticTool):
                     }
 
             execution_time = time.time() - start_time
-            return self._create_result(
-                True, {"services": service_status}, execution_time=execution_time
-            )
+            return self._create_result(True, {"services": service_status}, execution_time=execution_time)
 
         except Exception as e:
             execution_time = time.time() - start_time
@@ -275,9 +265,7 @@ class ProcessInfoTool(DiagnosticTool):
     def __init__(self):
         super().__init__("process_info", "Gather information about running processes")
 
-    async def execute(
-        self, filter_name: Optional[str] = None, top_n: int = 10, **kwargs
-    ) -> ToolResult:
+    async def execute(self, filter_name: Optional[str] = None, top_n: int = 10, **kwargs) -> ToolResult:
         """Get information about running processes"""
         start_time = time.time()
 
@@ -298,16 +286,11 @@ class ProcessInfoTool(DiagnosticTool):
                     proc_info = proc.info
 
                     # Filter by name if specified
-                    if (
-                        filter_name
-                        and filter_name.lower() not in proc_info["name"].lower()
-                    ):
+                    if filter_name and filter_name.lower() not in proc_info["name"].lower():
                         continue
 
                     # Add additional info
-                    proc_info["memory_mb"] = round(
-                        proc.memory_info().rss / (1024 * 1024), 2
-                    )
+                    proc_info["memory_mb"] = round(proc.memory_info().rss / (1024 * 1024), 2)
                     proc_info["uptime_seconds"] = time.time() - proc_info["create_time"]
 
                     processes.append(proc_info)
@@ -331,9 +314,7 @@ class ProcessInfoTool(DiagnosticTool):
             }
 
             execution_time = time.time() - start_time
-            return self._create_result(
-                True, process_data, execution_time=execution_time
-            )
+            return self._create_result(True, process_data, execution_time=execution_time)
 
         except Exception as e:
             execution_time = time.time() - start_time
@@ -375,9 +356,7 @@ class KVMDiagnosticTool(DiagnosticTool):
 
             # Check libvirt connection
             try:
-                result = subprocess.run(
-                    ["virsh", "version"], capture_output=True, text=True, timeout=10
-                )
+                result = subprocess.run(["virsh", "version"], capture_output=True, text=True, timeout=10)
                 kvm_data["libvirt_available"] = result.returncode == 0
                 if result.returncode == 0:
                     kvm_data["libvirt_version"] = result.stdout.strip()
@@ -412,13 +391,9 @@ class NetworkDiagnosticTool(DiagnosticTool):
     """Tool for network connectivity diagnostics"""
 
     def __init__(self):
-        super().__init__(
-            "network_diagnostics", "Check network connectivity and configuration"
-        )
+        super().__init__("network_diagnostics", "Check network connectivity and configuration")
 
-    async def execute(
-        self, targets: Optional[List[str]] = None, **kwargs
-    ) -> ToolResult:
+    async def execute(self, targets: Optional[List[str]] = None, **kwargs) -> ToolResult:
         """Check network connectivity and configuration"""
         start_time = time.time()
 
@@ -459,9 +434,7 @@ class NetworkDiagnosticTool(DiagnosticTool):
 
                     connectivity_results[target] = {
                         "reachable": result.returncode == 0,
-                        "output": result.stdout
-                        if result.returncode == 0
-                        else result.stderr,
+                        "output": result.stdout if result.returncode == 0 else result.stderr,
                     }
                 except subprocess.TimeoutExpired:
                     connectivity_results[target] = {
@@ -483,17 +456,13 @@ class NetworkDiagnosticTool(DiagnosticTool):
                 )
                 network_data["dns_resolution"] = {
                     "working": result.returncode == 0,
-                    "output": result.stdout
-                    if result.returncode == 0
-                    else result.stderr,
+                    "output": result.stdout if result.returncode == 0 else result.stderr,
                 }
             except Exception as e:
                 network_data["dns_error"] = str(e)
 
             execution_time = time.time() - start_time
-            return self._create_result(
-                True, network_data, execution_time=execution_time
-            )
+            return self._create_result(True, network_data, execution_time=execution_time)
 
         except Exception as e:
             execution_time = time.time() - start_time
@@ -590,21 +559,15 @@ class DiagnosticToolRegistry:
         # Compile summary
         summary = {
             "total_tools": len(self.tools),
-            "successful_tools": sum(
-                1 for result in tool_results.values() if result.success
-            ),
-            "failed_tools": sum(
-                1 for result in tool_results.values() if not result.success
-            ),
+            "successful_tools": sum(1 for result in tool_results.values() if result.success),
+            "failed_tools": sum(1 for result in tool_results.values() if not result.success),
             "total_execution_time": time.time() - start_time,
             "timestamp": time.time(),
         }
 
         return {
             "summary": summary,
-            "tool_results": {
-                name: result.to_dict() for name, result in tool_results.items()
-            },
+            "tool_results": {name: result.to_dict() for name, result in tool_results.items()},
         }
 
 

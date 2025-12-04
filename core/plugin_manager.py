@@ -40,9 +40,7 @@ class PluginManager:
     resolution and event-driven communication.
     """
 
-    def __init__(
-        self, plugin_directories: List[str] = None, event_system: EventSystem = None
-    ):
+    def __init__(self, plugin_directories: List[str] = None, event_system: EventSystem = None):
         self.logger = logging.getLogger(__name__)
         self.plugin_directories = plugin_directories or ["plugins"]
         self.event_system = event_system or EventSystem()
@@ -117,19 +115,13 @@ class PluginManager:
 
             # Find plugin classes
             for name, obj in inspect.getmembers(module, inspect.isclass):
-                if (
-                    issubclass(obj, QubiNodePlugin)
-                    and obj != QubiNodePlugin
-                    and obj.__module__ == module_name
-                ):
+                if issubclass(obj, QubiNodePlugin) and obj != QubiNodePlugin and obj.__module__ == module_name:
                     self._register_plugin(name, obj, str(py_file))
 
         except Exception as e:
             self.logger.error(f"Failed to import module {module_name}: {e}")
 
-    def _register_plugin(
-        self, name: str, plugin_class: Type[QubiNodePlugin], module_path: str
-    ) -> None:
+    def _register_plugin(self, name: str, plugin_class: Type[QubiNodePlugin], module_path: str) -> None:
         """Register a discovered plugin"""
         try:
             # Create temporary instance to get metadata
@@ -162,9 +154,7 @@ class PluginManager:
 
         def visit(plugin_name: str):
             if plugin_name in temp_visited:
-                raise ValueError(
-                    f"Circular dependency detected involving {plugin_name}"
-                )
+                raise ValueError(f"Circular dependency detected involving {plugin_name}")
             if plugin_name in visited:
                 return
 
@@ -174,9 +164,7 @@ class PluginManager:
                 plugin_info = self._discovered_plugins[plugin_name]
                 for dependency in plugin_info.dependencies:
                     if dependency not in self._discovered_plugins:
-                        raise ValueError(
-                            f"Plugin {plugin_name} depends on missing plugin: {dependency}"
-                        )
+                        raise ValueError(f"Plugin {plugin_name} depends on missing plugin: {dependency}")
                     visit(dependency)
 
             temp_visited.remove(plugin_name)
@@ -191,9 +179,7 @@ class PluginManager:
         self._plugin_execution_order = execution_order
         self.logger.info(f"Plugin execution order: {execution_order}")
 
-    def load_plugin(
-        self, plugin_name: str, config: Dict[str, Any] = None
-    ) -> Optional[QubiNodePlugin]:
+    def load_plugin(self, plugin_name: str, config: Dict[str, Any] = None) -> Optional[QubiNodePlugin]:
         """
         Load and initialize a specific plugin
 
@@ -228,9 +214,7 @@ class PluginManager:
             self.logger.error(f"Failed to load plugin {plugin_name}: {e}")
             return None
 
-    def execute_plugin(
-        self, plugin_name: str, context: ExecutionContext
-    ) -> PluginResult:
+    def execute_plugin(self, plugin_name: str, context: ExecutionContext) -> PluginResult:
         """
         Execute a specific plugin
 
@@ -250,9 +234,7 @@ class PluginManager:
             )
 
         try:
-            self.event_system.emit(
-                "plugin_execution_start", {"plugin_name": plugin_name}
-            )
+            self.event_system.emit("plugin_execution_start", {"plugin_name": plugin_name})
             result = plugin.execute(context)
             self.event_system.emit(
                 "plugin_execution_complete",
@@ -268,9 +250,7 @@ class PluginManager:
                 status=PluginStatus.FAILED,
             )
 
-    def execute_plugins(
-        self, plugin_names: List[str] = None, context: ExecutionContext = None
-    ) -> Dict[str, PluginResult]:
+    def execute_plugins(self, plugin_names: List[str] = None, context: ExecutionContext = None) -> Dict[str, PluginResult]:
         """
         Execute multiple plugins in dependency order
 
@@ -343,8 +323,5 @@ class PluginManager:
             "discovered_plugins": len(self._discovered_plugins),
             "loaded_plugins": len(self._loaded_plugins),
             "execution_order": self._plugin_execution_order,
-            "plugin_status": {
-                name: plugin.get_health_status()
-                for name, plugin in self._loaded_plugins.items()
-            },
+            "plugin_status": {name: plugin.get_health_status() for name, plugin in self._loaded_plugins.items()},
         }

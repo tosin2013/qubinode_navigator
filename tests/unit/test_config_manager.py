@@ -53,9 +53,7 @@ class TestConfigManager(unittest.TestCase):
         result = self.config_manager.load_config()
         self.assertTrue(result)
         self.assertTrue(self.config_manager._loaded)
-        self.assertEqual(
-            self.config_manager._config["plugins"]["rhel9_plugin"]["enabled"], True
-        )
+        self.assertEqual(self.config_manager._config["plugins"]["rhel9_plugin"]["enabled"], True)
         self.assertEqual(self.config_manager._config["system"]["log_level"], "INFO")
 
     def test_load_config_json_success(self):
@@ -71,9 +69,7 @@ class TestConfigManager(unittest.TestCase):
         result = config_manager.load_config()
         self.assertTrue(result)
         self.assertTrue(config_manager._loaded)
-        self.assertEqual(
-            config_manager._config["plugins"]["rhel9_plugin"]["enabled"], True
-        )
+        self.assertEqual(config_manager._config["plugins"]["rhel9_plugin"]["enabled"], True)
 
     def test_load_config_file_not_found(self):
         """Test loading config when file doesn't exist"""
@@ -143,9 +139,7 @@ class TestConfigManager(unittest.TestCase):
 
         global_config = self.config_manager.get_global_config()
         self.assertEqual(global_config["log_level"], "DEBUG")
-        self.assertEqual(
-            global_config["plugin_directories"], ["plugins", "custom_plugins"]
-        )
+        self.assertEqual(global_config["plugin_directories"], ["plugins", "custom_plugins"])
         self.assertEqual(global_config["execution_timeout"], 300)
 
     def test_set_plugin_config(self):

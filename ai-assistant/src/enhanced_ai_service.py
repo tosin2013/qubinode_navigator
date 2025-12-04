@@ -30,14 +30,12 @@ from model_manager import ModelManager
 
 # Import Marquez context service for lineage awareness
 try:
-    from marquez_context_service import MarquezContextService, get_marquez_service
+    from marquez_context_service import get_marquez_service
 
     MARQUEZ_AVAILABLE = True
 except ImportError:
     MARQUEZ_AVAILABLE = False
-    logging.warning(
-        "Marquez context service not available - lineage awareness disabled"
-    )
+    logging.warning("Marquez context service not available - lineage awareness disabled")
 
 logger = logging.getLogger(__name__)
 
@@ -55,9 +53,7 @@ class EnhancedAIService:
 
         # Determine model type
         model_info = self.model_manager.get_model_info()
-        self.is_api_model = (
-            model_info.get("preset_info", {}).get("provider") == "litellm"
-        )
+        self.is_api_model = model_info.get("preset_info", {}).get("provider") == "litellm"
 
         logger.info("Enhanced AI Service initialized")
         logger.info(f"Model type: {model_info['model_type']}")
@@ -92,17 +88,11 @@ class EnhancedAIService:
             logger.info("Initializing Marquez context service...")
             self.marquez_service = get_marquez_service()
             if await self.marquez_service.is_available():
-                logger.info(
-                    "Marquez lineage service connected - AI has lineage awareness"
-                )
+                logger.info("Marquez lineage service connected - AI has lineage awareness")
             else:
-                logger.warning(
-                    "Marquez not available - AI will work without lineage context"
-                )
+                logger.warning("Marquez not available - AI will work without lineage context")
         else:
-            logger.info(
-                "Marquez context service not installed - skipping lineage integration"
-            )
+            logger.info("Marquez context service not installed - skipping lineage integration")
 
         logger.info("Enhanced AI service initialized successfully")
 
@@ -173,9 +163,7 @@ class EnhancedAIService:
 
         elif "claude" in model_name.lower() or "anthropic" in model_name.lower():
             if not os.getenv("ANTHROPIC_API_KEY"):
-                logger.warning(
-                    "ANTHROPIC_API_KEY not set - Anthropic models may not work"
-                )
+                logger.warning("ANTHROPIC_API_KEY not set - Anthropic models may not work")
 
         elif "azure" in model_name.lower():
             required_vars = ["AZURE_API_KEY", "AZURE_API_BASE", "AZURE_API_VERSION"]
@@ -206,15 +194,13 @@ class EnhancedAIService:
         """Test connection to API model"""
         try:
             # Simple test completion
-            response = await self.llm._acall("Hello")
+            await self.llm._acall("Hello")
             logger.info("API model connection test successful")
         except Exception as e:
             logger.error(f"API model connection test failed: {e}")
             raise
 
-    async def chat(
-        self, message: str, context: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+    async def chat(self, message: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Process chat message with RAG and return response"""
 
         if not self.llm:
@@ -227,9 +213,7 @@ class EnhancedAIService:
 
             if self.rag_service:
                 try:
-                    retrieval_result = await self.rag_service.retrieve_relevant_context(
-                        query=message, top_k=6
-                    )
+                    retrieval_result = await self.rag_service.retrieve_relevant_context(query=message, top_k=6)
                     rag_context = retrieval_result.contexts
                     sources = retrieval_result.sources
 
@@ -242,9 +226,7 @@ class EnhancedAIService:
             lineage_context = ""
             if self.marquez_service:
                 try:
-                    lineage_context = await self.marquez_service.get_context_for_prompt(
-                        message
-                    )
+                    lineage_context = await self.marquez_service.get_context_for_prompt(message)
                     if lineage_context:
                         logger.info("Added lineage context from Marquez")
                 except Exception as e:
@@ -320,9 +302,7 @@ Provide helpful, accurate, and actionable guidance for infrastructure deployment
 
         # Add RAG documentation context
         if rag_context:
-            context_text = "\n\n".join(
-                rag_context[:4]
-            )  # Limit context to avoid token limits
+            context_text = "\n\n".join(rag_context[:4])  # Limit context to avoid token limits
             prompt_parts.append(f"\nRelevant Documentation:\n{context_text}")
 
         prompt_parts.append(f"\nUser Question: {message}\n\nResponse:")
@@ -348,9 +328,7 @@ Provide helpful, accurate, and actionable guidance for infrastructure deployment
             logger.error(f"API model generation failed: {e}")
             raise
 
-    async def process_message(
-        self, message: str, context: dict = None, **kwargs
-    ) -> dict:
+    async def process_message(self, message: str, context: dict = None, **kwargs) -> dict:
         """Process a user message and return AI response with RAG enhancement."""
         try:
             # Use the chat method which already handles RAG and context
@@ -403,9 +381,7 @@ Provide helpful, accurate, and actionable guidance for infrastructure deployment
             logger.error(f"Error getting job lineage for {job_name}: {e}")
             return None
 
-    async def run_diagnostics(
-        self, request: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+    async def run_diagnostics(self, request: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Run system diagnostics (compatibility method)"""
         try:
             tool_name = None
@@ -416,9 +392,7 @@ Provide helpful, accurate, and actionable guidance for infrastructure deployment
             logger.error(f"Error running diagnostics: {e}")
             return {"error": str(e), "timestamp": time.time()}
 
-    async def run_specific_diagnostic_tool(
-        self, tool_name: str, **kwargs
-    ) -> Dict[str, Any]:
+    async def run_specific_diagnostic_tool(self, tool_name: str, **kwargs) -> Dict[str, Any]:
         """Run a specific diagnostic tool"""
         try:
             return await diagnostic_registry.run_diagnostic(tool_name)

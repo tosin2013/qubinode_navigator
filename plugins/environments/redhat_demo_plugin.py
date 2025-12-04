@@ -137,42 +137,30 @@ class RedHatDemoPlugin(QubiNodePlugin):
 
             if missing_packages:
                 self._install_packages(list(missing_packages))
-                changes_made.append(
-                    f"Installed demo packages: {', '.join(missing_packages)}"
-                )
+                changes_made.append(f"Installed demo packages: {', '.join(missing_packages)}")
 
             # Create config file template if needed
-            if not current_state.get("config_file_exists") and desired_state.get(
-                "config_file_exists"
-            ):
+            if not current_state.get("config_file_exists") and desired_state.get("config_file_exists"):
                 self._create_config_file_template()
                 changes_made.append("Created /tmp/config.yml template")
 
             # Create environment file if needed
-            if not current_state.get("env_file_exists") and desired_state.get(
-                "env_file_exists"
-            ):
+            if not current_state.get("env_file_exists") and desired_state.get("env_file_exists"):
                 self._create_env_file()
                 changes_made.append("Created notouch.env file")
 
             # Configure lab user if needed
-            if not current_state.get("lab_user_configured") and desired_state.get(
-                "lab_user_configured"
-            ):
+            if not current_state.get("lab_user_configured") and desired_state.get("lab_user_configured"):
                 self._configure_lab_user()
                 changes_made.append("Configured lab-user for demo system")
 
             # Configure bashrc if needed
-            if not current_state.get("bashrc_configured") and desired_state.get(
-                "bashrc_configured"
-            ):
+            if not current_state.get("bashrc_configured") and desired_state.get("bashrc_configured"):
                 self._configure_bashrc()
                 changes_made.append("Configured .bashrc for demo environment")
 
             # Handle RHSM registration if credentials provided
-            if desired_state.get("rhsm_registered") and not current_state.get(
-                "rhsm_registered"
-            ):
+            if desired_state.get("rhsm_registered") and not current_state.get("rhsm_registered"):
                 rhsm_username = context.variables.get("rhsm_username")
                 rhsm_password = context.variables.get("rhsm_password")
                 rhsm_org = context.variables.get("rhsm_org")
@@ -185,9 +173,7 @@ class RedHatDemoPlugin(QubiNodePlugin):
                     self._register_rhsm_activation_key(rhsm_org, rhsm_activationkey)
                     changes_made.append("Registered RHSM with activation key")
                 else:
-                    self.logger.warning(
-                        "RHSM credentials not provided - skipping registration"
-                    )
+                    self.logger.warning("RHSM credentials not provided - skipping registration")
 
             return PluginResult(
                 changed=len(changes_made) > 0,
@@ -216,9 +202,7 @@ class RedHatDemoPlugin(QubiNodePlugin):
     def _is_rhsm_registered(self) -> bool:
         """Check if RHSM is registered"""
         try:
-            result = subprocess.run(
-                ["subscription-manager", "status"], capture_output=True, text=True
-            )
+            result = subprocess.run(["subscription-manager", "status"], capture_output=True, text=True)
 
             return "Overall Status: Current" in result.stdout
         except (subprocess.CalledProcessError, FileNotFoundError):
@@ -377,9 +361,7 @@ export QUBINODE_DEMO_MODE=true
             subprocess.run(["id", "lab-user"], check=True, capture_output=True)
         except subprocess.CalledProcessError:
             # Create lab-user
-            subprocess.run(
-                ["sudo", "useradd", "-m", "-s", "/bin/bash", "lab-user"], check=True
-            )
+            subprocess.run(["sudo", "useradd", "-m", "-s", "/bin/bash", "lab-user"], check=True)
 
             # Add to wheel group
             subprocess.run(["sudo", "usermod", "-aG", "wheel", "lab-user"], check=True)
@@ -499,8 +481,7 @@ export PS1="[\\u@\\h-DEMO \\W]\\$ "
             {
                 "demo_environment": self._is_demo_environment(),
                 "rhsm_registered": self._is_rhsm_registered(),
-                "config_file_ready": self._config_file_exists()
-                and self._is_config_file_valid(),
+                "config_file_ready": self._config_file_exists() and self._is_config_file_valid(),
             }
         )
 

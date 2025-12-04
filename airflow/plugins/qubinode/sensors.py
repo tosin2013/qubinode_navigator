@@ -51,7 +51,5 @@ class KcliVMStatusSensor(BaseSensorOperator):
             self.log.info(f"✅ VM {self.vm_name} is {self.expected_status}")
             return True
         else:
-            self.log.info(
-                f"⏳ VM {self.vm_name} is {status}, waiting for {self.expected_status}"
-            )
+            self.log.info(f"⏳ VM {self.vm_name} is {status}, waiting for {self.expected_status}")
             return False

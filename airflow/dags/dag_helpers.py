@@ -101,9 +101,7 @@ Actual:   {actual}
     return message
 
 
-def format_success_report(
-    operation: str, details: Dict[str, Any], next_steps: Optional[List[str]] = None
-) -> str:
+def format_success_report(operation: str, details: Dict[str, Any], next_steps: Optional[List[str]] = None) -> str:
     """
     Format a success report with details and next steps.
     """
@@ -310,9 +308,7 @@ def get_credential_setup_command(
 # =============================================================================
 
 
-def get_registry_validation_command(
-    registry_host: str, registry_port: str = "8443", min_cert_days: int = 7
-) -> str:
+def get_registry_validation_command(registry_host: str, registry_port: str = "8443", min_cert_days: int = 7) -> str:
     """
     Generate bash command to validate registry health and certificate.
     """
@@ -383,9 +379,7 @@ def get_registry_validation_command(
     """
 
 
-def get_dns_validation_command(
-    cluster_name: str, base_domain: str, expected_ip: Optional[str] = None
-) -> str:
+def get_dns_validation_command(cluster_name: str, base_domain: str, expected_ip: Optional[str] = None) -> str:
     """
     Generate bash command to validate DNS entries for OpenShift cluster.
     """
@@ -564,9 +558,7 @@ def get_config_validation_command(cluster_yml_path: str, nodes_yml_path: str) ->
 # =============================================================================
 
 
-def get_image_validation_command(
-    registry_host: str, registry_port: str = "8443", ocp_version: str = "4.19"
-) -> str:
+def get_image_validation_command(registry_host: str, registry_port: str = "8443", ocp_version: str = "4.19") -> str:
     """
     Generate bash command to validate OCP images exist in registry.
     """

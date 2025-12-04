@@ -41,9 +41,7 @@ class VirshCommandOperator(BaseOperator):
         self.log.info(f"Running virsh command: {' '.join(full_command)}")
 
         try:
-            result = subprocess.run(
-                full_command, capture_output=True, text=True, check=True
-            )
+            result = subprocess.run(full_command, capture_output=True, text=True, check=True)
 
             self.log.info("✅ Command succeeded")
             self.log.info(f"Output:\n{result.stdout}")
@@ -76,9 +74,7 @@ class VirshVMStartOperator(BaseOperator):
     ui_color = "#4CAF50"
 
     @apply_defaults
-    def __init__(
-        self, vm_name: str, connection_uri: str = "qemu:///system", *args, **kwargs
-    ):
+    def __init__(self, vm_name: str, connection_uri: str = "qemu:///system", *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.vm_name = vm_name
         self.connection_uri = connection_uri
@@ -166,9 +162,7 @@ class VirshVMInfoOperator(BaseOperator):
     ui_color = "#2196F3"
 
     @apply_defaults
-    def __init__(
-        self, vm_name: str, connection_uri: str = "qemu:///system", *args, **kwargs
-    ):
+    def __init__(self, vm_name: str, connection_uri: str = "qemu:///system", *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.vm_name = vm_name
         self.connection_uri = connection_uri

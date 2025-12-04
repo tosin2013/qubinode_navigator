@@ -51,12 +51,8 @@ Examples:
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # Status command
-    status_parser = subparsers.add_parser(
-        "status", help="Show monitoring system status"
-    )
-    status_parser.add_argument(
-        "--format", choices=["summary", "json"], default="summary", help="Output format"
-    )
+    status_parser = subparsers.add_parser("status", help="Show monitoring system status")
+    status_parser.add_argument("--format", choices=["summary", "json"], default="summary", help="Output format")
 
     # Alerts command
     alerts_parser = subparsers.add_parser("alerts", help="List and manage alerts")
@@ -71,24 +67,16 @@ Examples:
         choices=["info", "warning", "error", "critical"],
         help="Filter alerts by severity",
     )
-    alerts_parser.add_argument(
-        "--format", choices=["table", "json"], default="table", help="Output format"
-    )
+    alerts_parser.add_argument("--format", choices=["table", "json"], default="table", help="Output format")
 
     # Metrics command
     metrics_parser = subparsers.add_parser("metrics", help="View metrics data")
     metrics_parser.add_argument("--metric-name", help="Specific metric name to view")
-    metrics_parser.add_argument(
-        "--hours", type=int, default=24, help="Hours of data to show"
-    )
-    metrics_parser.add_argument(
-        "--format", choices=["summary", "json"], default="summary", help="Output format"
-    )
+    metrics_parser.add_argument("--hours", type=int, default=24, help="Hours of data to show")
+    metrics_parser.add_argument("--format", choices=["summary", "json"], default="summary", help="Output format")
 
     # Create alert command
-    create_alert_parser = subparsers.add_parser(
-        "create-alert", help="Create test alert"
-    )
+    create_alert_parser = subparsers.add_parser("create-alert", help="Create test alert")
     create_alert_parser.add_argument("--title", required=True, help="Alert title")
     create_alert_parser.add_argument("--description", help="Alert description")
     create_alert_parser.add_argument(
@@ -106,9 +94,7 @@ Examples:
 
     # Statistics command
     stats_parser = subparsers.add_parser("stats", help="Show monitoring statistics")
-    stats_parser.add_argument(
-        "--format", choices=["summary", "json"], default="summary", help="Output format"
-    )
+    stats_parser.add_argument("--format", choices=["summary", "json"], default="summary", help="Output format")
 
     # Test command
     test_parser = subparsers.add_parser("test", help="Test monitoring system")
@@ -221,9 +207,7 @@ async def handle_alerts_command(monitoring_manager: MonitoringManager, args):
                             "severity": alert.severity.value,
                             "source": alert.source,
                             "timestamp": alert.timestamp.isoformat(),
-                            "resolved_at": alert.resolved_at.isoformat()
-                            if alert.resolved_at
-                            else None,
+                            "resolved_at": alert.resolved_at.isoformat() if alert.resolved_at else None,
                             "status": "resolved",
                         }
                     )
@@ -236,18 +220,12 @@ async def handle_alerts_command(monitoring_manager: MonitoringManager, args):
                 return
 
             print("=== Alerts ===")
-            print(
-                f"{'Alert ID':<20} {'Title':<30} {'Severity':<10} {'Status':<10} {'Time':<20}"
-            )
+            print(f"{'Alert ID':<20} {'Title':<30} {'Severity':<10} {'Status':<10} {'Time':<20}")
             print("-" * 95)
 
             for alert in sorted(alerts, key=lambda x: x["timestamp"], reverse=True):
-                timestamp = datetime.fromisoformat(alert["timestamp"]).strftime(
-                    "%Y-%m-%d %H:%M"
-                )
-                print(
-                    f"{alert['alert_id']:<20} {alert['title'][:29]:<30} {alert['severity']:<10} {alert['status']:<10} {timestamp:<20}"
-                )
+                timestamp = datetime.fromisoformat(alert["timestamp"]).strftime("%Y-%m-%d %H:%M")
+                print(f"{alert['alert_id']:<20} {alert['title'][:29]:<30} {alert['severity']:<10} {alert['status']:<10} {timestamp:<20}")
 
     except Exception as e:
         print(f"Error listing alerts: {e}", file=sys.stderr)
@@ -258,9 +236,7 @@ async def handle_metrics_command(monitoring_manager: MonitoringManager, args):
     """Handle metrics command"""
 
     try:
-        metrics_summary = monitoring_manager.get_metrics_summary(
-            metric_name=args.metric_name, hours=args.hours
-        )
+        metrics_summary = monitoring_manager.get_metrics_summary(metric_name=args.metric_name, hours=args.hours)
 
         if args.format == "json":
             print(json.dumps(metrics_summary, indent=2))
@@ -272,9 +248,7 @@ async def handle_metrics_command(monitoring_manager: MonitoringManager, args):
             if args.metric_name:
                 print(f"Metric Name: {args.metric_name}")
             else:
-                print(
-                    f"Metric Names: {', '.join(metrics_summary.get('metric_names', []))}"
-                )
+                print(f"Metric Names: {', '.join(metrics_summary.get('metric_names', []))}")
 
             if metrics_summary["total_metrics"] > 0:
                 print(f"Oldest Metric: {metrics_summary['oldest_metric']}")
@@ -342,13 +316,7 @@ async def handle_stats_command(monitoring_manager: MonitoringManager, args):
             "metrics": metrics_summary,
             "monitoring_rules": {
                 "total_rules": len(monitoring_manager.monitoring_rules),
-                "enabled_rules": len(
-                    [
-                        r
-                        for r in monitoring_manager.monitoring_rules.values()
-                        if r.enabled
-                    ]
-                ),
+                "enabled_rules": len([r for r in monitoring_manager.monitoring_rules.values() if r.enabled]),
             },
         }
 
@@ -370,9 +338,7 @@ async def handle_stats_command(monitoring_manager: MonitoringManager, args):
 
             print("\nMetrics:")
             print(f"  Total Metrics (24h): {metrics_summary['total_metrics']}")
-            print(
-                f"  Unique Metric Names: {len(metrics_summary.get('metric_names', []))}"
-            )
+            print(f"  Unique Metric Names: {len(metrics_summary.get('metric_names', []))}")
 
             print("\nMonitoring Rules:")
             print(f"  Total Rules: {stats_data['monitoring_rules']['total_rules']}")
@@ -408,12 +374,8 @@ async def handle_test_command(monitoring_manager: MonitoringManager, args):
         elif args.component == "metrics":
             # Test metric recording
             print("✓ Testing metric recording...")
-            await monitoring_manager.record_metric(
-                "test_metric", 42.0, MetricType.GAUGE
-            )
-            await monitoring_manager.record_metric(
-                "test_counter", 1.0, MetricType.COUNTER
-            )
+            await monitoring_manager.record_metric("test_metric", 42.0, MetricType.GAUGE)
+            await monitoring_manager.record_metric("test_counter", 1.0, MetricType.COUNTER)
             print("  Recorded test metrics")
 
             # Test metrics summary
@@ -424,14 +386,10 @@ async def handle_test_command(monitoring_manager: MonitoringManager, args):
             # Test monitoring rules
             print("✓ Testing monitoring rules...")
             print(f"  Total rules: {len(monitoring_manager.monitoring_rules)}")
-            print(
-                f"  Enabled rules: {len([r for r in monitoring_manager.monitoring_rules.values() if r.enabled])}"
-            )
+            print(f"  Enabled rules: {len([r for r in monitoring_manager.monitoring_rules.values() if r.enabled])}")
 
             # List rule names
-            rule_names = [
-                rule.name for rule in monitoring_manager.monitoring_rules.values()
-            ]
+            rule_names = [rule.name for rule in monitoring_manager.monitoring_rules.values()]
             print(f"  Rule names: {', '.join(rule_names)}")
 
         print("✓ All tests passed")

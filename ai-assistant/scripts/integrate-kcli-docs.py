@@ -133,18 +133,14 @@ class KcliDocumentationIntegrator:
             shutil.rmtree(self.temp_dir)
             print(f"🧹 Cleaned up temporary directory: {self.temp_dir}")
 
-    def parse_markdown_content(
-        self, content: str, section: str, file_path: str
-    ) -> List[KcliDocChunk]:
+    def parse_markdown_content(self, content: str, section: str, file_path: str) -> List[KcliDocChunk]:
         """Parse Markdown content into structured chunks"""
 
         chunks = []
 
         # Extract title from first H1 or use filename
         title_match = re.search(r"^#\s+(.+)$", content, re.MULTILINE)
-        page_title = (
-            title_match.group(1).strip() if title_match else f"KCLI {section.title()}"
-        )
+        page_title = title_match.group(1).strip() if title_match else f"KCLI {section.title()}"
 
         # Split content by headers (# ## ### etc.)
         sections = self._split_markdown_by_headers(content)
@@ -160,9 +156,7 @@ class KcliDocumentationIntegrator:
             print(f"      Section {i}: '{header}' ({len(section_content)} chars)")
 
             if len(section_content.strip()) < 50:  # Skip very short sections
-                print(
-                    f"        Skipping - too short ({len(section_content.strip())} chars)"
-                )
+                print(f"        Skipping - too short ({len(section_content.strip())} chars)")
                 continue
 
             # Clean content (basic markdown cleanup)
@@ -171,14 +165,10 @@ class KcliDocumentationIntegrator:
             print(f"        Cleaned content: {len(clean_content)} chars")
 
             if len(clean_content.strip()) < 50:
-                print(
-                    f"        Skipping after cleaning - too short ({len(clean_content.strip())} chars)"
-                )
+                print(f"        Skipping after cleaning - too short ({len(clean_content.strip())} chars)")
                 continue
 
-            chunk_id = hashlib.md5(
-                f"{file_path}_{section}_{i}_{header}".encode()
-            ).hexdigest()[:12]
+            chunk_id = hashlib.md5(f"{file_path}_{section}_{i}_{header}".encode()).hexdigest()[:12]
 
             # Determine chunk type based on content
             chunk_type = self._determine_chunk_type(header, clean_content, section)
@@ -249,9 +239,7 @@ class KcliDocumentationIntegrator:
         content = re.sub(r"[ \t]+", " ", content)  # Multiple spaces
 
         # Clean up common markdown artifacts
-        content = re.sub(
-            r"```[a-zA-Z]*\n", "```\n", content
-        )  # Clean code block language specifiers
+        content = re.sub(r"```[a-zA-Z]*\n", "```\n", content)  # Clean code block language specifiers
 
         return content.strip()
 
@@ -262,9 +250,7 @@ class KcliDocumentationIntegrator:
         header_pattern = r"<h([1-6])[^>]*>(.*?)</h\1>"
         headers = []
 
-        for match in re.finditer(
-            header_pattern, html_content, re.IGNORECASE | re.DOTALL
-        ):
+        for match in re.finditer(header_pattern, html_content, re.IGNORECASE | re.DOTALL):
             level = int(match.group(1))
             title = self._clean_html_content(match.group(2))
             start_pos = match.end()
@@ -281,9 +267,7 @@ class KcliDocumentationIntegrator:
             # Find content until next header of same or higher level
             if i + 1 < len(headers):
                 next_start = headers[i + 1][2]
-                content = html_content[
-                    start_pos : html_content.rfind("<h", 0, next_start)
-                ]
+                content = html_content[start_pos : html_content.rfind("<h", 0, next_start)]
             else:
                 content = html_content[start_pos:]
 
@@ -337,9 +321,7 @@ class KcliDocumentationIntegrator:
         html_content = re.sub(r"<[^>]+>", "", html_content)
 
         # Clean up whitespace
-        html_content = re.sub(
-            r"\n\s*\n\s*\n", "\n\n", html_content
-        )  # Multiple newlines
+        html_content = re.sub(r"\n\s*\n\s*\n", "\n\n", html_content)  # Multiple newlines
         html_content = re.sub(r"[ \t]+", " ", html_content)  # Multiple spaces
         html_content = html_content.strip()
 
@@ -355,31 +337,19 @@ class KcliDocumentationIntegrator:
         if any(keyword in header_lower for keyword in ["example", "sample", "demo"]):
             return "example"
 
-        if any(
-            keyword in content_lower
-            for keyword in ["kcli create", "kcli deploy", "$ kcli"]
-        ):
+        if any(keyword in content_lower for keyword in ["kcli create", "kcli deploy", "$ kcli"]):
             return "example"
 
         # Check for tutorials/guides
-        if any(
-            keyword in header_lower
-            for keyword in ["tutorial", "guide", "walkthrough", "getting started"]
-        ):
+        if any(keyword in header_lower for keyword in ["tutorial", "guide", "walkthrough", "getting started"]):
             return "tutorial"
 
         # Check for reference material
-        if any(
-            keyword in header_lower
-            for keyword in ["reference", "api", "options", "parameters"]
-        ):
+        if any(keyword in header_lower for keyword in ["reference", "api", "options", "parameters"]):
             return "reference"
 
         # Check for troubleshooting
-        if any(
-            keyword in header_lower
-            for keyword in ["troubleshoot", "debug", "error", "problem"]
-        ):
+        if any(keyword in header_lower for keyword in ["troubleshoot", "debug", "error", "problem"]):
             return "troubleshooting"
 
         # Default based on section
@@ -403,9 +373,7 @@ class KcliDocumentationIntegrator:
             print(f"  Processing {section}...")
 
             if doc_data["type"] == "markdown":
-                chunks = self.parse_markdown_content(
-                    doc_data["content"], section, doc_data["relative_path"]
-                )
+                chunks = self.parse_markdown_content(doc_data["content"], section, doc_data["relative_path"])
             else:
                 # Handle other file types if needed
                 print(f"    Skipping non-markdown file: {doc_data['type']}")

@@ -58,19 +58,13 @@ def print_validation_summary(results: Dict[str, Any]):
     print("\n🔄 STAGE RESULTS")
     for stage_name, stage_data in results["stages"].items():
         stage_icon = "✅" if stage_data["passed"] else "❌"
-        print(
-            f"   {stage_icon} {stage_name.replace('_', ' ').title()}: {stage_data['test_count']} tests"
-        )
+        print(f"   {stage_icon} {stage_name.replace('_', ' ').title()}: {stage_data['test_count']} tests")
 
         # Show failed tests
-        failed_tests = [
-            t for t in stage_data["tests"] if t["status"] in ["failed", "error"]
-        ]
+        failed_tests = [t for t in stage_data["tests"] if t["status"] in ["failed", "error"]]
         if failed_tests:
             for test in failed_tests:
-                print(
-                    f"      ❌ {test['test_id']}: {test.get('error', 'Unknown error')}"
-                )
+                print(f"      ❌ {test['test_id']}: {test.get('error', 'Unknown error')}")
 
 
 def print_test_details(results: Dict[str, Any]):
@@ -126,9 +120,7 @@ async def validate_command(args):
         release_date=datetime.now().strftime("%Y-%m-%d"),
     )
 
-    print(
-        f"🧪 Starting validation: {args.component} {args.current_version} → {args.target_version}"
-    )
+    print(f"🧪 Starting validation: {args.component} {args.current_version} → {args.target_version}")
 
     try:
         # Create validation suite
@@ -222,9 +214,7 @@ async def batch_command(args):
             for component, result in results["update_results"].items():
                 status_icon = "✅" if result["overall_result"] == "passed" else "❌"
                 print(f"   {status_icon} {component}: {result['overall_result']}")
-                print(
-                    f"      Tests: {result['summary']['total_tests']} total, {result['summary']['passed']} passed"
-                )
+                print(f"      Tests: {result['summary']['total_tests']} total, {result['summary']['passed']} passed")
 
         # Save results if requested
         if args.output:
@@ -331,9 +321,7 @@ Examples:
         help="Base container image (default: quay.io/centos/centos:stream10)",
     )
 
-    parser.add_argument(
-        "--parallel", type=int, default=3, help="Maximum parallel tests (default: 3)"
-    )
+    parser.add_argument("--parallel", type=int, default=3, help="Maximum parallel tests (default: 3)")
 
     parser.add_argument(
         "--timeout",
@@ -352,16 +340,10 @@ Examples:
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # Validate command
-    validate_parser = subparsers.add_parser(
-        "validate", help="Validate component update"
-    )
+    validate_parser = subparsers.add_parser("validate", help="Validate component update")
     validate_parser.add_argument("component", help="Component name")
-    validate_parser.add_argument(
-        "--current-version", required=True, help="Current version"
-    )
-    validate_parser.add_argument(
-        "--target-version", required=True, help="Target version"
-    )
+    validate_parser.add_argument("--current-version", required=True, help="Current version")
+    validate_parser.add_argument("--target-version", required=True, help="Target version")
     validate_parser.add_argument(
         "--component-type",
         choices=["os_package", "software", "collection"],
@@ -374,9 +356,7 @@ Examples:
         default="summary",
         help="Output format (default: summary)",
     )
-    validate_parser.add_argument(
-        "--detailed", action="store_true", help="Show detailed test results"
-    )
+    validate_parser.add_argument("--detailed", action="store_true", help="Show detailed test results")
     validate_parser.add_argument("--output", help="Save results to file")
 
     # Batch command
@@ -396,12 +376,10 @@ Examples:
     batch_parser.add_argument("--output", help="Save results to file")
 
     # List command
-    list_parser = subparsers.add_parser(
-        "list", help="List available tests and environments"
-    )
+    subparsers.add_parser("list", help="List available tests and environments")
 
     # Cleanup command
-    cleanup_parser = subparsers.add_parser("cleanup", help="Cleanup test environments")
+    subparsers.add_parser("cleanup", help="Cleanup test environments")
 
     args = parser.parse_args()
 

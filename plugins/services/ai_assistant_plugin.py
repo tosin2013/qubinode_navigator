@@ -38,9 +38,7 @@ class AIAssistantPlugin(QubiNodePlugin):
         # Initialize configuration attributes immediately
         self.ai_service_url = self.config.get("ai_service_url", "http://localhost:8080")
         self.container_name = self.config.get("container_name", "qubinode-ai-assistant")
-        self.ai_assistant_path = self.config.get(
-            "ai_assistant_path", "/root/qubinode_navigator/ai-assistant"
-        )
+        self.ai_assistant_path = self.config.get("ai_assistant_path", "/root/qubinode_navigator/ai-assistant")
         self.auto_start = self.config.get("auto_start", True)
         self.health_check_timeout = self.config.get("health_check_timeout", 60)
         self.enable_diagnostics = self.config.get("enable_diagnostics", True)
@@ -48,9 +46,7 @@ class AIAssistantPlugin(QubiNodePlugin):
 
         # Version configuration
         self.container_version = self.config.get("container_version", "latest")
-        self.version_strategy = self.config.get(
-            "version_strategy", "auto"
-        )  # auto, latest, specific, semver
+        self.version_strategy = self.config.get("version_strategy", "auto")  # auto, latest, specific, semver
 
         # Image configuration for different deployment modes (must be set before determining container image)
         self.image_config = {
@@ -71,9 +67,7 @@ class AIAssistantPlugin(QubiNodePlugin):
         }
 
         # Deployment strategy configuration
-        self.deployment_mode = self.config.get(
-            "deployment_mode", "auto"
-        )  # auto, development, production
+        self.deployment_mode = self.config.get("deployment_mode", "auto")  # auto, development, production
         self.container_image = self._determine_container_image()
 
         # AI Assistant capabilities
@@ -102,9 +96,7 @@ class AIAssistantPlugin(QubiNodePlugin):
             return f"{config['registry']}/{config['image']}:{config['tag']}"
         else:
             # Fallback to development mode
-            self.logger.warning(
-                f"Unknown deployment mode '{self.deployment_mode}', falling back to development"
-            )
+            self.logger.warning(f"Unknown deployment mode '{self.deployment_mode}', falling back to development")
             self.deployment_mode = "development"
             config = self.image_config["development"]
             return f"{config['registry']}/{config['image']}:{config['tag']}"
@@ -135,11 +127,7 @@ class AIAssistantPlugin(QubiNodePlugin):
             return "latest"
         elif self.version_strategy == "specific":
             # Use configured version or fall back to latest
-            return (
-                self.container_version
-                if self.container_version != "latest"
-                else "latest"
-            )
+            return self.container_version if self.container_version != "latest" else "latest"
         elif self.version_strategy == "semver":
             # Use semantic versioning - prefer stable releases
             return self._get_latest_stable_version()
@@ -182,9 +170,7 @@ class AIAssistantPlugin(QubiNodePlugin):
             return "production"
 
         # Check if local development files exist
-        if os.path.exists(self.ai_assistant_path) and os.path.exists(
-            os.path.join(self.ai_assistant_path, "Dockerfile")
-        ):
+        if os.path.exists(self.ai_assistant_path) and os.path.exists(os.path.join(self.ai_assistant_path, "Dockerfile")):
             return "development"
 
         # Default to production for safety
@@ -192,9 +178,7 @@ class AIAssistantPlugin(QubiNodePlugin):
 
     def _initialize_plugin(self) -> None:
         """Initialize AI Assistant plugin resources"""
-        self.logger.info(
-            f"Initializing AI Assistant plugin in {self.deployment_mode} mode"
-        )
+        self.logger.info(f"Initializing AI Assistant plugin in {self.deployment_mode} mode")
         self.logger.info(f"Using container image: {self.container_image}")
 
     def check_state(self) -> SystemState:
@@ -217,9 +201,7 @@ class AIAssistantPlugin(QubiNodePlugin):
         state_data["diagnostic_tools_available"] = self._diagnostic_tools_available()
 
         # Check AI assistant directory
-        state_data["ai_assistant_directory_exists"] = os.path.exists(
-            self.ai_assistant_path
-        )
+        state_data["ai_assistant_directory_exists"] = os.path.exists(self.ai_assistant_path)
 
         return SystemState(state_data)
 
@@ -249,9 +231,7 @@ class AIAssistantPlugin(QubiNodePlugin):
         try:
             # Ensure AI assistant directory exists
             if not current_state.get("ai_assistant_directory_exists"):
-                self.logger.error(
-                    f"AI Assistant directory not found: {self.ai_assistant_path}"
-                )
+                self.logger.error(f"AI Assistant directory not found: {self.ai_assistant_path}")
                 return PluginResult(
                     changed=False,
                     message=f"AI Assistant directory not found: {self.ai_assistant_path}",
@@ -260,13 +240,8 @@ class AIAssistantPlugin(QubiNodePlugin):
 
             # Build or pull container if it doesn't exist
             if not current_state.get("container_exists"):
-                if (
-                    self.deployment_mode == "development"
-                    and self.image_config[self.deployment_mode]["build_required"]
-                ):
-                    self.logger.info(
-                        "Building AI Assistant container for development..."
-                    )
+                if self.deployment_mode == "development" and self.image_config[self.deployment_mode]["build_required"]:
+                    self.logger.info("Building AI Assistant container for development...")
                     if self._build_container():
                         changes_made.append("Built AI Assistant container")
                     else:
@@ -276,9 +251,7 @@ class AIAssistantPlugin(QubiNodePlugin):
                             status=PluginStatus.FAILED,
                         )
                 else:
-                    self.logger.info(
-                        f"Pulling AI Assistant container from {self.container_image}..."
-                    )
+                    self.logger.info(f"Pulling AI Assistant container from {self.container_image}...")
                     if self._pull_container():
                         changes_made.append("Pulled AI Assistant container")
                     else:
@@ -316,14 +289,10 @@ class AIAssistantPlugin(QubiNodePlugin):
                 if self._setup_rag_system():
                     changes_made.append("Configured RAG system")
                 else:
-                    self.logger.warning(
-                        "RAG system setup failed, continuing without RAG"
-                    )
+                    self.logger.warning("RAG system setup failed, continuing without RAG")
 
             # Verify diagnostic tools if enabled
-            if self.enable_diagnostics and not current_state.get(
-                "diagnostic_tools_available"
-            ):
+            if self.enable_diagnostics and not current_state.get("diagnostic_tools_available"):
                 if self._verify_diagnostic_tools():
                     changes_made.append("Verified diagnostic tools")
                 else:
@@ -385,9 +354,7 @@ class AIAssistantPlugin(QubiNodePlugin):
                 # Runtime not available, try next one
                 continue
             except Exception as e:
-                self.logger.debug(
-                    f"Failed to check container existence with {runtime}: {e}"
-                )
+                self.logger.debug(f"Failed to check container existence with {runtime}: {e}")
                 continue
 
         # Neither docker nor podman worked
@@ -422,15 +389,11 @@ class AIAssistantPlugin(QubiNodePlugin):
                 # Runtime not available, try next one
                 continue
             except Exception as e:
-                self.logger.debug(
-                    f"Failed to check container status with {runtime}: {e}"
-                )
+                self.logger.debug(f"Failed to check container status with {runtime}: {e}")
                 continue
 
         # Neither docker nor podman worked
-        self.logger.error(
-            "Neither docker nor podman available for container status checks"
-        )
+        self.logger.error("Neither docker nor podman available for container status checks")
         return False
 
     def _ai_service_healthy(self) -> bool:
@@ -450,12 +413,9 @@ class AIAssistantPlugin(QubiNodePlugin):
                             ai_service = detail.get("ai_service", {})
                             warnings = ai_service.get("warnings", [])
                             # Accept degraded status if only RAG documents not loaded
-                            if (
-                                len(warnings) == 1
-                                and "RAG documents not loaded" in warnings[0]
-                            ):
+                            if len(warnings) == 1 and "RAG documents not loaded" in warnings[0]:
                                 return True
-                except:
+                except Exception:
                     pass
             return False
         except Exception as e:
@@ -479,9 +439,7 @@ class AIAssistantPlugin(QubiNodePlugin):
     def _diagnostic_tools_available(self) -> bool:
         """Check if diagnostic tools are available"""
         try:
-            response = requests.get(
-                f"{self.ai_service_url}/diagnostics/tools", timeout=5
-            )
+            response = requests.get(f"{self.ai_service_url}/diagnostics/tools", timeout=5)
             if response.status_code == 200:
                 tools_data = response.json()
                 return tools_data.get("total_tools", 0) > 0
@@ -497,16 +455,12 @@ class AIAssistantPlugin(QubiNodePlugin):
 
             # Ensure we're in development mode
             if self.deployment_mode != "development":
-                self.logger.error(
-                    "Container building is only supported in development mode"
-                )
+                self.logger.error("Container building is only supported in development mode")
                 return False
 
             # Check if AI assistant directory exists
             if not os.path.exists(self.ai_assistant_path):
-                self.logger.error(
-                    f"AI Assistant directory not found: {self.ai_assistant_path}"
-                )
+                self.logger.error(f"AI Assistant directory not found: {self.ai_assistant_path}")
                 return False
 
             # Change to AI assistant directory
@@ -551,14 +505,10 @@ class AIAssistantPlugin(QubiNodePlugin):
                     )
 
                     if result.returncode == 0:
-                        self.logger.info(
-                            f"Container pulled successfully using {runtime}"
-                        )
+                        self.logger.info(f"Container pulled successfully using {runtime}")
                         return True
                     else:
-                        self.logger.debug(
-                            f"Failed to pull with {runtime}: {result.stderr}"
-                        )
+                        self.logger.debug(f"Failed to pull with {runtime}: {result.stderr}")
                         continue
 
                 except FileNotFoundError:
@@ -579,14 +529,10 @@ class AIAssistantPlugin(QubiNodePlugin):
         """Start AI Assistant container"""
         try:
             # Stop existing container if running
-            subprocess.run(
-                ["podman", "stop", self.container_name], capture_output=True, timeout=30
-            )
+            subprocess.run(["podman", "stop", self.container_name], capture_output=True, timeout=30)
 
             # Remove existing container
-            subprocess.run(
-                ["podman", "rm", self.container_name], capture_output=True, timeout=10
-            )
+            subprocess.run(["podman", "rm", self.container_name], capture_output=True, timeout=10)
 
             # Start new container
             result = subprocess.run(
@@ -641,9 +587,7 @@ class AIAssistantPlugin(QubiNodePlugin):
                     self.logger.info("RAG documents copied to container")
                     return True
                 else:
-                    self.logger.warning(
-                        f"Failed to copy RAG documents: {result.stderr}"
-                    )
+                    self.logger.warning(f"Failed to copy RAG documents: {result.stderr}")
             else:
                 self.logger.warning(f"RAG documents not found at {rag_docs_path}")
             return False
@@ -764,12 +708,9 @@ class AIAssistantPlugin(QubiNodePlugin):
                             ai_service = detail.get("ai_service", {})
                             warnings = ai_service.get("warnings", [])
                             # Accept degraded status if only RAG documents not loaded
-                            if (
-                                len(warnings) == 1
-                                and "RAG documents not loaded" in warnings[0]
-                            ):
+                            if len(warnings) == 1 and "RAG documents not loaded" in warnings[0]:
                                 return True
-                except:
+                except Exception:
                     pass
 
             return False
@@ -856,9 +797,7 @@ class AIAssistantPlugin(QubiNodePlugin):
             Dict containing available tools
         """
         try:
-            response = requests.get(
-                f"{self.ai_service_url}/diagnostics/tools", timeout=10
-            )
+            response = requests.get(f"{self.ai_service_url}/diagnostics/tools", timeout=10)
 
             if response.status_code == 200:
                 return response.json()

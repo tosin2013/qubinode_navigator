@@ -190,12 +190,8 @@ class TestRollbackManager:
         )
 
         # Mock successful execution
-        with mock.patch.object(
-            self.rollback_manager, "_execute_rollback_action", return_value=True
-        ):
-            with mock.patch.object(
-                self.rollback_manager, "_validate_rollback_success", return_value=True
-            ):
+        with mock.patch.object(self.rollback_manager, "_execute_rollback_action", return_value=True):
+            with mock.patch.object(self.rollback_manager, "_validate_rollback_success", return_value=True):
                 success = await self.rollback_manager.execute_rollback(rollback_plan)
 
         assert success is True
@@ -216,9 +212,7 @@ class TestRollbackManager:
         )
 
         # Mock failed execution
-        with mock.patch.object(
-            self.rollback_manager, "_execute_rollback_action", return_value=False
-        ):
+        with mock.patch.object(self.rollback_manager, "_execute_rollback_action", return_value=False):
             success = await self.rollback_manager.execute_rollback(rollback_plan)
 
         assert success is False
@@ -258,9 +252,7 @@ class TestRollbackManager:
     async def test_monitor_pipeline_health(self):
         """Test pipeline health monitoring"""
         # Test no triggers detected
-        with mock.patch.object(
-            self.rollback_manager, "_check_deployment_failure", return_value=False
-        ):
+        with mock.patch.object(self.rollback_manager, "_check_deployment_failure", return_value=False):
             with mock.patch.object(
                 self.rollback_manager,
                 "_check_critical_system_failure",
@@ -271,29 +263,19 @@ class TestRollbackManager:
                     "_check_service_availability",
                     return_value=False,
                 ):
-                    with mock.patch.object(
-                        self.rollback_manager, "_check_error_rates", return_value=False
-                    ):
+                    with mock.patch.object(self.rollback_manager, "_check_error_rates", return_value=False):
                         with mock.patch.object(
                             self.rollback_manager,
                             "_check_performance_degradation",
                             return_value=False,
                         ):
-                            trigger = (
-                                await self.rollback_manager.monitor_pipeline_health(
-                                    self.test_pipeline
-                                )
-                            )
+                            trigger = await self.rollback_manager.monitor_pipeline_health(self.test_pipeline)
 
         assert trigger is None
 
         # Test deployment failure trigger
-        with mock.patch.object(
-            self.rollback_manager, "_check_deployment_failure", return_value=True
-        ):
-            trigger = await self.rollback_manager.monitor_pipeline_health(
-                self.test_pipeline
-            )
+        with mock.patch.object(self.rollback_manager, "_check_deployment_failure", return_value=True):
+            trigger = await self.rollback_manager.monitor_pipeline_health(self.test_pipeline)
 
         assert trigger == RollbackTrigger.DEPLOYMENT_FAILURE
 
@@ -314,17 +296,13 @@ class TestRollbackManager:
 
         self.test_pipeline.phases.append(failed_phase)
 
-        result = await self.rollback_manager._check_deployment_failure(
-            self.test_pipeline
-        )
+        result = await self.rollback_manager._check_deployment_failure(self.test_pipeline)
         assert result is True
 
         # Remove failed phase
         self.test_pipeline.phases.remove(failed_phase)
 
-        result = await self.rollback_manager._check_deployment_failure(
-            self.test_pipeline
-        )
+        result = await self.rollback_manager._check_deployment_failure(self.test_pipeline)
         assert result is False
 
     async def test_trigger_manual_rollback(self):
@@ -366,9 +344,7 @@ class TestRollbackManager:
                     "_check_performance_metrics",
                     return_value={"status": "passed"},
                 ):
-                    success = await self.rollback_manager._validate_rollback_success(
-                        rollback_plan
-                    )
+                    success = await self.rollback_manager._validate_rollback_success(rollback_plan)
 
         assert success is True
         assert "system_health" in rollback_plan.validation_results
@@ -500,9 +476,7 @@ class TestRollbackManager:
         assert stats["completed"] == 1
         assert stats["failed"] == 1
         assert stats["success_rate"] == 50.0
-        assert (
-            stats["average_duration_minutes"] == 30.0
-        )  # Only completed rollback counted
+        assert stats["average_duration_minutes"] == 30.0  # Only completed rollback counted
         assert stats["trigger_breakdown"]["deployment_failure"] == 1
         assert stats["trigger_breakdown"]["error_rate_high"] == 1
         assert stats["active_rollbacks"] == 0
@@ -561,12 +535,8 @@ class TestPipelineExecutorRollbackIntegration:
 
     async def test_trigger_manual_rollback(self):
         """Test manual rollback trigger through executor"""
-        with mock.patch.object(
-            self.executor.rollback_manager, "trigger_manual_rollback"
-        ) as mock_trigger:
-            with mock.patch.object(
-                self.executor.rollback_manager, "execute_rollback", return_value=True
-            ):
+        with mock.patch.object(self.executor.rollback_manager, "trigger_manual_rollback") as mock_trigger:
+            with mock.patch.object(self.executor.rollback_manager, "execute_rollback", return_value=True):
                 mock_trigger.return_value = mock.MagicMock()
 
                 success = await self.executor.trigger_manual_rollback(
@@ -584,17 +554,11 @@ class TestPipelineExecutorRollbackIntegration:
 
     async def test_handle_pipeline_failure_with_rollback(self):
         """Test pipeline failure handling with rollback"""
-        with mock.patch.object(
-            self.executor.rollback_manager, "create_rollback_plan"
-        ) as mock_create:
-            with mock.patch.object(
-                self.executor.rollback_manager, "execute_rollback", return_value=True
-            ):
+        with mock.patch.object(self.executor.rollback_manager, "create_rollback_plan") as mock_create:
+            with mock.patch.object(self.executor.rollback_manager, "execute_rollback", return_value=True):
                 mock_create.return_value = mock.MagicMock()
 
-                success = await self.executor._handle_pipeline_failure(
-                    self.test_pipeline, "Deployment failed"
-                )
+                success = await self.executor._handle_pipeline_failure(self.test_pipeline, "Deployment failed")
 
         assert success is True
         mock_create.assert_called_once()
@@ -610,25 +574,15 @@ class TestRollbackTriggers:
 
     def test_rollback_trigger_values(self):
         """Test rollback trigger enum values"""
-        assert (
-            RollbackTrigger.CRITICAL_SYSTEM_FAILURE.value == "critical_system_failure"
-        )
-        assert (
-            RollbackTrigger.SECURITY_BREACH_DETECTED.value == "security_breach_detected"
-        )
+        assert RollbackTrigger.CRITICAL_SYSTEM_FAILURE.value == "critical_system_failure"
+        assert RollbackTrigger.SECURITY_BREACH_DETECTED.value == "security_breach_detected"
         assert RollbackTrigger.DATA_CORRUPTION.value == "data_corruption"
         assert RollbackTrigger.SERVICE_UNAVAILABLE.value == "service_unavailable"
-        assert (
-            RollbackTrigger.PERFORMANCE_DEGRADATION_SEVERE.value
-            == "performance_degradation_severe"
-        )
+        assert RollbackTrigger.PERFORMANCE_DEGRADATION_SEVERE.value == "performance_degradation_severe"
         assert RollbackTrigger.ERROR_RATE_HIGH.value == "error_rate_high"
         assert RollbackTrigger.DEPLOYMENT_FAILURE.value == "deployment_failure"
         assert RollbackTrigger.VALIDATION_FAILURE.value == "validation_failure"
-        assert (
-            RollbackTrigger.MANUAL_ROLLBACK_REQUESTED.value
-            == "manual_rollback_requested"
-        )
+        assert RollbackTrigger.MANUAL_ROLLBACK_REQUESTED.value == "manual_rollback_requested"
         assert RollbackTrigger.TIMEOUT_EXCEEDED.value == "timeout_exceeded"
 
 

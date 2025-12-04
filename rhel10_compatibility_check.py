@@ -120,9 +120,7 @@ class RHEL10CompatibilityChecker:
         print("-" * 25)
 
         try:
-            result = subprocess.run(
-                ["python3", "--version"], capture_output=True, text=True, check=True
-            )
+            result = subprocess.run(["python3", "--version"], capture_output=True, text=True, check=True)
             version_str = result.stdout.strip()
             print(f"Current Python: {version_str}")
 

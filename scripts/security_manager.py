@@ -51,9 +51,7 @@ Examples:
 
     # Status command
     status_parser = subparsers.add_parser("status", help="Show security status")
-    status_parser.add_argument(
-        "--format", choices=["summary", "json"], default="summary", help="Output format"
-    )
+    status_parser.add_argument("--format", choices=["summary", "json"], default="summary", help="Output format")
 
     # Scan command
     scan_parser = subparsers.add_parser("scan", help="Scan for vulnerabilities")
@@ -62,9 +60,7 @@ Examples:
         action="append",
         help="Paths to scan (can be specified multiple times)",
     )
-    scan_parser.add_argument(
-        "--format", choices=["table", "json"], default="table", help="Output format"
-    )
+    scan_parser.add_argument("--format", choices=["table", "json"], default="table", help="Output format")
 
     # Token command
     token_parser = subparsers.add_parser("token", help="Manage access tokens")
@@ -85,37 +81,25 @@ Examples:
     token_parser.add_argument("--token", help="Token to validate or revoke")
 
     # Vulnerabilities command
-    vuln_parser = subparsers.add_parser(
-        "vulnerabilities", help="View vulnerability report"
-    )
+    vuln_parser = subparsers.add_parser("vulnerabilities", help="View vulnerability report")
     vuln_parser.add_argument(
         "--severity",
         choices=["low", "medium", "high", "critical"],
         help="Filter by severity",
     )
-    vuln_parser.add_argument(
-        "--format", choices=["table", "json"], default="table", help="Output format"
-    )
-    vuln_parser.add_argument(
-        "--resolved", action="store_true", help="Include resolved vulnerabilities"
-    )
+    vuln_parser.add_argument("--format", choices=["table", "json"], default="table", help="Output format")
+    vuln_parser.add_argument("--resolved", action="store_true", help="Include resolved vulnerabilities")
 
     # Resolve command
     resolve_parser = subparsers.add_parser("resolve", help="Resolve vulnerability")
-    resolve_parser.add_argument(
-        "--vulnerability-id", required=True, help="Vulnerability ID to resolve"
-    )
+    resolve_parser.add_argument("--vulnerability-id", required=True, help="Vulnerability ID to resolve")
     resolve_parser.add_argument("--notes", help="Resolution notes")
 
     # Audit command
     audit_parser = subparsers.add_parser("audit", help="View audit logs")
-    audit_parser.add_argument(
-        "--hours", type=int, default=24, help="Hours of logs to show"
-    )
+    audit_parser.add_argument("--hours", type=int, default=24, help="Hours of logs to show")
     audit_parser.add_argument("--event-type", help="Filter by event type")
-    audit_parser.add_argument(
-        "--format", choices=["table", "json"], default="table", help="Output format"
-    )
+    audit_parser.add_argument("--format", choices=["table", "json"], default="table", help="Output format")
 
     # Encrypt command
     encrypt_parser = subparsers.add_parser("encrypt", help="Encrypt sensitive data")
@@ -186,9 +170,7 @@ async def handle_status_command(security_manager: SecurityManager, args):
         else:
             print("=== Security Manager Status ===")
             print(f"Security Level: {summary['security_level'].title()}")
-            print(
-                f"Vault Integration: {'Enabled' if summary['vault_integration'] else 'Disabled'}"
-            )
+            print(f"Vault Integration: {'Enabled' if summary['vault_integration'] else 'Disabled'}")
 
             print("\n=== Vulnerabilities ===")
             vulns = summary["vulnerabilities"]
@@ -214,17 +196,13 @@ async def handle_status_command(security_manager: SecurityManager, args):
 
             print("\n=== Audit Logging ===")
             audit = summary["audit"]
-            print(
-                f"Audit Logging: {'Enabled' if audit['audit_logging_enabled'] else 'Disabled'}"
-            )
+            print(f"Audit Logging: {'Enabled' if audit['audit_logging_enabled'] else 'Disabled'}")
             print(f"Total Events: {audit['total_events']}")
             print(f"Recent Events (24h): {audit['recent_events_24h']}")
 
             print("\n=== Encryption ===")
             encryption = summary["encryption"]
-            print(
-                f"Encryption: {'Enabled' if encryption['encryption_enabled'] else 'Disabled'}"
-            )
+            print(f"Encryption: {'Enabled' if encryption['encryption_enabled'] else 'Disabled'}")
 
     except Exception as e:
         print(f"Error getting security status: {e}", file=sys.stderr)
@@ -260,9 +238,7 @@ async def handle_scan_command(security_manager: SecurityManager, args):
                 print("✓ No new vulnerabilities found")
                 return
 
-            print(
-                f"\n=== Vulnerability Scan Results ({len(vulnerabilities)} found) ==="
-            )
+            print(f"\n=== Vulnerability Scan Results ({len(vulnerabilities)} found) ===")
             print(f"{'Severity':<10} {'Type':<20} {'Title':<40} {'Components':<20}")
             print("-" * 95)
 
@@ -277,14 +253,10 @@ async def handle_scan_command(security_manager: SecurityManager, args):
                 if len(vuln.affected_components) > 2:
                     components += f" (+{len(vuln.affected_components) - 2})"
 
-                print(
-                    f"{severity_symbol} {vuln.severity.value:<9} {vuln.vulnerability_type.value:<20} {vuln.title[:39]:<40} {components[:19]:<20}"
-                )
+                print(f"{severity_symbol} {vuln.severity.value:<9} {vuln.vulnerability_type.value:<20} {vuln.title[:39]:<40} {components[:19]:<20}")
 
             # Show details for critical/high vulnerabilities
-            critical_high = [
-                v for v in vulnerabilities if v.severity.value in ["critical", "high"]
-            ]
+            critical_high = [v for v in vulnerabilities if v.severity.value in ["critical", "high"]]
             if critical_high:
                 print("\n=== High Priority Vulnerabilities ===")
                 for vuln in critical_high[:3]:  # Show first 3
@@ -308,16 +280,12 @@ async def handle_token_command(security_manager: SecurityManager, args):
             access_level = AccessLevel(args.level)
             permissions = args.permissions or []
 
-            token, jwt_token = security_manager.generate_access_token(
-                user_id=args.user, access_level=access_level, permissions=permissions
-            )
+            token, jwt_token = security_manager.generate_access_token(user_id=args.user, access_level=access_level, permissions=permissions)
 
             print("=== Access Token Generated ===")
             print(f"User ID: {token.user_id}")
             print(f"Access Level: {token.access_level.value}")
-            print(
-                f"Permissions: {', '.join(token.permissions) if token.permissions else 'None'}"
-            )
+            print(f"Permissions: {', '.join(token.permissions) if token.permissions else 'None'}")
             print(f"Expires: {token.expires_at.strftime('%Y-%m-%d %H:%M:%S')}")
             print(f"JWT Token: {jwt_token}")
 
@@ -333,9 +301,7 @@ async def handle_token_command(security_manager: SecurityManager, args):
                 print(f"User ID: {token.user_id}")
                 print(f"Access Level: {token.access_level.value}")
                 print(f"Expires: {token.expires_at.strftime('%Y-%m-%d %H:%M:%S')}")
-                print(
-                    f"Last Used: {token.last_used.strftime('%Y-%m-%d %H:%M:%S') if token.last_used else 'Never'}"
-                )
+                print(f"Last Used: {token.last_used.strftime('%Y-%m-%d %H:%M:%S') if token.last_used else 'Never'}")
             else:
                 print("✗ Token is invalid or expired")
                 sys.exit(1)
@@ -392,28 +358,18 @@ async def handle_vulnerabilities_command(security_manager: SecurityManager, args
                     "remediation_steps": vuln.remediation_steps,
                     "detected_at": vuln.detected_at.isoformat(),
                     "resolved": vuln.resolved,
-                    "resolved_at": vuln.resolved_at.isoformat()
-                    if vuln.resolved_at
-                    else None,
+                    "resolved_at": vuln.resolved_at.isoformat() if vuln.resolved_at else None,
                 }
                 vuln_data.append(vuln_dict)
             print(json.dumps(vuln_data, indent=2))
         else:
             if not vulnerabilities:
-                status = (
-                    "resolved vulnerabilities"
-                    if args.resolved
-                    else "active vulnerabilities"
-                )
+                status = "resolved vulnerabilities" if args.resolved else "active vulnerabilities"
                 print(f"No {status} found")
                 return
 
-            print(
-                f"=== Vulnerability Report ({len(vulnerabilities)} vulnerabilities) ==="
-            )
-            print(
-                f"{'ID':<25} {'Severity':<10} {'Type':<20} {'Status':<10} {'Detected':<12}"
-            )
+            print(f"=== Vulnerability Report ({len(vulnerabilities)} vulnerabilities) ===")
+            print(f"{'ID':<25} {'Severity':<10} {'Type':<20} {'Status':<10} {'Detected':<12}")
             print("-" * 85)
 
             for vuln in vulnerabilities:
@@ -426,9 +382,7 @@ async def handle_vulnerabilities_command(security_manager: SecurityManager, args
                 status = "Resolved" if vuln.resolved else "Active"
                 detected = vuln.detected_at.strftime("%Y-%m-%d")
 
-                print(
-                    f"{vuln.vulnerability_id[:24]:<25} {severity_symbol} {vuln.severity.value:<9} {vuln.vulnerability_type.value:<20} {status:<10} {detected:<12}"
-                )
+                print(f"{vuln.vulnerability_id[:24]:<25} {severity_symbol} {vuln.severity.value:<9} {vuln.vulnerability_type.value:<20} {status:<10} {detected:<12}")
 
     except Exception as e:
         print(f"Error getting vulnerability report: {e}", file=sys.stderr)
@@ -439,9 +393,7 @@ async def handle_resolve_command(security_manager: SecurityManager, args):
     """Handle resolve command"""
 
     try:
-        success = security_manager.resolve_vulnerability(
-            vulnerability_id=args.vulnerability_id, resolution_notes=args.notes
-        )
+        success = security_manager.resolve_vulnerability(vulnerability_id=args.vulnerability_id, resolution_notes=args.notes)
 
         if success:
             print(f"✓ Vulnerability {args.vulnerability_id} marked as resolved")
@@ -458,9 +410,7 @@ async def handle_audit_command(security_manager: SecurityManager, args):
     """Handle audit command"""
 
     try:
-        logs = security_manager.get_audit_logs(
-            hours=args.hours, event_type=args.event_type
-        )
+        logs = security_manager.get_audit_logs(hours=args.hours, event_type=args.event_type)
 
         if args.format == "json":
             log_data = []
@@ -485,21 +435,15 @@ async def handle_audit_command(security_manager: SecurityManager, args):
                 return
 
             print(f"=== Audit Logs (Last {args.hours} hours, {len(logs)} entries) ===")
-            print(
-                f"{'Timestamp':<20} {'Event Type':<20} {'User':<15} {'Action':<20} {'Result':<10}"
-            )
+            print(f"{'Timestamp':<20} {'Event Type':<20} {'User':<15} {'Action':<20} {'Result':<10}")
             print("-" * 90)
 
             for log in logs[:50]:  # Show first 50
                 timestamp = log.timestamp.strftime("%Y-%m-%d %H:%M:%S")
                 user = log.user_id[:14] if log.user_id else "system"
-                result_symbol = {"success": "✓", "failure": "✗", "denied": "⚠"}.get(
-                    log.result, "•"
-                )
+                result_symbol = {"success": "✓", "failure": "✗", "denied": "⚠"}.get(log.result, "•")
 
-                print(
-                    f"{timestamp:<20} {log.event_type:<20} {user:<15} {log.action:<20} {result_symbol} {log.result:<9}"
-                )
+                print(f"{timestamp:<20} {log.event_type:<20} {user:<15} {log.action:<20} {result_symbol} {log.result:<9}")
 
             if len(logs) > 50:
                 print(f"\n... and {len(logs) - 50} more entries")

@@ -57,9 +57,7 @@ class TestRHEL9PluginIntegration(unittest.TestCase):
         """Clean up test fixtures"""
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
-    @patch(
-        "builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"'
-    )
+    @patch("builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"')
     @patch("os.path.exists")
     def test_plugin_initialization_rhel9(self, mock_exists, mock_file):
         """Test plugin initialization on RHEL 9 system"""
@@ -84,9 +82,7 @@ class TestRHEL9PluginIntegration(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             plugin.configure(self.mock_config)
 
-    @patch(
-        "builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"'
-    )
+    @patch("builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"')
     @patch("subprocess.run")
     def test_check_state_packages_installed(self, mock_run, mock_file):
         """Test system state check with packages installed"""
@@ -104,9 +100,7 @@ class TestRHEL9PluginIntegration(unittest.TestCase):
         self.assertIsInstance(state, SystemState)
         self.assertIn("packages_installed", state.data)
 
-    @patch(
-        "builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"'
-    )
+    @patch("builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"')
     @patch("subprocess.run")
     def test_validate_environment_success(self, mock_run, mock_file):
         """Test successful environment validation"""
@@ -122,16 +116,12 @@ class TestRHEL9PluginIntegration(unittest.TestCase):
         self.assertTrue(result.success)
         self.assertEqual(result.status, PluginStatus.SUCCESS)
 
-    @patch(
-        "builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"'
-    )
+    @patch("builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"')
     @patch("subprocess.run")
     def test_validate_environment_failure(self, mock_run, mock_file):
         """Test environment validation failure"""
         # Mock failed command
-        mock_run.return_value = Mock(
-            returncode=1, stdout="", stderr="Package not found"
-        )
+        mock_run.return_value = Mock(returncode=1, stdout="", stderr="Package not found")
 
         plugin = RHEL9Plugin()
         plugin.configure(self.mock_config)
@@ -142,9 +132,7 @@ class TestRHEL9PluginIntegration(unittest.TestCase):
         self.assertFalse(result.success)
         self.assertEqual(result.status, PluginStatus.FAILED)
 
-    @patch(
-        "builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"'
-    )
+    @patch("builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"')
     @patch("subprocess.run")
     def test_execute_dry_run(self, mock_run, mock_file):
         """Test plugin execution in dry run mode"""
@@ -154,9 +142,7 @@ class TestRHEL9PluginIntegration(unittest.TestCase):
         plugin.configure(self.mock_config)
 
         # Use dry run context
-        dry_run_context = ExecutionContext(
-            inventory="localhost", config=self.mock_config, dry_run=True
-        )
+        dry_run_context = ExecutionContext(inventory="localhost", config=self.mock_config, dry_run=True)
 
         result = plugin.execute(dry_run_context)
 
@@ -165,9 +151,7 @@ class TestRHEL9PluginIntegration(unittest.TestCase):
         self.assertEqual(result.status, PluginStatus.SUCCESS)
         self.assertIn("dry run", result.message.lower())
 
-    @patch(
-        "builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"'
-    )
+    @patch("builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"')
     @patch("subprocess.run")
     def test_execute_actual_run(self, mock_run, mock_file):
         """Test plugin execution in actual run mode"""
@@ -178,9 +162,7 @@ class TestRHEL9PluginIntegration(unittest.TestCase):
         plugin.configure(self.mock_config)
 
         # Use actual run context
-        actual_context = ExecutionContext(
-            inventory="localhost", config=self.mock_config, dry_run=False
-        )
+        actual_context = ExecutionContext(inventory="localhost", config=self.mock_config, dry_run=False)
 
         result = plugin.execute(actual_context)
 
@@ -188,9 +170,7 @@ class TestRHEL9PluginIntegration(unittest.TestCase):
         self.assertTrue(result.success)
         self.assertEqual(result.status, PluginStatus.SUCCESS)
 
-    @patch(
-        "builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"'
-    )
+    @patch("builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"')
     @patch("subprocess.run")
     def test_idempotent_behavior(self, mock_run, mock_file):
         """Test idempotent behavior - running twice should be safe"""
@@ -217,16 +197,12 @@ class TestRHEL9PluginIntegration(unittest.TestCase):
         self.assertTrue(result2.success)
         self.assertEqual(result2.status, PluginStatus.SUCCESS)
 
-    @patch(
-        "builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"'
-    )
+    @patch("builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"')
     @patch("subprocess.run")
     def test_package_installation_failure(self, mock_run, mock_file):
         """Test handling of package installation failure"""
         # Mock failed package installation
-        mock_run.return_value = Mock(
-            returncode=1, stdout="", stderr="No package nonexistent-package available"
-        )
+        mock_run.return_value = Mock(returncode=1, stdout="", stderr="No package nonexistent-package available")
 
         plugin = RHEL9Plugin()
         plugin.configure(self.mock_config)
@@ -238,9 +214,7 @@ class TestRHEL9PluginIntegration(unittest.TestCase):
         self.assertEqual(result.status, PluginStatus.FAILED)
         self.assertIn("package", result.message.lower())
 
-    @patch(
-        "builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"'
-    )
+    @patch("builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"')
     @patch("subprocess.run")
     def test_service_management(self, mock_run, mock_file):
         """Test service management functionality"""
@@ -261,9 +235,7 @@ class TestRHEL9PluginIntegration(unittest.TestCase):
         # Verify systemctl commands were called
         self.assertGreater(mock_run.call_count, 0)
 
-    @patch(
-        "builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"'
-    )
+    @patch("builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"')
     @patch("subprocess.run")
     def test_repository_management(self, mock_run, mock_file):
         """Test repository management functionality"""
@@ -280,9 +252,7 @@ class TestRHEL9PluginIntegration(unittest.TestCase):
 
         self.assertTrue(result.success)
 
-    @patch(
-        "builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"'
-    )
+    @patch("builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"')
     @patch("subprocess.run")
     def test_python_package_installation(self, mock_run, mock_file):
         """Test Python package installation via pip"""
@@ -299,9 +269,7 @@ class TestRHEL9PluginIntegration(unittest.TestCase):
 
         self.assertTrue(result.success)
 
-    @patch(
-        "builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"'
-    )
+    @patch("builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"')
     @patch("subprocess.run")
     def test_cleanup_functionality(self, mock_run, mock_file):
         """Test cleanup functionality"""
@@ -316,9 +284,7 @@ class TestRHEL9PluginIntegration(unittest.TestCase):
         self.assertIsInstance(result, PluginResult)
         self.assertTrue(result.success)
 
-    @patch(
-        "builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"'
-    )
+    @patch("builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"')
     def test_configuration_validation(self, mock_file):
         """Test configuration validation"""
         plugin = RHEL9Plugin()
@@ -342,17 +308,13 @@ class TestRHEL9PluginIntegration(unittest.TestCase):
         with self.assertRaises((TypeError, ValueError)):
             plugin.configure(invalid_config)
 
-    @patch(
-        "builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"'
-    )
+    @patch("builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"')
     @patch("subprocess.run")
     def test_error_handling_and_recovery(self, mock_run, mock_file):
         """Test error handling and recovery mechanisms"""
         # Simulate transient failure followed by success
         mock_run.side_effect = [
-            Mock(
-                returncode=1, stdout="", stderr="Temporary failure"
-            ),  # First attempt fails
+            Mock(returncode=1, stdout="", stderr="Temporary failure"),  # First attempt fails
             Mock(returncode=0, stdout="Success", stderr=""),  # Retry succeeds
         ]
 
@@ -364,9 +326,7 @@ class TestRHEL9PluginIntegration(unittest.TestCase):
         # Plugin should handle the error gracefully
         self.assertIsInstance(result, PluginResult)
 
-    @patch(
-        "builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"'
-    )
+    @patch("builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"')
     @patch("subprocess.run")
     def test_logging_and_monitoring(self, mock_run, mock_file):
         """Test logging and monitoring functionality"""
@@ -377,7 +337,7 @@ class TestRHEL9PluginIntegration(unittest.TestCase):
 
         with patch.object(plugin.logger, "info") as mock_log_info:
             with patch.object(plugin.logger, "error") as mock_log_error:
-                result = plugin.execute(self.context)
+                plugin.execute(self.context)
 
                 # Verify logging occurred
                 self.assertGreater(mock_log_info.call_count, 0)
@@ -385,9 +345,7 @@ class TestRHEL9PluginIntegration(unittest.TestCase):
                 # No errors should be logged for successful execution
                 self.assertEqual(mock_log_error.call_count, 0)
 
-    @patch(
-        "builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"'
-    )
+    @patch("builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"')
     def test_plugin_metadata(self, mock_file):
         """Test plugin metadata and information"""
         plugin = RHEL9Plugin()
@@ -399,9 +357,7 @@ class TestRHEL9PluginIntegration(unittest.TestCase):
         self.assertIsInstance(plugin.dependencies, list)
         self.assertIsInstance(plugin.description, str)
 
-    @patch(
-        "builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"'
-    )
+    @patch("builtins.open", new_callable=mock_open, read_data='ID="rhel"\nVERSION_ID="9.2"')
     @patch("subprocess.run")
     def test_integration_with_event_system(self, mock_run, mock_file):
         """Test integration with the event system"""
@@ -425,8 +381,7 @@ class TestRHEL9PluginSystemIntegration(unittest.TestCase):
     """System-level integration tests for RHEL9Plugin"""
 
     @unittest.skipUnless(
-        os.path.exists("/etc/os-release")
-        and "rhel" in open("/etc/os-release").read().lower(),
+        os.path.exists("/etc/os-release") and "rhel" in open("/etc/os-release").read().lower(),
         "RHEL system required for system integration tests",
     )
     def test_real_system_validation(self):
@@ -443,9 +398,7 @@ class TestRHEL9PluginSystemIntegration(unittest.TestCase):
         plugin.configure(minimal_config)
 
         # Test validation only (no actual changes)
-        context = ExecutionContext(
-            inventory="localhost", config=minimal_config, dry_run=True
-        )
+        context = ExecutionContext(inventory="localhost", config=minimal_config, dry_run=True)
 
         result = plugin.validate_environment(context)
         self.assertIsInstance(result, PluginResult)

@@ -406,15 +406,7 @@ update_summary = BashOperator(
 # ============================================================================
 # Task Dependencies
 # ============================================================================
-(
-    pre_update_validation
-    >> download_incremental
-    >> push_to_registry
-    >> apply_manifests
-    >> trigger_update
-    >> monitor_update
-    >> update_summary
-)
+(pre_update_validation >> download_incremental >> push_to_registry >> apply_manifests >> trigger_update >> monitor_update >> update_summary)
 
 # ============================================================================
 # DAG Documentation

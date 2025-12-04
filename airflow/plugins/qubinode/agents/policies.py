@@ -440,9 +440,7 @@ class PolicyEngine:
             message=message,
         )
 
-    def _build_result_message(
-        self, final_action: PolicyResult, evaluations: List[PolicyEvaluation]
-    ) -> str:
+    def _build_result_message(self, final_action: PolicyResult, evaluations: List[PolicyEvaluation]) -> str:
         """Build human-readable result message."""
         messages = {
             PolicyResult.ALLOW: "All policies passed - ready to execute",
@@ -467,9 +465,7 @@ class PolicyEngine:
 
         return base_message
 
-    async def check_single_policy(
-        self, policy_name: str, task: str, context: Dict[str, Any]
-    ) -> Optional[PolicyEvaluation]:
+    async def check_single_policy(self, policy_name: str, task: str, context: Dict[str, Any]) -> Optional[PolicyEvaluation]:
         """
         Check a single policy by name.
 

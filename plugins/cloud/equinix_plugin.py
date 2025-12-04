@@ -41,9 +41,7 @@ class EquinixPlugin(QubiNodePlugin):
         )
 
         # Bare metal specific packages
-        self.metal_packages = self.config.get(
-            "metal_packages", ["curl", "wget", "jq", "dmidecode", "lshw", "pciutils"]
-        )
+        self.metal_packages = self.config.get("metal_packages", ["curl", "wget", "jq", "dmidecode", "lshw", "pciutils"])
 
     def check_state(self) -> SystemState:
         """Check current Equinix Metal configuration state"""
@@ -105,9 +103,7 @@ class EquinixPlugin(QubiNodePlugin):
         try:
             # Verify we're on Equinix Metal (or skip optimizations)
             if not current_state.get("is_equinix_metal"):
-                self.logger.warning(
-                    "Not running on Equinix Metal - some optimizations may not apply"
-                )
+                self.logger.warning("Not running on Equinix Metal - some optimizations may not apply")
 
             # Install missing metal packages
             current_packages = set(current_state.get("metal_packages_installed", []))
@@ -116,35 +112,25 @@ class EquinixPlugin(QubiNodePlugin):
 
             if missing_packages:
                 self._install_packages(list(missing_packages))
-                changes_made.append(
-                    f"Installed metal packages: {', '.join(missing_packages)}"
-                )
+                changes_made.append(f"Installed metal packages: {', '.join(missing_packages)}")
 
             # Install Equinix CLI if needed
-            if not current_state.get("equinix_cli_installed") and desired_state.get(
-                "equinix_cli_installed"
-            ):
+            if not current_state.get("equinix_cli_installed") and desired_state.get("equinix_cli_installed"):
                 self._install_equinix_cli()
                 changes_made.append("Installed Equinix Metal CLI tools")
 
             # Configure network for bare metal if needed
-            if not current_state.get("network_configured") and desired_state.get(
-                "network_configured"
-            ):
+            if not current_state.get("network_configured") and desired_state.get("network_configured"):
                 self._configure_bare_metal_network()
                 changes_made.append("Configured bare metal networking")
 
             # Optimize hardware if needed
-            if not current_state.get("hardware_optimized") and desired_state.get(
-                "hardware_optimized"
-            ):
+            if not current_state.get("hardware_optimized") and desired_state.get("hardware_optimized"):
                 self._optimize_bare_metal_hardware()
                 changes_made.append("Optimized bare metal hardware configuration")
 
             # Configure SSH for bare metal access if needed
-            if not current_state.get("ssh_configured") and desired_state.get(
-                "ssh_configured"
-            ):
+            if not current_state.get("ssh_configured") and desired_state.get("ssh_configured"):
                 self._configure_bare_metal_ssh()
                 changes_made.append("Configured SSH for bare metal access")
 
@@ -245,9 +231,7 @@ class EquinixPlugin(QubiNodePlugin):
         """Install Equinix Metal CLI"""
         try:
             # Download and install metal CLI
-            arch = subprocess.run(
-                ["uname", "-m"], capture_output=True, text=True, check=True
-            ).stdout.strip()
+            arch = subprocess.run(["uname", "-m"], capture_output=True, text=True, check=True).stdout.strip()
             if arch == "x86_64":
                 arch = "amd64"
             elif arch == "aarch64":
@@ -286,9 +270,7 @@ class EquinixPlugin(QubiNodePlugin):
         """Check if network is configured for bare metal"""
         # Check if bonding is configured (common for bare metal)
         try:
-            result = subprocess.run(
-                ["ip", "link", "show"], capture_output=True, text=True
-            )
+            result = subprocess.run(["ip", "link", "show"], capture_output=True, text=True)
             return "bond0" in result.stdout or "team0" in result.stdout
         except subprocess.CalledProcessError:
             return False
@@ -310,9 +292,7 @@ net.core.default_qdisc = fq
         with open("/tmp/99-equinix-network.conf", "w") as f:
             f.write(network_tuning)
 
-        subprocess.run(
-            ["sudo", "mv", "/tmp/99-equinix-network.conf", "/etc/sysctl.d/"], check=True
-        )
+        subprocess.run(["sudo", "mv", "/tmp/99-equinix-network.conf", "/etc/sysctl.d/"], check=True)
 
         # Apply settings
         subprocess.run(["sudo", "sysctl", "--system"], check=True)
@@ -323,9 +303,7 @@ net.core.default_qdisc = fq
         """Check if hardware is optimized for bare metal"""
         # Check if CPU governor is set to performance
         try:
-            with open(
-                "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "r"
-            ) as f:
+            with open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "r") as f:
                 governor = f.read().strip()
                 return governor == "performance"
         except FileNotFoundError:
@@ -335,9 +313,7 @@ net.core.default_qdisc = fq
         """Optimize hardware configuration for bare metal"""
         # Set CPU governor to performance
         try:
-            subprocess.run(
-                ["sudo", "cpupower", "frequency-set", "-g", "performance"], check=True
-            )
+            subprocess.run(["sudo", "cpupower", "frequency-set", "-g", "performance"], check=True)
         except (subprocess.CalledProcessError, FileNotFoundError):
             self.logger.warning("Could not set CPU governor - cpupower not available")
 
@@ -354,9 +330,7 @@ ACTION=="add|change", KERNEL=="nvme[0-9]*", ATTR{queue/scheduler}="none"
         with open("/tmp/99-equinix-io.rules", "w") as f:
             f.write(io_scheduler_config)
 
-        subprocess.run(
-            ["sudo", "mv", "/tmp/99-equinix-io.rules", "/etc/udev/rules.d/"], check=True
-        )
+        subprocess.run(["sudo", "mv", "/tmp/99-equinix-io.rules", "/etc/udev/rules.d/"], check=True)
 
         self.logger.info("Optimized bare metal hardware configuration")
 

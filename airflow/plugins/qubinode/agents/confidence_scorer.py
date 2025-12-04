@@ -42,12 +42,7 @@ class ConfidenceWeights:
 
     def validate(self) -> bool:
         """Validate that weights sum to 1.0."""
-        total = (
-            self.rag_similarity
-            + self.rag_coverage
-            + self.provider_availability
-            + self.historical_success
-        )
+        total = self.rag_similarity + self.rag_coverage + self.provider_availability + self.historical_success
         return abs(total - 1.0) < 0.001
 
 
@@ -70,8 +65,7 @@ class ConfidenceBreakdown:
                 "rag_similarity": {
                     "score": self.rag_similarity_score,
                     "weight": self.weights.rag_similarity,
-                    "contribution": self.rag_similarity_score
-                    * self.weights.rag_similarity,
+                    "contribution": self.rag_similarity_score * self.weights.rag_similarity,
                 },
                 "rag_coverage": {
                     "score": self.rag_coverage_score,
@@ -81,14 +75,12 @@ class ConfidenceBreakdown:
                 "provider_availability": {
                     "score": self.provider_score,
                     "weight": self.weights.provider_availability,
-                    "contribution": self.provider_score
-                    * self.weights.provider_availability,
+                    "contribution": self.provider_score * self.weights.provider_availability,
                 },
                 "historical_success": {
                     "score": self.historical_score,
                     "weight": self.weights.historical_success,
-                    "contribution": self.historical_score
-                    * self.weights.historical_success,
+                    "contribution": self.historical_score * self.weights.historical_success,
                 },
             },
             "raw_inputs": self.raw_inputs,
@@ -255,9 +247,7 @@ class ConfidenceScorer:
                 "requires_approval": True,
             }
 
-    def compute_from_rag_context(
-        self, rag_context: Dict[str, Any], provider_exists: bool = False
-    ) -> ConfidenceBreakdown:
+    def compute_from_rag_context(self, rag_context: Dict[str, Any], provider_exists: bool = False) -> ConfidenceBreakdown:
         """
         Compute confidence from RAG context dictionary.
 
@@ -344,12 +334,7 @@ def compute_confidence_score(
     Returns:
         Confidence score (0-1)
     """
-    return (
-        0.4 * (rag_similarity or 0)
-        + 0.3 * min((rag_hit_count or 0) / 5.0, 1.0)
-        + 0.2 * (1.0 if provider_exists else 0.0)
-        + 0.1 * (1.0 if similar_dag_exists else 0.0)
-    )
+    return 0.4 * (rag_similarity or 0) + 0.3 * min((rag_hit_count or 0) / 5.0, 1.0) + 0.2 * (1.0 if provider_exists else 0.0) + 0.1 * (1.0 if similar_dag_exists else 0.0)
 
 
 __version__ = "1.0.0"

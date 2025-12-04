@@ -64,10 +64,7 @@ class VaultDynamicSecretsOperator(BaseOperator):
         try:
             from airflow.providers.hashicorp.hooks.vault import VaultHook
         except ImportError:
-            raise ImportError(
-                "apache-airflow-providers-hashicorp is required. "
-                "Install with: pip install apache-airflow-providers-hashicorp"
-            )
+            raise ImportError("apache-airflow-providers-hashicorp is required. " "Install with: pip install apache-airflow-providers-hashicorp")
 
         hook = VaultHook(vault_conn_id=self.vault_conn_id)
 
@@ -84,11 +81,7 @@ class VaultDynamicSecretsOperator(BaseOperator):
         lease_id = response.get("lease_id")
         lease_duration = response.get("lease_duration")
 
-        self.log.info(
-            f"Obtained dynamic credentials, "
-            f"lease_id={lease_id[:20] + '...' if lease_id else 'N/A'}, "
-            f"ttl={lease_duration}s"
-        )
+        self.log.info(f"Obtained dynamic credentials, " f"lease_id={lease_id[:20] + '...' if lease_id else 'N/A'}, " f"ttl={lease_duration}s")
 
         # Store lease_id for cleanup
         if lease_id and self.store_lease_id:
@@ -196,9 +189,7 @@ class VaultAWSCredsOperator(VaultDynamicSecretsOperator):
         if self.ttl and self.credential_type == "sts":
             # Use the underlying hvac client for more control
             client = hook.get_conn()
-            response = client.secrets.aws.generate_credentials(
-                name=self.aws_role, ttl=self.ttl, mount_point=self.mount_point
-            )
+            response = client.secrets.aws.generate_credentials(name=self.aws_role, ttl=self.ttl, mount_point=self.mount_point)
         else:
             response = hook.get_secret(secret_path=self.vault_path)
 
@@ -209,10 +200,7 @@ class VaultAWSCredsOperator(VaultDynamicSecretsOperator):
         lease_id = response.get("lease_id")
         lease_duration = response.get("lease_duration")
 
-        self.log.info(
-            f"Obtained AWS credentials, type={self.credential_type}, "
-            f"ttl={lease_duration}s"
-        )
+        self.log.info(f"Obtained AWS credentials, type={self.credential_type}, " f"ttl={lease_duration}s")
 
         if lease_id and self.store_lease_id:
             context["ti"].xcom_push(key=f"{self.output_key}_lease_id", value=lease_id)
@@ -284,10 +272,7 @@ class VaultSSHSignOperator(BaseOperator):
         try:
             from airflow.providers.hashicorp.hooks.vault import VaultHook
         except ImportError:
-            raise ImportError(
-                "apache-airflow-providers-hashicorp is required. "
-                "Install with: pip install apache-airflow-providers-hashicorp"
-            )
+            raise ImportError("apache-airflow-providers-hashicorp is required. " "Install with: pip install apache-airflow-providers-hashicorp")
 
         hook = VaultHook(vault_conn_id=self.vault_conn_id)
         client = hook.get_conn()
@@ -351,10 +336,7 @@ class VaultLeaseRevokeOperator(BaseOperator):
         try:
             from airflow.providers.hashicorp.hooks.vault import VaultHook
         except ImportError:
-            raise ImportError(
-                "apache-airflow-providers-hashicorp is required. "
-                "Install with: pip install apache-airflow-providers-hashicorp"
-            )
+            raise ImportError("apache-airflow-providers-hashicorp is required. " "Install with: pip install apache-airflow-providers-hashicorp")
 
         hook = VaultHook(vault_conn_id=self.vault_conn_id)
         client = hook.get_conn()
@@ -379,19 +361,12 @@ class VaultLeaseRevokeOperator(BaseOperator):
                 results["revoked"].append(lease_id)
             except Exception as e:
                 if "invalid lease" in str(e).lower():
-                    self.log.warning(
-                        f"Lease not found (may have expired): {lease_id[:20]}..."
-                    )
+                    self.log.warning(f"Lease not found (may have expired): {lease_id[:20]}...")
                     results["not_found"].append(lease_id)
                 else:
                     self.log.error(f"Failed to revoke lease {lease_id[:20]}...: {e}")
                     results["failed"].append(lease_id)
 
-        self.log.info(
-            f"Lease cleanup complete: "
-            f"{len(results['revoked'])} revoked, "
-            f"{len(results['not_found'])} expired, "
-            f"{len(results['failed'])} failed"
-        )
+        self.log.info(f"Lease cleanup complete: " f"{len(results['revoked'])} revoked, " f"{len(results['not_found'])} expired, " f"{len(results['failed'])} failed")
 
         return results

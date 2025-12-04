@@ -92,18 +92,14 @@ def test_dnf_capabilities():
             return False
 
         # Test DNF modularity (should be removed in Stream 10)
-        result = subprocess.run(
-            ["dnf", "module", "list"], capture_output=True, text=True
-        )
+        result = subprocess.run(["dnf", "module", "list"], capture_output=True, text=True)
         if "No such command: module" in result.stderr or result.returncode != 0:
             print("✅ DNF modularity removed (as expected in Stream 10)")
         else:
             print("⚠️  DNF modularity still present")
 
         # Test package search (non-destructive)
-        result = subprocess.run(
-            ["dnf", "search", "python3", "--quiet"], capture_output=True, text=True
-        )
+        result = subprocess.run(["dnf", "search", "python3", "--quiet"], capture_output=True, text=True)
         if result.returncode == 0:
             print("✅ Package search functionality working")
         else:
@@ -133,9 +129,7 @@ def test_container_capabilities():
             return False
 
         # Test Buildah
-        result = subprocess.run(
-            ["buildah", "--version"], capture_output=True, text=True
-        )
+        result = subprocess.run(["buildah", "--version"], capture_output=True, text=True)
         if result.returncode == 0:
             version = result.stdout.strip()
             print(f"✅ {version}")
