@@ -23,6 +23,13 @@ sys.modules["litellm"] = MagicMock()
 mock_llm_class = MagicMock()
 sys.modules["langchain.llms.base"].LLM = mock_llm_class
 
+# Mock RAG services before importing main (they try to create /app/data directories)
+mock_qdrant_rag = MagicMock()
+mock_rag_ingestion = MagicMock()
+sys.modules["qdrant_rag_service"] = mock_qdrant_rag
+sys.modules["rag_ingestion_api"] = mock_rag_ingestion
+mock_rag_ingestion.router = MagicMock()
+
 from main import app, ChatRequest, ChatResponse
 
 
