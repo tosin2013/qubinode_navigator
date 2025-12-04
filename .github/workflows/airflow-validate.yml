@@ -246,9 +246,9 @@ jobs:
           MARQUEZ_ADMIN_PORT: 5002
           POSTGRES_HOST: postgres
           POSTGRES_PORT: 5432
-          POSTGRES_DB: airflow
-          POSTGRES_USER: airflow
-          POSTGRES_PASSWORD: airflow
+          POSTGRES_DB: marquez
+          POSTGRES_USER: marquez
+          POSTGRES_PASSWORD: marquez
         ports:
           - 5001:5001
           - 5002:5002
@@ -304,6 +304,43 @@ jobs:
             pip show apache-airflow | head -10
             exit 1
           fi
+
+      - name: Setup PostgreSQL for Marquez
+        run: |
+          echo "Creating Marquez database and user in PostgreSQL..."
+          
+          # Install PostgreSQL client
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+          
+          # Wait for PostgreSQL to be ready
+          for i in {1..30}; do
+            if PGPASSWORD=airflow psql -h localhost -U airflow -d airflow -c "SELECT 1" > /dev/null 2>&1; then
+              echo "PostgreSQL is ready"
+              break
+            fi
+            echo "Waiting for PostgreSQL... ($i/30)"
+            sleep 2
+          done
+          
+          # Create marquez user and database (run as airflow superuser)
+          PGPASSWORD=airflow psql -h localhost -U airflow -d airflow << 'EOF'
+          -- Create marquez user if it doesn't exist
+          DO $$ 
+          BEGIN
+            IF NOT EXISTS (SELECT FROM pg_catalog.pg_user WHERE usename = 'marquez') THEN
+              CREATE USER marquez WITH PASSWORD 'marquez';
+            END IF;
+          END $$;
+          
+          -- Create marquez database if it doesn't exist
+          SELECT 'CREATE DATABASE marquez OWNER marquez'
+          WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'marquez')\gexec
+          
+          -- Grant privileges
+          GRANT ALL PRIVILEGES ON DATABASE marquez TO marquez;
+          EOF
+          
+          echo "[OK] Marquez database and user created"
 
       - name: Initialize Airflow DB
         env:
