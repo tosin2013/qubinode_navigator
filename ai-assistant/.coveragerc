@@ -1,0 +1,38 @@
+[run]
+source = src
+branch = True
+omit =
+    */tests/*
+    */__pycache__/*
+    */site-packages/*
+    */.venv/*
+    src/ai_service.py
+    src/enhanced_ai_service.py
+    src/rag_ingestion_api.py
+    src/marquez_context_service.py
+    src/faiss_rag_service.py
+    src/rag_service.py
+    src/qdrant_rag_service.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    @abstractmethod
+    @abc.abstractmethod
+    except ImportError
+    CHROMADB_AVAILABLE = False
+    QDRANT_AVAILABLE = False
+    LITELLM_AVAILABLE = False
+    MARQUEZ_AVAILABLE = False
+
+fail_under = 70
+show_missing = True
+precision = 2
+
+[html]
+directory = htmlcov

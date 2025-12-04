@@ -362,7 +362,12 @@ Provide clear, actionable recommendations."""
                 "timestamp": time.time(),
             }
 
-            logger.info(f"Diagnostics completed: {diagnostics_data['summary']['successful_tools']}/{diagnostics_data['summary']['total_tools']} tools successful")
+            # Log completion - handle both specific tool and comprehensive formats
+            summary = diagnostics_data.get("summary", {})
+            if "successful_tools" in summary:
+                logger.info(f"Diagnostics completed: {summary['successful_tools']}/{summary['total_tools']} tools successful")
+            else:
+                logger.info(f"Diagnostics completed: tool '{tool_name}' {'successful' if summary.get('successful') else 'failed'}")
             return result
 
         except Exception as e:
