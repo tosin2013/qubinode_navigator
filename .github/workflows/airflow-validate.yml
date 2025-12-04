@@ -126,23 +126,25 @@ jobs:
           echo "=== Checking for import errors ==="
           airflow dags list-import-errors 2>&1 | tee import_errors.txt || true
 
-          # Separate duplicate DAG warnings from real errors
+          # Count import errors, but treat duplicate DAG IDs as warnings, not errors
           # Duplicate DAG IDs are a known issue that needs to be fixed separately
-          DUPLICATE_COUNT=$(grep -c "DuplicatedIdException" import_errors.txt 2>/dev/null || echo "0")
-          REAL_ERROR_COUNT=$(grep -c "^/" import_errors.txt 2>/dev/null || echo "0")
-          REAL_ERROR_COUNT=$((REAL_ERROR_COUNT - DUPLICATE_COUNT))
+          # Filter out lines that are just continuation of multi-line errors
+          TOTAL_ERRORS=$(grep "^/" import_errors.txt 2>/dev/null | wc -l || echo "0")
+          DUPLICATE_COUNT=$(grep "DuplicatedIdException" import_errors.txt 2>/dev/null | wc -l || echo "0")
 
           if [[ "$DUPLICATE_COUNT" -gt 0 ]]; then
-            echo "[WARN] Found $DUPLICATE_COUNT duplicate DAG ID warnings (known issue)"
+            echo "[WARN] Found $DUPLICATE_COUNT duplicate DAG ID warnings (known issue - to be fixed separately)"
           fi
 
-          if [[ "$REAL_ERROR_COUNT" -gt 0 ]]; then
-            echo "[ERROR] Found $REAL_ERROR_COUNT DAG files with import errors (excluding duplicates)"
+          # Only fail if there are errors other than duplicates
+          NON_DUPLICATE_ERRORS=$((TOTAL_ERRORS - DUPLICATE_COUNT))
+          if [[ "$NON_DUPLICATE_ERRORS" -gt 0 ]]; then
+            echo "[ERROR] Found $NON_DUPLICATE_ERRORS DAG files with import errors (excluding duplicates)"
             cat import_errors.txt
             exit 1
           fi
 
-          echo "[OK] All DAGs imported successfully (with $DUPLICATE_COUNT known duplicate warnings)"
+          echo "[OK] All DAGs parsed successfully (with $DUPLICATE_COUNT known duplicate warnings)"
 
   # ==========================================================================
   # Container Build Validation (runs on GitHub-hosted runners)
