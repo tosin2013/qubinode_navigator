@@ -106,7 +106,8 @@ jobs:
           export AIRFLOW_HOME=$(pwd)
           export AIRFLOW__CORE__DAGS_FOLDER=$(pwd)/dags
           export AIRFLOW__CORE__LOAD_EXAMPLES=false
-          export AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=sqlite:///airflow.db
+          # Use absolute path for SQLite database
+          export AIRFLOW__DATABASE__SQL_ALCHEMY_CONN="sqlite:////tmp/airflow.db"
 
           # Verify airflow is accessible
           echo "Airflow location: $(which airflow || echo 'not in PATH')"
