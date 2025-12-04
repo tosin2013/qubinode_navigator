@@ -128,9 +128,9 @@ jobs:
 
           # Count import errors, but treat duplicate DAG IDs as warnings, not errors
           # Duplicate DAG IDs are a known issue that needs to be fixed separately
-          # Filter out lines that are just continuation of multi-line errors
-          TOTAL_ERRORS=$(grep "^/" import_errors.txt 2>/dev/null | wc -l || echo "0")
-          DUPLICATE_COUNT=$(grep "DuplicatedIdException" import_errors.txt 2>/dev/null | wc -l || echo "0")
+          # Only count lines that are primary error entries (filepath | error)
+          TOTAL_ERRORS=$(grep -E "^/.*\|" import_errors.txt 2>/dev/null | wc -l || echo "0")
+          DUPLICATE_COUNT=$(grep -E "^/.*\|.*DuplicatedIdException" import_errors.txt 2>/dev/null | wc -l || echo "0")
 
           if [[ "$DUPLICATE_COUNT" -gt 0 ]]; then
             echo "[WARN] Found $DUPLICATE_COUNT duplicate DAG ID warnings (known issue - to be fixed separately)"
