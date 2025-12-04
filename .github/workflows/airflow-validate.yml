@@ -66,32 +66,35 @@ jobs:
           pip install apache-airflow-providers-postgres
           pip install pyyaml
 
-          # Find where pip installed the airflow binary
-          echo "Looking for airflow binary..."
-          AIRFLOW_BIN=$(python3 -c "import sysconfig; print(sysconfig.get_path('scripts'))")/airflow
+          # Debug: Show where pip installs scripts
+          echo "=== Debug Info ==="
+          echo "Python: $(which python3)"
+          echo "Pip: $(which pip)"
+          echo "sysconfig scripts path: $(python3 -c 'import sysconfig; print(sysconfig.get_path(\"scripts\"))')"
+          echo "sys.prefix: $(python3 -c 'import sys; print(sys.prefix)')"
 
-          if [[ -f "$AIRFLOW_BIN" ]]; then
-            echo "Found airflow at: $AIRFLOW_BIN"
-            SCRIPTS_DIR=$(dirname "$AIRFLOW_BIN")
-          else
-            # Fallback: search common locations
-            echo "Searching for airflow binary..."
-            AIRFLOW_BIN=$(find /opt/hostedtoolcache -name "airflow" -type f 2>/dev/null | head -1)
-            if [[ -n "$AIRFLOW_BIN" ]]; then
-              echo "Found airflow at: $AIRFLOW_BIN"
-              SCRIPTS_DIR=$(dirname "$AIRFLOW_BIN")
-            else
-              echo "ERROR: Could not find airflow binary"
-              pip show -f apache-airflow | grep -E "bin/|scripts/"
-              exit 1
-            fi
-          fi
+          # List what airflow package installed
+          echo "=== Airflow package files ==="
+          pip show -f apache-airflow 2>&1 | head -50
 
-          echo "Adding $SCRIPTS_DIR to PATH"
+          # Find airflow entry point script
+          SCRIPTS_DIR=$(python3 -c "import sysconfig; print(sysconfig.get_path('scripts'))")
+          echo "=== Contents of $SCRIPTS_DIR ==="
+          ls -la "$SCRIPTS_DIR/" 2>&1 | head -30
+
+          # Add scripts directory to PATH
           echo "$SCRIPTS_DIR" >> $GITHUB_PATH
 
-          # Verify airflow is executable
-          "$AIRFLOW_BIN" version
+          # Test if airflow is available
+          if [[ -f "$SCRIPTS_DIR/airflow" ]]; then
+            echo "Found airflow at: $SCRIPTS_DIR/airflow"
+            "$SCRIPTS_DIR/airflow" version
+          else
+            echo "airflow binary not in $SCRIPTS_DIR"
+            echo "=== Searching entire system ==="
+            find / -name "airflow" -type f 2>/dev/null | head -10 || echo "No airflow found"
+            exit 1
+          fi
 
       - name: Validate DAG syntax
         run: |
