@@ -260,6 +260,137 @@ async def get_config():
 
 
 # =============================================================================
+# RAG Query Endpoints (Document Search)
+# =============================================================================
+
+
+class QueryRequest(BaseModel):
+    """Request model for RAG document query"""
+
+    query: str
+    max_results: int = 5
+
+
+class QueryResult(BaseModel):
+    """Single query result"""
+
+    content: str
+    score: float
+    source: str
+    title: str = ""
+
+
+class QueryResponse(BaseModel):
+    """Response model for RAG document query"""
+
+    results: list = []
+    query: str = ""
+    total_results: int = 0
+
+
+@app.post("/api/query", response_model=QueryResponse)
+async def query_documents(request: QueryRequest):
+    """Search documentation using RAG.
+
+    This endpoint enables MCP tools to search the knowledge base
+    for relevant documentation about infrastructure, deployment, etc.
+
+    Args:
+        query: Search query string
+        max_results: Maximum number of results to return (default: 5)
+
+    Returns:
+        List of relevant document chunks with scores and sources
+    """
+    if not ai_service:
+        raise HTTPException(status_code=503, detail="AI service not available")
+
+    try:
+        # Access the RAG service from the AI service
+        if not hasattr(ai_service, "rag_service") or ai_service.rag_service is None:
+            # Return empty results if RAG is not available
+            logger.warning("RAG service not available for query")
+            return QueryResponse(results=[], query=request.query, total_results=0)
+
+        # Search documents using RAG service
+        results = await ai_service.rag_service.search_documents(query=request.query, n_results=request.max_results)
+
+        # Format results for response
+        formatted_results = []
+        for result in results:
+            formatted_results.append(
+                {
+                    "content": result.content,
+                    "score": result.score,
+                    "source": result.source_file,
+                    "title": result.title,
+                }
+            )
+
+        logger.info(f"RAG query '{request.query[:50]}...' returned {len(formatted_results)} results")
+        return QueryResponse(results=formatted_results, query=request.query, total_results=len(formatted_results))
+
+    except Exception as e:
+        logger.error(f"RAG query error: {e}")
+        raise HTTPException(status_code=500, detail=f"Query error: {str(e)}")
+
+
+# =============================================================================
+# Status Endpoints (Project and Service Status)
+# =============================================================================
+
+
+@app.get("/api/status")
+async def get_project_status():
+    """Get comprehensive project status for MCP tools.
+
+    Returns current status of:
+    - AI Assistant service
+    - Airflow/DAG execution
+    - Virtual machines
+    - System metrics
+
+    This endpoint is called by the MCP get_project_status tool.
+    """
+    if not health_monitor:
+        raise HTTPException(status_code=503, detail="Health monitor not available")
+
+    try:
+        # Get health status
+        health = await health_monitor.get_health_status()
+
+        # Get lineage summary if available
+        lineage_summary = {}
+        if ai_service:
+            try:
+                lineage_summary = await ai_service.get_lineage_summary()
+            except Exception:
+                lineage_summary = {"available": False}
+
+        # Build comprehensive status
+        status = {
+            "ai_status": health.get("status", "unknown"),
+            "uptime_seconds": health.get("uptime_seconds", 0),
+            "airflow_status": "connected" if lineage_summary.get("available") else "disconnected",
+            "vm_count": lineage_summary.get("job_stats", {}).get("total", 0),
+            "metrics": {
+                "cpu": f"{health.get('system', {}).get('metrics', {}).get('cpu_percent', 0):.1f}%",
+                "memory": f"{health.get('system', {}).get('metrics', {}).get('memory_percent', 0):.1f}%",
+                "disk": f"{health.get('system', {}).get('metrics', {}).get('disk_percent', 0):.1f}%",
+            },
+            "recent_failures": lineage_summary.get("recent_failures", []),
+            "job_stats": lineage_summary.get("job_stats", {}),
+            "timestamp": time.time(),
+        }
+
+        return status
+
+    except Exception as e:
+        logger.error(f"Status endpoint error: {e}")
+        raise HTTPException(status_code=500, detail=f"Status error: {str(e)}")
+
+
+# =============================================================================
 # Lineage Endpoints (Marquez/OpenLineage Integration)
 # =============================================================================
 
