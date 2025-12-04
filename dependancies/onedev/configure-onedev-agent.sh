@@ -96,7 +96,7 @@ if [ ! -d /opt/onedev-agent/agent/ ]; then
     if [ ! -f "$extractDir/agent/conf/agent.properties" ]; then
         echo "agent.properties not found in $extractDir/conf"
         exit 1
-    fi  
+    fi
     echo "Configuring agent..."
     sed -i "s#^serverUrl=.*#serverUrl=$oneDevServerUrl#g" "$extractDir/agent/conf/agent.properties" || exit 1
 fi
@@ -107,5 +107,3 @@ fi
 echo "Starting the agent..."
 cd "$extractDir/agent"
 nohup bin/agent.sh console > agent.log 2>&1 &
-
-

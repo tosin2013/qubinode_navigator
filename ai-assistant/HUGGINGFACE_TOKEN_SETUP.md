@@ -5,6 +5,7 @@ This document explains how to set up Hugging Face authentication tokens for the 
 ## Supported Model
 
 **Default Supported Model**: `granite-4.0-micro` (Granite-based model)
+
 - **Family**: IBM Granite model family (using compatible GGUF version)
 - This is the officially supported and tested model for Qubinode AI Assistant
 - Optimized for CPU-only systems with low memory requirements (2GB+)
@@ -18,11 +19,11 @@ The AI Assistant downloads AI models from Hugging Face Hub. Some models require 
 ## Getting a Hugging Face Token
 
 1. Go to [Hugging Face](https://huggingface.co/) and create an account if you don't have one
-2. Navigate to your [Settings → Access Tokens](https://huggingface.co/settings/tokens)
-3. Click "New token"
-4. Give it a name like "qubinode-ai-assistant"
-5. Select "Read" permissions (sufficient for downloading models)
-6. Copy the generated token
+1. Navigate to your [Settings → Access Tokens](https://huggingface.co/settings/tokens)
+1. Click "New token"
+1. Give it a name like "qubinode-ai-assistant"
+1. Select "Read" permissions (sufficient for downloading models)
+1. Copy the generated token
 
 ## Local Development Setup
 
@@ -41,11 +42,11 @@ echo "HUGGINGFACE_TOKEN=hf_your_token_here" >> .env
 ## GitHub Actions Setup
 
 1. Go to your GitHub repository
-2. Navigate to **Settings** → **Secrets and variables** → **Actions**
-3. Click **New repository secret**
-4. Name: `HUGGINGFACE_TOKEN`
-5. Value: Your Hugging Face token (e.g., `hf_your_token_here`)
-6. Click **Add secret**
+1. Navigate to **Settings** → **Secrets and variables** → **Actions**
+1. Click **New repository secret**
+1. Name: `HUGGINGFACE_TOKEN`
+1. Value: Your Hugging Face token (e.g., `hf_your_token_here`)
+1. Click **Add secret**
 
 ## Docker Container Setup
 
@@ -84,14 +85,17 @@ ERROR - Failed to download model: Client error '401 Unauthorized'
 ## Troubleshooting
 
 ### 401 Unauthorized Error
+
 - Check that your token is valid and not expired
 - Ensure the token has read permissions
 - Verify the token is correctly set in the environment
 
 ### Rate Limiting
+
 - Authenticated requests have higher rate limits
 - Consider using a dedicated token for CI/CD
 
 ### Model Access
+
 - Some models require explicit permission from the model owner
 - Check the model's page on Hugging Face for access requirements

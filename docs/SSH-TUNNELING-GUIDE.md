@@ -81,6 +81,7 @@ ssh -fN -L 80:localhost:80 \
 ```
 
 Flags explained:
+
 - `-f` = fork to background
 - `-N` = don't execute remote command
 - `-L` = forward local port to remote
@@ -149,13 +150,13 @@ Usage:
 
 When tunneling is active, you can access services on these local ports:
 
-| Service | Local Port | Tunneled To | Purpose |
-|---------|-----------|-------------|---------|
-| Nginx Proxy | 80 | localhost:80 | Web UI reverse proxy |
-| AI Assistant | 8080 | localhost:8080 | Chat interface |
-| AI Assistant MCP | 8081 | localhost:8081 | Chat tools for LLMs |
-| Airflow Web UI | 8888 | localhost:8888 | Workflow interface |
-| Airflow MCP Server | 8889 | localhost:8889 | DAG/VM tools for LLMs |
+| Service            | Local Port | Tunneled To    | Purpose               |
+| ------------------ | ---------- | -------------- | --------------------- |
+| Nginx Proxy        | 80         | localhost:80   | Web UI reverse proxy  |
+| AI Assistant       | 8080       | localhost:8080 | Chat interface        |
+| AI Assistant MCP   | 8081       | localhost:8081 | Chat tools for LLMs   |
+| Airflow Web UI     | 8888       | localhost:8888 | Workflow interface    |
+| Airflow MCP Server | 8889       | localhost:8889 | DAG/VM tools for LLMs |
 
 ## Accessing Services Through Tunnel
 
@@ -255,11 +256,11 @@ Host qubinode
     LocalForward 8081 localhost:8081
     LocalForward 8888 localhost:8888
     LocalForward 8889 localhost:8889
-    
+
     # Keep connection alive
     ServerAliveInterval 60
     ServerAliveCountMax 5
-    
+
     # Auto-reconnect on failure
     ConnectTimeout 10
     StrictHostKeyChecking no
@@ -361,25 +362,30 @@ sudo firewall-cmd --reload
 ## Security Best Practices
 
 1. **Use SSH Keys**
+
    - More secure than passwords
    - Easier to automate
    - Can be revoked independently
 
-2. **Limit SSH Access**
+1. **Limit SSH Access**
+
    - Disable root login if possible
    - Use key-based authentication only
    - Restrict SSH to specific IPs if feasible
 
-3. **Monitor Tunnels**
+1. **Monitor Tunnels**
+
    - Regularly check active connections
    - Close unused tunnels
    - Audit SSH logs
 
-4. **Use Non-Standard SSH Port** (Optional)
+1. **Use Non-Standard SSH Port** (Optional)
+
    - Change SSH port from 22 to reduce scanning
    - Update config: `Port 2222`
 
-5. **Enable SSH Timeout**
+1. **Enable SSH Timeout**
+
    - Automatically close idle connections
    - Add to server `sshd_config`:
      ```
@@ -561,6 +567,6 @@ Done! 🎉
 - [Using SSH Tunneling](https://www.ssh.com/ssh/tunneling/)
 - [Autossh Documentation](http://www.harding.motd.ca/autossh/)
 
----
+______________________________________________________________________
 
 **Last Updated**: 2025-11-26

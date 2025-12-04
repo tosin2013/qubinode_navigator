@@ -5,6 +5,7 @@ Thank you for your interest in contributing to this project! This guide will hel
 ## 🚀 Quick Start for Contributors
 
 ### Prerequisites
+
 - Git 2.20+
 - Node.js 18+ or Python 3.9+
 - Docker 20+ (optional but recommended)
@@ -13,41 +14,45 @@ Thank you for your interest in contributing to this project! This guide will hel
 ### Development Setup
 
 1. **Fork and Clone**
+
    ```bash
    git clone https://github.com/yourusername/repo.git
    cd repo
    git remote add upstream https://github.com/originalowner/repo.git
    ```
 
-2. **Install Dependencies**
+1. **Install Dependencies**
+
    ```bash
    # For Node.js projects
    npm install
-   
+
    # For Python projects
    pip install -r requirements-dev.txt
-   
+
    # For containerized development
    docker-compose up -d
    ```
 
-3. **Setup Development Environment**
+1. **Setup Development Environment**
+
    ```bash
    # Copy environment template
    cp .env.example .env
-   
+
    # Setup pre-commit hooks
    ./scripts/setup-precommit-hooks.sh
-   
+
    # Run initial tests
    npm test  # or pytest
    ```
 
-4. **Verify Setup**
+1. **Verify Setup**
+
    ```bash
    # Start development server
    npm run dev  # or python manage.py runserver
-   
+
    # Run full test suite
    npm run test:full  # or pytest --cov
    ```
@@ -55,6 +60,7 @@ Thank you for your interest in contributing to this project! This guide will hel
 ## 🏗️ Development Workflow
 
 ### Branch Strategy
+
 - `main` - Production-ready code
 - `develop` - Integration branch for features
 - `feature/feature-name` - New features
@@ -64,25 +70,29 @@ Thank you for your interest in contributing to this project! This guide will hel
 ### Making Changes
 
 1. **Create Feature Branch**
+
    ```bash
    git checkout develop
    git pull upstream develop
    git checkout -b feature/your-feature-name
    ```
 
-2. **Make Your Changes**
+1. **Make Your Changes**
+
    - Write code following our [coding standards](#coding-standards)
    - Add tests for new functionality
    - Update documentation as needed
    - Ensure all tests pass
 
-3. **Commit Your Changes**
+1. **Commit Your Changes**
+
    ```bash
    git add .
    git commit -m "feat: add new feature description"
    ```
 
-4. **Push and Create PR**
+1. **Push and Create PR**
+
    ```bash
    git push origin feature/your-feature-name
    # Create pull request on GitHub
@@ -101,6 +111,7 @@ type(scope): description
 ```
 
 **Types:**
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation changes
@@ -110,6 +121,7 @@ type(scope): description
 - `chore`: Maintenance tasks
 
 **Examples:**
+
 ```
 feat(auth): add OAuth2 authentication
 fix(api): resolve user data validation issue
@@ -137,6 +149,7 @@ npm run test:coverage  # or pytest --cov
 ### Writing Tests
 
 #### Unit Tests
+
 ```javascript
 // JavaScript example
 describe('UserService', () => {
@@ -157,6 +170,7 @@ def test_create_user_with_valid_data():
 ```
 
 #### Integration Tests
+
 ```javascript
 // API integration test
 describe('POST /api/users', () => {
@@ -164,7 +178,7 @@ describe('POST /api/users', () => {
     const response = await request(app)
       .post('/api/users')
       .send({ name: 'John', email: 'john@example.com' });
-    
+
     expect(response.status).toBe(201);
     expect(response.body.user.name).toBe('John');
   });
@@ -172,6 +186,7 @@ describe('POST /api/users', () => {
 ```
 
 ### Test Coverage Requirements
+
 - **Minimum**: 80% overall coverage
 - **Critical paths**: 95% coverage
 - **New features**: 90% coverage
@@ -179,6 +194,7 @@ describe('POST /api/users', () => {
 ## 📝 Coding Standards
 
 ### Code Style
+
 - Use [Prettier](https://prettier.io/) for formatting
 - Follow [ESLint](https://eslint.org/) rules for JavaScript
 - Follow [Black](https://black.readthedocs.io/) for Python
@@ -186,6 +202,7 @@ describe('POST /api/users', () => {
 - Write self-documenting code with clear comments
 
 ### File Organization
+
 ```
 src/
 ├── components/          # Reusable components
@@ -196,12 +213,14 @@ src/
 ```
 
 ### Documentation Standards
+
 - **Functions**: Document parameters, return values, and examples
 - **Classes**: Document purpose, usage, and key methods
 - **APIs**: Use OpenAPI/Swagger specifications
 - **README**: Keep up-to-date with current functionality
 
 ### Security Guidelines
+
 - Never commit secrets or credentials
 - Validate all user inputs
 - Use parameterized queries for database operations
@@ -211,6 +230,7 @@ src/
 ## 🔍 Code Review Process
 
 ### Before Submitting PR
+
 - [ ] All tests pass locally
 - [ ] Code follows style guidelines
 - [ ] Documentation is updated
@@ -218,6 +238,7 @@ src/
 - [ ] No merge conflicts with target branch
 
 ### PR Requirements
+
 - **Title**: Clear, descriptive title
 - **Description**: Explain what changes and why
 - **Testing**: Describe how changes were tested
@@ -225,7 +246,9 @@ src/
 - **Breaking Changes**: Clearly document any breaking changes
 
 ### Review Checklist
+
 Reviewers will check:
+
 - [ ] Code quality and style
 - [ ] Test coverage and quality
 - [ ] Documentation completeness
@@ -236,24 +259,28 @@ Reviewers will check:
 ## 🏷️ Release Process
 
 ### Version Numbering
+
 We use [Semantic Versioning](https://semver.org/):
+
 - `MAJOR.MINOR.PATCH`
 - `MAJOR`: Breaking changes
 - `MINOR`: New features (backward compatible)
 - `PATCH`: Bug fixes (backward compatible)
 
 ### Release Steps
+
 1. Update version numbers
-2. Update CHANGELOG.md
-3. Create release branch
-4. Run full test suite
-5. Create release PR
-6. Tag release after merge
-7. Deploy to production
+1. Update CHANGELOG.md
+1. Create release branch
+1. Run full test suite
+1. Create release PR
+1. Tag release after merge
+1. Deploy to production
 
 ## 🛠️ Development Tools
 
 ### Recommended IDE Setup
+
 - **VS Code** with extensions:
   - ESLint
   - Prettier
@@ -261,6 +288,7 @@ We use [Semantic Versioning](https://semver.org/):
   - Thunder Client (API testing)
 
 ### Useful Commands
+
 ```bash
 # Development
 npm run dev          # Start development server
@@ -282,11 +310,13 @@ npm run db:reset     # Reset database
 ## 🐛 Bug Reports
 
 ### Before Reporting
+
 1. Search existing issues
-2. Try to reproduce the bug
-3. Check if it's fixed in latest version
+1. Try to reproduce the bug
+1. Check if it's fixed in latest version
 
 ### Bug Report Template
+
 ```markdown
 **Bug Description**
 Clear description of the bug
@@ -314,6 +344,7 @@ Screenshots, logs, etc.
 ## 💡 Feature Requests
 
 ### Feature Request Template
+
 ```markdown
 **Feature Description**
 Clear description of the feature
@@ -334,17 +365,20 @@ Mockups, examples, etc.
 ## 📚 Resources
 
 ### Documentation
+
 - [Architecture Overview](docs/architecture.md)
 - [API Documentation](docs/api.md)
 - [Database Schema](docs/database.md)
 - [Deployment Guide](docs/deployment.md)
 
 ### External Resources
+
 - [Project Website](https://example.com)
 - [Community Forum](https://forum.example.com)
 - [Slack Channel](https://slack.example.com)
 
 ### Learning Resources
+
 - [Technology Stack Guide](docs/tech-stack.md)
 - [Best Practices](docs/best-practices.md)
 - [Troubleshooting Guide](docs/troubleshooting.md)
@@ -352,16 +386,20 @@ Mockups, examples, etc.
 ## 🤝 Community
 
 ### Code of Conduct
+
 We follow the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md). Please read it before participating.
 
 ### Getting Help
+
 - **GitHub Issues**: Technical questions and bug reports
 - **Discussions**: General questions and ideas
 - **Slack**: Real-time chat with maintainers
 - **Email**: security@example.com for security issues
 
 ### Recognition
+
 Contributors are recognized in:
+
 - [Contributors page](https://github.com/username/repo/graphs/contributors)
 - Release notes for significant contributions
 - Annual contributor awards
@@ -370,7 +408,7 @@ Contributors are recognized in:
 
 By contributing, you agree that your contributions will be licensed under the same license as the project (MIT License).
 
----
+______________________________________________________________________
 
 Thank you for contributing! 🎉
 

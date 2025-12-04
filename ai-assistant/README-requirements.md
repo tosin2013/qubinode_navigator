@@ -25,8 +25,8 @@ pip install -r requirements.txt
 ### Add New Dependency
 
 1. Edit `requirements.in`
-2. Run `pip-compile requirements.in`
-3. Commit both files
+1. Run `pip-compile requirements.in`
+1. Commit both files
 
 ### Update All Dependencies
 
@@ -45,16 +45,17 @@ pip-compile --upgrade-package langchain requirements.in
 ## Why This Approach?
 
 1. **Automatic conflict resolution** - `pip-compile` solves dependency conflicts
-2. **Reproducible builds** - `requirements.txt` locks exact versions
-3. **Easy updates** - One command to upgrade all dependencies
-4. **Dependabot compatible** - Can still create PRs for updates
-5. **Clear intent** - `requirements.in` shows what you actually need
+1. **Reproducible builds** - `requirements.txt` locks exact versions
+1. **Easy updates** - One command to upgrade all dependencies
+1. **Dependabot compatible** - Can still create PRs for updates
+1. **Clear intent** - `requirements.in` shows what you actually need
 
 ## CI/CD Integration
 
 GitHub Actions should:
+
 1. Install from `requirements.txt` (locked versions)
-2. Optionally verify `requirements.txt` is up-to-date with `requirements.in`
+1. Optionally verify `requirements.txt` is up-to-date with `requirements.in`
 
 ```yaml
 - name: Check requirements are up-to-date

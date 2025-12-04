@@ -1,12 +1,11 @@
----
-title: Ingest New Docs into RAG
-parent: How to
-nav_order: 3
----
+______________________________________________________________________
+
+## title: Ingest New Docs into RAG parent: How to nav_order: 3
 
 # How To: Ingest New Documents into RAG
 
 > **Documentation status**
+>
 > - Validation: `IN PROGRESS` – Simplified recipe based on the RAG ingestion DAG.
 > - Last reviewed: 2025-11-21
 > - Community: If you refine this workflow, please update it via [Contributing to docs](./contribute.md).
@@ -38,9 +37,9 @@ cp ~/my-updated-docs/*.md /opt/documents/incoming/
 ### 2. Trigger the RAG Ingestion DAG
 
 1. Open the Airflow UI.
-2. Find the RAG ingestion DAG (e.g., `rag_document_ingestion`).
-3. Unpause it if needed.
-4. Trigger a DAG run:
+1. Find the RAG ingestion DAG (e.g., `rag_document_ingestion`).
+1. Unpause it if needed.
+1. Trigger a DAG run:
    - Optionally provide parameters if your DAG supports custom paths.
 
 ### 3. Confirm Ingestion Succeeded
@@ -58,6 +57,6 @@ cp ~/my-updated-docs/*.md /opt/documents/incoming/
   - Whether the ingestion DAG completed successfully.
   - Any errors reported in logs.
 
----
+______________________________________________________________________
 
 If you frequently ingest new docs, consider scheduling the ingestion DAG or adding a dedicated incremental-update DAG and documenting it here.

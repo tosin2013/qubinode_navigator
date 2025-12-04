@@ -20,7 +20,7 @@ import argparse
 import signal
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Generator
+from typing import Generator
 
 # Check for required dependencies
 try:
@@ -32,7 +32,6 @@ try:
     from rich.spinner import Spinner
     from rich.text import Text
     from rich.theme import Theme
-    from rich.style import Style
     from prompt_toolkit import PromptSession
     from prompt_toolkit.history import FileHistory
     from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
@@ -44,16 +43,18 @@ except ImportError as e:
     sys.exit(1)
 
 # Custom theme for Qubinode
-QUBINODE_THEME = Theme({
-    "info": "cyan",
-    "warning": "yellow",
-    "error": "bold red",
-    "success": "bold green",
-    "user": "bold blue",
-    "assistant": "bold magenta",
-    "dim": "dim white",
-    "highlight": "bold cyan",
-})
+QUBINODE_THEME = Theme(
+    {
+        "info": "cyan",
+        "warning": "yellow",
+        "error": "bold red",
+        "success": "bold green",
+        "user": "bold blue",
+        "assistant": "bold magenta",
+        "dim": "dim white",
+        "highlight": "bold cyan",
+    }
+)
 
 console = Console(theme=QUBINODE_THEME)
 
@@ -71,14 +72,10 @@ class ConversationHistory:
         self.messages: list[dict] = []
 
     def add(self, role: str, content: str):
-        self.messages.append({
-            "role": role,
-            "content": content,
-            "timestamp": datetime.now().isoformat()
-        })
+        self.messages.append({"role": role, "content": content, "timestamp": datetime.now().isoformat()})
         # Keep only recent messages
         if len(self.messages) > self.max_turns * 2:
-            self.messages = self.messages[-self.max_turns * 2:]
+            self.messages = self.messages[-self.max_turns * 2 :]
 
     def get_context(self) -> str:
         """Format recent conversation for context."""
@@ -97,7 +94,7 @@ class ConversationHistory:
 
     def save(self):
         try:
-            with open(CONVERSATION_FILE, 'w') as f:
+            with open(CONVERSATION_FILE, "w") as f:
                 json.dump(self.messages, f, indent=2)
         except Exception:
             pass
@@ -105,7 +102,7 @@ class ConversationHistory:
     def load(self):
         try:
             if CONVERSATION_FILE.exists():
-                with open(CONVERSATION_FILE, 'r') as f:
+                with open(CONVERSATION_FILE, "r") as f:
                     self.messages = json.load(f)
         except Exception:
             self.messages = []
@@ -115,20 +112,14 @@ class QuibinodeChatClient:
     """Client for Qubinode AI Assistant."""
 
     def __init__(self, base_url: str = DEFAULT_AI_URL):
-        self.base_url = base_url.rstrip('/')
+        self.base_url = base_url.rstrip("/")
         self.session = requests.Session()
-        self.session.headers.update({
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-        })
+        self.session.headers.update({"Content-Type": "application/json", "Accept": "application/json"})
 
     def check_health(self) -> tuple[bool, str]:
         """Check if AI Assistant is available."""
         try:
-            response = self.session.get(
-                f"{self.base_url}/health",
-                timeout=5
-            )
+            response = self.session.get(f"{self.base_url}/health", timeout=5)
             if response.status_code == 200:
                 return True, "AI Assistant is online"
             return False, f"Health check failed (HTTP {response.status_code})"
@@ -145,11 +136,7 @@ class QuibinodeChatClient:
 
         Falls back to non-streaming if streaming isn't supported.
         """
-        payload = {
-            "message": message,
-            "max_tokens": 1000,
-            "temperature": 0.7
-        }
+        payload = {"message": message, "max_tokens": 1000, "temperature": 0.7}
 
         if context:
             payload["context"] = {"conversation_history": context}
@@ -157,37 +144,32 @@ class QuibinodeChatClient:
         try:
             # Try streaming first
             if stream:
-                response = self.session.post(
-                    f"{self.base_url}/chat",
-                    json=payload,
-                    stream=True,
-                    timeout=90
-                )
+                response = self.session.post(f"{self.base_url}/chat", json=payload, stream=True, timeout=90)
 
                 if response.status_code == 200:
                     # Check if response is actually streaming
-                    content_type = response.headers.get('content-type', '')
+                    content_type = response.headers.get("content-type", "")
 
-                    if 'text/event-stream' in content_type:
+                    if "text/event-stream" in content_type:
                         # True streaming response
                         for line in response.iter_lines(decode_unicode=True):
                             if line:
-                                if line.startswith('data: '):
+                                if line.startswith("data: "):
                                     data = line[6:]
-                                    if data != '[DONE]':
+                                    if data != "[DONE]":
                                         try:
                                             chunk = json.loads(data)
-                                            if 'text' in chunk:
-                                                yield chunk['text']
-                                            elif 'content' in chunk:
-                                                yield chunk['content']
+                                            if "text" in chunk:
+                                                yield chunk["text"]
+                                            elif "content" in chunk:
+                                                yield chunk["content"]
                                         except json.JSONDecodeError:
                                             yield data
                     else:
                         # Non-streaming JSON response
                         try:
                             result = response.json()
-                            text = result.get('text') or result.get('response') or result.get('message', '')
+                            text = result.get("text") or result.get("response") or result.get("message", "")
                             yield text
                         except json.JSONDecodeError:
                             yield response.text
@@ -195,16 +177,12 @@ class QuibinodeChatClient:
                     yield f"Error: HTTP {response.status_code}"
             else:
                 # Non-streaming request
-                response = self.session.post(
-                    f"{self.base_url}/chat",
-                    json=payload,
-                    timeout=90
-                )
+                response = self.session.post(f"{self.base_url}/chat", json=payload, timeout=90)
 
                 if response.status_code == 200:
                     try:
                         result = response.json()
-                        yield result.get('text') or result.get('response') or result.get('message', '')
+                        yield (result.get("text") or result.get("response") or result.get("message", ""))
                     except json.JSONDecodeError:
                         yield response.text
                 else:
@@ -232,20 +210,22 @@ class QuibinodeChat:
         self.history.load()
 
         # Prompt toolkit style
-        self.prompt_style = PTStyle.from_dict({
-            'prompt': '#00aa00 bold',
-        })
+        self.prompt_style = PTStyle.from_dict(
+            {
+                "prompt": "#00aa00 bold",
+            }
+        )
 
         # Command shortcuts
         self.commands = {
-            '/help': self.cmd_help,
-            '/clear': self.cmd_clear,
-            '/history': self.cmd_history,
-            '/status': self.cmd_status,
-            '/exit': self.cmd_exit,
-            '/quit': self.cmd_exit,
-            '/new': self.cmd_new_conversation,
-            '/save': self.cmd_save,
+            "/help": self.cmd_help,
+            "/clear": self.cmd_clear,
+            "/history": self.cmd_history,
+            "/status": self.cmd_status,
+            "/exit": self.cmd_exit,
+            "/quit": self.cmd_exit,
+            "/new": self.cmd_new_conversation,
+            "/save": self.cmd_save,
         }
 
     def print_welcome(self):
@@ -353,7 +333,7 @@ class QuibinodeChat:
             return True
 
         # Check for commands
-        if user_input.startswith('/'):
+        if user_input.startswith("/"):
             cmd = user_input.split()[0].lower()
             if cmd in self.commands:
                 self.commands[cmd](user_input)
@@ -386,33 +366,36 @@ class QuibinodeChat:
                 spinner_text.append(" ", style="")
 
                 # Show spinner while waiting for first chunk
-                live.update(Panel(
-                    Spinner("dots", text=spinner_text),
-                    title="[assistant]Assistant[/assistant]",
-                    border_style="magenta"
-                ))
+                live.update(
+                    Panel(
+                        Spinner("dots", text=spinner_text),
+                        title="[assistant]Assistant[/assistant]",
+                        border_style="magenta",
+                    )
+                )
 
-                first_chunk = True
                 for chunk in self.client.chat(message, context, stream=True):
                     response_text += chunk
 
                     # Render markdown progressively
                     try:
                         md = Markdown(response_text)
-                        live.update(Panel(
-                            md,
-                            title="[assistant]Assistant[/assistant]",
-                            border_style="magenta"
-                        ))
+                        live.update(
+                            Panel(
+                                md,
+                                title="[assistant]Assistant[/assistant]",
+                                border_style="magenta",
+                            )
+                        )
                     except Exception:
                         # Fall back to plain text if markdown fails
-                        live.update(Panel(
-                            response_text,
-                            title="[assistant]Assistant[/assistant]",
-                            border_style="magenta"
-                        ))
-
-                    first_chunk = False
+                        live.update(
+                            Panel(
+                                response_text,
+                                title="[assistant]Assistant[/assistant]",
+                                border_style="magenta",
+                            )
+                        )
 
         except KeyboardInterrupt:
             console.print("\n[warning]Response cancelled.[/warning]")
@@ -436,7 +419,7 @@ class QuibinodeChat:
         session = PromptSession(
             history=FileHistory(str(HISTORY_FILE)),
             auto_suggest=AutoSuggestFromHistory(),
-            style=self.prompt_style
+            style=self.prompt_style,
         )
 
         # Handle Ctrl+C gracefully
@@ -447,10 +430,7 @@ class QuibinodeChat:
 
         while True:
             try:
-                user_input = session.prompt(
-                    [('class:prompt', 'You: ')],
-                    style=self.prompt_style
-                )
+                user_input = session.prompt([("class:prompt", "You: ")], style=self.prompt_style)
 
                 if not self.process_input(user_input):
                     break
@@ -483,26 +463,23 @@ Examples:
   %(prog)s                      Start interactive chat
   %(prog)s "How do I create a VM?"   Ask a single question
   %(prog)s --url http://server:8080  Connect to remote AI Assistant
-        """
+        """,
     )
 
     parser.add_argument(
-        'question',
-        nargs='?',
-        help='Question to ask (starts interactive mode if not provided)'
+        "question",
+        nargs="?",
+        help="Question to ask (starts interactive mode if not provided)",
     )
 
     parser.add_argument(
-        '--url', '-u',
+        "--url",
+        "-u",
         default=DEFAULT_AI_URL,
-        help=f'AI Assistant URL (default: {DEFAULT_AI_URL})'
+        help=f"AI Assistant URL (default: {DEFAULT_AI_URL})",
     )
 
-    parser.add_argument(
-        '--no-stream',
-        action='store_true',
-        help='Disable streaming responses'
-    )
+    parser.add_argument("--no-stream", action="store_true", help="Disable streaming responses")
 
     args = parser.parse_args()
 

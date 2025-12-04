@@ -41,9 +41,9 @@ def main():
 
     # Try loading from multiple locations
     registry_paths = [
-        os.path.join(DAGS_DIR, 'registry.yaml'),
-        '/opt/kcli-pipelines/dags/registry.yaml',
-        '/root/qubinode_navigator/airflow/dags/registry.yaml',
+        os.path.join(DAGS_DIR, "registry.yaml"),
+        "/opt/kcli-pipelines/dags/registry.yaml",
+        "/root/qubinode_navigator/airflow/dags/registry.yaml",
     ]
 
     for path in registry_paths:
@@ -64,9 +64,9 @@ for _dag_id, _dag in _registry_dags.items():
     globals()[_dag_id] = _dag
 
 # Cleanup temporary variables
-if '_dag_id' in dir():
+if "_dag_id" in dir():
     del _dag_id
-if '_dag' in dir():
+if "_dag" in dir():
     del _dag
 
 
@@ -74,13 +74,13 @@ if '_dag' in dir():
 # Module Information
 # =============================================================================
 
-__version__ = '1.0.0'
-__author__ = 'Qubinode Team'
+__version__ = "1.0.0"
+__author__ = "Qubinode Team"
 
 # Export list of loaded DAGs for debugging
 LOADED_DAGS = list(_registry_dags.keys())
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print(f"Loaded {len(LOADED_DAGS)} DAGs from registry:")
     for dag_id in LOADED_DAGS:
         print(f"  - {dag_id}")

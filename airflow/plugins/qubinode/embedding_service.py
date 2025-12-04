@@ -16,8 +16,7 @@ Usage:
 import os
 import logging
 import hashlib
-from typing import List, Optional, Union
-from functools import lru_cache
+from typing import List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +37,7 @@ def _get_local_model():
     if _local_model is None:
         try:
             from sentence_transformers import SentenceTransformer
+
             logger.info(f"Loading local embedding model: {EMBEDDING_MODEL}")
             _local_model = SentenceTransformer(EMBEDDING_MODEL)
             logger.info(f"Model loaded successfully. Dimensions: {_local_model.get_sentence_embedding_dimension()}")
@@ -56,6 +56,7 @@ def _get_openai_client():
     if _openai_client is None:
         try:
             from openai import OpenAI
+
             if not OPENAI_API_KEY:
                 raise ValueError("OPENAI_API_KEY environment variable not set")
             _openai_client = OpenAI(api_key=OPENAI_API_KEY)
@@ -85,7 +86,7 @@ class EmbeddingService:
         self,
         provider: Optional[str] = None,
         model: Optional[str] = None,
-        dimensions: Optional[int] = None
+        dimensions: Optional[int] = None,
     ):
         """
         Initialize the embedding service.
@@ -177,10 +178,7 @@ class EmbeddingService:
     def _embed_openai(self, text: str) -> List[float]:
         """Generate embedding using OpenAI API."""
         client = _get_openai_client()
-        response = client.embeddings.create(
-            model="text-embedding-ada-002",
-            input=text
-        )
+        response = client.embeddings.create(model="text-embedding-ada-002", input=text)
         return response.data[0].embedding
 
     def _embed_batch_openai(self, texts: List[str], batch_size: int) -> List[List[float]]:
@@ -190,11 +188,8 @@ class EmbeddingService:
 
         # OpenAI has limits, process in batches
         for i in range(0, len(texts), batch_size):
-            batch = texts[i:i + batch_size]
-            response = client.embeddings.create(
-                model="text-embedding-ada-002",
-                input=batch
-            )
+            batch = texts[i : i + batch_size]
+            response = client.embeddings.create(model="text-embedding-ada-002", input=batch)
             results.extend([d.embedding for d in response.data])
 
         return results
@@ -210,7 +205,7 @@ class EmbeddingService:
         Returns:
             Hex string of SHA256 hash
         """
-        return hashlib.sha256(text.encode('utf-8')).hexdigest()
+        return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
     def get_dimensions(self) -> int:
         """Return the embedding dimensions for this service."""
@@ -259,12 +254,8 @@ def embed_texts(texts: List[str]) -> List[List[float]]:
 # Text Chunking Utilities
 # =============================================================================
 
-def chunk_text(
-    text: str,
-    chunk_size: int = 500,
-    chunk_overlap: int = 50,
-    separator: str = "\n\n"
-) -> List[str]:
+
+def chunk_text(text: str, chunk_size: int = 500, chunk_overlap: int = 50, separator: str = "\n\n") -> List[str]:
     """
     Split text into overlapping chunks for embedding.
 
@@ -294,7 +285,7 @@ def chunk_text(
                 end = sep_pos + len(separator)
             else:
                 # Try to break at sentence
-                for punct in ['. ', '! ', '? ', '\n']:
+                for punct in [". ", "! ", "? ", "\n"]:
                     punct_pos = text.rfind(punct, start, end)
                     if punct_pos > start:
                         end = punct_pos + len(punct)

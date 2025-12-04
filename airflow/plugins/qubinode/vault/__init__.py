@@ -30,10 +30,12 @@ __all__ = [
     "VaultLeaseRevokeOperator",
 ]
 
+
 # Lazy imports to avoid loading hvac if not installed
 def __getattr__(name):
     """Lazy load vault components."""
     if name in __all__:
         from qubinode.vault import operators
+
         return getattr(operators, name)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

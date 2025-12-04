@@ -164,13 +164,25 @@ jobs:
           cd airflow
 
           # Initialize Airflow DB (use python -m to ensure correct path)
-          python -m airflow db init 2>/dev/null || python -m airflow db migrate 2>/dev/null
+          # Allow migrate to fail initially (may need to init first on fresh install)
+          echo "Initializing Airflow database..."
+          python -m airflow db migrate 2>&1 || {
+            echo "[WARN] db migrate failed, trying db init..."
+            python -m airflow db init 2>&1 || true
+          }
 
-          # List DAGs and check for import errors
-          python -m airflow dags list 2>&1 | tee dag_list.txt
+          # List DAGs and check for import errors (auto-confirm with yes)
+          echo "Listing DAGs..."
+          yes | python -m airflow dags list 2>&1 | tee dag_list.txt || true
 
-          if grep -iE "error|exception" dag_list.txt | grep -v "No data found"; then
-            echo "[ERROR] DAG import errors detected"
+          # Check for actual import errors by running list-import-errors
+          echo "Checking for DAG import errors..."
+          import_errors=$(yes | python -m airflow dags list-import-errors 2>&1 || true)
+
+          # Check if there are real errors (not just "No data found" or graphviz warnings)
+          if echo "$import_errors" | grep -v "No data found" | grep -v "Could not import graphviz" | grep -qE "Traceback|ImportError|ModuleNotFoundError|SyntaxError"; then
+            echo "[ERROR] DAG import errors detected:"
+            echo "$import_errors"
             exit 1
           fi
 

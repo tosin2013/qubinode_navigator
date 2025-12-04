@@ -5,6 +5,7 @@
 **ALWAYS test kcli commands with these scripts BEFORE adding them to DAGs!**
 
 These scripts help you:
+
 - ✅ Verify kcli syntax is correct
 - ✅ Confirm commands work on your system
 - ✅ See actual output before DAGifying
@@ -20,12 +21,12 @@ These scripts help you:
 
 ## 📁 Available Scripts
 
-| Script | Purpose | When to Use |
-|--------|---------|-------------|
-| `test-kcli-create-vm.sh` | Test VM creation | Before using `KcliVMCreateOperator` |
-| `test-kcli-delete-vm.sh` | Test VM deletion | Before using `KcliVMDeleteOperator` |
-| `test-kcli-list-vms.sh` | Test VM listing | Before using `KcliVMListOperator` |
-| `test-complete-workflow.sh` | Test full lifecycle | Before creating new DAGs |
+| Script                      | Purpose             | When to Use                         |
+| --------------------------- | ------------------- | ----------------------------------- |
+| `test-kcli-create-vm.sh`    | Test VM creation    | Before using `KcliVMCreateOperator` |
+| `test-kcli-delete-vm.sh`    | Test VM deletion    | Before using `KcliVMDeleteOperator` |
+| `test-kcli-list-vms.sh`     | Test VM listing     | Before using `KcliVMListOperator`   |
+| `test-complete-workflow.sh` | Test full lifecycle | Before creating new DAGs            |
 
 ## 🚀 Quick Start
 
@@ -71,11 +72,13 @@ chmod +x *.sh
 **Script:** `test-kcli-create-vm.sh`
 
 **Usage:**
+
 ```bash
 ./test-kcli-create-vm.sh [vm_name] [image] [memory_mb] [cpus] [disk_gb]
 ```
 
 **Examples:**
+
 ```bash
 # Default (auto-generated name, centos10stream, 2GB RAM, 2 CPUs, 10GB disk)
 ./test-kcli-create-vm.sh
@@ -88,14 +91,16 @@ chmod +x *.sh
 ```
 
 **What it does:**
+
 1. ✅ Checks if image exists
-2. ✅ Shows the exact kcli command
-3. ✅ Asks for confirmation
-4. ✅ Creates the VM
-5. ✅ Verifies creation succeeded
-6. ✅ Shows how to use in DAG
+1. ✅ Shows the exact kcli command
+1. ✅ Asks for confirmation
+1. ✅ Creates the VM
+1. ✅ Verifies creation succeeded
+1. ✅ Shows how to use in DAG
 
 **Output:**
+
 ```
 ✅ VM creation command completed
 📊 VM Details:
@@ -114,11 +119,13 @@ Used memory:    2097152 KiB
 **Script:** `test-kcli-delete-vm.sh`
 
 **Usage:**
+
 ```bash
 ./test-kcli-delete-vm.sh <vm_name>
 ```
 
 **Examples:**
+
 ```bash
 # Delete specific VM
 ./test-kcli-delete-vm.sh my-test-vm
@@ -129,29 +136,33 @@ Used memory:    2097152 KiB
 ```
 
 **What it does:**
+
 1. ✅ Checks if VM exists
-2. ✅ Shows current VM state
-3. ✅ Asks for confirmation
-4. ✅ Stops VM if running
-5. ✅ Deletes VM
-6. ✅ Verifies deletion
+1. ✅ Shows current VM state
+1. ✅ Asks for confirmation
+1. ✅ Stops VM if running
+1. ✅ Deletes VM
+1. ✅ Verifies deletion
 
 ### Test VM Listing
 
 **Script:** `test-kcli-list-vms.sh`
 
 **Usage:**
+
 ```bash
 ./test-kcli-list-vms.sh
 ```
 
 **What it does:**
+
 1. ✅ Lists VMs using virsh
-2. ✅ Lists VMs using kcli (if available)
-3. ✅ Lists VMs from Airflow container
-4. ✅ Shows count summary
+1. ✅ Lists VMs using kcli (if available)
+1. ✅ Lists VMs from Airflow container
+1. ✅ Shows count summary
 
 **Output:**
+
 ```
 📋 Method 1: virsh -c qemu:///system list --all
  Id   Name                 State
@@ -175,21 +186,24 @@ Running VMs:  1
 **Script:** `test-complete-workflow.sh`
 
 **Usage:**
+
 ```bash
 ./test-complete-workflow.sh
 ```
 
 **What it does:**
 Mirrors the `example_kcli_vm_provisioning` DAG:
+
 1. ✅ Lists VMs (before)
-2. ✅ Creates test VM
-3. ✅ Waits for VM to be running
-4. ✅ Validates VM
-5. ✅ Lists VMs (after)
-6. ✅ Keeps VM running (configurable)
-7. ✅ Deletes VM (optional)
+1. ✅ Creates test VM
+1. ✅ Waits for VM to be running
+1. ✅ Validates VM
+1. ✅ Lists VMs (after)
+1. ✅ Keeps VM running (configurable)
+1. ✅ Deletes VM (optional)
 
 **Interactive options:**
+
 - 30 seconds wait (quick test)
 - 5 minutes wait (like DAG)
 - Keep running (manual cleanup)
@@ -238,17 +252,20 @@ kcli version
 ### Example: VM Creation
 
 **After testing with script:**
+
 ```bash
 ./test-kcli-create-vm.sh test-vm centos10stream 2048 2 10
 ```
 
 **Successful output:**
+
 ```
 ✅ VM creation command completed
 Command: kcli create vm test-vm -i centos10stream -P memory=2048 -P numcpus=2 -P disks=[10]
 ```
 
 **Add to DAG:**
+
 ```python
 from qubinode.operators import KcliVMCreateOperator
 
@@ -266,12 +283,14 @@ create_vm = KcliVMCreateOperator(
 ### Example: Complete Workflow
 
 **Test full workflow:**
+
 ```bash
 ./test-complete-workflow.sh
 # Select option 2 (5 minutes wait)
 ```
 
 **If all steps succeed, create DAG:**
+
 ```python
 # All these operators have been tested!
 list_before = KcliVMListOperator(task_id='list_before', dag=dag)
@@ -289,12 +308,14 @@ list_before >> create_vm >> wait_vm >> validate >> list_after >> keep_running >>
 ## 🎓 Learning Path
 
 ### 1. Start Simple
+
 ```bash
 # Just list VMs
 ./test-kcli-list-vms.sh
 ```
 
 ### 2. Create and Delete
+
 ```bash
 # Create a test VM
 ./test-kcli-create-vm.sh
@@ -304,6 +325,7 @@ list_before >> create_vm >> wait_vm >> validate >> list_after >> keep_running >>
 ```
 
 ### 3. Try Custom Configs
+
 ```bash
 # Different sizes
 ./test-kcli-create-vm.sh small-vm centos10stream 1024 1 10
@@ -311,12 +333,14 @@ list_before >> create_vm >> wait_vm >> validate >> list_after >> keep_running >>
 ```
 
 ### 4. Full Workflow
+
 ```bash
 # Run the complete test
 ./test-complete-workflow.sh
 ```
 
 ### 5. Create Your DAG
+
 ```bash
 # Now you're ready!
 # Copy example_kcli_vm_provisioning.py and customize
@@ -413,6 +437,6 @@ You know the scripts are working when:
 # http://localhost:8888
 ```
 
----
+______________________________________________________________________
 
 **Remember:** Scripts are faster to debug than DAGs! Test first, DAGify later. 🚀

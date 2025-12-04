@@ -59,11 +59,13 @@ curl http://localhost:8080/health
 ## API Endpoints
 
 ### Health Check
+
 ```bash
 GET /health
 ```
 
 ### Chat Interface
+
 ```bash
 POST /chat
 {
@@ -75,6 +77,7 @@ POST /chat
 ```
 
 ### System Diagnostics
+
 ```bash
 POST /diagnostics
 {
@@ -83,6 +86,7 @@ POST /diagnostics
 ```
 
 ### Configuration
+
 ```bash
 GET /config
 ```
@@ -92,6 +96,7 @@ GET /config
 The AI Assistant exposes **4 powerful tools** via Model Context Protocol (MCP) for LLMs to interact with Qubinode:
 
 ### 1. **ask_qubinode** (NEW - Learning Tool)
+
 Perfect for LLMs to learn how to use Qubinode by asking questions in natural language.
 
 ```python
@@ -104,6 +109,7 @@ await mcp_client.call_tool("ask_qubinode", {
 ```
 
 **Features:**
+
 - Combines documentation search with AI-powered guidance
 - Supports topics: `plugins`, `deployment`, `mcp`, `airflow`, `configuration`
 - Skill levels: `beginner`, `intermediate`, `advanced`
@@ -111,6 +117,7 @@ await mcp_client.call_tool("ask_qubinode", {
 - Falls back to documentation if AI service is unavailable
 
 ### 2. **query_documents**
+
 Search the RAG document store for specific information.
 
 ```python
@@ -121,6 +128,7 @@ await mcp_client.call_tool("query_documents", {
 ```
 
 ### 3. **chat_with_context**
+
 Send messages with context for intelligent infrastructure-focused responses.
 
 ```python
@@ -135,6 +143,7 @@ await mcp_client.call_tool("chat_with_context", {
 ```
 
 ### 4. **get_project_status**
+
 Get current project health and metrics.
 
 ```python
@@ -146,8 +155,8 @@ await mcp_client.call_tool("get_project_status", {})
 The AI assistant can be configured via:
 
 1. **Configuration file**: `config/ai_config.yaml`
-2. **Environment variables**: `AI_*` prefixed variables
-3. **Runtime parameters**: API request parameters
+1. **Environment variables**: `AI_*` prefixed variables
+1. **Runtime parameters**: API request parameters
 
 ### Key Configuration Options
 
@@ -199,8 +208,8 @@ The service automatically downloads the IBM Granite-4.0-Micro model in GGUF form
 To use a different model:
 
 1. Place the GGUF model file in `/app/models/`
-2. Update `ai.model_path` in configuration
-3. Restart the service
+1. Update `ai.model_path` in configuration
+1. Restart the service
 
 ## Integration with Qubinode Navigator
 
@@ -286,12 +295,14 @@ pytest tests/load/
 ## Hardware Requirements
 
 ### Minimum Requirements
+
 - **CPU**: x86_64 with AVX2 support
 - **Memory**: 6GB RAM (4GB for model + 2GB for system)
 - **Storage**: 5GB free space
 - **Network**: HTTP access for model download
 
 ### Recommended Requirements
+
 - **CPU**: 8+ cores with AVX2/AVX-512
 - **Memory**: 8GB+ RAM
 - **Storage**: 10GB+ SSD storage
@@ -327,28 +338,32 @@ Use different quantization levels for performance/quality trade-offs:
 ### Common Issues
 
 1. **Model Download Fails**
+
    ```bash
    # Manual download
    wget -O models/granite-4.0-micro.gguf [MODEL_URL]
    ```
 
-2. **High Memory Usage**
+1. **High Memory Usage**
+
    ```bash
    # Reduce context size
    export AI_CONTEXT_SIZE=1024
    ```
 
-3. **Slow Response Times**
+1. **Slow Response Times**
+
    ```bash
    # Increase thread count
    export AI_THREADS=8
    ```
 
-4. **Container Won't Start**
+1. **Container Won't Start**
+
    ```bash
    # Check logs
    podman logs qubinode-ai
-   
+
    # Check health
    curl http://localhost:8080/health
    ```
@@ -374,10 +389,10 @@ podman run --rm -it qubinode-ai-assistant
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
+1. Create a feature branch
+1. Make your changes
+1. Add tests
+1. Submit a pull request
 
 ## License
 

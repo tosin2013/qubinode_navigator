@@ -11,14 +11,14 @@ Both use same commands, different execution!
 
 ## 📊 Side-by-Side Comparison
 
-| Feature | Test Scripts | DAG Operators |
-|---------|--------------|---------------|
-| **Purpose** | Manual testing | Automated workflows |
-| **Interaction** | ✅ Requires confirmation ('y') | ❌ No interaction |
-| **Execution** | You run manually | Airflow scheduler runs |
-| **Commands** | Direct kcli/virsh calls | Via hooks.py |
-| **Error Handling** | Show & stop | Log & raise exception |
-| **Use When** | Testing before DAGifying | Production workflows |
+| Feature            | Test Scripts                   | DAG Operators          |
+| ------------------ | ------------------------------ | ---------------------- |
+| **Purpose**        | Manual testing                 | Automated workflows    |
+| **Interaction**    | ✅ Requires confirmation ('y') | ❌ No interaction      |
+| **Execution**      | You run manually               | Airflow scheduler runs |
+| **Commands**       | Direct kcli/virsh calls        | Via hooks.py           |
+| **Error Handling** | Show & stop                    | Log & raise exception  |
+| **Use When**       | Testing before DAGifying       | Production workflows   |
 
 ## 🔍 Detailed Explanation
 
@@ -27,6 +27,7 @@ Both use same commands, different execution!
 **Location:** `/root/qubinode_navigator/airflow/scripts/test-*.sh`
 
 **Example:**
+
 ```bash
 $ ./scripts/test-kcli-create-vm.sh myvm centos10stream 2048 2 10
 
@@ -38,11 +39,13 @@ Execute this command? (y/n) █  ← YOU MUST PRESS 'y'
 ```
 
 **Why Interactive?**
+
 - ✅ Safety: Prevents accidental VM creation/deletion
 - ✅ Learning: You see command before it runs
 - ✅ Control: You can abort if parameters look wrong
 
 **Code Pattern:**
+
 ```bash
 #!/bin/bash
 # Show the command
@@ -63,6 +66,7 @@ kcli create vm $VM_NAME ...
 **Location:** `/root/qubinode_navigator/airflow/plugins/qubinode/operators.py`
 
 **Example:**
+
 ```python
 # In your DAG
 create_vm = KcliVMCreateOperator(
@@ -79,12 +83,14 @@ create_vm = KcliVMCreateOperator(
 ```
 
 **Why Automated?**
+
 - ✅ Workflows: Can't wait for human input
 - ✅ Scheduled: Runs at specific times
 - ✅ Reliable: Deterministic behavior
 - ✅ Scalable: Can run 100s of tasks
 
 **Code Pattern:**
+
 ```python
 # From operators.py
 def execute(self, context):
@@ -97,7 +103,7 @@ def execute(self, context):
         cpus=self.cpus,
         disk_size=self.disk_size
     )
-    
+
     if result['success']:
         return {'status': 'created'}
     else:
@@ -142,12 +148,14 @@ def execute(self, context):
 **The commands are the SAME, but the execution is different!**
 
 ### Test Script Command:
+
 ```bash
 kcli create vm myvm -i centos10stream -P memory=2048 -P numcpus=2 -P disks=[10]
 # ↑ You confirm before this runs
 ```
 
 ### DAG Operator (Internal):
+
 ```python
 # hooks.py line 64-87
 command = ['create', 'vm', vm_name]
@@ -163,6 +171,7 @@ subprocess.run(command, ...)  # ✅ Runs immediately, no prompt!
 ### We Just Tested:
 
 **1. Test Script** (Interactive) ✅
+
 ```bash
 $ ./scripts/test-kcli-create-vm.sh test-validation centos10stream 2048 2 10
 
@@ -172,12 +181,14 @@ Execute this command? (y/n) y  ← We pressed 'y'
 ```
 
 **2. VM Actually Created** ✅
+
 ```bash
 $ kcli list vms
 test-validation |   up   | 192.168.122.204 | centos10stream
 ```
 
 **3. VM Cleaned Up** ✅
+
 ```bash
 $ kcli delete vm test-validation -y
 test-validation deleted
@@ -195,9 +206,9 @@ test-validation deleted
 Since the test script proved the command works, **the DAG operator will work without prompts** because:
 
 1. ✅ Same kcli command (verified working)
-2. ✅ Operator calls hook directly (no prompts in code)
-3. ✅ Hook uses subprocess.run() (automated)
-4. ✅ No `read -p` or input() calls in Python code
+1. ✅ Operator calls hook directly (no prompts in code)
+1. ✅ Hook uses subprocess.run() (automated)
+1. ✅ No `read -p` or input() calls in Python code
 
 ## 🎓 When to Use Each
 
@@ -226,6 +237,7 @@ Since the test script proved the command works, **the DAG operator will work wit
 ## 🔄 Workflow: Test → DAGify
 
 ### Step 1: Test with Script
+
 ```bash
 ./scripts/test-kcli-create-vm.sh webserver ubuntu2404 4096 4 50
 
@@ -234,6 +246,7 @@ Execute this command? (y/n) y  ← You confirm
 ```
 
 ### Step 2: Note the Working Values
+
 ```
 VM Name:  webserver
 Image:    ubuntu2404
@@ -245,6 +258,7 @@ Disk:     50GB
 ```
 
 ### Step 3: Add to DAG (No Prompts!)
+
 ```python
 from qubinode.operators import KcliVMCreateOperator
 
@@ -291,7 +305,7 @@ eval "$COMMAND"
 class KcliVMCreateOperator(BaseOperator):
     def execute(self, context):
         # NO PROMPTS! Direct execution
-        
+
         kcli_hook = KcliHook()
         result = kcli_hook.create_vm(
             vm_name=self.vm_name,
@@ -301,7 +315,7 @@ class KcliVMCreateOperator(BaseOperator):
             disk_size=self.disk_size
         )
         # ↑ Runs immediately, returns result
-        
+
         if result['success']:
             return {'status': 'created'}
         else:
@@ -314,12 +328,12 @@ class KcliVMCreateOperator(BaseOperator):
 # hooks.py
 def create_vm(self, vm_name: str, **kwargs):
     """Create VM - NO INTERACTION"""
-    
+
     command = ['create', 'vm', vm_name]
     command.extend(['-i', kwargs['image']])
     command.extend(['-P', f"memory={kwargs['memory']}"])
     # ... more parameters ...
-    
+
     # Execute directly (no prompts!)
     result = subprocess.run(
         command,
@@ -327,7 +341,7 @@ def create_vm(self, vm_name: str, **kwargs):
         text=True
     )
     # ↑ Runs immediately, captures output
-    
+
     return {
         'success': result.returncode == 0,
         'stdout': result.stdout,
@@ -338,18 +352,21 @@ def create_vm(self, vm_name: str, **kwargs):
 ## 🎯 Summary
 
 ### Test Scripts:
+
 - 🔒 **Interactive** (safe for manual testing)
 - 🤔 Requires 'y' confirmation
 - 📚 Educational (shows commands)
 - 🧪 For testing BEFORE DAGifying
 
 ### DAG Operators:
+
 - 🤖 **Automated** (no interaction)
 - ⚡ Runs immediately
 - 📊 Logs results
 - 🚀 For production workflows
 
 ### Both:
+
 - ✅ Use same kcli/virsh commands
 - ✅ Same syntax and parameters
 - ✅ Same error handling
@@ -362,16 +379,18 @@ def create_vm(self, vm_name: str, **kwargs):
 **Your observation was spot-on!**
 
 You noticed:
+
 > "I had to press 'y' - that's why the VM may not have started in the DAG"
 
 **Correct analysis, but DAGs don't have this issue:**
 
 1. ✅ Test scripts require 'y' (by design, for safety)
-2. ✅ DAG operators don't require 'y' (by design, for automation)
-3. ✅ Both use same commands (tested and verified)
-4. ✅ DAGs will work without manual interaction
+1. ✅ DAG operators don't require 'y' (by design, for automation)
+1. ✅ Both use same commands (tested and verified)
+1. ✅ DAGs will work without manual interaction
 
 **Test script validation proved:**
+
 - ✅ Commands work
 - ✅ Syntax correct
 - ✅ Image exists

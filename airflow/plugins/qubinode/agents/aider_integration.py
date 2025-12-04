@@ -27,10 +27,8 @@ import os
 import logging
 import subprocess
 import tempfile
-import shutil
 from typing import Dict, Any, List, Optional
 from pathlib import Path
-import json
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +52,7 @@ class AiderClient:
         self,
         model: Optional[str] = None,
         working_dir: Optional[str] = None,
-        auto_commit: bool = False
+        auto_commit: bool = False,
     ):
         """
         Initialize the Aider client.
@@ -75,11 +73,7 @@ class AiderClient:
         """Check if Aider is available."""
         if self._aider_available is None:
             try:
-                result = subprocess.run(
-                    ["aider", "--version"],
-                    capture_output=True,
-                    timeout=5
-                )
+                result = subprocess.run(["aider", "--version"], capture_output=True, timeout=5)
                 self._aider_available = result.returncode == 0
                 if self._aider_available:
                     logger.info(f"Aider version: {result.stdout.decode().strip()}")
@@ -93,7 +87,7 @@ class AiderClient:
         instruction: str,
         files: List[str],
         context: Optional[str] = None,
-        dry_run: bool = False
+        dry_run: bool = False,
     ) -> Dict[str, Any]:
         """
         Use Aider to modify files based on instruction.
@@ -108,11 +102,7 @@ class AiderClient:
             Dictionary with success status and output
         """
         if not self.is_available():
-            return {
-                "success": False,
-                "error": "Aider not available",
-                "output": ""
-            }
+            return {"success": False, "error": "Aider not available", "output": ""}
 
         # Build the prompt
         prompt = instruction
@@ -120,7 +110,7 @@ class AiderClient:
             prompt = f"{context}\n\n{instruction}"
 
         # Create temporary file for prompt
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
             f.write(prompt)
             prompt_file = f.name
 
@@ -129,8 +119,10 @@ class AiderClient:
             cmd = [
                 "aider",
                 "--yes",  # Non-interactive
-                "--message-file", prompt_file,
-                "--model", self.model
+                "--message-file",
+                prompt_file,
+                "--model",
+                self.model,
             ]
 
             if not self.auto_commit:
@@ -153,7 +145,7 @@ class AiderClient:
                 capture_output=True,
                 text=True,
                 timeout=AIDER_TIMEOUT,
-                cwd=self.working_dir
+                cwd=self.working_dir,
             )
 
             success = result.returncode == 0
@@ -164,7 +156,7 @@ class AiderClient:
                 "output": output,
                 "return_code": result.returncode,
                 "files_modified": files,
-                "dry_run": dry_run
+                "dry_run": dry_run,
             }
 
         except subprocess.TimeoutExpired:
@@ -172,15 +164,11 @@ class AiderClient:
             return {
                 "success": False,
                 "error": f"Aider timed out after {AIDER_TIMEOUT} seconds",
-                "output": ""
+                "output": "",
             }
         except Exception as e:
             logger.error(f"Aider execution failed: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "output": ""
-            }
+            return {"success": False, "error": str(e), "output": ""}
         finally:
             # Clean up temp file
             try:
@@ -188,12 +176,7 @@ class AiderClient:
             except Exception:
                 pass
 
-    async def create_file(
-        self,
-        instruction: str,
-        file_path: str,
-        context: Optional[str] = None
-    ) -> Dict[str, Any]:
+    async def create_file(self, instruction: str, file_path: str, context: Optional[str] = None) -> Dict[str, Any]:
         """
         Use Aider to create a new file.
 
@@ -216,17 +199,12 @@ class AiderClient:
         result = await self.modify_files(
             instruction=f"Create the file {file_path} with the following:\n{instruction}",
             files=[file_path],
-            context=context
+            context=context,
         )
 
         return result
 
-    async def add_to_file(
-        self,
-        file_path: str,
-        content: str,
-        position: str = "end"
-    ) -> Dict[str, Any]:
+    async def add_to_file(self, file_path: str, content: str, position: str = "end") -> Dict[str, Any]:
         """
         Add content to an existing file.
 
@@ -240,17 +218,14 @@ class AiderClient:
         """
         instruction = f"Add the following to the {position} of the file:\n\n{content}"
 
-        return await self.modify_files(
-            instruction=instruction,
-            files=[file_path]
-        )
+        return await self.modify_files(instruction=instruction, files=[file_path])
 
     async def refactor(
         self,
         files: List[str],
         refactor_type: str,
         target: str,
-        context: Optional[str] = None
+        context: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Perform a refactoring operation.
@@ -270,26 +245,14 @@ class AiderClient:
             "inline": f"Inline the function/variable '{target}'",
             "simplify": f"Simplify the code in '{target}'",
             "add_docstring": f"Add comprehensive docstrings to '{target}'",
-            "add_tests": f"Add unit tests for '{target}'"
+            "add_tests": f"Add unit tests for '{target}'",
         }
 
-        instruction = refactor_instructions.get(
-            refactor_type,
-            f"Perform {refactor_type} refactoring on '{target}'"
-        )
+        instruction = refactor_instructions.get(refactor_type, f"Perform {refactor_type} refactoring on '{target}'")
 
-        return await self.modify_files(
-            instruction=instruction,
-            files=files,
-            context=context
-        )
+        return await self.modify_files(instruction=instruction, files=files, context=context)
 
-    async def fix_error(
-        self,
-        file_path: str,
-        error_message: str,
-        error_context: Optional[str] = None
-    ) -> Dict[str, Any]:
+    async def fix_error(self, file_path: str, error_message: str, error_context: Optional[str] = None) -> Dict[str, Any]:
         """
         Use Aider to fix an error in code.
 
@@ -308,17 +271,14 @@ Error: {error_message}
         if error_context:
             instruction += f"\nContext: {error_context}"
 
-        return await self.modify_files(
-            instruction=instruction,
-            files=[file_path]
-        )
+        return await self.modify_files(instruction=instruction, files=[file_path])
 
     async def generate_dag(
         self,
         dag_name: str,
         description: str,
         tasks: List[Dict[str, str]],
-        template: Optional[str] = None
+        template: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Generate a new DAG file using Aider.
@@ -335,10 +295,7 @@ Error: {error_message}
         file_path = f"dags/{dag_name}.py"
 
         # Build task descriptions
-        task_desc = "\n".join([
-            f"- {t.get('name', 'task')}: {t.get('description', '')}"
-            for t in tasks
-        ])
+        task_desc = "\n".join([f"- {t.get('name', 'task')}: {t.get('description', '')}" for t in tasks])
 
         instruction = f"""Create an Airflow DAG named '{dag_name}' that:
 
@@ -364,10 +321,7 @@ Requirements:
         os.makedirs(parent_dir, exist_ok=True)
         Path(full_path).touch()
 
-        result = await self.modify_files(
-            instruction=instruction,
-            files=[file_path]
-        )
+        result = await self.modify_files(instruction=instruction, files=[file_path])
 
         result["file_path"] = file_path
         return result
@@ -384,10 +338,7 @@ class AiderBatchProcessor:
         self.client = client or AiderClient()
         self.results: List[Dict[str, Any]] = []
 
-    async def process_batch(
-        self,
-        operations: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+    async def process_batch(self, operations: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
         Process a batch of operations.
 
@@ -410,31 +361,31 @@ class AiderBatchProcessor:
                     result = await self.client.modify_files(
                         instruction=op.get("instruction", ""),
                         files=op.get("files", []),
-                        context=op.get("context")
+                        context=op.get("context"),
                     )
                 elif op_type == "create":
                     result = await self.client.create_file(
                         instruction=op.get("instruction", ""),
                         file_path=op.get("file_path", ""),
-                        context=op.get("context")
+                        context=op.get("context"),
                     )
                 elif op_type == "refactor":
                     result = await self.client.refactor(
                         files=op.get("files", []),
                         refactor_type=op.get("refactor_type", "simplify"),
                         target=op.get("target", ""),
-                        context=op.get("context")
+                        context=op.get("context"),
                     )
                 elif op_type == "fix":
                     result = await self.client.fix_error(
                         file_path=op.get("file_path", ""),
                         error_message=op.get("error_message", ""),
-                        error_context=op.get("error_context")
+                        error_context=op.get("error_context"),
                     )
                 else:
                     result = {
                         "success": False,
-                        "error": f"Unknown operation type: {op_type}"
+                        "error": f"Unknown operation type: {op_type}",
                     }
 
                 if result.get("success"):
@@ -442,23 +393,17 @@ class AiderBatchProcessor:
                 else:
                     failure_count += 1
 
-                self.results.append({
-                    "operation": op,
-                    "result": result
-                })
+                self.results.append({"operation": op, "result": result})
 
             except Exception as e:
                 failure_count += 1
-                self.results.append({
-                    "operation": op,
-                    "result": {"success": False, "error": str(e)}
-                })
+                self.results.append({"operation": op, "result": {"success": False, "error": str(e)}})
 
         return {
             "total": len(operations),
             "success": success_count,
             "failed": failure_count,
-            "results": self.results
+            "results": self.results,
         }
 
 
@@ -475,8 +420,4 @@ def get_aider_client() -> AiderClient:
 
 
 __version__ = "1.0.0"
-__all__ = [
-    "AiderClient",
-    "AiderBatchProcessor",
-    "get_aider_client"
-]
+__all__ = ["AiderClient", "AiderBatchProcessor", "get_aider_client"]

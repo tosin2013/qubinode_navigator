@@ -1,25 +1,23 @@
----
-layout: default
-title: ADR-0042 FreeIPA Base OS Upgrade to RHEL 9
-parent: Infrastructure & Deployment
-grand_parent: Architectural Decision Records
-nav_order: 42
----
+______________________________________________________________________
+
+## layout: default title: ADR-0042 FreeIPA Base OS Upgrade to RHEL 9 parent: Infrastructure & Deployment grand_parent: Architectural Decision Records nav_order: 42
 
 # ADR-0042: FreeIPA Workshop Deployer Base OS Upgrade to RHEL 9
 
-**Status:** Accepted  
-**Date:** 2025-11-27  
-**Decision Makers:** Platform Team, Identity Team  
+**Status:** Accepted
+**Date:** 2025-11-27
+**Decision Makers:** Platform Team, Identity Team
 **Related ADRs:** ADR-0039 (FreeIPA/VyOS DAG Integration)
 
 ## Context and Problem Statement
 
 The `freeipa-workshop-deployer` repository currently supports:
+
 - **RHEL 8** (Enterprise) - End of Maintenance Support: May 2024, End of Extended Life: May 2029
 - **CentOS 8 Stream** (Community) - End of Life: May 2024 (already EOL)
 
 From the current `1_kcli/create.sh`:
+
 ```bash
 if [ "$COMMUNITY_VERSION" == "true" ]; then
   export IMAGE_NAME=centos8stream
@@ -31,19 +29,20 @@ fi
 ```
 
 **Problems:**
+
 1. CentOS 8 Stream is already end-of-life (May 2024)
-2. RHEL 8 is in maintenance mode with limited updates
-3. FreeIPA on RHEL 9 has improved features and security
-4. Python 3.9+ and newer OpenSSL required for modern integrations
-5. Bootstrap script already references RHEL 9.5 as primary platform
+1. RHEL 8 is in maintenance mode with limited updates
+1. FreeIPA on RHEL 9 has improved features and security
+1. Python 3.9+ and newer OpenSSL required for modern integrations
+1. Bootstrap script already references RHEL 9.5 as primary platform
 
 ## Decision Drivers
 
-* Align with supported OS lifecycle
-* Leverage RHEL 9 security improvements
-* Support modern Python and cryptography requirements
-* Maintain community (CentOS) and enterprise (RHEL) options
-* Minimize disruption to existing deployments
+- Align with supported OS lifecycle
+- Leverage RHEL 9 security improvements
+- Support modern Python and cryptography requirements
+- Maintain community (CentOS) and enterprise (RHEL) options
+- Minimize disruption to existing deployments
 
 ## Decision Outcome
 
@@ -74,13 +73,13 @@ fi
 
 ### Supported OS Matrix
 
-| OS Version | Status | Support Until | Default |
-|------------|--------|---------------|---------|
-| RHEL 9.x | **Primary** | 2032 | ✅ Yes |
-| CentOS 9 Stream | **Primary** | 2027 | Community default |
-| CentOS 10 Stream | Planned | 2030+ | Future |
-| RHEL 8.x | Deprecated | 2029 | Legacy only |
-| CentOS 8 Stream | **Removed** | EOL | ❌ No |
+| OS Version       | Status      | Support Until | Default           |
+| ---------------- | ----------- | ------------- | ----------------- |
+| RHEL 9.x         | **Primary** | 2032          | ✅ Yes            |
+| CentOS 9 Stream  | **Primary** | 2027          | Community default |
+| CentOS 10 Stream | Planned     | 2030+         | Future            |
+| RHEL 8.x         | Deprecated  | 2029          | Legacy only       |
+| CentOS 8 Stream  | **Removed** | EOL           | ❌ No             |
 
 ## Implementation Details
 
@@ -220,13 +219,13 @@ export OS_VERSION="${OS_VERSION:-9}"  # Default to RHEL/CentOS 9
 
 ### 5. FreeIPA Package Differences
 
-| Component | RHEL 8 | RHEL 9 |
-|-----------|--------|--------|
-| Python | 3.6 | 3.9+ |
-| OpenSSL | 1.1.1 | 3.0+ |
-| FreeIPA | 4.9.x | 4.10.x+ |
-| Samba | 4.14 | 4.17+ |
-| BIND | 9.11 | 9.16+ |
+| Component | RHEL 8 | RHEL 9  |
+| --------- | ------ | ------- |
+| Python    | 3.6    | 3.9+    |
+| OpenSSL   | 1.1.1  | 3.0+    |
+| FreeIPA   | 4.9.x  | 4.10.x+ |
+| Samba     | 4.14   | 4.17+   |
+| BIND      | 9.11   | 9.16+   |
 
 ### 6. Ansible Playbook Updates
 
@@ -255,17 +254,20 @@ export OS_VERSION="${OS_VERSION:-9}"  # Default to RHEL/CentOS 9
 ### Pre-Migration Testing
 
 1. **Fresh Installation Test**
+
    - Deploy FreeIPA on CentOS 9 Stream
    - Verify all services start correctly
    - Test user/group management
    - Test DNS resolution
 
-2. **Integration Testing**
+1. **Integration Testing**
+
    - Test with VyOS router (DNS forwarding)
    - Test with OpenShift integration
    - Test Kerberos authentication
 
-3. **Performance Testing**
+1. **Performance Testing**
+
    - Compare LDAP query performance
    - Measure DNS resolution times
    - Check memory/CPU usage
@@ -273,44 +275,46 @@ export OS_VERSION="${OS_VERSION:-9}"  # Default to RHEL/CentOS 9
 ### Migration Testing
 
 1. **In-place Upgrade** (if supported)
+
    - Document upgrade procedure
    - Test data preservation
 
-2. **Side-by-Side Migration**
+1. **Side-by-Side Migration**
+
    - Deploy new RHEL 9 FreeIPA
    - Migrate data from RHEL 8
    - Verify replication
 
 ## Positive Consequences
 
-* **Security**: RHEL 9 has improved security features (SELinux, crypto policies)
-* **Performance**: Newer kernel and libraries improve performance
-* **Support**: Full vendor support until 2032
-* **Features**: Access to latest FreeIPA features
-* **Compatibility**: Better integration with modern tools
+- **Security**: RHEL 9 has improved security features (SELinux, crypto policies)
+- **Performance**: Newer kernel and libraries improve performance
+- **Support**: Full vendor support until 2032
+- **Features**: Access to latest FreeIPA features
+- **Compatibility**: Better integration with modern tools
 
 ## Negative Consequences
 
-* **Migration Effort**: Existing deployments need migration
-* **Testing**: Comprehensive testing required
-* **Documentation**: All docs need updating
-* **Training**: Team needs RHEL 9 familiarity
+- **Migration Effort**: Existing deployments need migration
+- **Testing**: Comprehensive testing required
+- **Documentation**: All docs need updating
+- **Training**: Team needs RHEL 9 familiarity
 
 ## Risks and Mitigations
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| Breaking changes in FreeIPA | High | Thorough testing, staged rollout |
-| Ansible playbook incompatibility | Medium | Version-specific tasks |
-| User confusion during transition | Low | Clear documentation, deprecation notices |
+| Risk                             | Impact | Mitigation                               |
+| -------------------------------- | ------ | ---------------------------------------- |
+| Breaking changes in FreeIPA      | High   | Thorough testing, staged rollout         |
+| Ansible playbook incompatibility | Medium | Version-specific tasks                   |
+| User confusion during transition | Low    | Clear documentation, deprecation notices |
 
 ## References
 
-* [RHEL 9 Release Notes](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9)
-* [FreeIPA on RHEL 9](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/installing_identity_management)
-* [CentOS Stream Lifecycle](https://www.centos.org/centos-stream/)
-* Current deployer: `/root/freeipa-workshop-deployer/`
+- [RHEL 9 Release Notes](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9)
+- [FreeIPA on RHEL 9](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/installing_identity_management)
+- [CentOS Stream Lifecycle](https://www.centos.org/centos-stream/)
+- Current deployer: `/root/freeipa-workshop-deployer/`
 
----
+______________________________________________________________________
 
 **This ADR ensures FreeIPA deployments remain on supported, secure platforms! 🔐**

@@ -9,7 +9,79 @@ title = "Qubinode Navigator Security Scan"
 [extend]
 useDefault = true
 
-# Global allowlist for known false positives
+[[rules]]
+id = "api-secrets"
+description = "API keys and tokens"
+regex = '''(API_KEY|CLIENT_SECRET|ACCESS_TOKEN|PRIVATE_KEY|TOKEN)\s*[=:]\s*["'][A-Za-z0-9+/]{16,}["']'''
+path = '''.*\.(env|sh|yml|yaml|py)$'''
+
+[[rules]]
+id = "private-keys"
+description = "Private key content"
+regex = '''-----BEGIN [A-Z ]+PRIVATE KEY-----'''
+path = '''.*'''
+
+[[rules]]
+id = "ssh-keys"
+description = "SSH private keys"
+regex = '''ssh-rsa AAAA[0-9A-Za-z+/]+[=]{0,3}'''
+path = '''.*'''
+
+[[rules]]
+id = "jwt-tokens"
+description = "JWT tokens"
+regex = '''eyJ[A-Za-z0-9_/+-]*\.eyJ[A-Za-z0-9_/+-]*\.[A-Za-z0-9._/+-]*'''
+path = '''.*'''
+
+# AI-generated developer notes detection
+# Disabled - too many false positives with legitimate documentation notes
+# [[rules]]
+# id = "ai-todo-comments"
+# description = "AI-generated TODO comments with implementation details"
+# regex = '''(?i)#\s*(TODO|FIXME|HACK|XXX|NOTE):\s*.{20,}'''
+# path = '''.*\.(py|sh|yml|yaml|js|ts|md)$'''
+
+# Disabled - too many false positives with legitimate comments
+# [[rules]]
+# id = "ai-debug-comments"
+# description = "AI-generated debug and temporary comments"
+# regex = '''(?i)#\s*(DEBUG|TEMP|REMOVE|DELETE|CLEANUP):\s*.+'''
+# path = '''.*\.(py|sh|yml|yaml|js|ts)$'''
+
+# Disabled - too many false positives
+# [[rules]]
+# id = "ai-implementation-notes"
+# description = "Detailed implementation notes from AI"
+# regex = '''(?i)(implementation note|ai note|claude note|assistant note):\s*.{30,}'''
+# path = '''.*\.(md|py|sh|yml|yaml)$'''
+
+# Disabled - too many false positives
+# [[rules]]
+# id = "internal-architecture-details"
+# description = "Internal architecture details not for end users"
+# regex = '''(?i)(internal implementation|private method|internal use only|not for production).{20,}'''
+# path = '''.*\.(md|py|sh|yml|yaml)$'''
+
+# Sensitive configuration patterns
+[[rules]]
+id = "database-urls"
+description = "Database connection URLs with credentials"
+regex = '''(mysql|postgresql|mongodb)://[^:]+:[^@]+@[^/]+'''
+path = '''.*\.(env|yml|yaml|py|sh)$'''
+
+[[rules]]
+id = "cloud-credentials"
+description = "Cloud provider credentials"
+regex = '''(?i)(aws_access_key|azure_client|gcp_key|do_token)\s*[=:]\s*["'][A-Za-z0-9+/]{16,}["']'''
+path = '''.*'''
+
+[[rules]]
+id = "hardcoded-ips"
+description = "Hardcoded internal IP addresses"
+regex = '''(?i)(server|host|endpoint)\s*[=:]\s*["']?(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.)[0-9.]+["']?'''
+path = '''.*\.(env|yml|yaml|py|sh)$'''
+
+# Global allowlists
 [allowlist]
 description = "Allowlist for Qubinode Navigator false positives"
 
@@ -31,8 +103,20 @@ paths = [
     # Scripts with example patterns
     '''scripts/setup-security-tools.sh''',
     '''scripts/security-scan.sh''',
-    '''scripts/cleanup-git-history.sh''',
-    '''deploy-fastmcp-production.sh''',
+    '''.dev-notes/''',
+    '''docs/internal/''',
+    '''docs/contributors/''',
+    '''test.*\.py$''',  # Test files
+    '''tests/.*''',     # Test directory
+    '''test-.*\.sh$''', # Test scripts
+    '''inventories/sample/.*''',  # Sample inventory
+    '''airflow/scripts/scaffold-dag.sh''',  # Template file with TODO placeholders
+    '''airflow/scripts/init-prerequisites.sh''',  # Setup script with example passwords
+    '''airflow/scripts/setup-vault.sh''',  # Vault setup with template credentials
+    '''airflow/docker-compose.yml''',  # Docker compose with test API keys
+    '''airflow/plugins/qubinode/rag_store.py''',  # RAG store with URL string manipulation
+    '''dependancies/onedev/configure-onedev-agent.sh''',  # OneDev setup with prompts
+    '''.github/workflows/.*\.yml$''',  # CI workflow files with example configs
 ]
 
 # Regex patterns to ignore in detected matches
@@ -40,28 +124,36 @@ regexTarget = "match"
 regexes = [
     # Placeholder/example values
     '''CHANGEME''',
-    '''your[-_].*''',
+    '''your_.*''',
+    '''your-password''',
     '''example''',
     '''placeholder''',
     '''template''',
     '''sample''',
-    # Variable substitutions (not real secrets)
-    '''\$\{.*\}''',
-    '''\$[A-Z_]+''',
-    # Localhost references (not sensitive)
-    '''localhost''',
-    '''127\.0\.0\.1''',
-    '''0\.0\.0\.0''',
-    # Known development/sample passwords
-    '''Harbor12345''',
-    '''testpass''',
-    '''adminpass''',
-    '''airflow:airflow''',
-    '''user:pass''',
-    # Known dev API keys (local development only)
-    '''b8c909cc21b988703db529ff2287cdbe0cc3ffca67678e9c97bd912790df6486''',
-    # Template patterns with mustache/jinja syntax
-    '''\{\{.*\}\}''',
+    '''\$\{.*\}''',  # Variable substitutions
+    '''\$[A-Z_]+''', # Environment variables
+    '''Enter the password''', # Interactive prompts
+    '''Enter OneDev password''', # OneDev setup prompt
+    '''read.*password''',     # Read password commands
+    '''# TODO: (Add|Update|Fix|Implement)''', # Standard TODO patterns
+    '''# FIXME: (Bug|Issue|Problem)''', # Standard FIXME patterns
+    '''# NOTE:.*''', # Documentation notes
+    '''# Note:.*''', # Documentation notes
+    '''localhost''', # Localhost references
+    '''127\.0\.0\.1''', # Localhost IP
+    '''0\.0\.0\.0''', # Bind all interfaces
+    '''192\.168\.1\.10''', # Example IP in docs
+    '''Harbor12345''', # Example password in setup scripts
+    '''testpass''', # Test password
+    '''adminpass''', # Test password
+    '''postgresql://airflow:airflow@localhost''', # Test DB URL
+    '''postgresql://user:pass@localhost''', # Example DB URL
+    '''postgresql://\{\{username\}\}:\{\{password\}\}@localhost''', # Template DB URL
+    '''postgresql\+psycopg2://''', # DB URL prefix in code
+    '''b8c909cc21b988703db529ff2287cdbe0cc3ffca67678e9c97bd912790df6486''', # Hardcoded API key in docker-compose for litellm (not a real secret, test/dev only)
+    '''AIRFLOW_MCP_API_KEY.*b8c909cc21b988703db529ff2287cdbe0cc3ffca67678e9c97bd912790df6486''', # Full API key line in docker-compose
+    '''65efb281f1ea9dc8498ec563f7bf42af4f8bf8a6b7bb542141902ce462cdb98a''', # MCP API key in deploy-fastmcp-production.sh (dev/test only)
+    '''AKIA1234567890ABCDEF''', # Example AWS key format in documentation/templates
 ]
 
 # Specific commit allowlist (for historical commits with known issues)

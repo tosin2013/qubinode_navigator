@@ -1,10 +1,6 @@
----
-layout: default
-title: Infrastructure & Deployment
-parent: Architectural Decision Records
-nav_order: 1
-has_children: true
----
+______________________________________________________________________
+
+## layout: default title: Infrastructure & Deployment parent: Architectural Decision Records nav_order: 1 has_children: true
 
 # Infrastructure & Deployment ADRs
 

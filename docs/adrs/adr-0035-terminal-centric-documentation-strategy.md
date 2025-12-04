@@ -1,17 +1,15 @@
----
-layout: default
-title: ADR-0035 Terminal-Centric Documentation
-parent: Documentation & User Experience
-grand_parent: Architectural Decision Records
-nav_order: 0035
----
+______________________________________________________________________
+
+## layout: default title: ADR-0035 Terminal-Centric Documentation parent: Documentation & User Experience grand_parent: Architectural Decision Records nav_order: 0035
 
 # ADR-0035: Terminal-Centric Documentation Strategy
 
 ## Status
+
 Accepted
 
 ## Context
+
 The Qubinode Navigator project needs comprehensive documentation that serves multiple user personas and use cases:
 
 - New users deploying for the first time
@@ -25,20 +23,22 @@ The documentation must work seamlessly with the terminal-based deployment archit
 Current documentation is scattered across multiple files and lacks a cohesive user journey that integrates with the one-shot deployment approach and AI Assistant capabilities.
 
 ## Decision
+
 We will implement a terminal-centric documentation strategy that provides comprehensive guidance for the complete user journey, from initial deployment through advanced infrastructure extension, with integrated AI Assistant interaction patterns.
 
 ### Core Documentation Principles:
 
 1. **Terminal-First Approach**: All documentation assumes terminal-based interaction
-2. **Progressive Disclosure**: Information organized by user experience level and use case
-3. **AI Assistant Integration**: Documentation shows how to leverage AI for guidance
-4. **Executable Examples**: All code examples are copy-pastable and tested
-5. **Journey-Based Organization**: Content organized around user workflows, not technical components
-6. **Future-Ready Structure**: Architecture supports Hugging Face showcase integration
+1. **Progressive Disclosure**: Information organized by user experience level and use case
+1. **AI Assistant Integration**: Documentation shows how to leverage AI for guidance
+1. **Executable Examples**: All code examples are copy-pastable and tested
+1. **Journey-Based Organization**: Content organized around user workflows, not technical components
+1. **Future-Ready Structure**: Architecture supports Hugging Face showcase integration
 
 ### Implementation Details:
 
 #### Documentation Architecture:
+
 ```
 docs/
 ├── user-guides/
@@ -63,15 +63,16 @@ docs/
 #### User Journey Documentation:
 
 1. **Discovery Phase**: Quick-start guide with single-command deployment
-2. **Deployment Phase**: Comprehensive guide with AI Assistant integration
-3. **Validation Phase**: Verification steps and troubleshooting with AI
-4. **Extension Phase**: Building additional services on deployed infrastructure
-5. **Maintenance Phase**: Updates, backups, and ongoing management
+1. **Deployment Phase**: Comprehensive guide with AI Assistant integration
+1. **Validation Phase**: Verification steps and troubleshooting with AI
+1. **Extension Phase**: Building additional services on deployed infrastructure
+1. **Maintenance Phase**: Updates, backups, and ongoing management
 
 #### AI Assistant Integration Documentation:
 
 ##### During Deployment:
-```markdown
+
+````markdown
 ## Getting Help During Deployment
 
 The AI Assistant automatically provides guidance when errors occur - no manual intervention needed:
@@ -90,10 +91,11 @@ The package installation failure is likely due to...
 [Step-by-step resolution guidance]
 
 For more help, visit: http://localhost:8080
-```
+````
 
 No curl commands needed - the AI Assistant is seamlessly integrated!
-```
+
+````
 
 ##### Post-Deployment Extensions:
 ```markdown
@@ -111,7 +113,8 @@ curl -X POST -H "Content-Type: application/json" \
 curl -X POST -H "Content-Type: application/json" \
   -d '{"message": "What monitoring solutions work well with this setup?"}' \
   http://localhost:8080/chat
-```
+````
+
 ```
 
 #### Documentation Standards:
@@ -215,3 +218,4 @@ curl -X POST -H "Content-Type: application/json" \
 This documentation strategy creates a comprehensive, AI-integrated user experience that guides users from initial deployment through advanced infrastructure extension. The terminal-centric approach ensures compatibility with the deployment architecture while preparing for future Hugging Face showcase integration.
 
 The documentation serves as both user guidance and AI Assistant training material, creating a self-reinforcing knowledge system.
+```

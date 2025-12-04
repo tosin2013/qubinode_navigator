@@ -1,7 +1,5 @@
----
-layout: default
-title: Developer Documentation
-nav_order: 1
-has_children: true
----
+______________________________________________________________________
+
+## layout: default title: Developer Documentation nav_order: 1 has_children: true
+
 # Developer Documentation

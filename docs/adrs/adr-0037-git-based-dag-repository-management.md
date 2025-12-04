@@ -1,21 +1,18 @@
----
-layout: default
-title: ADR-0037 Git-Based DAG Repository
-parent: Configuration & Automation
-grand_parent: Architectural Decision Records
-nav_order: 37
----
+______________________________________________________________________
+
+## layout: default title: ADR-0037 Git-Based DAG Repository parent: Configuration & Automation grand_parent: Architectural Decision Records nav_order: 37
 
 # ADR-0037: Git-Based DAG Repository Management
 
-**Status:** Proposed  
-**Date:** 2025-11-15  
-**Decision Makers:** Platform Team, DevOps Team  
+**Status:** Proposed
+**Date:** 2025-11-15
+**Decision Makers:** Platform Team, DevOps Team
 **Related ADRs:** ADR-0036 (Airflow Integration)
 
 ## Context and Problem Statement
 
 Users need to deploy and manage Airflow DAGs from their own Git repositories. Currently, users must manually copy DAG files to the Airflow directory, which is error-prone and doesn't support:
+
 - Automatic synchronization with Git repositories
 - Version control and rollback
 - Webhook-based instant updates
@@ -23,6 +20,7 @@ Users need to deploy and manage Airflow DAGs from their own Git repositories. Cu
 - Secure credential handling
 
 **Key Requirements:**
+
 - Support multiple Git repositories (GitHub, GitLab, Bitbucket)
 - Automatic DAG synchronization
 - Secure credential management
@@ -32,26 +30,27 @@ Users need to deploy and manage Airflow DAGs from their own Git repositories. Cu
 
 ## Decision Drivers
 
-* Enable GitOps workflow for DAG management
-* Reduce manual deployment errors
-* Support team collaboration through Git
-* Enable CI/CD integration
-* Maintain security and access control
-* Support both public and private repositories
+- Enable GitOps workflow for DAG management
+- Reduce manual deployment errors
+- Support team collaboration through Git
+- Enable CI/CD integration
+- Maintain security and access control
+- Support both public and private repositories
 
 ## Considered Options
 
 1. **Git-Sync Sidecar Pattern** - Dedicated container for Git synchronization
-2. **Built-in Git Client** - Integrate Git directly into AI Assistant
-3. **Manual Git Operations** - Users manage Git manually
-4. **Airflow Git-Sync Plugin** - Use existing Airflow plugin
-5. **Hybrid Approach** - Combine AI Assistant integration with Git-Sync
+1. **Built-in Git Client** - Integrate Git directly into AI Assistant
+1. **Manual Git Operations** - Users manage Git manually
+1. **Airflow Git-Sync Plugin** - Use existing Airflow plugin
+1. **Hybrid Approach** - Combine AI Assistant integration with Git-Sync
 
 ## Decision Outcome
 
 **Chosen option:** Hybrid Approach - AI Assistant manages Git repositories with optional Git-Sync sidecar
 
 **Justification:**
+
 - Provides both automated (Git-Sync) and managed (AI Assistant) approaches
 - Leverages existing Git-Sync for Kubernetes deployments
 - Adds intelligent layer for validation, security, and user experience
@@ -105,7 +104,7 @@ repositories:
     validation:
       enabled: true
       security_scan: true
-    
+
   - name: community-workflows
     url: https://github.com/Qubinode/airflow-dags
     branch: main
@@ -115,7 +114,7 @@ repositories:
     validation:
       enabled: true
       security_scan: true
-    
+
   - name: personal-workflows
     url: https://github.com/user/my-dags
     branch: develop
@@ -130,61 +129,66 @@ repositories:
 
 ## Positive Consequences
 
-* **GitOps Workflow**: Standard Git workflow for DAG management
-* **Version Control**: Full Git history for all DAGs
-* **Collaboration**: Teams can collaborate through Pull Requests
-* **Automation**: Webhook-based instant updates
-* **Security**: Centralized credential management
-* **Validation**: Automatic DAG validation before deployment
-* **Multi-Repo**: Support multiple repositories with namespace isolation
-* **Rollback**: Easy rollback to previous versions
-* **Audit Trail**: Complete history of all changes
+- **GitOps Workflow**: Standard Git workflow for DAG management
+- **Version Control**: Full Git history for all DAGs
+- **Collaboration**: Teams can collaborate through Pull Requests
+- **Automation**: Webhook-based instant updates
+- **Security**: Centralized credential management
+- **Validation**: Automatic DAG validation before deployment
+- **Multi-Repo**: Support multiple repositories with namespace isolation
+- **Rollback**: Easy rollback to previous versions
+- **Audit Trail**: Complete history of all changes
 
 ## Negative Consequences
 
-* **Complexity**: Additional components to manage
-* **Credentials**: Secure storage and rotation required
-* **Network**: Requires network access to Git providers
-* **Sync Delays**: Polling-based sync has latency (mitigated by webhooks)
-* **Storage**: Multiple repositories increase storage requirements
-* **Conflicts**: Potential namespace conflicts between repositories
+- **Complexity**: Additional components to manage
+- **Credentials**: Secure storage and rotation required
+- **Network**: Requires network access to Git providers
+- **Sync Delays**: Polling-based sync has latency (mitigated by webhooks)
+- **Storage**: Multiple repositories increase storage requirements
+- **Conflicts**: Potential namespace conflicts between repositories
 
 ## Risks and Mitigations
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| Credential exposure | Critical | Use encrypted storage (Vault/Airflow Connections) |
-| Malicious DAG injection | Critical | Mandatory validation and security scanning |
-| Repository unavailability | High | Cache last known good state, retry logic |
-| Sync conflicts | Medium | Namespace isolation, clear precedence rules |
-| Webhook failures | Medium | Fallback to polling, retry mechanism |
-| Large repository size | Medium | Sparse checkout, shallow clone |
+| Risk                      | Impact   | Mitigation                                        |
+| ------------------------- | -------- | ------------------------------------------------- |
+| Credential exposure       | Critical | Use encrypted storage (Vault/Airflow Connections) |
+| Malicious DAG injection   | Critical | Mandatory validation and security scanning        |
+| Repository unavailability | High     | Cache last known good state, retry logic          |
+| Sync conflicts            | Medium   | Namespace isolation, clear precedence rules       |
+| Webhook failures          | Medium   | Fallback to polling, retry mechanism              |
+| Large repository size     | Medium   | Sparse checkout, shallow clone                    |
 
 ## Alternatives Considered
 
 ### Git-Sync Sidecar Only
-* **Pros:** Simple, Kubernetes-native, proven solution
-* **Cons:** No validation, no UI, limited credential management
-* **Verdict:** Rejected - lacks intelligence and user experience
+
+- **Pros:** Simple, Kubernetes-native, proven solution
+- **Cons:** No validation, no UI, limited credential management
+- **Verdict:** Rejected - lacks intelligence and user experience
 
 ### Built-in Git Client Only
-* **Pros:** Single component, full control
-* **Cons:** Reinventing wheel, more maintenance
-* **Verdict:** Rejected - Git-Sync is battle-tested
+
+- **Pros:** Single component, full control
+- **Cons:** Reinventing wheel, more maintenance
+- **Verdict:** Rejected - Git-Sync is battle-tested
 
 ### Manual Git Operations
-* **Pros:** Simple, no automation needed
-* **Cons:** Error-prone, no automation, poor UX
-* **Verdict:** Rejected - doesn't meet automation requirements
+
+- **Pros:** Simple, no automation needed
+- **Cons:** Error-prone, no automation, poor UX
+- **Verdict:** Rejected - doesn't meet automation requirements
 
 ### Airflow Git-Sync Plugin
-* **Pros:** Native Airflow integration
-* **Cons:** Limited features, no validation layer
-* **Verdict:** Rejected - insufficient for our needs
+
+- **Pros:** Native Airflow integration
+- **Cons:** Limited features, no validation layer
+- **Verdict:** Rejected - insufficient for our needs
 
 ## Implementation Plan
 
 ### Phase 1: Core Git Integration (Weeks 1-2)
+
 - [ ] Git repository manager service
 - [ ] Credential storage (Airflow Connections)
 - [ ] Basic clone and sync functionality
@@ -192,6 +196,7 @@ repositories:
 - [ ] Namespace isolation
 
 ### Phase 2: Validation & Security (Weeks 3-4)
+
 - [ ] DAG syntax validation
 - [ ] Security scanning (hardcoded credentials, dangerous operations)
 - [ ] Dependency checking
@@ -199,6 +204,7 @@ repositories:
 - [ ] Validation reporting
 
 ### Phase 3: Webhook Integration (Week 5)
+
 - [ ] Webhook receiver endpoint
 - [ ] GitHub webhook integration
 - [ ] GitLab webhook integration
@@ -206,6 +212,7 @@ repositories:
 - [ ] Instant sync on push events
 
 ### Phase 4: User Interface (Week 6)
+
 - [ ] Repository management UI
 - [ ] Add/remove repositories
 - [ ] Sync status monitoring
@@ -213,6 +220,7 @@ repositories:
 - [ ] Chat interface integration
 
 ### Phase 5: Advanced Features (Weeks 7-8)
+
 - [ ] Multi-repository support
 - [ ] Version control and rollback
 - [ ] A/B testing capability
@@ -221,18 +229,19 @@ repositories:
 
 ## Success Metrics
 
-| Metric | Target | Measurement |
-|--------|--------|-------------|
-| Repository sync time | <30 seconds | Webhook latency |
-| Validation success rate | >95% | Pre-deployment checks |
-| Security scan coverage | 100% | All DAGs scanned |
-| User adoption | 80% use Git repos | Usage analytics |
-| Sync reliability | >99.5% uptime | Monitoring |
-| Credential security | Zero exposures | Security audits |
+| Metric                  | Target            | Measurement           |
+| ----------------------- | ----------------- | --------------------- |
+| Repository sync time    | \<30 seconds      | Webhook latency       |
+| Validation success rate | >95%              | Pre-deployment checks |
+| Security scan coverage  | 100%              | All DAGs scanned      |
+| User adoption           | 80% use Git repos | Usage analytics       |
+| Sync reliability        | >99.5% uptime     | Monitoring            |
+| Credential security     | Zero exposures    | Security audits       |
 
 ## Security Considerations
 
 ### Credential Management
+
 ```python
 # Secure credential storage
 class SecureCredentialStore:
@@ -252,6 +261,7 @@ class SecureCredentialStore:
 ```
 
 ### DAG Validation
+
 ```python
 # Security scanning before deployment
 class DAGSecurityScanner:
@@ -260,7 +270,7 @@ class DAGSecurityScanner:
         Scan DAG for security issues
         """
         issues = []
-        
+
         # Check for hardcoded credentials
         if self.has_hardcoded_credentials(dag_file):
             issues.append({
@@ -268,7 +278,7 @@ class DAGSecurityScanner:
                 'type': 'hardcoded_credentials',
                 'message': 'Found hardcoded credentials'
             })
-        
+
         # Check for dangerous operations
         if self.has_dangerous_operations(dag_file):
             issues.append({
@@ -276,7 +286,7 @@ class DAGSecurityScanner:
                 'type': 'dangerous_operation',
                 'message': 'Found potentially dangerous operations'
             })
-        
+
         return {
             'passed': len(issues) == 0,
             'issues': issues
@@ -291,7 +301,7 @@ AI: "I'll help you add a Git repository. Please provide:
      1. Repository URL
      2. Branch (default: main)
      3. Authentication type (ssh_key, oauth_token, or public)
-     
+
      Example: https://github.com/youruser/workflows"
 
 User: "https://github.com/mycompany/dags, branch: develop, use SSH key"
@@ -300,10 +310,10 @@ AI: "Adding repository...
      ✅ SSH key configured
      ✅ Initial sync complete
      ✅ Found 5 DAGs
-     
+
      All DAGs passed validation and are now available in Airflow!
      Namespace: mycompany
-     
+
      Would you like to enable automatic sync on push events?"
 
 User: "Yes"
@@ -365,7 +375,7 @@ spec:
         volumeMounts:
         - name: dags
           mountPath: /opt/airflow/dags
-      
+
       - name: git-sync
         image: k8s.gcr.io/git-sync:v3.6.3
         env:
@@ -378,7 +388,7 @@ spec:
         volumeMounts:
         - name: dags
           mountPath: /git
-      
+
       volumes:
       - name: dags
         emptyDir: {}
@@ -386,19 +396,19 @@ spec:
 
 ## References
 
-* [Git-Sync Documentation](https://github.com/kubernetes/git-sync)
-* [Airflow Git-Sync Guide](https://airflow.apache.org/docs/helm-chart/stable/manage-dags-files.html#mounting-dags-using-git-sync-sidecar)
-* [GitHub Webhooks](https://docs.github.com/en/developers/webhooks-and-events/webhooks)
-* [GitLab Webhooks](https://docs.gitlab.com/ee/user/project/integrations/webhooks.html)
-* ADR-0036: Apache Airflow Workflow Orchestration Integration
-* [DAG Deployment Workflows](../airflow-dag-deployment-workflows.md)
+- [Git-Sync Documentation](https://github.com/kubernetes/git-sync)
+- [Airflow Git-Sync Guide](https://airflow.apache.org/docs/helm-chart/stable/manage-dags-files.html#mounting-dags-using-git-sync-sidecar)
+- [GitHub Webhooks](https://docs.github.com/en/developers/webhooks-and-events/webhooks)
+- [GitLab Webhooks](https://docs.gitlab.com/ee/user/project/integrations/webhooks.html)
+- ADR-0036: Apache Airflow Workflow Orchestration Integration
+- [DAG Deployment Workflows](../airflow-dag-deployment-workflows.md)
 
 ## Decision Log
 
-* **2025-11-15:** Initial proposal created
-* **Status:** Awaiting team review and approval
-* **Next Review:** 2025-11-22
+- **2025-11-15:** Initial proposal created
+- **Status:** Awaiting team review and approval
+- **Next Review:** 2025-11-22
 
----
+______________________________________________________________________
 
 **This ADR enables GitOps workflow for Airflow DAGs, making deployment as simple as `git push`! 🚀**

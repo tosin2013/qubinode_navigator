@@ -35,15 +35,15 @@ log_error() {
 # Test 1: Default CPU model (current setup)
 test_default_model() {
     log_info "Test 1: Default CPU Model (Granite 4.0 Micro)"
-    
+
     podman run --rm --name test-ai-default \
         -p 8081:8080 \
         -v $(pwd)/data:/app/data:Z \
         -d \
         localhost/qubinode-ai-assistant:latest
-    
+
     sleep 10
-    
+
     # Test model info endpoint
     if curl -f http://localhost:8081/model/info >/dev/null 2>&1; then
         log_success "Default model API accessible"
@@ -51,14 +51,14 @@ test_default_model() {
     else
         log_warning "Default model still starting up"
     fi
-    
+
     podman stop test-ai-default || true
 }
 
 # Test 2: GPU model configuration (simulated)
 test_gpu_model() {
     log_info "Test 2: GPU Model Configuration (Simulated)"
-    
+
     # This would work on a system with GPU
     cat << 'EOF'
 Example GPU command:
@@ -72,14 +72,14 @@ podman run --rm --name test-ai-gpu \
     -d \
     quay.io/qubinode/ai-assistant:latest
 EOF
-    
+
     log_info "GPU model would use Llama3-8B with 32 GPU layers"
 }
 
 # Test 3: API model configuration (simulated)
 test_api_model() {
     log_info "Test 3: API Model Configuration (Simulated)"
-    
+
     cat << 'EOF'
 Example OpenAI API command:
 podman run --rm --name test-ai-api \
@@ -90,14 +90,14 @@ podman run --rm --name test-ai-api \
     -d \
     quay.io/qubinode/ai-assistant:latest
 EOF
-    
+
     log_info "API model would use OpenAI GPT-4 via LiteLLM"
 }
 
 # Test 4: Hardware detection
 test_hardware_detection() {
     log_info "Test 4: Hardware Detection"
-    
+
     # Check for GPU
     if command -v nvidia-smi >/dev/null 2>&1; then
         log_success "NVIDIA GPU detected"
@@ -105,11 +105,11 @@ test_hardware_detection() {
     else
         log_info "No NVIDIA GPU detected - CPU-only mode recommended"
     fi
-    
+
     # Check system memory
     local mem_gb=$(free -g | awk '/^Mem:/{print $2}')
     log_info "System Memory: ${mem_gb}GB"
-    
+
     if [ "$mem_gb" -ge 8 ]; then
         log_success "Sufficient memory for larger models (granite-7b)"
     else
@@ -120,10 +120,10 @@ test_hardware_detection() {
 # Test 5: Configuration validation
 test_config_validation() {
     log_info "Test 5: Configuration Validation"
-    
+
     # Test invalid model type
     log_info "Testing invalid model configuration..."
-    
+
     # This would fail gracefully
     cat << 'EOF'
 Invalid configuration example:
@@ -139,25 +139,25 @@ EOF
 main() {
     log_info "Starting AI Assistant Model Configuration Tests"
     echo
-    
+
     # Run tests
     test_hardware_detection
     echo
-    
+
     test_default_model
     echo
-    
+
     test_gpu_model
     echo
-    
+
     test_api_model
     echo
-    
+
     test_config_validation
     echo
-    
+
     log_success "Model configuration tests completed!"
-    
+
     echo
     log_info "Summary of Model Options:"
     echo "  • granite-4.0-micro: CPU-only, 2GB+ RAM (default)"
@@ -167,7 +167,7 @@ main() {
     echo "  • openai-gpt4: API-based (requires key)"
     echo "  • anthropic-claude: API-based (requires key)"
     echo "  • ollama-local: Local Ollama integration"
-    
+
     echo
     log_info "For production deployment, configure via environment variables:"
     echo "  export AI_MODEL_TYPE=llama3-8b"

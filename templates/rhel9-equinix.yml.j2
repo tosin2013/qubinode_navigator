@@ -37,13 +37,13 @@ rhel9_equinix_config:
   rhel_version: "9.6"
   admin_user: "lab-user"
   project_dir: "/opt/qubinode-installer"
-  
+
   # Network configuration for cloud/virtualized environment
   network:
     interface: "eth0"  # Common for cloud instances
     use_bridge: false
     dns_forwarder: "1.1.1.1"
-    
+
   # Storage configuration
   storage:
     logical_volumes:
@@ -51,13 +51,13 @@ rhel9_equinix_config:
         size: "+100%FREE"
         mount_dir: "/var/lib/libvirt/images"
         fstype: "xfs"
-  
+
   # Cloud/virtualized environment settings
   cloud_config:
     run_on_rhpds: false
     run_kni_lab_on_rhpds: false
     one_redhat: false
-    
+
   # Application dependencies
   applications:
     ansible_automation_platform: false
@@ -78,14 +78,14 @@ aws_secret_key: {{ aws_secret_key | default('') }}
 system_config:
   # Package management
   package_manager: "dnf"
-  
+
   # Security settings
   selinux: "enforcing"
   firewall: "firewalld"
-  
+
   # Container runtime
   container_runtime: "podman"
-  
+
   # Virtualization
   virtualization: "kvm"
   libvirt_dir: "/var/lib/libvirt/images"
@@ -94,12 +94,12 @@ system_config:
 network_config:
   # Primary interface (detected from system)
   primary_interface: "eth0"
-  
+
   # DNS configuration
   dns_servers:
     - "{{ dns_forwarder | default('1.1.1.1') }}"
     - "8.8.8.8"
-  
+
   # Firewall ports for Qubinode services
   firewall_ports:
     - "22/tcp"    # SSH
@@ -114,12 +114,12 @@ network_config:
 openshift_config:
   # OpenShift version compatibility
   supported_versions: ["4.12", "4.13", "4.14", "4.15"]
-  
+
   # Container registry settings
   registry_config:
     insecure_registries: []
     blocked_registries: []
-    
+
   # Resource requirements for RHEL 9
   minimum_requirements:
     cpu_cores: 4
@@ -130,10 +130,10 @@ openshift_config:
 development_config:
   # Git repository
   git_repo: "https://github.com/Qubinode/qubinode_navigator.git"
-  
+
   # CI/CD environment
   cicd_pipeline: {{ cicd_pipeline | default('false') }}
-  
+
   # Development tools
   development_tools:
     - "git"
@@ -148,10 +148,10 @@ monitoring_config:
   # System monitoring
   enable_cockpit: true
   cockpit_port: 9090
-  
+
   # Log management
   log_retention_days: 30
-  
+
   # Performance monitoring
   enable_performance_monitoring: false
 
@@ -159,11 +159,11 @@ monitoring_config:
 maintenance_config:
   # Automatic updates
   auto_updates: false
-  
+
   # Backup configuration
   backup_enabled: false
   backup_retention_days: 7
-  
+
   # Maintenance windows
   maintenance_window: "02:00-04:00"
 

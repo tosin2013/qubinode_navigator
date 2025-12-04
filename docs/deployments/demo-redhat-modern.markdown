@@ -1,9 +1,6 @@
----
-layout: default
-title: "Modern Red Hat Demo System Deployment"
-parent: Deployment Documentation
-nav_order: 4
----
+______________________________________________________________________
+
+## layout: default title: "Modern Red Hat Demo System Deployment" parent: Deployment Documentation nav_order: 4
 
 # 🚀 Modern Red Hat Demo System Deployment
 
@@ -82,6 +79,7 @@ vi .env
 ```
 
 **Red Hat Demo System configuration:**
+
 ```bash
 # =============================================================================
 # RED HAT DEMO SYSTEM (EQUINIX) DEPLOYMENT CONFIGURATION
@@ -133,6 +131,7 @@ USE_HASHICORP_VAULT=false  # Or true for HCP Vault
 ```
 
 The deployment will:
+
 - ✅ **Automatically detect** Red Hat Demo System environment
 - ✅ **Configure RHEL subscription** using your credentials
 - ✅ **Set up networking** with Equinix-optimized settings
@@ -146,13 +145,15 @@ The deployment will:
 The AI Assistant provides Red Hat-specific expertise:
 
 ### **Red Hat Subscription Assistance**
+
 ```
-🤖 AI: "Detected Red Hat Demo System environment. 
+🤖 AI: "Detected Red Hat Demo System environment.
 Configuring RHEL subscription with your credentials.
 Applying Red Hat best practices for enterprise deployment..."
 ```
 
 ### **Equinix Metal Optimization**
+
 ```
 🤖 AI: "Optimizing for Equinix Metal bare metal servers.
 Configuring bond0 interface for network redundancy.
@@ -160,6 +161,7 @@ Applying enterprise-grade security settings..."
 ```
 
 ### **Interactive Red Hat Guidance**
+
 ```bash
 # AI Assistant is available at:
 http://your-server-ip:8080
@@ -231,6 +233,7 @@ https://your-server.opentlc.com:9090
 ## 🖥️ **Remote Access Options**
 
 ### **Option 1: Cockpit Web Console**
+
 ```bash
 # Access via web browser
 https://your-server.opentlc.com:9090
@@ -243,6 +246,7 @@ https://your-server.opentlc.com:9090
 ```
 
 ### **Option 2: RDP Access (if configured)**
+
 ```bash
 # Connect via RDP client
 Server: your-server.opentlc.com:3389
@@ -254,6 +258,7 @@ xfreerdp /v:your-server.opentlc.com:3389 /u:remoteuser
 ```
 
 ### **Option 3: SSH Access**
+
 ```bash
 # Direct SSH access
 ssh lab-user@your-server.opentlc.com
@@ -265,6 +270,7 @@ ssh lab-user@your-server.opentlc.com
 ## 🔄 **Migration from Legacy Method**
 
 ### **Legacy Process (Old Way)**
+
 ```bash
 # OLD: Manual multi-step process
 curl -OL https://raw.githubusercontent.com/Qubinode/qubinode_navigator/main/rhel9-linux-hypervisor.sh
@@ -276,6 +282,7 @@ curl -OL https://raw.githubusercontent.com/Qubinode/qubinode_navigator/main/rhel
 ```
 
 ### **Modern Process (New Way)**
+
 ```bash
 # NEW: AI-enhanced one-shot deployment
 git clone https://github.com/Qubinode/qubinode_navigator.git
@@ -294,20 +301,20 @@ cp .env.example .env
 The AI Assistant automatically helps with:
 
 1. **RHEL subscription issues**
-2. **Equinix Metal network configuration**
-3. **Red Hat package repository problems**
-4. **SELinux policy conflicts**
-5. **Red Hat Insights integration**
-6. **Performance optimization for bare metal**
+1. **Equinix Metal network configuration**
+1. **Red Hat package repository problems**
+1. **SELinux policy conflicts**
+1. **Red Hat Insights integration**
+1. **Performance optimization for bare metal**
 
 ### **Common Red Hat Demo System Issues**
 
-| Issue | AI-Assisted Solution | Manual Solution |
-|-------|---------------------|-----------------|
-| Subscription registration fails | AI guides through credential verification | `sudo subscription-manager register` |
-| Network configuration on Equinix | AI applies Equinix-specific bond0 config | Manual network restart |
-| Package installation failures | AI checks repos and suggests fixes | `sudo dnf clean all && dnf makecache` |
-| SELinux denials | AI analyzes audit logs and suggests policies | `sudo sealert -a /var/log/audit/audit.log` |
+| Issue                            | AI-Assisted Solution                         | Manual Solution                            |
+| -------------------------------- | -------------------------------------------- | ------------------------------------------ |
+| Subscription registration fails  | AI guides through credential verification    | `sudo subscription-manager register`       |
+| Network configuration on Equinix | AI applies Equinix-specific bond0 config     | Manual network restart                     |
+| Package installation failures    | AI checks repos and suggests fixes           | `sudo dnf clean all && dnf makecache`      |
+| SELinux denials                  | AI analyzes audit logs and suggests policies | `sudo sealert -a /var/log/audit/audit.log` |
 
 ### **Red Hat Support Integration**
 
@@ -321,6 +328,7 @@ The AI Assistant automatically helps with:
 ## 🎯 **Post-Deployment Red Hat Workflow**
 
 ### **Download Red Hat Images**
+
 ```bash
 # Download RHEL images (AI-assisted)
 sudo kcli download image rhel9
@@ -331,6 +339,7 @@ sudo kcli download image rhel8  # If needed for compatibility
 ```
 
 ### **Red Hat Ecosystem Integration**
+
 ```bash
 # Set up Red Hat Satellite (if available)
 # Ask AI: "How do I register this system with Red Hat Satellite?"
@@ -343,6 +352,7 @@ sudo insights-client --register
 ```
 
 ### **Enterprise VM Deployment**
+
 ```bash
 # Create enterprise-ready VMs
 kcli create vm -P rhel9 -m 4096 -d 20 enterprise-vm1
@@ -371,7 +381,7 @@ Your Red Hat Demo System deployment includes:
 - ✅ **Enterprise security** hardening
 - ✅ **Red Hat Insights** integration ready
 
----
+______________________________________________________________________
 
 ## 🎉 **Success!**
 

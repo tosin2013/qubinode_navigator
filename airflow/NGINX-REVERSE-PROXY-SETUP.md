@@ -5,6 +5,7 @@
 Configured nginx as a secure reverse proxy instead of exposing ports directly.
 
 ### Security Improvements:
+
 - ❌ **Before:** Direct access on ports 8888, 8080
 - ✅ **After:** Access through nginx on standard HTTP/HTTPS ports (80/443)
 - 🔒 **Benefit:** Single entry point, SSL termination, better access control
@@ -12,6 +13,7 @@ Configured nginx as a secure reverse proxy instead of exposing ports directly.
 ## 🔧 Configuration
 
 ### Firewall Rules:
+
 ```bash
 # Closed direct access ports
 firewall-cmd --permanent --remove-port=8888/tcp
@@ -24,6 +26,7 @@ firewall-cmd --reload
 ```
 
 ### Nginx Configuration:
+
 **File:** `/etc/nginx/conf.d/airflow.conf`
 
 ```nginx
@@ -46,12 +49,12 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        
+
         # WebSocket support
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
-        
+
         # Timeouts
         proxy_connect_timeout 300s;
         proxy_send_timeout 300s;
@@ -65,7 +68,7 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        
+
         proxy_connect_timeout 300s;
         proxy_send_timeout 300s;
         proxy_read_timeout 300s;
@@ -86,27 +89,31 @@ server {
 
 ## 🚀 Access URLs
 
-| Service | URL | Notes |
-|---------|-----|-------|
-| **Airflow UI** | http://YOUR_SERVER_IP/airflow/ | Main UI |
-| **AI Assistant** | http://YOUR_SERVER_IP/ai/ | API endpoint |
-| **Health Check** | http://YOUR_SERVER_IP/health | Status |
+| Service          | URL                            | Notes        |
+| ---------------- | ------------------------------ | ------------ |
+| **Airflow UI**   | http://YOUR_SERVER_IP/airflow/ | Main UI      |
+| **AI Assistant** | http://YOUR_SERVER_IP/ai/      | API endpoint |
+| **Health Check** | http://YOUR_SERVER_IP/health   | Status       |
 
 ### Credentials:
+
 - **Username:** admin
 - **Password:** admin
 
 ## ⚠️ Current Issue & Fix Needed
 
 ### Problem:
+
 Airflow UI is not loading through nginx because Airflow needs to know about the base URL (`/airflow/`).
 
 ### Solution:
+
 Update Airflow configuration to set the base URL.
 
 **File:** `/root/qubinode_navigator/airflow/docker-compose.yml`
 
 Add to environment:
+
 ```yaml
 environment:
   AIRFLOW__WEBSERVER__BASE_URL: 'http://YOUR_SERVER_IP/airflow'
@@ -114,6 +121,7 @@ environment:
 ```
 
 Then restart:
+
 ```bash
 cd /root/qubinode_navigator/airflow
 podman-compose down
@@ -123,11 +131,13 @@ podman-compose up -d
 ## 🔒 Next Steps: Add SSL/TLS
 
 ### 1. Install Certbot
+
 ```bash
 dnf install -y certbot python3-certbot-nginx
 ```
 
 ### 2. Get SSL Certificate
+
 ```bash
 # Stop nginx temporarily
 systemctl stop nginx
@@ -143,6 +153,7 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 ```
 
 ### 3. Update Nginx Config
+
 Uncomment the HTTPS server block in `/etc/nginx/conf.d/airflow.conf`:
 
 ```nginx
@@ -170,6 +181,7 @@ server {
 ```
 
 ### 4. Restart Nginx
+
 ```bash
 nginx -t
 systemctl restart nginx
@@ -178,12 +190,13 @@ systemctl restart nginx
 ## 🛡️ Additional Security
 
 ### IP-Based Access Control
+
 Restrict to specific IP ranges:
 
 ```nginx
 server {
     # ... existing config ...
-    
+
     # Only allow from specific networks
     allow 10.0.0.0/8;       # Internal network
     allow 192.168.0.0/16;   # Private network
@@ -193,6 +206,7 @@ server {
 ```
 
 ### Rate Limiting
+
 Prevent abuse:
 
 ```nginx
@@ -201,7 +215,7 @@ limit_req_zone $binary_remote_addr zone=airflow:10m rate=10r/s;
 
 server {
     # ... existing config ...
-    
+
     location /airflow/ {
         limit_req zone=airflow burst=20;
         # ... rest of proxy config ...
@@ -210,6 +224,7 @@ server {
 ```
 
 ### Basic Authentication
+
 Add extra auth layer:
 
 ```bash
@@ -227,11 +242,13 @@ location /airflow/ {
 ## 🧪 Testing
 
 ### Test Nginx Configuration
+
 ```bash
 nginx -t
 ```
 
 ### Test Access
+
 ```bash
 # Health check
 curl http://YOUR_SERVER_IP/health
@@ -244,6 +261,7 @@ http://YOUR_SERVER_IP/airflow/
 ```
 
 ### Test Backend Connectivity
+
 ```bash
 # Direct to Airflow (should work from localhost)
 curl http://localhost:8888/health
@@ -253,6 +271,7 @@ curl http://localhost/health
 ```
 
 ### Check Logs
+
 ```bash
 # Nginx access log
 tail -f /var/log/nginx/access.log
@@ -277,6 +296,7 @@ podman logs -f airflow_airflow-webserver_1
 **Cause:** Backend not running or not accessible
 
 **Check:**
+
 ```bash
 # Is Airflow running?
 podman ps | grep airflow_airflow-webserver
@@ -290,6 +310,7 @@ curl http://localhost:8888/health
 **Cause:** Firewall blocking nginx → container communication
 
 **Fix:**
+
 ```bash
 # Check SELinux
 getsebool httpd_can_network_connect
@@ -349,23 +370,27 @@ ss -tlnp | grep -E '80|8888'
 ## ✅ Benefits of This Setup
 
 1. **Security:**
+
    - ✅ No direct port exposure
    - ✅ Single entry point
    - ✅ SSL termination at nginx
    - ✅ Can add authentication easily
 
-2. **Flexibility:**
+1. **Flexibility:**
+
    - ✅ Multiple services on one port
    - ✅ Path-based routing
    - ✅ Easy to add more services
 
-3. **Performance:**
+1. **Performance:**
+
    - ✅ Nginx static file serving
    - ✅ Connection pooling
    - ✅ Compression
    - ✅ Caching (if configured)
 
-4. **Monitoring:**
+1. **Monitoring:**
+
    - ✅ Centralized access logs
    - ✅ Easy to add monitoring
    - ✅ Better visibility
@@ -373,31 +398,35 @@ ss -tlnp | grep -E '80|8888'
 ## 🎯 Final Steps to Complete Setup
 
 1. **Fix Airflow Base URL** (REQUIRED):
+
    ```bash
    vim /root/qubinode_navigator/airflow/docker-compose.yml
    # Add AIRFLOW__WEBSERVER__BASE_URL environment variable
    podman-compose restart
    ```
 
-2. **Add SSL** (Recommended):
+1. **Add SSL** (Recommended):
+
    ```bash
    certbot --nginx -d yourdomain.com
    ```
 
-3. **Test thoroughly**:
+1. **Test thoroughly**:
+
    ```bash
    curl http://YOUR_SERVER_IP/airflow/
    # Should work!
    ```
 
-4. **Monitor logs**:
+1. **Monitor logs**:
+
    ```bash
    tail -f /var/log/nginx/access.log
    ```
 
----
+______________________________________________________________________
 
-**Status:** Nginx configured ✅  
-**Next:** Fix Airflow base URL  
-**Security:** Improved ✅  
+**Status:** Nginx configured ✅
+**Next:** Fix Airflow base URL
+**Security:** Improved ✅
 **Access:** http://YOUR_SERVER_IP/airflow/

@@ -18,7 +18,7 @@ jobs:
   close-resolved-issues:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    
+
     steps:
       - name: Get workflow run details
         id: workflow
@@ -27,7 +27,7 @@ jobs:
           echo "workflow_url=${{ github.event.workflow_run.html_url }}" >> $GITHUB_OUTPUT
           echo "commit_sha=${{ github.event.workflow_run.head_sha }}" >> $GITHUB_OUTPUT
           echo "branch=${{ github.event.workflow_run.head_branch }}" >> $GITHUB_OUTPUT
-      
+
       - name: Find and close related failure issues
         uses: actions/github-script@v8
         with:
@@ -36,7 +36,7 @@ jobs:
             const workflowUrl = '${{ steps.workflow.outputs.workflow_url }}';
             const commitSha = '${{ steps.workflow.outputs.commit_sha }}';
             const branch = '${{ steps.workflow.outputs.branch }}';
-            
+
             // Search for open issues with ci-failure label and matching workflow name
             const issues = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
@@ -45,36 +45,36 @@ jobs:
               labels: 'ci-failure',
               per_page: 100
             });
-            
-            const matchingIssues = issues.data.filter(issue => 
+
+            const matchingIssues = issues.data.filter(issue =>
               issue.title.includes(workflowName)
             );
-            
+
             if (matchingIssues.length === 0) {
               console.log(`No open failure issues found for workflow: ${workflowName}`);
               return;
             }
-            
+
             // Close matching issues with a success comment
             for (const issue of matchingIssues) {
               const comment = `### ✅ Workflow Recovered
-              
+
               The **${workflowName}** workflow is now passing!
-              
+
               **Success run:** [View Logs](${workflowUrl})
               **Branch:** \`${branch}\`
               **Commit:** \`${commitSha.substring(0, 7)}\`
               **Recovered at:** ${new Date().toISOString()}
-              
+
               Automatically closing this issue as the CI pipeline has recovered.`;
-              
+
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issue.number,
                 body: comment
               });
-              
+
               await github.rest.issues.update({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -82,8 +82,8 @@ jobs:
                 state: 'closed',
                 state_reason: 'completed'
               });
-              
+
               console.log(`✅ Closed issue #${issue.number}: ${issue.title}`);
             }
-            
+
             console.log(`Closed ${matchingIssues.length} issue(s) for recovered workflow: ${workflowName}`);

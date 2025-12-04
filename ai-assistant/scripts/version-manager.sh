@@ -63,11 +63,11 @@ parse_version() {
 increment_version() {
     local version="$1"
     local increment_type="$2"
-    
+
     if ! parse_version "$version"; then
         return 1
     fi
-    
+
     case "$increment_type" in
         major)
             MAJOR=$((MAJOR + 1))
@@ -106,7 +106,7 @@ increment_version() {
             return 1
             ;;
     esac
-    
+
     local new_version="$MAJOR.$MINOR.$PATCH"
     if [[ -n "$PRERELEASE" ]]; then
         new_version="$new_version-$PRERELEASE"
@@ -114,18 +114,18 @@ increment_version() {
     if [[ -n "$BUILD" ]]; then
         new_version="$new_version+$BUILD"
     fi
-    
+
     echo "$new_version"
 }
 
 # Set version
 set_version() {
     local version="$1"
-    
+
     if ! parse_version "$version"; then
         return 1
     fi
-    
+
     echo "$version" > "$VERSION_FILE"
     log_success "Version set to $version"
 }
@@ -135,30 +135,30 @@ generate_container_tags() {
     local version="$1"
     local registry="${2:-localhost}"
     local image_name="${3:-qubinode-ai-assistant}"
-    
+
     if ! parse_version "$version"; then
         return 1
     fi
-    
+
     local tags=()
-    
+
     # Full version tag
     tags+=("$registry/$image_name:$version")
-    
+
     # Major.Minor tag (for patch updates)
     tags+=("$registry/$image_name:$MAJOR.$MINOR")
-    
+
     # Major tag (for minor/patch updates)
     tags+=("$registry/$image_name:$MAJOR")
-    
+
     # Latest tag (only for non-prerelease versions)
     if [[ -z "$PRERELEASE" ]]; then
         tags+=("$registry/$image_name:latest")
     fi
-    
+
     # Date tag for tracking
     tags+=("$registry/$image_name:$(date +%Y%m%d)")
-    
+
     printf '%s\n' "${tags[@]}"
 }
 
@@ -166,13 +166,13 @@ generate_container_tags() {
 generate_build_metadata() {
     local version="$1"
     local build_info=""
-    
+
     # Add git commit hash if available
     if command -v git &> /dev/null && git rev-parse --git-dir > /dev/null 2>&1; then
         local git_hash=$(git rev-parse --short HEAD)
         build_info="git.$git_hash"
     fi
-    
+
     # Add build timestamp
     local timestamp=$(date +%Y%m%d%H%M%S)
     if [[ -n "$build_info" ]]; then
@@ -180,7 +180,7 @@ generate_build_metadata() {
     else
         build_info="build.$timestamp"
     fi
-    
+
     # Parse version and add build metadata
     if parse_version "$version"; then
         local versioned_build="$MAJOR.$MINOR.$PATCH"
@@ -197,11 +197,11 @@ generate_build_metadata() {
 # Validate version
 validate_version() {
     local version="$1"
-    
+
     if ! parse_version "$version"; then
         return 1
     fi
-    
+
     log_success "Version $version is valid"
     echo "  Major: $MAJOR"
     echo "  Minor: $MINOR"
@@ -218,7 +218,7 @@ validate_version() {
 create_changelog_entry() {
     local version="$1"
     local changes="${2:-Minor improvements and bug fixes}"
-    
+
     local date=$(date +%Y-%m-%d)
     local entry="## [$version] - $date
 
@@ -232,7 +232,7 @@ create_changelog_entry() {
 - Various bug fixes and improvements
 
 "
-    
+
     if [[ -f "$CHANGELOG_FILE" ]]; then
         # Insert after the header
         local temp_file=$(mktemp)
@@ -250,7 +250,7 @@ All notable changes to the Qubinode AI Assistant container will be documented in
 $entry
 EOF
     fi
-    
+
     log_success "Changelog entry created for version $version"
 }
 
@@ -283,7 +283,7 @@ Examples:
 
 Version Format:
     MAJOR.MINOR.PATCH[-PRERELEASE][+BUILD]
-    
+
     Examples:
     - 1.0.0 (stable release)
     - 1.0.0-alpha.1 (prerelease)

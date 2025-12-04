@@ -124,25 +124,25 @@ function ensure_libvirt_pool() {
 # ⚠️  SIDE EFFECTS: Creates libvirt storage pool, requires sudo privileges
 
     echo "Ensuring libvirt default pool exists..."
-    
+
     # Check if default pool exists
     if ! sudo virsh pool-list --all | grep -q "default"; then
         echo "Creating default libvirt storage pool..."
         # Create the images directory if it doesn't exist
         sudo mkdir -p /var/lib/libvirt/images
-        
+
         # Define the default pool
         sudo virsh pool-define-as default dir --target /var/lib/libvirt/images
-        
+
         # Build the pool (create directory structure)
         sudo virsh pool-build default
-        
+
         # Start the pool
         sudo virsh pool-start default
-        
+
         # Enable autostart
         sudo virsh pool-autostart default
-        
+
         echo "Default libvirt storage pool created and started"
     else
         # Pool exists, ensure it's active
@@ -150,12 +150,12 @@ function ensure_libvirt_pool() {
             echo "Starting existing default pool..."
             sudo virsh pool-start default
         fi
-        
+
         # Ensure autostart is enabled
         if ! sudo virsh pool-info default | grep -q "Autostart:.*yes"; then
             sudo virsh pool-autostart default
         fi
-        
+
         echo "Default libvirt storage pool is active"
     fi
 }
@@ -177,10 +177,10 @@ function kcli_configure_images() {
 
     echo "Configuring images"
     dependency_check
-    
+
     # Ensure libvirt storage pool exists before downloading images
     ensure_libvirt_pool
-    
+
     echo "Downloading latest distribution images..."
     # 🔧 CONFIGURATION CONSTANTS FOR LLMs:
     # Updated image set for 2024/2025 multi-distribution support
@@ -247,4 +247,3 @@ function qubinode_setup_kcli() {
         kcli --help
     fi
 }
-

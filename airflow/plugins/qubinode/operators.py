@@ -12,7 +12,7 @@ from qubinode.hooks import KcliHook, QuibinodeAIAssistantHook
 class KcliVMCreateOperator(BaseOperator):
     """
     Operator to create a VM using kcli
-    
+
     Example:
         create_vm = KcliVMCreateOperator(
             task_id='create_centos_vm',
@@ -23,10 +23,10 @@ class KcliVMCreateOperator(BaseOperator):
             disk_size='20G'
         )
     """
-    
-    template_fields = ('vm_name', 'image')
-    ui_color = '#4CAF50'
-    
+
+    template_fields = ("vm_name", "image")
+    ui_color = "#4CAF50"
+
     @apply_defaults
     def __init__(
         self,
@@ -35,9 +35,10 @@ class KcliVMCreateOperator(BaseOperator):
         memory: Optional[int] = None,
         cpus: Optional[int] = None,
         disk_size: Optional[str] = None,
-        kcli_conn_id: str = 'kcli_default',
+        kcli_conn_id: str = "kcli_default",
         ai_assistance: bool = True,
-        *args, **kwargs
+        *args,
+        **kwargs,
     ):
         super().__init__(*args, **kwargs)
         self.vm_name = vm_name
@@ -47,17 +48,17 @@ class KcliVMCreateOperator(BaseOperator):
         self.disk_size = disk_size
         self.kcli_conn_id = kcli_conn_id
         self.ai_assistance = ai_assistance
-    
+
     def execute(self, context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute VM creation"""
         self.log.info(f"Creating VM: {self.vm_name}")
-        
+
         # Get AI guidance if enabled
         if self.ai_assistance:
             ai_hook = QuibinodeAIAssistantHook()
             guidance = ai_hook.get_kcli_guidance(f"create a VM named {self.vm_name}")
             self.log.info(f"AI Guidance: {guidance}")
-        
+
         # Create VM using kcli
         kcli_hook = KcliHook(kcli_conn_id=self.kcli_conn_id)
         result = kcli_hook.create_vm(
@@ -65,15 +66,15 @@ class KcliVMCreateOperator(BaseOperator):
             image=self.image,
             memory=self.memory,
             cpus=self.cpus,
-            disk_size=self.disk_size
+            disk_size=self.disk_size,
         )
-        
-        if result['success']:
+
+        if result["success"]:
             self.log.info(f"✅ VM {self.vm_name} created successfully")
             return {
-                'vm_name': self.vm_name,
-                'status': 'created',
-                'output': result['stdout']
+                "vm_name": self.vm_name,
+                "status": "created",
+                "output": result["stdout"],
             }
         else:
             self.log.error(f"❌ Failed to create VM {self.vm_name}: {result['stderr']}")
@@ -83,7 +84,7 @@ class KcliVMCreateOperator(BaseOperator):
 class KcliVMDeleteOperator(BaseOperator):
     """
     Operator to delete a VM using kcli
-    
+
     Example:
         delete_vm = KcliVMDeleteOperator(
             task_id='delete_vm',
@@ -91,36 +92,37 @@ class KcliVMDeleteOperator(BaseOperator):
             force=True
         )
     """
-    
-    template_fields = ('vm_name',)
-    ui_color = '#F44336'
-    
+
+    template_fields = ("vm_name",)
+    ui_color = "#F44336"
+
     @apply_defaults
     def __init__(
         self,
         vm_name: str,
         force: bool = False,
-        kcli_conn_id: str = 'kcli_default',
-        *args, **kwargs
+        kcli_conn_id: str = "kcli_default",
+        *args,
+        **kwargs,
     ):
         super().__init__(*args, **kwargs)
         self.vm_name = vm_name
         self.force = force
         self.kcli_conn_id = kcli_conn_id
-    
+
     def execute(self, context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute VM deletion"""
         self.log.info(f"Deleting VM: {self.vm_name}")
-        
+
         kcli_hook = KcliHook(kcli_conn_id=self.kcli_conn_id)
         result = kcli_hook.delete_vm(vm_name=self.vm_name, force=self.force)
-        
-        if result['success']:
+
+        if result["success"]:
             self.log.info(f"✅ VM {self.vm_name} deleted successfully")
             return {
-                'vm_name': self.vm_name,
-                'status': 'deleted',
-                'output': result['stdout']
+                "vm_name": self.vm_name,
+                "status": "deleted",
+                "output": result["stdout"],
             }
         else:
             self.log.error(f"❌ Failed to delete VM {self.vm_name}: {result['stderr']}")
@@ -130,38 +132,34 @@ class KcliVMDeleteOperator(BaseOperator):
 class KcliVMListOperator(BaseOperator):
     """
     Operator to list VMs using kcli
-    
+
     Example:
         list_vms = KcliVMListOperator(
             task_id='list_all_vms'
         )
     """
-    
-    ui_color = '#2196F3'
-    
+
+    ui_color = "#2196F3"
+
     @apply_defaults
-    def __init__(
-        self,
-        kcli_conn_id: str = 'kcli_default',
-        *args, **kwargs
-    ):
+    def __init__(self, kcli_conn_id: str = "kcli_default", *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.kcli_conn_id = kcli_conn_id
-    
+
     def execute(self, context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute VM listing"""
         self.log.info("Listing all VMs")
-        
+
         kcli_hook = KcliHook(kcli_conn_id=self.kcli_conn_id)
         result = kcli_hook.list_vms()
-        
-        if result['success']:
-            self.log.info(f"✅ VM list retrieved successfully")
+
+        if result["success"]:
+            self.log.info("✅ VM list retrieved successfully")
             self.log.info(f"VMs:\n{result['stdout']}")
             return {
-                'status': 'success',
-                'output': result['stdout'],
-                'vm_count': result['stdout'].count('\n') - 2  # Rough count excluding header
+                "status": "success",
+                "output": result["stdout"],
+                "vm_count": result["stdout"].count("\n") - 2,  # Rough count excluding header
             }
         else:
             self.log.error(f"❌ Failed to list VMs: {result['stderr']}")

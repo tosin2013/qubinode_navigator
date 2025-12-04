@@ -25,9 +25,8 @@ build:
     - ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
     - sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no "$SSH_USER"@"$SSH_HOST"
     - ssh "$SSH_USER"@"$SSH_HOST"  'env CICD_PIPELINE="'$CICD_PIPELINE'" SSH_PASSWORD="'$SSH_PASSWORD'"
-        ENV_USERNAME="'$ENV_USERNAME'" DOMAIN="'$DOMAIN'" FORWARDER="'$FORWARDER'" 
+        ENV_USERNAME="'$ENV_USERNAME'" DOMAIN="'$DOMAIN'" FORWARDER="'$FORWARDER'"
         ACTIVE_BRIDGE="'$ACTIVE_BRIDGE'" INTERFACE="'$INTERFACE'" DISK="'$DISK'" USE_HASHICORP_VAULT="'${USE_HASHICORP_VAULT}'"
         VAULT_ADDRESS="'$VAULT_ADDRESS'" VAULT_TOKEN="'${VAULT_TOKEN}'" SECRET_PATH="'${SECRET_PATH}'" bash -s' < setup.sh
   only:
     - main
-

@@ -97,3 +97,7 @@ ansiblesafe-*.tar.gz
 .Trashes
 ehthumbs.db
 Thumbs.db
+airflow/airflow.cfg
+airflow/airflow.db
+airflow/airflow-webserver.pid
+airflow/dag_list.txt

@@ -5,6 +5,7 @@ This guide walks you through setting up a local HashiCorp Vault server for devel
 ## Why Podman for RHEL 9?
 
 **Podman is the recommended container runtime for RHEL 9** because:
+
 - ✅ **Pre-installed**: Included by default in RHEL 9
 - ✅ **Rootless**: Runs containers without root privileges
 - ✅ **Systemd Integration**: Native systemd service support
@@ -15,9 +16,9 @@ This guide walks you through setting up a local HashiCorp Vault server for devel
 ## Prerequisites
 
 1. **Linux System**: RHEL 9, Rocky Linux, or similar
-2. **Podman** (RHEL 9 default), **Docker**, or **Vault Binary**
-3. **Network Access**: For downloading Vault and dependencies
-4. **Root/Sudo Access**: For installation and configuration
+1. **Podman** (RHEL 9 default), **Docker**, or **Vault Binary**
+1. **Network Access**: For downloading Vault and dependencies
+1. **Root/Sudo Access**: For installation and configuration
 
 ## Option A: Podman-Based Local Vault (Recommended for RHEL 9)
 
@@ -491,24 +492,27 @@ sudo firewall-cmd --reload
 ### Common Issues
 
 1. **Vault Sealed**
+
    ```bash
    vault operator unseal <UNSEAL_KEY>
    ```
 
-2. **Permission Denied**
+1. **Permission Denied**
+
    ```bash
    # Check token permissions
    vault token lookup
-   
+
    # Renew token if needed
    vault token renew
    ```
 
-3. **Connection Refused**
+1. **Connection Refused**
+
    ```bash
    # Check vault status
    vault status
-   
+
    # Check service status
    sudo systemctl status vault
    ```
@@ -529,21 +533,21 @@ vault kv list kv/ansiblesafe/
 ## Next Steps
 
 1. **Test the integration** with your local vault setup
-2. **Create environment-specific secrets** for different inventories
-3. **Set up backup procedures** for vault data
-4. **Implement monitoring** for vault health
-5. **Plan migration** to production vault when ready
+1. **Create environment-specific secrets** for different inventories
+1. **Set up backup procedures** for vault data
+1. **Implement monitoring** for vault health
+1. **Plan migration** to production vault when ready
 
 ## Podman vs Docker Comparison
 
-| Feature | Podman (RHEL 9) | Docker |
-|---------|-----------------|--------|
-| **Installation** | Pre-installed | Requires installation |
-| **Root Access** | Rootless by default | Requires root daemon |
-| **Security** | SELinux compatible | Additional configuration needed |
-| **Systemd** | Native integration | Third-party integration |
-| **Resource Usage** | Lower overhead | Higher daemon overhead |
-| **RHEL Support** | Official Red Hat | Community support |
+| Feature            | Podman (RHEL 9)     | Docker                          |
+| ------------------ | ------------------- | ------------------------------- |
+| **Installation**   | Pre-installed       | Requires installation           |
+| **Root Access**    | Rootless by default | Requires root daemon            |
+| **Security**       | SELinux compatible  | Additional configuration needed |
+| **Systemd**        | Native integration  | Third-party integration         |
+| **Resource Usage** | Lower overhead      | Higher daemon overhead          |
+| **RHEL Support**   | Official Red Hat    | Community support               |
 
 ## Quick Test
 

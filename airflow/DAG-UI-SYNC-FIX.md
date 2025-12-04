@@ -3,6 +3,7 @@
 ## 🐛 Issue: "No results" or DAGs Disappearing
 
 **Symptoms:**
+
 - UI shows "No results" or "0-0 of 0 DAGs"
 - DAGs appear then disappear
 - "All 0", "Active 0", "Paused 0" counters
@@ -30,6 +31,7 @@ Safari:       Cmd + Option + R
 **Why:** UI filters might be hiding DAGs
 
 Looking at your screenshot:
+
 - Click **"Active 0"** button to toggle it OFF
 - Click **"Paused 0"** button to toggle it OFF
 - Clear any tag filters in the search box
@@ -48,6 +50,7 @@ Looking at your screenshot:
 **Why:** Persistent cache can block updates
 
 **Chrome/Edge:**
+
 ```
 1. Press F12 (Developer Tools)
 2. Right-click refresh button
@@ -55,6 +58,7 @@ Looking at your screenshot:
 ```
 
 **Firefox:**
+
 ```
 1. Preferences → Privacy & Security
 2. Cookies and Site Data → Clear Data
@@ -100,7 +104,7 @@ podman exec airflow_airflow-scheduler_1 airflow dags list
 
 # Should show:
 # example_kcli_script_based
-# example_kcli_virsh_combined  
+# example_kcli_virsh_combined
 # example_kcli_vm_provisioning
 ```
 
@@ -149,18 +153,22 @@ Diagnosis: Browser cache or UI filter issue
 **Try these in order:**
 
 1. **Clear the "Active" filter in UI**
+
    - Your screenshot shows "Active 0" - click it to deselect
    - Try clicking just "All" to show everything
 
-2. **Hard refresh browser**
+1. **Hard refresh browser**
+
    - Press Ctrl + Shift + R (or Cmd + Shift + R on Mac)
    - Or open in incognito/private window
 
-3. **Check tag filter**
+1. **Check tag filter**
+
    - Look for the "Filter DAGs by tag" search box
    - Make sure it's empty
 
-4. **If still not showing:**
+1. **If still not showing:**
+
    ```bash
    cd /root/qubinode_navigator/airflow
    podman-compose restart airflow-webserver airflow-scheduler
@@ -185,6 +193,7 @@ podman exec airflow_airflow-scheduler_1 curl -f http://localhost:8974/health
 **Fix scheduler health (if needed):**
 
 Check if curl is installed in container:
+
 ```bash
 podman exec airflow_airflow-scheduler_1 which curl
 
@@ -197,14 +206,17 @@ podman exec airflow_airflow-scheduler_1 which curl
 **Possible causes:**
 
 1. **DAG parsing taking too long**
+
    - Check: `podman logs airflow_airflow-scheduler_1 | grep "DagFileProcessor"`
    - If you see timeout errors, DAGs might be too complex
 
-2. **Database connection issues**
+1. **Database connection issues**
+
    - Check: `podman exec airflow_postgres_1 psql -U airflow -d airflow -c "SELECT COUNT(*) FROM dag;"`
    - Should show 3 (or your number of DAGs)
 
-3. **File permissions**
+1. **File permissions**
+
    - Check: `podman exec airflow_airflow-scheduler_1 ls -la /opt/airflow/dags/`
    - All .py files should be readable
 
@@ -230,6 +242,7 @@ podman-compose restart airflow-scheduler
 ### Scenario 1: Just Deployed/Restarted
 
 **What happens:**
+
 - Scheduler needs 30-60 seconds to parse DAGs
 - Webserver needs to fetch from database
 - UI might show "0 DAGs" briefly
@@ -239,12 +252,14 @@ podman-compose restart airflow-scheduler
 ### Scenario 2: After Adding New DAG
 
 **What happens:**
+
 - New DAG file created
 - Scheduler parses it next cycle (default: 30s)
 - Database updated
 - UI refreshes (might be cached)
 
 **Solution:**
+
 ```bash
 # Speed it up:
 podman-compose restart airflow-scheduler
@@ -255,22 +270,26 @@ sleep 30
 ### Scenario 3: After Container Restart
 
 **What happens:**
+
 - All services restart
 - Database persists (in volume)
 - But UI cache might be stale
 
 **Solution:**
+
 1. Wait 60 seconds after restart
-2. Clear browser cache
-3. Hard refresh
+1. Clear browser cache
+1. Hard refresh
 
 ### Scenario 4: "DAGs" Tab Shows DAGs, But Grid/Graph Don't
 
 **What happens:**
+
 - List view cached
 - Individual DAG views not cached
 
 **Solution:**
+
 - Click DAG name
 - If it loads, it's just a cache issue
 - Hard refresh after clicking
@@ -280,16 +299,19 @@ sleep 30
 **Why does Airflow UI behave like this?**
 
 1. **Heavy Caching:**
+
    - DAG list is expensive to compute
    - UI caches aggressively to improve performance
    - Tradeoff: Stale data sometimes
 
-2. **Database Polling:**
+1. **Database Polling:**
+
    - Webserver polls database every 30s (default)
    - Doesn't immediately see scheduler changes
    - Auto-refresh helps but has delays
 
-3. **Filter State:**
+1. **Filter State:**
+
    - Filters persist in localStorage
    - Can hide DAGs unintentionally
    - Clearing filters shows all DAGs
@@ -299,6 +321,7 @@ sleep 30
 ### 1. Always Use Auto-Refresh
 
 Enable the "Auto-refresh" toggle (top right of UI):
+
 - Updates every 30 seconds
 - Keeps UI in sync
 - Minimal performance impact
@@ -306,6 +329,7 @@ Enable the "Auto-refresh" toggle (top right of UI):
 ### 2. Use Incognito for Testing
 
 When testing new DAGs:
+
 - Open in incognito/private window
 - No cache issues
 - Fresh view every time
@@ -313,6 +337,7 @@ When testing new DAGs:
 ### 3. Bookmark Direct URLs
 
 Instead of going to /dags, bookmark:
+
 ```
 http://localhost:8888/dags  ← List view (can cache)
 http://localhost:8888/       ← Home (always fresh)
@@ -386,26 +411,32 @@ You know it's working when:
 **Try this right now:**
 
 1. **Look at the filter buttons** (Active/Paused)
+
    - Click them to turn OFF any filters
    - Only "All" should be selected
 
-2. **Hard refresh:**
+1. **Hard refresh:**
+
    - Press: Ctrl + Shift + R
 
-3. **If still empty:**
+1. **If still empty:**
+
    ```bash
    podman-compose restart airflow-webserver
    sleep 30
    ```
+
    Then refresh browser
 
-4. **Still nothing? Open incognito:**
+1. **Still nothing? Open incognito:**
+
    - Chrome: Ctrl + Shift + N
    - Firefox: Ctrl + Shift + P
    - Go to: http://localhost:8888
    - Login: admin/admin
 
 **You should see 3 DAGs:**
+
 - `example_kcli_script_based` ← New one!
 - `example_kcli_virsh_combined`
 - `example_kcli_vm_provisioning`

@@ -8,7 +8,7 @@
   vars:
     simulate_failures: true
     deployment_type: "rhel10_hypervisor"
-    
+
   tasks:
     - name: "Initialize Qubinode Navigator deployment"
       debug:
@@ -17,7 +17,7 @@
     - name: "Check system requirements"
       debug:
         msg: "Validating hardware virtualization support"
-      
+
     - name: "Simulate virtualization check failure"
       fail:
         msg: "Hardware virtualization not enabled in BIOS (VT-x/AMD-V required)"
@@ -27,7 +27,7 @@
     - name: "Install RHEL 10 base packages"
       debug:
         msg: "Installing: qemu-kvm libvirt virt-install bridge-utils"
-      
+
     - name: "Simulate package installation delay"
       pause:
         seconds: 8
@@ -40,7 +40,7 @@
     - name: "Install kcli (Kubernetes CLI for VMs)"
       debug:
         msg: "Installing kcli for VM lifecycle management"
-      
+
     - name: "Simulate kcli installation failure"
       fail:
         msg: "kcli installation failed: pip install error - missing python3-dev"

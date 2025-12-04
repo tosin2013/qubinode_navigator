@@ -1,25 +1,30 @@
 # ADR-0044: User-Configurable Airflow Volume Mounts
 
 ## Status
+
 Proposed
 
 ## Date
+
 2025-11-27
 
 ## Context and Problem Statement
 
 The current Airflow deployment requires modifying `docker-compose.yml` to add volume mounts for external repositories such as:
+
 - `freeipa-workshop-deployer` - Ansible playbooks for FreeIPA installation
 - `kcli-pipelines` - VM deployment scripts and DAGs
 - `qubinode_navigator` - Vault credentials and inventory files
 
 This approach is not user-friendly because:
+
 1. Requires container rebuilds after each change
-2. Core configuration gets modified, complicating upgrades
-3. Users must understand docker-compose syntax
-4. DAGs fail when required paths are not mounted (e.g., vault.yml not accessible)
+1. Core configuration gets modified, complicating upgrades
+1. Users must understand docker-compose syntax
+1. DAGs fail when required paths are not mounted (e.g., vault.yml not accessible)
 
 DAGs need access to host paths for:
+
 - `vault.yml` - Encrypted credentials (freeipa_server_admin_password, rhsm credentials)
 - Ansible playbooks and collections
 - SSH keys for VM access
@@ -28,27 +33,31 @@ DAGs need access to host paths for:
 
 ## Decision Drivers
 
-* Users need to mount host directories without modifying core configuration
-* Upgrades to `docker-compose.yml` should not overwrite user customizations
-* Configuration must support environment variable expansion for dynamic paths
-* Security: Prevent arbitrary mounts to sensitive host paths
-* Simplicity: Easy for users to add new mounts
+- Users need to mount host directories without modifying core configuration
+- Upgrades to `docker-compose.yml` should not overwrite user customizations
+- Configuration must support environment variable expansion for dynamic paths
+- Security: Prevent arbitrary mounts to sensitive host paths
+- Simplicity: Easy for users to add new mounts
 
 ## Considered Options
 
 ### Option 1: Hardcode All Mounts in docker-compose.yml
+
 - **Pros**: Simple, no additional configuration
 - **Cons**: Inflexible, requires rebuild for changes, bloats compose file
 
 ### Option 2: Use Docker Named Volumes
+
 - **Pros**: Portable, managed by Docker
 - **Cons**: Doesn't work for existing host directories, complex data migration
 
 ### Option 3: Run Airflow Directly on Host
+
 - **Pros**: Full host access, no mount issues
 - **Cons**: Loses container isolation, harder to manage dependencies
 
 ### Option 4: User-Configurable Mount System (Recommended)
+
 - **Pros**: Flexible, upgrade-safe, user-friendly
 - **Cons**: Requires documentation, potential security considerations
 
@@ -57,6 +66,7 @@ DAGs need access to host paths for:
 **Chosen Option**: Implement a user-configurable volume mount system with:
 
 ### 1. Environment File for Custom Mounts (`airflow/.env.local`)
+
 ```bash
 # User-defined volume mounts (one per line, format: host_path:container_path[:options])
 AIRFLOW_EXTRA_VOLUMES="
@@ -68,6 +78,7 @@ AIRFLOW_EXTRA_VOLUMES="
 ```
 
 ### 2. Standard Mounts Directory (`airflow/mounts/`)
+
 ```
 airflow/mounts/
 ├── README.md           # Documentation
@@ -77,6 +88,7 @@ airflow/mounts/
 ```
 
 ### 3. Docker Compose Integration
+
 ```yaml
 # In docker-compose.yml
 volumes:
@@ -89,15 +101,19 @@ volumes:
 ```
 
 ### 4. Wrapper Script for Mount Expansion
+
 Create `airflow/start-airflow.sh` that:
+
 1. Reads `.env.local` for custom mounts
-2. Generates a temporary docker-compose override file
-3. Starts services with the override
+1. Generates a temporary docker-compose override file
+1. Starts services with the override
 
 ## Implementation
 
 ### Phase 1: Immediate Fix (Current)
+
 Add standard mounts to `docker-compose.yml`:
+
 ```yaml
 # Mount qubinode_navigator for vault.yml and inventory access
 - /root/qubinode_navigator:/opt/qubinode_navigator:ro
@@ -112,20 +128,23 @@ Add standard mounts to `docker-compose.yml`:
 ```
 
 ### Phase 2: User-Configurable System
+
 1. Create `airflow/mounts/` directory structure
-2. Implement `.env.local` parsing in deploy script
-3. Document mount configuration format
-4. Add validation for security-sensitive paths
+1. Implement `.env.local` parsing in deploy script
+1. Document mount configuration format
+1. Add validation for security-sensitive paths
 
 ## Consequences
 
 ### Positive
+
 - Users can add custom mounts without modifying docker-compose.yml
 - Core configuration upgrades don't overwrite user customizations
 - Supports environment variable expansion for dynamic paths
 - DAGs can access required host resources (vault, playbooks, SSH keys)
 
 ### Negative
+
 - Requires documentation for mount configuration format
 - Potential security risks with arbitrary mounts (mitigated by validation)
 - Slightly more complex deployment process
@@ -133,9 +152,9 @@ Add standard mounts to `docker-compose.yml`:
 ## Security Considerations
 
 1. **Read-only mounts** for sensitive directories (SSH keys, credentials)
-2. **Validation script** to warn about potentially dangerous mounts
-3. **Documentation** of safe mount practices
-4. **Default deny** for mounts outside approved directories
+1. **Validation script** to warn about potentially dangerous mounts
+1. **Documentation** of safe mount practices
+1. **Default deny** for mounts outside approved directories
 
 ## Related ADRs
 

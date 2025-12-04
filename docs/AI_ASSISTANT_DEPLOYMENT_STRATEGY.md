@@ -1,6 +1,6 @@
----
-nav_exclude: true
----
+______________________________________________________________________
+
+## nav_exclude: true
 
 # AI Assistant Container Deployment Strategy
 
@@ -17,6 +17,7 @@ The Qubinode Navigator AI Assistant now supports a sophisticated deployment stra
 **Container Image**: `localhost/qubinode-ai-assistant:latest`
 
 **Characteristics**:
+
 - Uses locally built container images
 - Requires AI Assistant source code directory
 - Supports container building via `./scripts/build.sh`
@@ -24,6 +25,7 @@ The Qubinode Navigator AI Assistant now supports a sophisticated deployment stra
 - Longer health check timeouts for build processes
 
 **Use Cases**:
+
 - Local development and testing
 - Feature development and debugging
 - Custom model experimentation
@@ -36,6 +38,7 @@ The Qubinode Navigator AI Assistant now supports a sophisticated deployment stra
 **Container Image**: `quay.io/takinosh/qubinode-ai-assistant:latest`
 
 **Characteristics**:
+
 - Uses published container images from Quay.io registry
 - No local building required
 - Optimized for performance and security
@@ -43,6 +46,7 @@ The Qubinode Navigator AI Assistant now supports a sophisticated deployment stra
 - Production-ready configuration
 
 **Use Cases**:
+
 - Production deployments
 - CI/CD pipelines
 - Cloud deployments
@@ -53,10 +57,11 @@ The Qubinode Navigator AI Assistant now supports a sophisticated deployment stra
 **Purpose**: Intelligent environment detection for seamless deployment.
 
 **Auto-Detection Logic**:
+
 1. **Environment Variable**: Checks `QUBINODE_DEPLOYMENT_MODE`
-2. **Container Environment**: Detects if running inside a container (production)
-3. **Development Files**: Checks for local AI Assistant source and Dockerfile (development)
-4. **Default**: Falls back to production mode for safety
+1. **Container Environment**: Detects if running inside a container (production)
+1. **Development Files**: Checks for local AI Assistant source and Dockerfile (development)
+1. **Default**: Falls back to production mode for safety
 
 ## Configuration
 
@@ -119,9 +124,9 @@ export QUBINODE_DEPLOYMENT_MODE=production
 ### Development Workflow
 
 1. **Setup**: Ensure AI Assistant source code is available
-2. **Configuration**: Set `deployment_mode: "development"` or use auto-detection
-3. **Execution**: Plugin automatically builds container if needed
-4. **Testing**: Use local container for development and testing
+1. **Configuration**: Set `deployment_mode: "development"` or use auto-detection
+1. **Execution**: Plugin automatically builds container if needed
+1. **Testing**: Use local container for development and testing
 
 ```bash
 # Example development setup
@@ -133,8 +138,8 @@ python qubinode_cli.py --plugin ai_assistant --execute
 ### Production Workflow
 
 1. **Configuration**: Set `deployment_mode: "production"` or use auto-detection
-2. **Execution**: Plugin automatically pulls container from Quay.io
-3. **Deployment**: Use production-ready container
+1. **Execution**: Plugin automatically pulls container from Quay.io
+1. **Deployment**: Use production-ready container
 
 ```bash
 # Example production setup
@@ -147,12 +152,14 @@ python qubinode_cli.py --plugin ai_assistant --execute
 ### Development Image (`localhost/qubinode-ai-assistant:latest`)
 
 **Build Process**:
+
 - Built locally using `./scripts/build.sh`
 - Includes development dependencies
 - May include debugging tools
 - Supports rapid iteration
 
 **Requirements**:
+
 - AI Assistant source code directory
 - Container runtime (podman/docker)
 - Build dependencies
@@ -160,6 +167,7 @@ python qubinode_cli.py --plugin ai_assistant --execute
 ### Production Image (`quay.io/takinosh/qubinode-ai-assistant:latest`)
 
 **Features**:
+
 - **Size**: Optimized 681MB container
 - **Base Image**: Python 3.12 with llama.cpp integration
 - **AI Model**: IBM Granite-4.0-Micro (2.0GB Q4_K_M quantization)
@@ -168,6 +176,7 @@ python qubinode_cli.py --plugin ai_assistant --execute
 - **Security**: Non-root user, health checks
 
 **Usage**:
+
 ```bash
 podman pull quay.io/takinosh/qubinode-ai-assistant:latest
 podman run -d --name qubinode-ai-assistant -p 8080:8080 quay.io/takinosh/qubinode-ai-assistant:latest
@@ -179,10 +188,11 @@ curl http://localhost:8080/health
 ### Automatic Image Selection
 
 The `AIAssistantPlugin` automatically:
+
 1. Detects the deployment mode
-2. Selects the appropriate container image
-3. Builds or pulls the container as needed
-4. Starts and monitors the container
+1. Selects the appropriate container image
+1. Builds or pulls the container as needed
+1. Starts and monitors the container
 
 ### Health Status
 
@@ -199,16 +209,19 @@ print(f"Container Image: {health_status['container_image']}")
 ### Common Issues
 
 1. **Build Failures in Development Mode**
+
    - Ensure AI Assistant source directory exists
    - Check build script permissions
    - Verify container runtime availability
 
-2. **Pull Failures in Production Mode**
+1. **Pull Failures in Production Mode**
+
    - Check network connectivity
    - Verify registry access
    - Ensure container runtime is available
 
-3. **Auto-Detection Issues**
+1. **Auto-Detection Issues**
+
    - Use explicit deployment mode configuration
    - Set `QUBINODE_DEPLOYMENT_MODE` environment variable
    - Check file system permissions
@@ -234,12 +247,14 @@ podman pull quay.io/takinosh/qubinode-ai-assistant:latest
 ### From Hardcoded Images
 
 **Before**:
+
 ```yaml
 ai_assistant:
   container_image: "localhost/qubinode-ai-assistant:latest"
 ```
 
 **After**:
+
 ```yaml
 ai_assistant:
   deployment_mode: "auto"  # Automatically selects appropriate image
@@ -254,11 +269,13 @@ ai_assistant:
 ## Security Considerations
 
 ### Development Mode
+
 - Uses local images that may include development tools
 - Suitable for trusted development environments
 - May have longer startup times due to building
 
 ### Production Mode
+
 - Uses verified images from trusted registry
 - Optimized for security and performance
 - Faster deployment with pre-built images
@@ -266,11 +283,13 @@ ai_assistant:
 ## Performance Impact
 
 ### Development Mode
+
 - **Build Time**: 2-5 minutes for initial build
 - **Startup Time**: 30-60 seconds after build
 - **Resource Usage**: Higher during build process
 
 ### Production Mode
+
 - **Pull Time**: 30-120 seconds (depending on network)
 - **Startup Time**: 15-30 seconds
 - **Resource Usage**: Optimized for runtime efficiency
@@ -278,10 +297,10 @@ ai_assistant:
 ## Future Enhancements
 
 1. **Versioned Releases**: Support for specific version tags
-2. **Multi-Architecture**: Support for ARM64 and other architectures
-3. **Registry Configuration**: Support for custom registries
-4. **Caching**: Improved caching for faster deployments
-5. **Health Monitoring**: Enhanced health checks and monitoring
+1. **Multi-Architecture**: Support for ARM64 and other architectures
+1. **Registry Configuration**: Support for custom registries
+1. **Caching**: Improved caching for faster deployments
+1. **Health Monitoring**: Enhanced health checks and monitoring
 
 ## Related Documentation
 

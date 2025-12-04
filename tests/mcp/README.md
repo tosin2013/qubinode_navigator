@@ -5,12 +5,14 @@ This directory contains automated tests for the Qubinode Navigator MCP servers u
 ## Overview
 
 Tests validate:
+
 - **AI Assistant MCP Server** (Port 8081) - 3 tools
 - **Airflow MCP Server** (Port 8889) - 9 tools
 
 ## Quick Start
 
 ### 1. Install Test Collection
+
 ```bash
 make mcp-install
 ```
@@ -44,16 +46,17 @@ cat tests/mcp/comprehensive_test_report.md
 
 ## Test Files
 
-| File | Purpose |
-|------|---------|
-| `test_ai_assistant_mcp.yml` | Tests AI Assistant MCP server |
-| `test_airflow_mcp.yml` | Tests Airflow MCP server |
-| `test_mcp_suite.yml` | Comprehensive test suite for both servers |
-| `README.md` | This file |
+| File                        | Purpose                                   |
+| --------------------------- | ----------------------------------------- |
+| `test_ai_assistant_mcp.yml` | Tests AI Assistant MCP server             |
+| `test_airflow_mcp.yml`      | Tests Airflow MCP server                  |
+| `test_mcp_suite.yml`        | Comprehensive test suite for both servers |
+| `README.md`                 | This file                                 |
 
 ## Running Individual Tests
 
 ### AI Assistant Tests
+
 ```bash
 # All AI tests
 ansible-playbook tests/mcp/test_ai_assistant_mcp.yml
@@ -66,6 +69,7 @@ ansible-playbook tests/mcp/test_ai_assistant_mcp.yml --tags query_documents
 ```
 
 ### Airflow Tests
+
 ```bash
 # All Airflow tests
 ansible-playbook tests/mcp/test_airflow_mcp.yml
@@ -94,24 +98,26 @@ Default keys are loaded from `MCP-CONFIGURATION-ACTIVE.md`.
 
 Use tags to run specific test categories:
 
-| Tag | Description |
-|-----|-------------|
-| `discovery` | Server capability discovery |
-| `tools` | Tool execution tests |
-| `validation` | Response validation |
-| `report` | Report generation |
-| `dags` | DAG-related tests |
-| `vms` | VM-related tests |
-| `suite` | Full test suite |
+| Tag          | Description                 |
+| ------------ | --------------------------- |
+| `discovery`  | Server capability discovery |
+| `tools`      | Tool execution tests        |
+| `validation` | Response validation         |
+| `report`     | Report generation           |
+| `dags`       | DAG-related tests           |
+| `vms`        | VM-related tests            |
+| `suite`      | Full test suite             |
 
 ## Expected Test Results
 
 ### AI Assistant Tests
+
 - ✅ Server discovery successful
 - ✅ 3 tools tested: query_documents, chat_with_context, get_project_status
 - ✅ Test report generated
 
 ### Airflow Tests
+
 - ✅ Server discovery successful
 - ✅ Core tools tested: list_dags, list_vms
 - ✅ Optional tool tests (may skip if resources don't exist)
@@ -120,6 +126,7 @@ Use tags to run specific test categories:
 ## Troubleshooting
 
 ### Connection Refused
+
 ```bash
 # Check MCP servers are running
 podman ps | grep airflow
@@ -130,6 +137,7 @@ curl -I http://localhost:8889
 ```
 
 ### Authentication Errors
+
 ```bash
 # Verify API keys in .env file
 grep MCP_API_KEY /root/qubinode_navigator/airflow/.env
@@ -137,6 +145,7 @@ grep AIRFLOW_MCP_API_KEY /root/qubinode_navigator/airflow/.env
 ```
 
 ### Timeout Issues
+
 ```bash
 # Run with increased verbosity
 ansible-playbook tests/mcp/test_mcp_suite.yml -vv
@@ -148,6 +157,7 @@ podman logs -f airflow_airflow-webserver_1 | grep MCP
 ## CI/CD Integration
 
 Tests can be integrated into your CI/CD pipeline. See `MCP-AUDIT-INTEGRATION.md` for examples of:
+
 - GitLab CI integration
 - GitHub Actions workflows
 - Automated test reporting
@@ -161,6 +171,7 @@ Tests can be integrated into your CI/CD pipeline. See `MCP-AUDIT-INTEGRATION.md`
 ## Support
 
 For issues or questions:
+
 1. Check the troubleshooting section above
-2. Review MCP server logs
-3. Consult `MCP-AUDIT-INTEGRATION.md` for detailed examples
+1. Review MCP server logs
+1. Consult `MCP-AUDIT-INTEGRATION.md` for detailed examples

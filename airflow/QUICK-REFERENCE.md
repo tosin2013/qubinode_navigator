@@ -17,7 +17,7 @@ cd /root/qubinode_navigator/airflow/scripts
 # Test VM creation
 ./test-kcli-create-vm.sh [vm_name] [image] [memory] [cpus] [disk]
 
-# Test VM deletion  
+# Test VM deletion
 ./test-kcli-delete-vm.sh <vm_name>
 
 # Test VM listing
@@ -52,6 +52,7 @@ ubuntu2404, ubuntu2204
 ## 🚀 Quick Examples
 
 ### Create VM
+
 ```bash
 # Test first
 ./scripts/test-kcli-create-vm.sh webserver centos10stream 2048 2 20
@@ -68,6 +69,7 @@ KcliVMCreateOperator(
 ```
 
 ### List VMs
+
 ```bash
 # Test first
 ./scripts/test-kcli-list-vms.sh
@@ -77,6 +79,7 @@ KcliVMListOperator(task_id='list_vms')
 ```
 
 ### Delete VM
+
 ```bash
 # Test first
 ./scripts/test-kcli-delete-vm.sh webserver
@@ -133,17 +136,18 @@ virsh -c qemu:///system net-list --all
 
 ## 📊 Operator Reference
 
-| Operator | Script to Test | Parameters |
-|----------|----------------|------------|
-| `KcliVMCreateOperator` | `test-kcli-create-vm.sh` | vm_name, image, memory, cpus, disk_size |
-| `KcliVMDeleteOperator` | `test-kcli-delete-vm.sh` | vm_name, force |
-| `KcliVMListOperator` | `test-kcli-list-vms.sh` | (none) |
-| `VirshCommandOperator` | test manually with `virsh` | command (list) |
-| `VirshVMInfoOperator` | test with `virsh dominfo` | vm_name |
+| Operator               | Script to Test             | Parameters                              |
+| ---------------------- | -------------------------- | --------------------------------------- |
+| `KcliVMCreateOperator` | `test-kcli-create-vm.sh`   | vm_name, image, memory, cpus, disk_size |
+| `KcliVMDeleteOperator` | `test-kcli-delete-vm.sh`   | vm_name, force                          |
+| `KcliVMListOperator`   | `test-kcli-list-vms.sh`    | (none)                                  |
+| `VirshCommandOperator` | test manually with `virsh` | command (list)                          |
+| `VirshVMInfoOperator`  | test with `virsh dominfo`  | vm_name                                 |
 
 ## 🎯 Common Patterns
 
 ### Pattern 1: Simple VM
+
 ```bash
 # Test
 ./scripts/test-kcli-create-vm.sh simple centos10stream 1024 1 10
@@ -153,6 +157,7 @@ KcliVMCreateOperator(vm_name='simple', image='centos10stream', memory=1024, cpus
 ```
 
 ### Pattern 2: High-Performance VM
+
 ```bash
 # Test
 ./scripts/test-kcli-create-vm.sh powerful ubuntu2404 8192 4 100
@@ -162,6 +167,7 @@ KcliVMCreateOperator(vm_name='powerful', image='ubuntu2404', memory=8192, cpus=4
 ```
 
 ### Pattern 3: Multiple VMs (test each)
+
 ```bash
 # Test VM 1
 ./scripts/test-kcli-create-vm.sh web1 centos10stream 2048 2 20
@@ -256,12 +262,12 @@ Ask: "How do I create a VM with kcli?"
 ## 🎓 Learning Resources
 
 1. **Start Here**: `scripts/README.md`
-2. **Examples**: `dags/example_kcli_vm_provisioning.py`
-3. **Commands**: `TOOLS-AVAILABLE.md`
-4. **Bugs Fixed**: `BUGFIX-KCLI-SYNTAX.md`
-5. **Testing VMs**: `VM-TESTING-GUIDE.md`
-6. **Logging**: `LOGGING-GUIDE.md`
+1. **Examples**: `dags/example_kcli_vm_provisioning.py`
+1. **Commands**: `TOOLS-AVAILABLE.md`
+1. **Bugs Fixed**: `BUGFIX-KCLI-SYNTAX.md`
+1. **Testing VMs**: `VM-TESTING-GUIDE.md`
+1. **Logging**: `LOGGING-GUIDE.md`
 
----
+______________________________________________________________________
 
 **Print this card and keep it handy!** 📋

@@ -100,7 +100,7 @@ function configure_vg(){
 
     sudo /usr/sbin/pvcreate $not_mounted
     sudo /usr/sbin/vgcreate vg_qubi $not_mounted
-    sudo /usr/sbin/lvcreate -l 100%FREE -n vg_qubi-lv_qubi_images vg_qubi 
+    sudo /usr/sbin/lvcreate -l 100%FREE -n vg_qubi-lv_qubi_images vg_qubi
     sudo mkfs.ext4 /dev/vg_qubi/vg_qubi-lv_qubi_images
     sudo mkdir -p /var/lib/libvirt/images
     sudo mount /dev/vg_qubi/vg_qubi-lv_qubi_images /var/lib/libvirt/images

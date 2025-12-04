@@ -1,10 +1,6 @@
----
-layout: default
-title: Configuration & Automation
-parent: Architectural Decision Records
-nav_order: 3
-has_children: true
----
+______________________________________________________________________
+
+## layout: default title: Configuration & Automation parent: Architectural Decision Records nav_order: 3 has_children: true
 
 # Configuration & Automation ADRs
 

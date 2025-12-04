@@ -2,11 +2,11 @@
 - name: Test FastMCP Servers with MCP Audit Collection
   hosts: localhost
   gather_facts: false
-  
+
   vars:
     airflow_url: "http://localhost:8889"
     ai_url: "http://localhost:8081"
-  
+
   tasks:
     - name: "Phase 1: Test Airflow MCP Server Info (No Connection Pooling)"
       tosin2013.mcp_audit.mcp_server_info:
@@ -16,7 +16,7 @@
         timeout: 30
       register: airflow_info
       tags: [airflow, info]
-    
+
     - name: Display Airflow Server Info
       debug:
         msg:
@@ -30,7 +30,7 @@
           - "=========================================="
       when: airflow_info.success
       tags: [airflow, info]
-    
+
     - name: "Phase 2: Test AI Assistant MCP Server Info (No Connection Pooling)"
       tosin2013.mcp_audit.mcp_server_info:
         server_url: "{{ ai_url }}"
@@ -40,7 +40,7 @@
       register: ai_info
       ignore_errors: true
       tags: [ai, info]
-    
+
     - name: Display AI Assistant Server Info
       debug:
         msg:
@@ -52,7 +52,7 @@
           - "=========================================="
       when: ai_info.success | default(false)
       tags: [ai, info]
-    
+
     - name: "Phase 3: List Tools from Airflow MCP (requires connection)"
       block:
         - name: Test list_dags tool
@@ -65,7 +65,7 @@
             timeout: 30
           register: list_dags_result
           ignore_errors: true
-        
+
         - name: Display list_dags result
           debug:
             msg:
@@ -74,7 +74,7 @@
               - "Result: {{ list_dags_result.result | default('Failed') }}"
           when: list_dags_result.success | default(false)
       tags: [airflow, tools]
-    
+
     - name: "Final Summary"
       debug:
         msg:

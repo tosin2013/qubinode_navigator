@@ -1,6 +1,6 @@
----
-nav_exclude: true
----
+______________________________________________________________________
+
+## nav_exclude: true
 
 # MCP Server Integration for Qubinode Navigator
 
@@ -38,48 +38,59 @@ Add Model Context Protocol (MCP) server capability to expose Qubinode Navigator 
 ### AI Assistant MCP Tools:
 
 1. **query_documents**
+
    - Search RAG document store
    - Get relevant context
-   
-2. **chat_with_context**
+
+1. **chat_with_context**
+
    - Send messages with project context
    - Get AI responses
 
-3. **get_project_status**
+1. **get_project_status**
+
    - Current deployment state
    - Service health
 
 ### Airflow MCP Tools:
 
 1. **list_dags**
+
    - Get available workflows
    - DAG status and schedules
 
-2. **trigger_dag**
+1. **trigger_dag**
+
    - Start workflow execution
    - Specify parameters
 
-3. **get_dag_status**
+1. **get_dag_status**
+
    - Check DAG run status
    - Task completion
 
-4. **get_task_logs**
+1. **get_task_logs**
+
    - Retrieve execution logs
    - Debug information
 
-5. **create_vm**
+1. **create_vm**
+
    - Provision VM via kcli
    - Specify resources
 
-6. **delete_vm**
+1. **delete_vm**
+
    - Remove VM
    - Cleanup resources
 
-7. **list_vms**
+1. **list_vms**
+
    - Get VM inventory
    - VM states
 
-8. **get_vm_info**
+1. **get_vm_info**
+
    - Detailed VM information
    - Resource usage
 
@@ -96,18 +107,18 @@ import httpx
 
 class QuibinodeAIMCPServer(Server):
     """MCP Server for AI Assistant"""
-    
+
     def __init__(self):
         super().__init__("qubinode-ai-assistant")
         self.register_tools()
-    
+
     def register_tools(self):
         @self.tool()
         async def query_documents(query: str) -> TextContent:
             """Search RAG document store"""
             # Implementation
             pass
-        
+
         @self.tool()
         async def chat_with_context(message: str, context: dict) -> TextContent:
             """Chat with AI Assistant"""
@@ -143,27 +154,27 @@ from airflow.api.common.experimental.trigger_dag import trigger_dag
 
 class AirflowMCPServer(Server):
     """MCP Server for Airflow"""
-    
+
     def __init__(self):
         super().__init__("qubinode-airflow")
         self.register_tools()
-    
+
     def register_tools(self):
         @self.tool()
         async def trigger_dag(dag_id: str, conf: dict = None) -> TextContent:
             """Trigger an Airflow DAG"""
             # Implementation
             pass
-        
+
         @self.tool()
         async def list_dags() -> TextContent:
             """List available DAGs"""
             # Implementation
             pass
-        
+
         @self.tool()
         async def create_vm(
-            name: str, 
+            name: str,
             image: str = "centos10stream",
             memory: int = 2048,
             cpus: int = 2,
@@ -232,7 +243,7 @@ location /mcp/ai/ {
     proxy_pass http://localhost:8081/;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
-    
+
     # Require authentication
     auth_basic "MCP Access";
     auth_basic_user_file /etc/nginx/.mcp_htpasswd;
@@ -243,7 +254,7 @@ location /mcp/airflow/ {
     proxy_pass http://localhost:8889/;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
-    
+
     # Require authentication
     auth_basic "MCP Access";
     auth_basic_user_file /etc/nginx/.mcp_htpasswd;
@@ -253,6 +264,7 @@ location /mcp/airflow/ {
 ## Security Considerations
 
 ### 1. Authentication
+
 - API key required for all MCP connections
 - Support for multiple auth methods:
   - API Key (header-based)
@@ -260,6 +272,7 @@ location /mcp/airflow/ {
   - mTLS (mutual TLS)
 
 ### 2. Authorization
+
 - Role-based access control
 - Tool-level permissions:
   - read-only (list, query, status)
@@ -267,11 +280,13 @@ location /mcp/airflow/ {
   - admin (full access)
 
 ### 3. Rate Limiting
+
 - Per-client rate limits
 - Per-tool rate limits
 - Prevent abuse
 
 ### 4. Audit Logging
+
 - Log all MCP requests
 - Track tool usage
 - Security monitoring
@@ -383,16 +398,18 @@ Claude: [Calls get_dag_status tool]
 ## Benefits
 
 ### For Users:
+
 1. **Natural Language Control:** Manage VMs and workflows conversationally
-2. **Multi-Client Support:** Use any MCP-compatible LLM
-3. **Automation:** Chain operations via AI reasoning
-4. **Observability:** Query status and logs naturally
+1. **Multi-Client Support:** Use any MCP-compatible LLM
+1. **Automation:** Chain operations via AI reasoning
+1. **Observability:** Query status and logs naturally
 
 ### For Developers:
+
 1. **Standardized API:** MCP protocol is vendor-neutral
-2. **Tool Discovery:** LLMs automatically discover capabilities
-3. **Type Safety:** Schema-based tool definitions
-4. **Extensible:** Easy to add new tools
+1. **Tool Discovery:** LLMs automatically discover capabilities
+1. **Type Safety:** Schema-based tool definitions
+1. **Extensible:** Easy to add new tools
 
 ## Deployment
 
@@ -478,6 +495,7 @@ curl -X POST \
 ## Documentation
 
 Files to create:
+
 - `docs/MCP-SERVER-SETUP.md` - Setup guide
 - `docs/MCP-TOOLS-REFERENCE.md` - Tool catalog
 - `docs/MCP-SECURITY.md` - Security best practices
@@ -486,22 +504,22 @@ Files to create:
 ## Next Steps
 
 1. **Phase 1:** Implement AI Assistant MCP server (Week 1)
-2. **Phase 2:** Implement Airflow MCP server plugin (Week 2)
-3. **Phase 3:** Add authentication and security (Week 3)
-4. **Phase 4:** Documentation and examples (Week 4)
-5. **Phase 5:** Testing and hardening (Week 5)
+1. **Phase 2:** Implement Airflow MCP server plugin (Week 2)
+1. **Phase 3:** Add authentication and security (Week 3)
+1. **Phase 4:** Documentation and examples (Week 4)
+1. **Phase 5:** Testing and hardening (Week 5)
 
 ## Future Enhancements
 
 1. **WebSocket Support:** Real-time updates for long-running operations
-2. **GraphQL Interface:** Alternative to MCP for web clients
-3. **Custom Tool Builder:** UI for creating new MCP tools
-4. **Tool Marketplace:** Share community tools
-5. **Monitoring Dashboard:** MCP usage analytics
+1. **GraphQL Interface:** Alternative to MCP for web clients
+1. **Custom Tool Builder:** UI for creating new MCP tools
+1. **Tool Marketplace:** Share community tools
+1. **Monitoring Dashboard:** MCP usage analytics
 
----
+______________________________________________________________________
 
-**Status:** Design Phase  
-**Feature Flag:** `MCP_SERVER_ENABLED` (default: false)  
-**Security:** Opt-in, authentication required  
+**Status:** Design Phase
+**Feature Flag:** `MCP_SERVER_ENABLED` (default: false)
+**Security:** Opt-in, authentication required
 **Impact:** Enables LLM-powered automation
