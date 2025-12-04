@@ -65,13 +65,33 @@ jobs:
           pip install apache-airflow==2.10.4
           pip install apache-airflow-providers-postgres
           pip install pyyaml
-          # Add Python bin directory to PATH for airflow CLI
-          # With actions/setup-python, binaries go to the Python prefix bin dir
-          PYTHON_BIN_DIR="$(python3 -c 'import sys; print(sys.prefix)')/bin"
-          echo "Adding $PYTHON_BIN_DIR to PATH"
-          echo "$PYTHON_BIN_DIR" >> $GITHUB_PATH
-          # Verify airflow location
-          ls -la "$PYTHON_BIN_DIR/airflow" || echo "airflow not found in $PYTHON_BIN_DIR"
+
+          # Find where pip installed the airflow binary
+          echo "Looking for airflow binary..."
+          AIRFLOW_BIN=$(python3 -c "import sysconfig; print(sysconfig.get_path('scripts'))")/airflow
+
+          if [[ -f "$AIRFLOW_BIN" ]]; then
+            echo "Found airflow at: $AIRFLOW_BIN"
+            SCRIPTS_DIR=$(dirname "$AIRFLOW_BIN")
+          else
+            # Fallback: search common locations
+            echo "Searching for airflow binary..."
+            AIRFLOW_BIN=$(find /opt/hostedtoolcache -name "airflow" -type f 2>/dev/null | head -1)
+            if [[ -n "$AIRFLOW_BIN" ]]; then
+              echo "Found airflow at: $AIRFLOW_BIN"
+              SCRIPTS_DIR=$(dirname "$AIRFLOW_BIN")
+            else
+              echo "ERROR: Could not find airflow binary"
+              pip show -f apache-airflow | grep -E "bin/|scripts/"
+              exit 1
+            fi
+          fi
+
+          echo "Adding $SCRIPTS_DIR to PATH"
+          echo "$SCRIPTS_DIR" >> $GITHUB_PATH
+
+          # Verify airflow is executable
+          "$AIRFLOW_BIN" version
 
       - name: Validate DAG syntax
         run: |
@@ -238,13 +258,33 @@ jobs:
           pip install openlineage-airflow
           pip install pyyaml
           pip install httpx  # For MCP server testing
-          # Add Python bin directory to PATH for airflow CLI
-          # With actions/setup-python, binaries go to the Python prefix bin dir
-          PYTHON_BIN_DIR="$(python3 -c 'import sys; print(sys.prefix)')/bin"
-          echo "Adding $PYTHON_BIN_DIR to PATH"
-          echo "$PYTHON_BIN_DIR" >> $GITHUB_PATH
-          # Verify airflow location
-          ls -la "$PYTHON_BIN_DIR/airflow" || echo "airflow not found in $PYTHON_BIN_DIR"
+
+          # Find where pip installed the airflow binary
+          echo "Looking for airflow binary..."
+          AIRFLOW_BIN=$(python3 -c "import sysconfig; print(sysconfig.get_path('scripts'))")/airflow
+
+          if [[ -f "$AIRFLOW_BIN" ]]; then
+            echo "Found airflow at: $AIRFLOW_BIN"
+            SCRIPTS_DIR=$(dirname "$AIRFLOW_BIN")
+          else
+            # Fallback: search common locations
+            echo "Searching for airflow binary..."
+            AIRFLOW_BIN=$(find /opt/hostedtoolcache -name "airflow" -type f 2>/dev/null | head -1)
+            if [[ -n "$AIRFLOW_BIN" ]]; then
+              echo "Found airflow at: $AIRFLOW_BIN"
+              SCRIPTS_DIR=$(dirname "$AIRFLOW_BIN")
+            else
+              echo "ERROR: Could not find airflow binary"
+              pip show -f apache-airflow | grep -E "bin/|scripts/"
+              exit 1
+            fi
+          fi
+
+          echo "Adding $SCRIPTS_DIR to PATH"
+          echo "$SCRIPTS_DIR" >> $GITHUB_PATH
+
+          # Verify airflow is executable
+          "$AIRFLOW_BIN" version
 
       - name: Initialize Airflow DB
         env:
