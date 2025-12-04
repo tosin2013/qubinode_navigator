@@ -62,37 +62,27 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install apache-airflow==2.10.4
-          pip install apache-airflow-providers-postgres
+          # Install Airflow 2.10.4 with constraints file to ensure correct version
+          PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+          CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-2.10.4/constraints-${PYTHON_VERSION}.txt"
+          echo "Using constraints: $CONSTRAINT_URL"
+
+          pip install "apache-airflow==2.10.4" --constraint "$CONSTRAINT_URL"
+          pip install "apache-airflow-providers-postgres" --constraint "$CONSTRAINT_URL"
           pip install pyyaml
 
-          # Debug: Show where pip installs scripts
-          echo "=== Debug Info ==="
-          echo "Python: $(which python3)"
-          echo "Pip: $(which pip)"
-          echo "sysconfig scripts path: $(python3 -c 'import sysconfig; print(sysconfig.get_path(\"scripts\"))')"
-          echo "sys.prefix: $(python3 -c 'import sys; print(sys.prefix)')"
-
-          # List what airflow package installed
-          echo "=== Airflow package files ==="
-          pip show -f apache-airflow 2>&1 | head -50
-
-          # Find airflow entry point script
+          # Find scripts directory
           SCRIPTS_DIR=$(python3 -c "import sysconfig; print(sysconfig.get_path('scripts'))")
-          echo "=== Contents of $SCRIPTS_DIR ==="
-          ls -la "$SCRIPTS_DIR/" 2>&1 | head -30
+          echo "Scripts directory: $SCRIPTS_DIR"
+          ls -la "$SCRIPTS_DIR/" | grep -E "airflow|^total" || true
 
-          # Add scripts directory to PATH
+          # Verify airflow version and add to PATH
           echo "$SCRIPTS_DIR" >> $GITHUB_PATH
-
-          # Test if airflow is available
-          if [[ -f "$SCRIPTS_DIR/airflow" ]]; then
-            echo "Found airflow at: $SCRIPTS_DIR/airflow"
+          if [[ -x "$SCRIPTS_DIR/airflow" ]]; then
             "$SCRIPTS_DIR/airflow" version
           else
-            echo "airflow binary not in $SCRIPTS_DIR"
-            echo "=== Searching entire system ==="
-            find / -name "airflow" -type f 2>/dev/null | head -10 || echo "No airflow found"
+            echo "ERROR: airflow binary not found in $SCRIPTS_DIR"
+            pip show apache-airflow | head -10
             exit 1
           fi
 
@@ -256,38 +246,30 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install apache-airflow==2.10.4
-          pip install apache-airflow-providers-postgres
+          # Install Airflow 2.10.4 with constraints file to ensure correct version
+          PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+          CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-2.10.4/constraints-${PYTHON_VERSION}.txt"
+          echo "Using constraints: $CONSTRAINT_URL"
+
+          pip install "apache-airflow==2.10.4" --constraint "$CONSTRAINT_URL"
+          pip install "apache-airflow-providers-postgres" --constraint "$CONSTRAINT_URL"
           pip install openlineage-airflow
           pip install pyyaml
           pip install httpx  # For MCP server testing
 
-          # Find where pip installed the airflow binary
-          echo "Looking for airflow binary..."
-          AIRFLOW_BIN=$(python3 -c "import sysconfig; print(sysconfig.get_path('scripts'))")/airflow
-
-          if [[ -f "$AIRFLOW_BIN" ]]; then
-            echo "Found airflow at: $AIRFLOW_BIN"
-            SCRIPTS_DIR=$(dirname "$AIRFLOW_BIN")
-          else
-            # Fallback: search common locations
-            echo "Searching for airflow binary..."
-            AIRFLOW_BIN=$(find /opt/hostedtoolcache -name "airflow" -type f 2>/dev/null | head -1)
-            if [[ -n "$AIRFLOW_BIN" ]]; then
-              echo "Found airflow at: $AIRFLOW_BIN"
-              SCRIPTS_DIR=$(dirname "$AIRFLOW_BIN")
-            else
-              echo "ERROR: Could not find airflow binary"
-              pip show -f apache-airflow | grep -E "bin/|scripts/"
-              exit 1
-            fi
-          fi
-
-          echo "Adding $SCRIPTS_DIR to PATH"
+          # Find scripts directory and add to PATH
+          SCRIPTS_DIR=$(python3 -c "import sysconfig; print(sysconfig.get_path('scripts'))")
+          echo "Scripts directory: $SCRIPTS_DIR"
           echo "$SCRIPTS_DIR" >> $GITHUB_PATH
 
-          # Verify airflow is executable
-          "$AIRFLOW_BIN" version
+          # Verify airflow
+          if [[ -x "$SCRIPTS_DIR/airflow" ]]; then
+            "$SCRIPTS_DIR/airflow" version
+          else
+            echo "ERROR: airflow binary not found"
+            pip show apache-airflow | head -10
+            exit 1
+          fi
 
       - name: Initialize Airflow DB
         env:
