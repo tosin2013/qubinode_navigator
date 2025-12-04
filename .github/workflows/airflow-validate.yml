@@ -111,40 +111,53 @@ jobs:
 
           # Verify airflow is accessible
           echo "Airflow location: $(which airflow || echo 'not in PATH')"
-          echo "Python location: $(which python3)"
           airflow version || { echo "[ERROR] airflow CLI not found"; exit 1; }
 
           # Initialize minimal Airflow DB
           airflow db migrate
 
-          # List DAGs and check for import errors
-          echo "=== DAG List ==="
-          airflow dags list 2>&1 | tee dag_list.txt
+          # Use Python DagBag API for reliable import error checking
+          # This is the recommended approach per Airflow best practices
+          python3 << 'PYTHON_SCRIPT'
+          import sys
+          from airflow.models import DagBag
 
-          # Check for actual DAG import errors (not just the warning message)
-          echo ""
-          echo "=== Checking for import errors ==="
-          airflow dags list-import-errors 2>&1 | tee import_errors.txt || true
+          print("=== Loading DAGs with DagBag ===")
+          dagbag = DagBag(include_examples=False)
 
-          # Count import errors, but treat duplicate DAG IDs as warnings, not errors
-          # Duplicate DAG IDs are a known issue that needs to be fixed separately
-          # Only count lines that are primary error entries (filepath | error)
-          TOTAL_ERRORS=$(grep -E "^/.*\|" import_errors.txt 2>/dev/null | wc -l || echo "0")
-          DUPLICATE_COUNT=$(grep -E "^/.*\|.*DuplicatedIdException" import_errors.txt 2>/dev/null | wc -l || echo "0")
+          # Report loaded DAGs
+          print(f"\nLoaded {len(dagbag.dags)} DAGs:")
+          for dag_id in sorted(dagbag.dags.keys()):
+              print(f"  [OK] {dag_id}")
 
-          if [[ "$DUPLICATE_COUNT" -gt 0 ]]; then
-            echo "[WARN] Found $DUPLICATE_COUNT duplicate DAG ID warnings (known issue - to be fixed separately)"
-          fi
+          # Check for import errors
+          if dagbag.import_errors:
+              print(f"\n=== Import Errors ({len(dagbag.import_errors)}) ===")
+              non_duplicate_errors = []
+              duplicate_warnings = []
 
-          # Only fail if there are errors other than duplicates
-          NON_DUPLICATE_ERRORS=$((TOTAL_ERRORS - DUPLICATE_COUNT))
-          if [[ "$NON_DUPLICATE_ERRORS" -gt 0 ]]; then
-            echo "[ERROR] Found $NON_DUPLICATE_ERRORS DAG files with import errors (excluding duplicates)"
-            cat import_errors.txt
-            exit 1
-          fi
+              for filepath, error in dagbag.import_errors.items():
+                  error_str = str(error)
+                  if "DuplicatedIdException" in error_str:
+                      duplicate_warnings.append((filepath, error_str))
+                  else:
+                      non_duplicate_errors.append((filepath, error_str))
 
-          echo "[OK] All DAGs parsed successfully (with $DUPLICATE_COUNT known duplicate warnings)"
+              # Report duplicate warnings (known issue)
+              if duplicate_warnings:
+                  print(f"\n[WARN] {len(duplicate_warnings)} duplicate DAG ID warnings (known issue):")
+                  for filepath, error in duplicate_warnings:
+                      print(f"  {filepath}")
+
+              # Report real errors
+              if non_duplicate_errors:
+                  print(f"\n[ERROR] {len(non_duplicate_errors)} DAG import errors:")
+                  for filepath, error in non_duplicate_errors:
+                      print(f"  {filepath}: {error[:200]}")
+                  sys.exit(1)
+
+          print("\n[OK] All DAGs validated successfully")
+          PYTHON_SCRIPT
 
   # ==========================================================================
   # Container Build Validation (runs on GitHub-hosted runners)
