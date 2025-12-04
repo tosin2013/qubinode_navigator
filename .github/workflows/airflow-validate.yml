@@ -223,7 +223,9 @@ jobs:
     needs: [validate-dags, validate-containers]
 
     services:
-      # PostgreSQL for Airflow metadata
+      # PostgreSQL for Airflow metadata AND Marquez
+      # Marquez is started manually after DB init (not as service container)
+      # because it needs the marquez user/database created first
       postgres:
         image: postgres:15
         env:
@@ -237,36 +239,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
-      # Marquez API for lineage tracking
-      marquez:
-        image: marquezproject/marquez:latest
-        env:
-          MARQUEZ_PORT: 5001
-          MARQUEZ_ADMIN_PORT: 5002
-          POSTGRES_HOST: postgres
-          POSTGRES_PORT: 5432
-          POSTGRES_DB: airflow
-          POSTGRES_USER: airflow
-          POSTGRES_PASSWORD: airflow
-        ports:
-          - 5001:5001
-          - 5002:5002
-        options: >-
-          --health-cmd "curl -f http://localhost:5001/api/v1/namespaces || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
-          --health-start-period 30s
-
-      # Marquez Web UI
-      marquez-web:
-        image: marquezproject/marquez-web:latest
-        env:
-          MARQUEZ_HOST: marquez
-          MARQUEZ_PORT: 5001
-        ports:
-          - 3000:3000
 
     steps:
       - name: Checkout code
@@ -304,6 +276,77 @@ jobs:
             exit 1
           fi
 
+      - name: Create Marquez database and user
+        run: |
+          echo "Creating Marquez database and user in PostgreSQL..."
+          echo "(Replicating airflow/init-scripts/002-marquez-db.sql)"
+
+          # Wait for PostgreSQL to be fully ready
+          for i in {1..30}; do
+            if PGPASSWORD=airflow psql -h localhost -U airflow -d airflow -c '\q' 2>/dev/null; then
+              echo "[OK] PostgreSQL is accepting connections"
+              break
+            fi
+            echo "Waiting for PostgreSQL... ($i/30)"
+            sleep 2
+          done
+
+          # Create marquez user and database (same as init-scripts/002-marquez-db.sql)
+          PGPASSWORD=airflow psql -h localhost -U airflow -d airflow << 'EOF'
+          CREATE USER marquez WITH PASSWORD 'marquez';
+          CREATE DATABASE marquez OWNER marquez;
+          GRANT ALL PRIVILEGES ON DATABASE marquez TO marquez;
+          EOF
+
+          echo "[OK] Marquez database and user created"
+
+      - name: Start Marquez containers
+        run: |
+          echo "Starting Marquez API container..."
+          docker run -d \
+            --name marquez \
+            --network host \
+            -e MARQUEZ_PORT=5001 \
+            -e MARQUEZ_ADMIN_PORT=5002 \
+            -e POSTGRES_HOST=localhost \
+            -e POSTGRES_PORT=5432 \
+            -e POSTGRES_DB=marquez \
+            -e POSTGRES_USER=marquez \
+            -e POSTGRES_PASSWORD=marquez \
+            docker.io/marquezproject/marquez:latest
+
+          echo "Starting Marquez Web UI container..."
+          docker run -d \
+            --name marquez-web \
+            --network host \
+            -e MARQUEZ_HOST=localhost \
+            -e MARQUEZ_PORT=5001 \
+            -e WEB_PORT=3000 \
+            docker.io/marquezproject/marquez-web:latest
+
+          echo "[OK] Marquez containers started"
+
+      - name: Wait for Marquez to be ready
+        run: |
+          echo "Waiting for Marquez API..."
+          for i in {1..30}; do
+            if curl -sf http://localhost:5001/api/v1/namespaces > /dev/null 2>&1; then
+              echo "[OK] Marquez API is ready"
+              break
+            fi
+            echo "  Attempt $i/30: Marquez not ready yet..."
+            # Show container logs on failures for debugging
+            if [ $i -eq 15 ]; then
+              echo "  Marquez container logs:"
+              docker logs marquez 2>&1 | tail -20 || true
+            fi
+            sleep 5
+          done
+
+          # Verify Marquez is responding
+          curl -s http://localhost:5001/api/v1/namespaces | head -100 || echo "[WARN] Marquez may not be fully ready"
+          echo ""
+
       - name: Initialize Airflow DB
         env:
           AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@localhost:5432/airflow
@@ -322,22 +365,6 @@ jobs:
             --role Admin \
             --email admin@example.com
           echo "[OK] Airflow DB initialized"
-
-      - name: Wait for Marquez to be ready
-        run: |
-          echo "Waiting for Marquez API..."
-          for i in {1..30}; do
-            if curl -sf http://localhost:5001/api/v1/namespaces > /dev/null 2>&1; then
-              echo "[OK] Marquez API is ready"
-              break
-            fi
-            echo "  Attempt $i/30: Marquez not ready yet..."
-            sleep 5
-          done
-
-          # Verify Marquez is responding
-          curl -s http://localhost:5001/api/v1/namespaces | head -100
-          echo ""
 
       - name: List and validate DAGs
         env:
