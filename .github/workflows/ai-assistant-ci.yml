@@ -65,17 +65,18 @@ jobs:
           pip install -r requirements.txt
           pip install pytest-cov
 
-      - name: Run diagnostic tools tests
+      - name: Run AI Assistant tests
         run: |
           cd ai-assistant
-          python -m pytest tests/test_diagnostic_tools.py -v --cov=src --cov-report=xml --cov-report=term
+          # Run all tests with coverage using .coveragerc configuration
+          python -m pytest tests/ -v --cov=src --cov-config=.coveragerc --cov-report=xml --cov-report=term
 
-      - name: Upload diagnostic tools coverage
+      - name: Upload AI Assistant coverage
         uses: codecov/codecov-action@v5
         with:
-          file: ./ai-assistant/coverage.xml
-          flags: diagnostic-tools
-          name: diagnostic-tools-coverage
+          files: ./ai-assistant/coverage.xml
+          flags: ai-assistant
+          name: ai-assistant-coverage
 
   # Test Plugin Framework Integration
   test-plugin-integration:
