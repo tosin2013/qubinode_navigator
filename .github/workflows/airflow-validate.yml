@@ -223,7 +223,7 @@ jobs:
     needs: [validate-dags, validate-containers]
 
     services:
-      # PostgreSQL for Airflow metadata
+      # PostgreSQL for Airflow metadata and Marquez lineage
       postgres:
         image: postgres:15
         env:
@@ -237,37 +237,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
-      # Marquez API for lineage tracking
-      marquez:
-        image: docker.io/marquezproject/marquez:latest
-        env:
-          MARQUEZ_PORT: 5001
-          MARQUEZ_ADMIN_PORT: 5002
-          POSTGRES_HOST: postgres
-          POSTGRES_PORT: 5432
-          POSTGRES_DB: marquez
-          POSTGRES_USER: marquez
-          POSTGRES_PASSWORD: marquez
-        ports:
-          - 5001:5001
-          - 5002:5002
-        options: >-
-          --health-cmd "curl -f http://localhost:5001/api/v1/namespaces || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
-          --health-start-period 30s
-
-      # Marquez Web UI
-      marquez-web:
-        image: docker.io/marquezproject/marquez-web:latest
-        env:
-          MARQUEZ_HOST: marquez
-          MARQUEZ_PORT: 5001
-          WEB_PORT: 3000
-        ports:
-          - 3000:3000
 
     steps:
       - name: Checkout code
@@ -341,6 +310,32 @@ jobs:
           EOF
           
           echo "[OK] Marquez database and user created"
+
+      - name: Start Marquez containers
+        run: |
+          echo "Starting Marquez API container..."
+          docker run -d \
+            --name marquez \
+            --network host \
+            -e MARQUEZ_PORT=5001 \
+            -e MARQUEZ_ADMIN_PORT=5002 \
+            -e POSTGRES_HOST=localhost \
+            -e POSTGRES_PORT=5432 \
+            -e POSTGRES_DB=marquez \
+            -e POSTGRES_USER=marquez \
+            -e POSTGRES_PASSWORD=marquez \
+            docker.io/marquezproject/marquez:latest
+          
+          echo "Starting Marquez Web UI container..."
+          docker run -d \
+            --name marquez-web \
+            --network host \
+            -e MARQUEZ_HOST=localhost \
+            -e MARQUEZ_PORT=5001 \
+            -e WEB_PORT=3000 \
+            docker.io/marquezproject/marquez-web:latest
+          
+          echo "[OK] Marquez containers started"
 
       - name: Initialize Airflow DB
         env:
@@ -682,6 +677,14 @@ jobs:
           echo "  - MCP server syntax and startup"
           echo ""
           echo "========================================"
+
+      - name: Cleanup Marquez containers
+        if: always()
+        run: |
+          echo "Stopping and removing Marquez containers..."
+          docker stop marquez marquez-web 2>/dev/null || true
+          docker rm marquez marquez-web 2>/dev/null || true
+          echo "[OK] Cleanup complete"
 
   # ==========================================================================
   # Full Integration Tests (requires self-hosted runner with KVM)
