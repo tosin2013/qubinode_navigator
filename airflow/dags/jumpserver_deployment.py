@@ -155,8 +155,18 @@ configure_network = BashOperator(
     echo "[INFO] Configuring second NIC on ${VM_NAME} ($IP)..."
 
     # Find and configure the second NIC (handles Fedora ens naming)
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
-        "ssh -o StrictHostKeyChecking=no fedora@${IP} 'SECOND_NIC=\\$(ip -o link show | awk -F\": \" \"{print \\\\$2}\" | grep -v lo | tail -1); if [ -n \"\\$SECOND_NIC\" ]; then if ! ip addr show \\$SECOND_NIC | grep -q ${STATIC_IP}; then sudo nmcli con add type ethernet con-name isolated ifname \\$SECOND_NIC ip4 ${STATIC_IP}/24 gw4 ${GATEWAY} && sudo nmcli con up isolated && echo OK; else echo Already configured; fi; else echo No second NIC; fi'"
+    # Step 1: Get the second NIC name from the VM
+    SECOND_NIC=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        "ssh -o StrictHostKeyChecking=no fedora@${IP} 'ip -o link show | grep -v lo: | tail -1 | cut -d: -f2 | tr -d \" \"'")
+
+    if [ -z "$SECOND_NIC" ]; then
+        echo "[WARN] No second NIC found"
+    else
+        echo "[INFO] Found second NIC: $SECOND_NIC"
+        # Step 2: Configure the NIC if not already done
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+            "ssh -o StrictHostKeyChecking=no fedora@${IP} 'if ! ip addr show ${SECOND_NIC} | grep -q ${STATIC_IP}; then sudo nmcli con add type ethernet con-name isolated ifname ${SECOND_NIC} ip4 ${STATIC_IP}/24 gw4 ${GATEWAY} && sudo nmcli con up isolated && echo OK; else echo Already configured; fi'"
+    fi
 
     echo "[OK] Network configuration complete"
     """,
