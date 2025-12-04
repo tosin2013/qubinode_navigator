@@ -115,16 +115,25 @@ jobs:
           airflow version || { echo "[ERROR] airflow CLI not found"; exit 1; }
 
           # Initialize minimal Airflow DB
-          airflow db init
+          airflow db migrate
 
-          # List DAGs to check for import errors
+          # List DAGs and check for import errors
+          echo "=== DAG List ==="
           airflow dags list 2>&1 | tee dag_list.txt
 
-          # Check for import errors (exclude "No data found" which is normal)
-          if grep -i "error" dag_list.txt | grep -v "No data found"; then
-            echo "[ERROR] DAG import errors found"
+          # Check for actual DAG import errors (not just the warning message)
+          echo ""
+          echo "=== Checking for import errors ==="
+          airflow dags list-import-errors 2>&1 | tee import_errors.txt || true
+
+          # Count actual import errors (non-empty output indicates errors)
+          ERROR_COUNT=$(grep -c "^/" import_errors.txt 2>/dev/null || echo "0")
+          if [[ "$ERROR_COUNT" -gt 0 ]]; then
+            echo "[ERROR] Found $ERROR_COUNT DAG files with import errors"
+            cat import_errors.txt
             exit 1
           fi
+
           echo "[OK] All DAGs imported successfully"
 
   # ==========================================================================
