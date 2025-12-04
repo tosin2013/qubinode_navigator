@@ -282,16 +282,24 @@ jobs:
           sudo apt-get update && sudo apt-get install -y postgresql-client
           
           # Wait for PostgreSQL to be ready
+          POSTGRES_READY=false
           for i in {1..30}; do
             if PGPASSWORD=airflow psql -h localhost -U airflow -d airflow -c "SELECT 1" > /dev/null 2>&1; then
               echo "PostgreSQL is ready"
+              POSTGRES_READY=true
               break
             fi
             echo "Waiting for PostgreSQL... ($i/30)"
             sleep 2
           done
           
+          if [ "$POSTGRES_READY" = false ]; then
+            echo "[ERROR] PostgreSQL did not become ready after 60 seconds"
+            exit 1
+          fi
+          
           # Create marquez user and database (run as airflow superuser)
+          # Note: Using hardcoded credentials is acceptable here as this is an ephemeral CI environment
           PGPASSWORD=airflow psql -h localhost -U airflow -d airflow << 'EOF'
           -- Create marquez user if it doesn't exist
           DO $$ 
