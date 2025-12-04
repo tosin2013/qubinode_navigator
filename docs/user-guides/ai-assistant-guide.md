@@ -1,11 +1,13 @@
 # AI Assistant Interaction Guide
 
 ## Overview
+
 The Qubinode Navigator includes an integrated AI Assistant that provides intelligent troubleshooting and guidance throughout your deployment journey. The AI Assistant is **automatically integrated** - no manual commands required!
 
 ## How It Works
 
 ### During Deployment
+
 The AI Assistant automatically activates when you run the deployment script:
 
 ```bash
@@ -40,6 +42,7 @@ For more help, visit: http://localhost:8080
 ```
 
 ### After Deployment
+
 Once deployment completes successfully, the AI Assistant remains available to help you build on your infrastructure:
 
 ```
@@ -61,22 +64,25 @@ Next Steps:
 ## Post-Deployment Interactions
 
 ### Option 1: Web Interface (Recommended)
+
 Simply open your browser and visit: **http://localhost:8080**
 
 You can ask questions like:
+
 - "How do I deploy OpenShift on this KVM infrastructure?"
 - "What monitoring solutions work well with this setup?"
 - "How do I add more virtual machines?"
 - "Show me how to configure networking for my VMs"
 
 ### Option 2: Simple Command Line
+
 For natural terminal interactions, just use the `qubinode` command:
 
 ```bash
 # Ask for OpenShift deployment guidance
 ./qubinode "How do I deploy OpenShift 4.14 on my KVM infrastructure?"
 
-# Get monitoring recommendations  
+# Get monitoring recommendations
 ./qubinode "What monitoring solutions work well with this setup?"
 
 # Ask about VM management
@@ -94,9 +100,11 @@ For natural terminal interactions, just use the `qubinode` command:
 ## Common Use Cases
 
 ### 1. Troubleshooting Deployment Issues
+
 **No action needed** - AI automatically provides guidance when errors occur during `./deploy-qubinode.sh`
 
 ### 2. Learning Next Steps
+
 After successful deployment, ask the AI:
 
 ```bash
@@ -106,6 +114,7 @@ After successful deployment, ask the AI:
 ```
 
 ### 3. Extending Your Infrastructure
+
 Get guidance on building more services:
 
 ```bash
@@ -117,6 +126,7 @@ Get guidance on building more services:
 ```
 
 ### 4. Best Practices and Optimization
+
 Ask for expert advice:
 
 ```bash
@@ -129,6 +139,7 @@ Ask for expert advice:
 ## AI Assistant Capabilities
 
 The AI Assistant has knowledge about:
+
 - ✅ **Qubinode Navigator architecture and components**
 - ✅ **KVM/libvirt virtualization management**
 - ✅ **OpenShift and Kubernetes deployment**
@@ -147,6 +158,7 @@ curl -s http://localhost:8080/health
 ```
 
 Expected response:
+
 ```json
 {"status": "healthy", "model": "loaded", "timestamp": "2025-11-11T05:00:00Z"}
 ```
@@ -156,21 +168,25 @@ Expected response:
 If the AI Assistant isn't responding:
 
 1. **Check if container is running**:
+
    ```bash
    podman ps | grep qubinode-ai-assistant
    ```
 
-2. **Check container logs**:
+1. **Check container logs**:
+
    ```bash
    podman logs qubinode-ai-assistant
    ```
 
-3. **Restart AI Assistant**:
+1. **Restart AI Assistant**:
+
    ```bash
    podman restart qubinode-ai-assistant
    ```
 
-4. **Verify port accessibility**:
+1. **Verify port accessibility**:
+
    ```bash
    curl -s http://localhost:8080/health
    ```
@@ -178,6 +194,7 @@ If the AI Assistant isn't responding:
 ## Future Enhancements
 
 The AI Assistant architecture is designed to support:
+
 - 🔄 **Hugging Face integration** for advanced AI models
 - 🔄 **Community showcase** capabilities
 - 🔄 **Enhanced model training** on deployment patterns
@@ -186,11 +203,12 @@ The AI Assistant architecture is designed to support:
 ## Getting Help
 
 If you need additional assistance:
-1. **Check the AI Assistant first**: http://localhost:8080
-2. **Review deployment logs**: Check the log file path shown at deployment completion
-3. **Consult documentation**: Browse `/docs/` directory in the repository
-4. **Community support**: Visit the project repository for issues and discussions
 
----
+1. **Check the AI Assistant first**: http://localhost:8080
+1. **Review deployment logs**: Check the log file path shown at deployment completion
+1. **Consult documentation**: Browse `/docs/` directory in the repository
+1. **Community support**: Visit the project repository for issues and discussions
+
+______________________________________________________________________
 
 **Remember**: The AI Assistant is your intelligent companion throughout the entire Qubinode Navigator journey - from initial deployment through advanced infrastructure management!

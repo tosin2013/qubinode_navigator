@@ -15,7 +15,7 @@ KcliVMCreateOperator(
 )
 # ↓
 # Calls KcliHook
-# ↓  
+# ↓
 # Builds command
 # ↓
 # May have bugs
@@ -41,22 +41,23 @@ BashOperator(
 
 ## 📊 Comparison
 
-| Aspect | Custom Operators | Script-Based DAGs |
-|--------|------------------|-------------------|
-| **Reliability** | Depends on hook implementation | Uses proven test scripts |
-| **Debugging** | Check Python code, rebuild image | Check bash command in logs |
-| **Testing** | Need full DAG run | Test script directly |
-| **Complexity** | High (operators + hooks + error handling) | Low (just bash commands) |
-| **Maintenance** | Update Python, rebuild, redeploy | Edit script, reload DAG |
-| **Transparency** | Hidden in code | Visible in task logs |
-| **Learning Curve** | Need to understand operators/hooks | Just bash/kcli knowledge |
-| **Bug Fixes** | Rebuild entire image | Edit DAG file |
+| Aspect             | Custom Operators                          | Script-Based DAGs          |
+| ------------------ | ----------------------------------------- | -------------------------- |
+| **Reliability**    | Depends on hook implementation            | Uses proven test scripts   |
+| **Debugging**      | Check Python code, rebuild image          | Check bash command in logs |
+| **Testing**        | Need full DAG run                         | Test script directly       |
+| **Complexity**     | High (operators + hooks + error handling) | Low (just bash commands)   |
+| **Maintenance**    | Update Python, rebuild, redeploy          | Edit script, reload DAG    |
+| **Transparency**   | Hidden in code                            | Visible in task logs       |
+| **Learning Curve** | Need to understand operators/hooks        | Just bash/kcli knowledge   |
+| **Bug Fixes**      | Rebuild entire image                      | Edit DAG file              |
 
 ## 🚀 New DAG: `example_kcli_script_based`
 
 ### What's Different?
 
 **Old DAG (`example_kcli_vm_provisioning`):**
+
 ```python
 from qubinode.operators import KcliVMCreateOperator
 
@@ -71,6 +72,7 @@ create_vm = KcliVMCreateOperator(
 ```
 
 **New DAG (`example_kcli_script_based`):**
+
 ```python
 from airflow.operators.bash import BashOperator
 
@@ -79,7 +81,7 @@ create_vm = BashOperator(
     bash_command='''
     echo "Creating VM..."
     kcli create vm {{ params.vm_name }} -i centos10stream -P memory=2048 -P numcpus=2 -P disks=[10]
-    
+
     if [ $? -eq 0 ]; then
         echo "✅ VM created successfully"
     else
@@ -93,21 +95,25 @@ create_vm = BashOperator(
 ### Key Improvements
 
 1. **Direct kcli Commands**
+
    - Same commands from `/opt/airflow/scripts/test-kcli-create-vm.sh`
    - Already tested and proven to work
    - No abstraction layer
 
-2. **Better Error Handling**
+1. **Better Error Handling**
+
    - Explicit exit codes
    - Clear success/failure messages
    - Easy to see what failed
 
-3. **Verification Built-In**
+1. **Verification Built-In**
+
    - Checks if VM exists after creation
    - Waits for running state
    - Shows detailed VM info
 
-4. **Transparent Logging**
+1. **Transparent Logging**
+
    - Every command visible in logs
    - Can copy/paste commands to test manually
    - No hidden operations
@@ -161,50 +167,64 @@ Show VM details
 ### New DAG Tasks:
 
 1. **list_vms_before**
+
    ```bash
    /opt/airflow/scripts/test-kcli-list-vms.sh
    ```
+
    Uses the proven test script directly!
 
-2. **create_vm**
+1. **create_vm**
+
    ```bash
    kcli create vm {vm_name} -i centos10stream -P memory=2048 -P numcpus=2 -P disks=[10]
    ```
+
    Same command from test script that we know works!
 
-3. **verify_vm_running**
+1. **verify_vm_running**
+
    ```bash
    virsh domstate {vm_name}
    # Waits up to 60 seconds for 'running' state
    ```
+
    Built-in verification!
 
-4. **list_vms_after_creation**
+1. **list_vms_after_creation**
+
    ```bash
    kcli list vms
    virsh list --all
    ```
+
    Shows VM in both tools!
 
-5. **keep_vm_running_2min**
+1. **keep_vm_running_2min**
+
    ```bash
    echo "VM running, check with: kcli list vms"
    sleep 120  # 2 minutes (shorter for faster testing)
    ```
+
    Countdown timer included!
 
-6. **delete_vm**
+1. **delete_vm**
+
    ```bash
    kcli delete vm {vm_name} -y
    # Fallback to virsh if kcli fails
    # Verifies deletion
    ```
+
    Robust cleanup!
 
-7. **list_vms_final**
+1. **list_vms_final**
+
    ```bash
    kcli list vms
    ```
+
    Confirms cleanup!
 
 ## 🧪 Testing the New DAG
@@ -233,9 +253,9 @@ podman exec airflow_airflow-scheduler_1 airflow dags list | grep script_based
 ### Step 3: Trigger the DAG
 
 1. Go to: http://localhost:8888
-2. Find `example_kcli_script_based`
-3. Click play button ▶️
-4. Select "Trigger DAG"
+1. Find `example_kcli_script_based`
+1. Click play button ▶️
+1. Select "Trigger DAG"
 
 ### Step 4: Monitor Execution
 
@@ -269,17 +289,20 @@ airflow-test-20251120001234 created on local
 ### If create_vm Fails
 
 **Check the exact command:**
+
 ```bash
 # From DAG logs, copy the kcli command and run it manually:
 podman exec airflow_airflow-scheduler_1 kcli create vm test-manual -i centos10stream -P memory=2048 -P numcpus=2 -P disks=[10]
 ```
 
 **Check if image exists:**
+
 ```bash
 virsh -c qemu:///system vol-list default | grep centos10stream
 ```
 
 **Use test script:**
+
 ```bash
 cd /root/qubinode_navigator/airflow
 ./scripts/test-kcli-create-vm.sh test-debug centos10stream 2048 2 10
@@ -288,11 +311,13 @@ cd /root/qubinode_navigator/airflow
 ### If verify_vm_running Fails
 
 **Check VM state manually:**
+
 ```bash
 virsh -c qemu:///system domstate airflow-test-<timestamp>
 ```
 
 **Check VM info:**
+
 ```bash
 virsh -c qemu:///system dominfo airflow-test-<timestamp>
 ```
@@ -300,6 +325,7 @@ virsh -c qemu:///system dominfo airflow-test-<timestamp>
 ### If delete_vm Fails
 
 **Manual cleanup:**
+
 ```bash
 # Try kcli first
 kcli delete vm airflow-test-<timestamp> -y
@@ -314,6 +340,7 @@ virsh -c qemu:///system undefine airflow-test-<timestamp> --remove-all-storage
 ### Scenario 1: Bug in VM Creation
 
 **Operator Approach:**
+
 ```
 1. Find bug in KcliHook
 2. Edit /opt/airflow/plugins/qubinode/hooks.py
@@ -325,6 +352,7 @@ Total: ~10 minutes
 ```
 
 **Script Approach:**
+
 ```
 1. Find bug in bash command
 2. Edit /opt/airflow/dags/example_kcli_script_based.py
@@ -336,6 +364,7 @@ Total: ~1 minute
 ### Scenario 2: Testing Before DAG Run
 
 **Operator Approach:**
+
 ```
 1. Trigger DAG
 2. Wait for task to run
@@ -345,6 +374,7 @@ Total: ~1 minute
 ```
 
 **Script Approach:**
+
 ```
 1. Copy command from DAG bash_command
 2. Run it directly:
@@ -356,18 +386,20 @@ Total: ~1 minute
 ### Scenario 3: Understanding What Happened
 
 **Operator Approach:**
+
 ```
 Looking at logs:
 "VM creation failed: <cryptic error>"
 
 Need to:
 - Check operator code
-- Check hook implementation  
+- Check hook implementation
 - Understand Python abstraction
 - Find actual kcli command that ran
 ```
 
 **Script Approach:**
+
 ```
 Looking at logs:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -385,17 +417,20 @@ Deploying vm test from image centos10stream...
 ## 📚 Related Files
 
 ### Test Scripts
+
 - `/opt/airflow/scripts/test-kcli-create-vm.sh` - VM creation test
 - `/opt/airflow/scripts/test-kcli-delete-vm.sh` - VM deletion test
 - `/opt/airflow/scripts/test-kcli-list-vms.sh` - List VMs test
 - `/opt/airflow/scripts/test-complete-workflow.sh` - Full workflow test
 
 ### DAG Files
+
 - `/opt/airflow/dags/example_kcli_script_based.py` - ✅ **NEW** (script-based)
 - `/opt/airflow/dags/example_kcli_vm_provisioning.py` - Old (operator-based, paused)
 - `/opt/airflow/dags/example_kcli_virsh_combined.py` - Combined example
 
 ### Documentation
+
 - `SCRIPTS-VS-DAGS.md` - Scripts vs DAG operators comparison
 - `BUGFIX-KCLI-VERSION.md` - kcli version bug fix
 - `HOW-TO-ADD-SCRIPTS.md` - Creating new test scripts
@@ -432,17 +467,20 @@ $ which genisoimage
 ## 🚀 Next Steps
 
 1. **Test the new DAG:**
+
    ```
    http://localhost:8888
    Trigger: example_kcli_script_based
    ```
 
-2. **Watch it work:**
+1. **Watch it work:**
+
    ```bash
    watch -n 2 'kcli list vms'
    ```
 
-3. **Expected result:**
+1. **Expected result:**
+
    - ✅ VM created
    - ✅ VM verified running
    - ✅ VM visible in kcli & virsh
@@ -450,7 +488,8 @@ $ which genisoimage
    - ✅ VM deleted
    - ✅ DAG succeeds!
 
-4. **If successful, you can:**
+1. **If successful, you can:**
+
    - Create more script-based DAGs
    - Use the template for new workflows
    - Build complex orchestration
@@ -459,12 +498,14 @@ $ which genisoimage
 ## 🎯 Recommendation
 
 **Use script-based DAGs for:**
+
 - ✅ VM provisioning
 - ✅ Infrastructure management
 - ✅ Anything testable with bash
 - ✅ Operations you test manually first
 
 **Keep operator-based DAGs for:**
+
 - Complex Python logic
 - APIs that need authentication
 - Data transformation
@@ -475,6 +516,7 @@ $ which genisoimage
 Your idea to use the test scripts directly was **spot-on!**
 
 **Benefits:**
+
 - ✅ More reliable (proven commands)
 - ✅ Easier to debug (see exact commands)
 - ✅ Faster to fix (edit DAG, not code)

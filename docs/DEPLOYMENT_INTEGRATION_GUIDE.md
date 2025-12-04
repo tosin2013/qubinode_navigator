@@ -1,6 +1,6 @@
----
-nav_exclude: true
----
+______________________________________________________________________
+
+## nav_exclude: true
 
 # Deployment Integration Guide
 
@@ -13,6 +13,7 @@ This guide explains how the new **one-shot deployment script** (`deploy-qubinode
 Based on analysis of `docs/deployments/demo-hetzner-com.markdown` and `docs/deployments/demo-redhat-com.markdown`, we identified three primary deployment patterns:
 
 ### **1. Hetzner Cloud Deployment**
+
 - **Target OS**: Rocky Linux 9
 - **Script**: `rocky-linux-hetzner.sh`
 - **Inventory**: `hetzner`
@@ -20,6 +21,7 @@ Based on analysis of `docs/deployments/demo-hetzner-com.markdown` and `docs/depl
 - **Network**: `FORWARDER=1.1.1.1`, `INTERFACE=bond0`
 
 ### **2. Red Hat Demo System (Equinix Metal)**
+
 - **Target OS**: RHEL 9
 - **Script**: `rhel9-linux-hypervisor.sh`
 - **Inventory**: `rhel9-equinix`
@@ -27,6 +29,7 @@ Based on analysis of `docs/deployments/demo-hetzner-com.markdown` and `docs/depl
 - **Network**: Auto-detect forwarder, `INTERFACE=bond0`
 
 ### **3. Local Development**
+
 - **Target OS**: Any supported RHEL-based system
 - **Script**: `setup.sh` → `rhel9-linux-hypervisor.sh`
 - **Inventory**: `localhost`
@@ -38,31 +41,33 @@ Based on analysis of `docs/deployments/demo-hetzner-com.markdown` and `docs/depl
 Our one-shot deployment script (`deploy-qubinode.sh`) **preserves and enhances** the existing architecture:
 
 ### **Compatibility Layer**
+
 1. **Automatic Target Detection**: Detects deployment target based on domain patterns and inventory settings
-2. **notouch.env Generation**: Creates compatible `notouch.env` file for existing scripts
-3. **Function Integration**: Reuses proven functions from `setup.sh`
-4. **Inventory Compatibility**: Works with existing inventory configurations
+1. **notouch.env Generation**: Creates compatible `notouch.env` file for existing scripts
+1. **Function Integration**: Reuses proven functions from `setup.sh`
+1. **Inventory Compatibility**: Works with existing inventory configurations
 
 ### **Enhanced Features**
+
 1. **AI Assistant Integration**: Real-time troubleshooting and guidance
-2. **Modern OS Support**: RHEL 9/10, CentOS Stream 9/10, Rocky 9, Alma 9
-3. **Intelligent Configuration**: Auto-detects network settings and deployment patterns
-4. **Comprehensive Logging**: Structured logging with error context
+1. **Modern OS Support**: RHEL 9/10, CentOS Stream 9/10, Rocky 9, Alma 9
+1. **Intelligent Configuration**: Auto-detects network settings and deployment patterns
+1. **Comprehensive Logging**: Structured logging with error context
 
 ## 🛠️ **Configuration Mapping**
 
 ### **Environment Variables Compatibility**
 
-| Existing Pattern | One-Shot Script | Purpose |
-|------------------|-----------------|---------|
-| `SSH_USER=lab-user` | `SSH_USER=lab-user` | SSH user configuration |
-| `CICD_PIPELINE='true'` | `CICD_PIPELINE=true` | CI/CD mode enablement |
-| `ENV_USERNAME=lab-user` | `ENV_USERNAME=$SSH_USER` | Environment username |
-| `DOMAIN=qubinodelab.io` | `QUBINODE_DOMAIN=qubinodelab.io` | Domain configuration |
-| `INVENTORY=hetzner` | `INVENTORY=hetzner` | Ansible inventory selection |
-| `FORWARDER='1.1.1.1'` | `FORWARDER=1.1.1.1` | DNS forwarder |
-| `INTERFACE=bond0` | `INTERFACE=bond0` | Network interface |
-| `USE_HASHICORP_VAULT='false'` | `USE_HASHICORP_VAULT=false` | Vault integration |
+| Existing Pattern              | One-Shot Script                  | Purpose                     |
+| ----------------------------- | -------------------------------- | --------------------------- |
+| `SSH_USER=lab-user`           | `SSH_USER=lab-user`              | SSH user configuration      |
+| `CICD_PIPELINE='true'`        | `CICD_PIPELINE=true`             | CI/CD mode enablement       |
+| `ENV_USERNAME=lab-user`       | `ENV_USERNAME=$SSH_USER`         | Environment username        |
+| `DOMAIN=qubinodelab.io`       | `QUBINODE_DOMAIN=qubinodelab.io` | Domain configuration        |
+| `INVENTORY=hetzner`           | `INVENTORY=hetzner`              | Ansible inventory selection |
+| `FORWARDER='1.1.1.1'`         | `FORWARDER=1.1.1.1`              | DNS forwarder               |
+| `INTERFACE=bond0`             | `INTERFACE=bond0`                | Network interface           |
+| `USE_HASHICORP_VAULT='false'` | `USE_HASHICORP_VAULT=false`      | Vault integration           |
 
 ### **Deployment Target Detection**
 
@@ -76,7 +81,7 @@ if [[ "$QUBINODE_DOMAIN" =~ "hetzner" || "$QUBINODE_DOMAIN" =~ "qubinodelab.io" 
     FORWARDER="1.1.1.1"
 fi
 
-# Equinix Detection  
+# Equinix Detection
 if [[ "$QUBINODE_DOMAIN" =~ "opentlc.com" || "$INVENTORY" == "rhel9-equinix" ]]; then
     DEPLOYMENT_TARGET="equinix"
     INVENTORY="rhel9-equinix"
@@ -93,6 +98,7 @@ fi
 ## 📁 **File Structure Integration**
 
 ### **Configuration Files**
+
 ```
 /root/qubinode_navigator/
 ├── .env                    # New: One-shot script configuration
@@ -105,10 +111,11 @@ fi
 ```
 
 ### **Inventory Integration**
+
 ```
 inventories/
 ├── localhost/             # Local development
-├── hetzner/              # Hetzner Cloud deployments  
+├── hetzner/              # Hetzner Cloud deployments
 ├── rhel9-equinix/        # Red Hat Demo System
 ├── dev/                  # Development environment
 └── sample/               # Sample configuration
@@ -119,6 +126,7 @@ inventories/
 ### **From Existing Deployments**
 
 **1. Hetzner Cloud Users:**
+
 ```bash
 # OLD WAY (demo-hetzner-com.markdown)
 curl -OL https://raw.githubusercontent.com/Qubinode/qubinode_navigator/main/rocky-linux-hetzner.sh
@@ -132,8 +140,9 @@ cp .env.example .env
 ```
 
 **2. Red Hat Demo System Users:**
+
 ```bash
-# OLD WAY (demo-redhat-com.markdown)  
+# OLD WAY (demo-redhat-com.markdown)
 curl -OL https://raw.githubusercontent.com/Qubinode/qubinode_navigator/main/rhel9-linux-hypervisor.sh
 chmod +x rhel9-linux-hypervisor.sh
 source notouch.env && sudo -E ./rhel9-linux-hypervisor.sh
@@ -147,6 +156,7 @@ cp .env.example .env
 ### **Configuration Examples**
 
 **Hetzner Cloud (.env):**
+
 ```bash
 QUBINODE_DOMAIN=qubinodelab.io
 QUBINODE_ADMIN_USER=lab-user
@@ -159,6 +169,7 @@ USE_ROUTE53=true
 ```
 
 **Red Hat Demo System (.env):**
+
 ```bash
 QUBINODE_DOMAIN=sandbox000.opentlc.com
 QUBINODE_ADMIN_USER=lab-user
@@ -172,21 +183,25 @@ USE_ROUTE53=true
 ## 🔧 **Advanced Integration Features**
 
 ### **1. Credential Management**
+
 - **Existing**: Manual `/tmp/config.yml` creation
 - **Enhanced**: AI Assistant guides credential setup
 - **Compatible**: Still supports `/tmp/config.yml` pattern
 
 ### **2. HashiCorp Vault Integration**
+
 - **Existing**: Manual HCP Vault setup
 - **Enhanced**: Automated vault configuration
 - **Compatible**: Preserves existing vault workflows
 
 ### **3. Network Configuration**
+
 - **Existing**: Manual interface detection
 - **Enhanced**: Automatic interface detection with fallbacks
 - **Compatible**: Respects existing network settings
 
 ### **4. Error Handling**
+
 - **Existing**: Manual troubleshooting
 - **Enhanced**: AI Assistant provides contextual help
 - **Compatible**: Maintains existing error patterns
@@ -194,6 +209,7 @@ USE_ROUTE53=true
 ## 📊 **Deployment Workflow Comparison**
 
 ### **Traditional Multi-Step Process**
+
 ```
 1. SSH into server
 2. Create lab-user (configure-sudo-user.sh)
@@ -205,8 +221,9 @@ USE_ROUTE53=true
 ```
 
 ### **One-Shot Deployment Process**
+
 ```
-1. SSH into server  
+1. SSH into server
 2. Configure .env file (with examples and guidance)
 3. Run ./deploy-qubinode.sh
 4. AI Assistant provides help if issues occur
@@ -215,12 +232,14 @@ USE_ROUTE53=true
 ## 🎯 **Benefits**
 
 ### **For Users**
+
 - **Simplified Process**: Single command deployment
 - **Intelligent Guidance**: AI Assistant for troubleshooting
 - **Automatic Detection**: No manual target configuration
 - **Modern OS Support**: Latest RHEL-based systems
 
 ### **For Maintainers**
+
 - **Preserved Architecture**: Existing scripts still work
 - **Enhanced Compatibility**: Automatic notouch.env generation
 - **Centralized Logic**: Single entry point with consistent patterns
@@ -231,25 +250,27 @@ USE_ROUTE53=true
 The one-shot script **maintains full backward compatibility**:
 
 1. **Existing Scripts Work**: `setup.sh`, `rhel9-linux-hypervisor.sh`, etc. still function
-2. **Configuration Preserved**: `notouch.env` automatically generated
-3. **Inventory Compatible**: Works with all existing inventories
-4. **Function Reuse**: Leverages proven functions from existing scripts
+1. **Configuration Preserved**: `notouch.env` automatically generated
+1. **Inventory Compatible**: Works with all existing inventories
+1. **Function Reuse**: Leverages proven functions from existing scripts
 
 ## 🚀 **Future Enhancements**
 
 ### **Planned Features**
+
 1. **Multi-Architecture Support**: ARM64 compatibility
-2. **Cloud Integration**: Enhanced cloud provider support
-3. **Container Orchestration**: Kubernetes/OpenShift deployment
-4. **Monitoring Integration**: Built-in observability
+1. **Cloud Integration**: Enhanced cloud provider support
+1. **Container Orchestration**: Kubernetes/OpenShift deployment
+1. **Monitoring Integration**: Built-in observability
 
 ### **Extension Points**
-1. **New Deployment Targets**: Easy to add new cloud providers
-2. **Custom Workflows**: Pluggable deployment steps
-3. **Integration APIs**: REST API for programmatic deployment
-4. **Advanced AI Features**: Predictive troubleshooting
 
----
+1. **New Deployment Targets**: Easy to add new cloud providers
+1. **Custom Workflows**: Pluggable deployment steps
+1. **Integration APIs**: REST API for programmatic deployment
+1. **Advanced AI Features**: Predictive troubleshooting
+
+______________________________________________________________________
 
 ## 📞 **Support**
 

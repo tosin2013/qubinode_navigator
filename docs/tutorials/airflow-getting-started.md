@@ -1,12 +1,11 @@
----
-title: Airflow Getting Started
-parent: Tutorials
-nav_order: 2
----
+______________________________________________________________________
+
+## title: Airflow Getting Started parent: Tutorials nav_order: 2
 
 # Getting Started with Apache Airflow for Qubinode Navigator
 
 > **Documentation status**
+>
 > - Validation: `IN PROGRESS` – Based on `deploy-qubinode-with-airflow.sh` and current Airflow sidecar configuration.
 > - Last reviewed: 2025-11-21
 > - Community: If you use this tutorial to bring up Airflow and run Qubinode DAGs, please share fixes or enhancements via [Contributing to docs](../how-to/contribute.md).
@@ -14,10 +13,10 @@ nav_order: 2
 This tutorial shows how to:
 
 1. Deploy Qubinode Navigator **together with Apache Airflow and nginx** using `deploy-qubinode-with-airflow.sh`.
-2. Access the Airflow UI through nginx.
-3. Locate and run Qubinode-related DAGs.
+1. Access the Airflow UI through nginx.
+1. Locate and run Qubinode-related DAGs.
 
----
+______________________________________________________________________
 
 ## 1. Prerequisites
 
@@ -32,7 +31,7 @@ If you havent done a base deployment yet, start with:
 
 - [Deploy To Production](../how-to/deploy-to-production.md)
 
----
+______________________________________________________________________
 
 ## 2. Run `deploy-qubinode-with-airflow.sh`
 
@@ -66,7 +65,7 @@ At the end, you should see output similar to:
 
 If the script fails, review the logs it prints and update this tutorial with any repeatable troubleshooting steps you discover.
 
----
+______________________________________________________________________
 
 ## 3. Access the Airflow UI
 
@@ -76,23 +75,23 @@ Once deployment completes successfully:
    ```bash
    hostname -I | awk '{print $1}'
    ```
-2. In a browser, open:
+1. In a browser, open:
    - `http://YOUR_HOST_IP/` (served by nginx as the Airflow UI).
-3. Log in with the credentials configured for Airflow (often `admin` / `admin` by default e change immediately for production).
+1. Log in with the credentials configured for Airflow (often `admin` / `admin` by default e change immediately for production).
 
 nginx is configured to:
 
 - Proxy `/` to the Airflow webserver.
 - Proxy `/ai/` (or similar) to the AI Assistant API (depending on your nginx config in `deploy-qubinode-with-airflow.sh`).
 
----
+______________________________________________________________________
 
 ## 4. Locate and Run Qubinode DAGs
 
 In the Airflow UI:
 
 1. Go to **DAGs** view.
-2. Look for DAGs related to Qubinode Navigator, for example (exact names may vary by version):
+1. Look for DAGs related to Qubinode Navigator, for example (exact names may vary by version):
    - `qubinode_simple_deploy`
    - `multi_cloud_deploy`
    - RAG/AI‑related workflows documented in:
@@ -102,10 +101,10 @@ In the Airflow UI:
 To run a DAG:
 
 1. Unpause it if it is paused.
-2. Use the **Play** button to trigger a run.
-3. Monitor the tasks in the **Graph** or **Tree** view and inspect logs when needed.
+1. Use the **Play** button to trigger a run.
+1. Monitor the tasks in the **Graph** or **Tree** view and inspect logs when needed.
 
----
+______________________________________________________________________
 
 ## 5. Integrate with the AI Assistant
 
@@ -121,7 +120,7 @@ See also:
 - [Airflow Community Ecosystem](../airflow-community-ecosystem.md)
 - [Airflow ↔ RAG Bidirectional Learning](../airflow-rag-bidirectional-learning.md)
 
----
+______________________________________________________________________
 
 ## 6. Next Steps and Contributions
 

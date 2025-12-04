@@ -164,7 +164,16 @@ jobs:
           cd airflow
 
           # Initialize Airflow DB (use python -m to ensure correct path)
-          python -m airflow db init 2>/dev/null || python -m airflow db migrate 2>/dev/null
+          # Allow migrate to fail initially (may need to init first on fresh install)
+          echo "Initializing Airflow database..."
+          python -m airflow db migrate 2>&1 || {
+            echo "[WARN] db migrate failed, trying db init..."
+            python -m airflow db init 2>&1 || true
+          }
+
+          # List DAGs and check for import errors (auto-confirm with yes)
+          echo "Listing DAGs..."
+          yes | python -m airflow dags list 2>&1 | tee dag_list.txt || true
 
           # List DAGs and check for import errors
           set +o pipefail  # Allow pipe to continue even if grep finds nothing

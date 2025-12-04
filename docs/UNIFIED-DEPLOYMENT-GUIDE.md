@@ -1,6 +1,6 @@
----
-nav_exclude: true
----
+______________________________________________________________________
+
+## nav_exclude: true
 
 # Qubinode Navigator Unified Deployment with Nginx
 
@@ -11,13 +11,15 @@ Single-script deployment of complete Qubinode Navigator stack with production-re
 ## ✨ What's Included
 
 ### Components Deployed:
+
 1. **AI Assistant** - RAG-powered assistant
-2. **Apache Airflow** - Workflow orchestration with kcli/virsh
-3. **Nginx Reverse Proxy** - Secure single entry point
-4. **Firewall Configuration** - Proper security rules
-5. **Podman Network** - Shared networking for all services
+1. **Apache Airflow** - Workflow orchestration with kcli/virsh
+1. **Nginx Reverse Proxy** - Secure single entry point
+1. **Firewall Configuration** - Proper security rules
+1. **Podman Network** - Shared networking for all services
 
 ### Security Features:
+
 - ✅ Direct ports (8888, 8080) closed
 - ✅ Access only through nginx (80/443)
 - ✅ Production-ready architecture
@@ -34,34 +36,39 @@ cd /root/qubinode_navigator
 ```
 
 That's it! The script handles:
+
 1. Base infrastructure deployment
-2. Airflow workflow orchestration setup
-3. Nginx reverse proxy configuration
-4. Firewall security rules
-5. Service verification
+1. Airflow workflow orchestration setup
+1. Nginx reverse proxy configuration
+1. Firewall security rules
+1. Service verification
 
 ## 📋 Deployment Steps
 
 The unified script performs these steps automatically:
 
 ### Step 1: Base Infrastructure (1/4)
+
 - Deploys hypervisor setup
 - Starts AI Assistant container
 - Configures base networking
 
 ### Step 2: Airflow Deployment (2/4)
+
 - Builds custom Airflow image with kcli
 - Deploys Airflow services (webserver, scheduler, postgres)
 - Mounts volumes and scripts
 - Connects to shared network
 
 ### Step 3: Nginx Reverse Proxy (3/4)
+
 - Installs nginx if needed
 - Creates reverse proxy configuration
 - Configures firewall (closes 8888/8080, opens 80/443)
 - Starts and enables nginx service
 
 ### Step 4: Verification (4/4)
+
 - Verifies all services running
 - Tests connectivity
 - Displays access URLs
@@ -70,17 +77,18 @@ The unified script performs these steps automatically:
 
 After deployment:
 
-| Service | URL | Credentials |
-|---------|-----|-------------|
-| **Airflow UI** | http://YOUR_IP/ | admin / admin |
-| **AI Assistant** | http://YOUR_IP/ai/ | (no auth) |
-| **Health Check** | http://YOUR_IP/health | (status) |
+| Service          | URL                   | Credentials   |
+| ---------------- | --------------------- | ------------- |
+| **Airflow UI**   | http://YOUR_IP/       | admin / admin |
+| **AI Assistant** | http://YOUR_IP/ai/    | (no auth)     |
+| **Health Check** | http://YOUR_IP/health | (status)      |
 
 Replace `YOUR_IP` with your server IP (shown in deployment output).
 
 ## 🔒 Security Architecture
 
 ### Before (Direct Access):
+
 ```
 Internet → Port 8888 → Airflow
 Internet → Port 8080 → AI Assistant
@@ -89,6 +97,7 @@ Internet → Port 8080 → AI Assistant
 ```
 
 ### After (Nginx Reverse Proxy):
+
 ```
 Internet → Port 80/443 → Nginx → {
                                     Port 8888 (localhost only) → Airflow
@@ -102,10 +111,12 @@ Internet → Port 80/443 → Nginx → {
 ### Firewall Rules:
 
 **Closed:**
+
 - ❌ Port 8888 (Airflow direct access)
 - ❌ Port 8080 (AI Assistant direct access)
 
 **Open:**
+
 - ✅ Port 80 (HTTP via nginx)
 - ✅ Port 443 (HTTPS via nginx - ready for SSL)
 - ✅ Port 22 (SSH)
@@ -114,9 +125,11 @@ Internet → Port 80/443 → Nginx → {
 ## 🔧 Configuration Files
 
 ### Nginx Configuration:
+
 **Location:** `/etc/nginx/conf.d/airflow.conf`
 
 Automatically created by deployment script with:
+
 - Airflow UI served at root (`/`)
 - AI Assistant API at `/ai/`
 - Health check at `/health`
@@ -124,9 +137,11 @@ Automatically created by deployment script with:
 - Proper timeout settings
 
 ### Airflow Configuration:
+
 **Location:** `/root/qubinode_navigator/airflow/docker-compose.yml`
 
 Key settings:
+
 - No BASE_URL (serves at any path)
 - ENABLE_PROXY_FIX enabled
 - Shared network with AI Assistant
@@ -182,9 +197,9 @@ $ firewall-cmd --list-ports
 ### Access Airflow UI:
 
 1. **Open browser:** `http://YOUR_SERVER_IP/`
-2. **Login:** admin / admin
-3. **Enable DAGs** you want to run
-4. **Trigger test DAG** to verify VM creation
+1. **Login:** admin / admin
+1. **Enable DAGs** you want to run
+1. **Trigger test DAG** to verify VM creation
 
 ### Test VM Creation:
 
@@ -272,7 +287,7 @@ nginx -t && systemctl reload nginx
     │  PostgreSQL │
     │    :5432    │
     └─────────────┘
-    
+
     ┌─────────────┐
     │   libvirt   │  ← VM Management
     │   :qemu///  │
@@ -287,6 +302,7 @@ Security: Firewall (firewalld)
 ### Change Nginx Port:
 
 Edit `/etc/nginx/conf.d/airflow.conf`:
+
 ```nginx
 server {
     listen 8080;  # Change from 80
@@ -295,6 +311,7 @@ server {
 ```
 
 Update firewall:
+
 ```bash
 firewall-cmd --permanent --add-port=8080/tcp
 firewall-cmd --reload
@@ -303,10 +320,11 @@ firewall-cmd --reload
 ### Add IP Restrictions:
 
 Edit nginx config to allow only specific IPs:
+
 ```nginx
 server {
     # Existing config...
-    
+
     allow 192.168.1.0/24;  # Internal network
     allow YOUR_IP_HERE;    # Your IP
     deny all;              # Block everyone else
@@ -356,17 +374,20 @@ cd /root/qubinode_navigator
 ### Issue: Can't access Airflow UI
 
 **Check nginx:**
+
 ```bash
 systemctl status nginx
 curl http://localhost/
 ```
 
 **Check firewall:**
+
 ```bash
 firewall-cmd --list-services | grep http
 ```
 
 **Check Airflow:**
+
 ```bash
 podman ps | grep airflow
 curl http://localhost:8888/
@@ -377,6 +398,7 @@ curl http://localhost:8888/
 **Cause:** Backend not responding
 
 **Fix:**
+
 ```bash
 # Restart Airflow
 cd /root/qubinode_navigator/airflow
@@ -389,11 +411,13 @@ podman logs airflow_airflow-webserver_1
 ### Issue: SSL Certificate Errors
 
 **For Let's Encrypt:**
+
 ```bash
 certbot renew --dry-run
 ```
 
 **For self-signed:**
+
 ```bash
 # Browsers will show warning (expected)
 # Click "Advanced" → "Proceed anyway"
@@ -438,25 +462,26 @@ Before going to production:
 ## 💡 Tips
 
 1. **Use a domain name** instead of IP for SSL
-2. **Change default passwords** immediately
-3. **Enable HTTPS** for production
-4. **Monitor logs** regularly
-5. **Keep systems updated** (dnf update)
-6. **Backup regularly** (postgres, configs)
-7. **Test DAGs** in dev first
-8. **Use version control** for DAG files
+1. **Change default passwords** immediately
+1. **Enable HTTPS** for production
+1. **Monitor logs** regularly
+1. **Keep systems updated** (dnf update)
+1. **Backup regularly** (postgres, configs)
+1. **Test DAGs** in dev first
+1. **Use version control** for DAG files
 
 ## 📞 Support
 
 For issues:
+
 1. Check logs (nginx, Airflow, podman)
-2. Review documentation
-3. Test components individually
-4. Use AI Assistant for guidance
+1. Review documentation
+1. Test components individually
+1. Use AI Assistant for guidance
 
----
+______________________________________________________________________
 
-**Status:** Production-Ready ✅  
-**Security:** Nginx Reverse Proxy ✅  
-**SSL:** Ready to configure ✅  
+**Status:** Production-Ready ✅
+**Security:** Nginx Reverse Proxy ✅
+**SSL:** Ready to configure ✅
 **Automation:** Single-script deployment ✅

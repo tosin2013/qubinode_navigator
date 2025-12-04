@@ -1,9 +1,6 @@
----
-layout: default
-title:  RHEL 9 Equinix Server Vault
-parent: GitHub Actions
-nav_order: 4
----
+______________________________________________________________________
+
+## layout: default title:  RHEL 9 Equinix Server Vault parent: GitHub Actions nav_order: 4
 
 This document provides a detailed guide on how to configure a RHEL 9 server on Equinix using GitHub Actions. The workflow is designed to automate the setup process, ensuring that the server is configured with the necessary environment variables and software.
 
@@ -13,13 +10,14 @@ The workflow is triggered by either a `repository_dispatch` event or a manual `w
 
 1. **Set Environment Variables**: Depending on the trigger type, the workflow sets the necessary environment variables such as `TARGET_SERVER`, `DOMAIN`, `FORWARDER`, `HOSTNAME`, `CICD_ENVIORNMENT`, `USE_ROUTE53`, `ZONE_NAME`, and `GUID`.
 
-2. **Configure RHEL 9 Equinix Server**: This step uses the `appleboy/ssh-action` to SSH into the target server and perform the following tasks:
+1. **Configure RHEL 9 Equinix Server**: This step uses the `appleboy/ssh-action` to SSH into the target server and perform the following tasks:
+
    - Install Git if not already installed.
    - Clone or update the `qubinode_navigator` repository.
    - Set up the environment variables in the `.env` file.
    - Execute the `rhel9-linux-hypervisor.sh` script to configure the server.
 
-3. **Restart Workflow on Failure**: If the configuration step fails, the workflow sends a repository dispatch event to restart the workflow with the same inputs.
+1. **Restart Workflow on Failure**: If the configuration step fails, the workflow sends a repository dispatch event to restart the workflow with the same inputs.
 
 ## Inputs
 

@@ -224,7 +224,7 @@ function generate_inventory() {
             mkdir -p inventories/${INVENTORY}/group_vars/control
             cp -r inventories/localhost/group_vars/control/* inventories/${INVENTORY}/group_vars/control/
         fi
-        
+
         # set the values
         control_host="$(hostname -I | awk '{print $1}')"
         # Check if running as root
@@ -234,7 +234,7 @@ function generate_inventory() {
                 read -r -p "Enter the target username to ssh into machine: " control_user
             else
                 control_user="$USER"
-            fi 
+            fi
         else
             control_user="$USER"
         fi
@@ -281,24 +281,24 @@ function install_packages() {
     # Non-root podman hacks
     sudo chmod 4755 /usr/bin/newgidmap
     sudo chmod 4755 /usr/bin/newuidmap
-    
+
     sudo dnf reinstall -yq shadow-utils
-    
+
     cat > /tmp/xdg_runtime_dir.sh <<EOF
     export XDG_RUNTIME_DIR="\$HOME/.run/containers"
 EOF
-    
+
     sudo mv /tmp/xdg_runtime_dir.sh /etc/profile.d/xdg_runtime_dir.sh
     sudo chmod a+rx /etc/profile.d/xdg_runtime_dir.sh
     sudo cp /etc/profile.d/xdg_runtime_dir.sh /etc/profile.d/xdg_runtime_dir.zsh
-    
-    
+
+
     cat > /tmp/ping_group_range.conf <<EOF
     net.ipv4.ping_group_range=0 2000000
 EOF
     sudo mv /tmp/ping_group_range.conf /etc/sysctl.d/ping_group_range.conf
-    
-    sudo sysctl --system 
+
+    sudo sysctl --system
 }
 
 
@@ -427,7 +427,7 @@ function configure_ssh() {
         IP_ADDRESS=$(hostname -I | awk '{print $1}')
         ssh-keygen -f /home/lab-user/.ssh/id_rsa -t rsa -N ''
         if [ $CICD_PIPELINE == "true" ];
-        then 
+        then
             sudo ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
             sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no lab-user@${IP_ADDRESS} || exit $?
             sshpass -p "$SSH_PASSWORD" ssh-copy-id  -i /home/lab-user/.ssh/id_rsa -o StrictHostKeyChecking=no lab-user@${IP_ADDRESS} || exit $?
@@ -466,25 +466,25 @@ function configure_ansible_vault_setup() {
     echo "Configuring Ansible Vault Setup"
     echo "*****************************"
     if [ ! -f /root/qubinode_navigator/ansible_vault_setup.sh ];
-    then 
+    then
         curl -OL https://gist.githubusercontent.com/tosin2013/022841d90216df8617244ab6d6aceaf8/raw/92400b9e459351d204feb67b985c08df6477d7fa/ansible_vault_setup.sh
         chmod +x ansible_vault_setup.sh
     fi
     rm -f ~/.vault_password
     sudo rm -rf /root/password
     if [ $CICD_PIPELINE == "true" ];
-    then 
+    then
         if [ -z "$SSH_PASSWORD" ]; then
             echo "SSH_PASSWORD enviornment variable is not set"
             exit 1
-        fi   
+        fi
         echo "$SSH_PASSWORD" > ~/.vault_password
-        sudo cp ~/.vault_password /root/.vault_password 
-        sudo cp ~/.vault_password /home/lab-user/.vault_password 
+        sudo cp ~/.vault_password /root/.vault_password
+        sudo cp ~/.vault_password /home/lab-user/.vault_password
         bash  ./ansible_vault_setup.sh
-    else 
+    else
         bash  ./ansible_vault_setup.sh
-    fi 
+    fi
 
 
     if [ ! -f /usr/local/bin/ansiblesafe ];
@@ -493,9 +493,9 @@ function configure_ansible_vault_setup() {
         tar -zxvf ansiblesafe-v0.0.14-linux-amd64.tar.gz
         chmod +x ansiblesafe-linux-amd64
         sudo mv ansiblesafe-linux-amd64 /usr/local/bin/ansiblesafe
-    fi 
+    fi
     if [ $CICD_PIPELINE == "true" ];
-    then 
+    then
         if [ -f /tmp/config.yml ];
         then
             cp /tmp/config.yml /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml
@@ -565,11 +565,11 @@ function confiure_lvm_storage(){
     echo "Configuring Storage"
     echo "************************"
     if [ ! -f /tmp/configure-lvm.sh ];
-    then 
+    then
         curl -OL https://raw.githubusercontent.com/Qubinode/qubinode_navigator/main/dependancies/equinix-rocky/configure-lvm.sh
         mv configure-lvm.sh /tmp/configure-lvm.sh
         sudo chmod +x /tmp/configure-lvm.sh
-    fi 
+    fi
     /tmp/configure-lvm.sh || exit 1
 }
 

@@ -1,8 +1,8 @@
 # FreeIPA Identity Management Deployment
 
-**Status:** Production Ready  
-**Category:** Infrastructure Prerequisites  
-**Priority:** Required (Prerequisite for all other deployments)  
+**Status:** Production Ready
+**Category:** Infrastructure Prerequisites
+**Priority:** Required (Prerequisite for all other deployments)
 **ADRs:** ADR-0039, ADR-0042, ADR-0043
 
 ## Overview
@@ -19,14 +19,14 @@ FreeIPA provides centralized identity management, authentication, and authorizat
 
 ## Prerequisites
 
-| Requirement | Details |
-|-------------|---------|
-| **Hypervisor** | KVM/libvirt configured and running |
-| **kcli** | Installed and configured |
-| **Base Image** | CentOS 9 Stream or RHEL 9 |
-| **Network** | Default libvirt network (192.168.122.0/24) |
-| **Resources** | 4GB RAM, 2 vCPUs, 50GB disk minimum |
-| **Airflow** | Running with host network mode (ADR-0043) |
+| Requirement    | Details                                    |
+| -------------- | ------------------------------------------ |
+| **Hypervisor** | KVM/libvirt configured and running         |
+| **kcli**       | Installed and configured                   |
+| **Base Image** | CentOS 9 Stream or RHEL 9                  |
+| **Network**    | Default libvirt network (192.168.122.0/24) |
+| **Resources**  | 4GB RAM, 2 vCPUs, 50GB disk minimum        |
+| **Airflow**    | Running with host network mode (ADR-0043)  |
 
 ## Deployment Methods
 
@@ -37,8 +37,8 @@ The FreeIPA deployment DAG automates VM provisioning and provides guided install
 #### Via Airflow UI
 
 1. Navigate to **DAGs** → `freeipa_deployment`
-2. Click **Trigger DAG w/ config**
-3. Configure parameters:
+1. Click **Trigger DAG w/ config**
+1. Configure parameters:
    ```json
    {
      "action": "create",
@@ -46,7 +46,7 @@ The FreeIPA deployment DAG automates VM provisioning and provides guided install
      "os_version": "9"
    }
    ```
-4. Click **Trigger**
+1. Click **Trigger**
 
 #### Via CLI
 
@@ -87,12 +87,12 @@ kcli info vm freeipa | grep "^ip:"
 
 ## DAG Parameters
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `action` | `create` | Action to perform: `create` or `destroy` |
-| `community_version` | `false` | Use CentOS (`true`) or RHEL (`false`) |
-| `os_version` | `9` | OS version: `8` or `9` |
-| `target_server` | `` | Target server profile (optional) |
+| Parameter           | Default  | Description                              |
+| ------------------- | -------- | ---------------------------------------- |
+| `action`            | `create` | Action to perform: `create` or `destroy` |
+| `community_version` | `false`  | Use CentOS (`true`) or RHEL (`false`)    |
+| `os_version`        | `9`      | OS version: `8` or `9`                   |
+| `target_server`     | \`\`     | Target server profile (optional)         |
 
 ## DAG Workflow
 
@@ -170,15 +170,15 @@ ipa-server-install \
 
 ### Installation Options
 
-| Option | Description |
-|--------|-------------|
-| `--realm` | Kerberos realm (uppercase) |
-| `--domain` | DNS domain |
-| `--ds-password` | Directory Server admin password |
-| `--admin-password` | IPA admin user password |
-| `--setup-dns` | Configure integrated DNS |
-| `--forwarder` | DNS forwarder for external queries |
-| `--no-ntp` | Skip NTP configuration (if using external NTP) |
+| Option             | Description                                    |
+| ------------------ | ---------------------------------------------- |
+| `--realm`          | Kerberos realm (uppercase)                     |
+| `--domain`         | DNS domain                                     |
+| `--ds-password`    | Directory Server admin password                |
+| `--admin-password` | IPA admin user password                        |
+| `--setup-dns`      | Configure integrated DNS                       |
+| `--forwarder`      | DNS forwarder for external queries             |
+| `--no-ntp`         | Skip NTP configuration (if using external NTP) |
 
 ## Verification
 
@@ -215,15 +215,16 @@ dig @<FREEIPA_IP> ipa.example.com
 
 ### Access Web UI
 
-- **URL**: https://<FREEIPA_IP>/ipa/ui/
+- **URL**: https://\<FREEIPA_IP>/ipa/ui/
 - **Username**: admin
-- **Password**: <ADMIN_PASSWORD>
+- **Password**: \<ADMIN_PASSWORD>
 
 ## Integration with Other Services
 
 ### OpenShift Integration
 
 FreeIPA can provide:
+
 - LDAP authentication for OpenShift users
 - DNS for cluster services
 - Certificates for ingress
@@ -231,6 +232,7 @@ FreeIPA can provide:
 ### VyOS Router Integration
 
 Configure VyOS to use FreeIPA DNS:
+
 ```
 set system name-server <FREEIPA_IP>
 ```
@@ -314,6 +316,6 @@ podman exec airflow_airflow-scheduler_1 \
   --conf '{"action": "destroy"}'
 ```
 
----
+______________________________________________________________________
 
 **FreeIPA is a prerequisite for all other Qubinode deployments. Deploy it first!**

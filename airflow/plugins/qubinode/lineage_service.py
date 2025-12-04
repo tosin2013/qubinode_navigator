@@ -22,8 +22,7 @@ Usage:
 import os
 import logging
 from typing import Dict, Any, List, Optional
-from datetime import datetime, timedelta
-import json
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -44,11 +43,7 @@ class LineageService:
     - Custom facets (code lineage)
     """
 
-    def __init__(
-        self,
-        api_url: Optional[str] = None,
-        namespace: Optional[str] = None
-    ):
+    def __init__(self, api_url: Optional[str] = None, namespace: Optional[str] = None):
         """
         Initialize the LineageService.
 
@@ -67,10 +62,8 @@ class LineageService:
         if self._client is None:
             try:
                 import httpx
-                self._client = httpx.AsyncClient(
-                    base_url=self.api_url,
-                    timeout=30.0
-                )
+
+                self._client = httpx.AsyncClient(base_url=self.api_url, timeout=30.0)
             except ImportError:
                 logger.error("httpx not installed")
                 raise
@@ -97,11 +90,7 @@ class LineageService:
             logger.error(f"Failed to get namespaces: {e}")
             return []
 
-    async def get_jobs(
-        self,
-        namespace: Optional[str] = None,
-        limit: int = 100
-    ) -> List[Dict[str, Any]]:
+    async def get_jobs(self, namespace: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
         """
         Get all jobs (DAGs/tasks) in a namespace.
 
@@ -115,21 +104,14 @@ class LineageService:
         ns = namespace or self.namespace
         try:
             client = self._get_client()
-            response = await client.get(
-                f"/api/v1/namespaces/{ns}/jobs",
-                params={"limit": limit}
-            )
+            response = await client.get(f"/api/v1/namespaces/{ns}/jobs", params={"limit": limit})
             response.raise_for_status()
             return response.json().get("jobs", [])
         except Exception as e:
             logger.error(f"Failed to get jobs: {e}")
             return []
 
-    async def get_job(
-        self,
-        job_name: str,
-        namespace: Optional[str] = None
-    ) -> Optional[Dict[str, Any]]:
+    async def get_job(self, job_name: str, namespace: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """
         Get details for a specific job.
 
@@ -143,21 +125,14 @@ class LineageService:
         ns = namespace or self.namespace
         try:
             client = self._get_client()
-            response = await client.get(
-                f"/api/v1/namespaces/{ns}/jobs/{job_name}"
-            )
+            response = await client.get(f"/api/v1/namespaces/{ns}/jobs/{job_name}")
             response.raise_for_status()
             return response.json()
         except Exception as e:
             logger.error(f"Failed to get job {job_name}: {e}")
             return None
 
-    async def get_dag_lineage(
-        self,
-        dag_id: str,
-        depth: int = 5,
-        namespace: Optional[str] = None
-    ) -> Dict[str, Any]:
+    async def get_dag_lineage(self, dag_id: str, depth: int = 5, namespace: Optional[str] = None) -> Dict[str, Any]:
         """
         Get lineage for a DAG (all tasks and their dependencies).
 
@@ -182,7 +157,7 @@ class LineageService:
                 "tasks": [],
                 "upstream_dags": set(),
                 "downstream_dags": set(),
-                "datasets": set()
+                "datasets": set(),
             }
 
             for job in dag_jobs:
@@ -199,7 +174,7 @@ class LineageService:
                         "inputs": job_details.get("inputs", []),
                         "outputs": job_details.get("outputs", []),
                         "latest_run": job_details.get("latestRun"),
-                        "facets": job_details.get("facets", {})
+                        "facets": job_details.get("facets", {}),
                     }
                     lineage["tasks"].append(task_info)
 
@@ -224,7 +199,7 @@ class LineageService:
         self,
         dag_id: str,
         task_id: Optional[str] = None,
-        namespace: Optional[str] = None
+        namespace: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Get the blast radius of a failure (what would be affected).
@@ -250,11 +225,8 @@ class LineageService:
 
             # Query lineage API
             response = await client.get(
-                f"/api/v1/lineage",
-                params={
-                    "nodeId": f"job:{ns}:{job_name}",
-                    "depth": 10
-                }
+                "/api/v1/lineage",
+                params={"nodeId": f"job:{ns}:{job_name}", "depth": 10},
             )
 
             if response.status_code != 200:
@@ -274,31 +246,22 @@ class LineageService:
                     downstream_datasets.append(node.get("id", ""))
 
             return {
-                "source": {
-                    "dag_id": dag_id,
-                    "task_id": task_id,
-                    "job_name": job_name
-                },
+                "source": {"dag_id": dag_id, "task_id": task_id, "job_name": job_name},
                 "impact": {
                     "downstream_jobs": downstream_jobs,
                     "downstream_datasets": downstream_datasets,
                     "job_count": len(downstream_jobs),
-                    "dataset_count": len(downstream_datasets)
+                    "dataset_count": len(downstream_datasets),
                 },
                 "severity": self._calculate_severity(len(downstream_jobs), len(downstream_datasets)),
-                "recommendation": self._get_failure_recommendation(len(downstream_jobs))
+                "recommendation": self._get_failure_recommendation(len(downstream_jobs)),
             }
 
         except Exception as e:
             logger.error(f"Failed to get blast radius: {e}")
             return {"error": str(e)}
 
-    async def _analyze_blast_radius_fallback(
-        self,
-        dag_id: str,
-        task_id: Optional[str],
-        namespace: str
-    ) -> Dict[str, Any]:
+    async def _analyze_blast_radius_fallback(self, dag_id: str, task_id: Optional[str], namespace: str) -> Dict[str, Any]:
         """Fallback blast radius analysis using job API."""
         jobs = await self.get_jobs(namespace=namespace)
 
@@ -314,19 +277,16 @@ class LineageService:
                         break
 
         return {
-            "source": {
-                "dag_id": dag_id,
-                "task_id": task_id
-            },
+            "source": {"dag_id": dag_id, "task_id": task_id},
             "impact": {
                 "downstream_jobs": potential_downstream,
                 "downstream_datasets": [],
                 "job_count": len(potential_downstream),
-                "dataset_count": 0
+                "dataset_count": 0,
             },
             "severity": self._calculate_severity(len(potential_downstream), 0),
             "recommendation": self._get_failure_recommendation(len(potential_downstream)),
-            "note": "Analysis based on job API (lineage endpoint unavailable)"
+            "note": "Analysis based on job API (lineage endpoint unavailable)",
         }
 
     def _calculate_severity(self, job_count: int, dataset_count: int) -> str:
@@ -352,11 +312,7 @@ class LineageService:
         else:
             return "High impact - escalate before taking action"
 
-    async def get_dataset_lineage(
-        self,
-        dataset_name: str,
-        namespace: Optional[str] = None
-    ) -> Dict[str, Any]:
+    async def get_dataset_lineage(self, dataset_name: str, namespace: Optional[str] = None) -> Dict[str, Any]:
         """
         Get lineage for a specific dataset.
 
@@ -373,9 +329,7 @@ class LineageService:
 
         try:
             client = self._get_client()
-            response = await client.get(
-                f"/api/v1/namespaces/{ns}/datasets/{dataset_name}"
-            )
+            response = await client.get(f"/api/v1/namespaces/{ns}/datasets/{dataset_name}")
             response.raise_for_status()
 
             dataset = response.json()
@@ -389,19 +343,14 @@ class LineageService:
                 "tags": dataset.get("tags", []),
                 "facets": dataset.get("facets", {}),
                 "created_at": dataset.get("createdAt"),
-                "updated_at": dataset.get("updatedAt")
+                "updated_at": dataset.get("updatedAt"),
             }
 
         except Exception as e:
             logger.error(f"Failed to get dataset lineage for {dataset_name}: {e}")
             return {"name": dataset_name, "error": str(e)}
 
-    async def get_recent_runs(
-        self,
-        job_name: str,
-        namespace: Optional[str] = None,
-        limit: int = 10
-    ) -> List[Dict[str, Any]]:
+    async def get_recent_runs(self, job_name: str, namespace: Optional[str] = None, limit: int = 10) -> List[Dict[str, Any]]:
         """
         Get recent runs for a job.
 
@@ -417,31 +366,28 @@ class LineageService:
 
         try:
             client = self._get_client()
-            response = await client.get(
-                f"/api/v1/namespaces/{ns}/jobs/{job_name}/runs",
-                params={"limit": limit}
-            )
+            response = await client.get(f"/api/v1/namespaces/{ns}/jobs/{job_name}/runs", params={"limit": limit})
             response.raise_for_status()
 
             runs = response.json().get("runs", [])
 
-            return [{
-                "id": run.get("id"),
-                "state": run.get("state"),
-                "started_at": run.get("startedAt"),
-                "ended_at": run.get("endedAt"),
-                "duration_ms": run.get("durationMs"),
-                "facets": run.get("facets", {})
-            } for run in runs]
+            return [
+                {
+                    "id": run.get("id"),
+                    "state": run.get("state"),
+                    "started_at": run.get("startedAt"),
+                    "ended_at": run.get("endedAt"),
+                    "duration_ms": run.get("durationMs"),
+                    "facets": run.get("facets", {}),
+                }
+                for run in runs
+            ]
 
         except Exception as e:
             logger.error(f"Failed to get runs for {job_name}: {e}")
             return []
 
-    async def get_run_facets(
-        self,
-        run_id: str
-    ) -> Dict[str, Any]:
+    async def get_run_facets(self, run_id: str) -> Dict[str, Any]:
         """
         Get facets (custom metadata) for a specific run.
 
@@ -470,7 +416,7 @@ class LineageService:
         job_name: str,
         run_id: str,
         facets: Dict[str, Any],
-        namespace: Optional[str] = None
+        namespace: Optional[str] = None,
     ) -> bool:
         """
         Emit custom facets for a run.
@@ -493,23 +439,14 @@ class LineageService:
             event = {
                 "eventType": "COMPLETE",
                 "eventTime": datetime.utcnow().isoformat() + "Z",
-                "run": {
-                    "runId": run_id,
-                    "facets": facets
-                },
-                "job": {
-                    "namespace": ns,
-                    "name": job_name
-                },
+                "run": {"runId": run_id, "facets": facets},
+                "job": {"namespace": ns, "name": job_name},
                 "inputs": [],
-                "outputs": []
+                "outputs": [],
             }
 
             client = self._get_client()
-            response = await client.post(
-                "/api/v1/lineage",
-                json=event
-            )
+            response = await client.post("/api/v1/lineage", json=event)
             response.raise_for_status()
 
             logger.info(f"Emitted custom facets for {job_name}:{run_id}")
@@ -519,10 +456,7 @@ class LineageService:
             logger.error(f"Failed to emit facets: {e}")
             return False
 
-    async def get_lineage_stats(
-        self,
-        namespace: Optional[str] = None
-    ) -> Dict[str, Any]:
+    async def get_lineage_stats(self, namespace: Optional[str] = None) -> Dict[str, Any]:
         """
         Get statistics about lineage data.
 
@@ -544,10 +478,7 @@ class LineageService:
 
             # Get datasets
             client = self._get_client()
-            datasets_response = await client.get(
-                f"/api/v1/namespaces/{ns}/datasets",
-                params={"limit": 1000}
-            )
+            datasets_response = await client.get(f"/api/v1/namespaces/{ns}/datasets", params={"limit": 1000})
             datasets = datasets_response.json().get("datasets", []) if datasets_response.status_code == 200 else []
 
             return {
@@ -556,21 +487,15 @@ class LineageService:
                     "total": total_jobs,
                     "running": running_jobs,
                     "failed": failed_jobs,
-                    "success_rate": (total_jobs - failed_jobs) / max(total_jobs, 1) * 100
+                    "success_rate": (total_jobs - failed_jobs) / max(total_jobs, 1) * 100,
                 },
-                "datasets": {
-                    "total": len(datasets)
-                },
-                "available": True
+                "datasets": {"total": len(datasets)},
+                "available": True,
             }
 
         except Exception as e:
             logger.error(f"Failed to get lineage stats: {e}")
-            return {
-                "namespace": ns,
-                "available": False,
-                "error": str(e)
-            }
+            return {"namespace": ns, "available": False, "error": str(e)}
 
 
 # Singleton instance
@@ -586,7 +511,4 @@ def get_lineage_service() -> LineageService:
 
 
 __version__ = "1.0.0"
-__all__ = [
-    "LineageService",
-    "get_lineage_service"
-]
+__all__ = ["LineageService", "get_lineage_service"]

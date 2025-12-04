@@ -7,12 +7,14 @@ The Qubinode Airflow containers have **BOTH kcli AND virsh** available for VM ma
 ## 📦 Installed Packages
 
 ### System Packages (via apt)
+
 ```bash
 libvirt-clients     # Provides: virsh, virt-admin, virt-host-validate
 libvirt-dev         # Development libraries for libvirt
 ```
 
 ### Python Packages (via pip)
+
 ```bash
 kcli==99.0          # KVM Cloud Instances CLI
 libvirt-python      # Python bindings for libvirt API
@@ -22,6 +24,7 @@ paramiko            # SSH library
 ## 🔧 Available Commands
 
 ### kcli Commands
+
 ```bash
 kcli list vm                          # List all VMs
 kcli list image                       # List available images
@@ -37,6 +40,7 @@ kcli ssh <vm>                         # SSH into VM
 ```
 
 ### virsh Commands
+
 ```bash
 # VM Management
 virsh list --all                      # List all VMs
@@ -88,23 +92,26 @@ User: root (for socket access permissions)
 ## 🎨 When to Use Each Tool
 
 ### Use kcli for:
-✅ Quick VM provisioning from images/templates  
-✅ Profile-based deployments  
-✅ Simplified workflows  
-✅ Multi-VM deployments (plans)  
-✅ Integration with cloud images  
+
+✅ Quick VM provisioning from images/templates
+✅ Profile-based deployments
+✅ Simplified workflows
+✅ Multi-VM deployments (plans)
+✅ Integration with cloud images
 
 ### Use virsh for:
-✅ Detailed VM inspection and debugging  
-✅ Network and storage pool management  
-✅ XML configuration editing  
-✅ Snapshot management  
-✅ Low-level libvirt operations  
-✅ Performance tuning  
+
+✅ Detailed VM inspection and debugging
+✅ Network and storage pool management
+✅ XML configuration editing
+✅ Snapshot management
+✅ Low-level libvirt operations
+✅ Performance tuning
 
 ## 💡 Examples in Airflow DAGs
 
 ### Example 1: Using kcli
+
 ```python
 from qubinode.operators import KcliVMCreateOperator
 
@@ -118,6 +125,7 @@ create_vm = KcliVMCreateOperator(
 ```
 
 ### Example 2: Using virsh
+
 ```python
 from qubinode.virsh_operators import VirshVMInfoOperator
 
@@ -128,6 +136,7 @@ get_info = VirshVMInfoOperator(
 ```
 
 ### Example 3: Generic virsh command
+
 ```python
 from qubinode.virsh_operators import VirshCommandOperator
 
@@ -159,11 +168,13 @@ virsh nodeinfo
 ## 📚 Available Operators
 
 ### kcli Operators
+
 - `KcliVMCreateOperator` - Create VM
-- `KcliVMDeleteOperator` - Delete VM  
+- `KcliVMDeleteOperator` - Delete VM
 - `KcliVMListOperator` - List VMs
 
 ### virsh Operators
+
 - `VirshCommandOperator` - Run any virsh command
 - `VirshVMStartOperator` - Start VM
 - `VirshVMStopOperator` - Stop VM
@@ -175,13 +186,13 @@ virsh nodeinfo
 The containers run as root and have access to the libvirt socket because:
 
 1. Libvirt socket is owned by `root:libvirt` with `0770` permissions
-2. Containers run as user `0:0` (root:root)
-3. Container is added to group `107` (libvirt group)
-4. Socket is mounted: `/var/run/libvirt/libvirt-sock:/var/run/libvirt/libvirt-sock`
+1. Containers run as user `0:0` (root:root)
+1. Container is added to group `107` (libvirt group)
+1. Socket is mounted: `/var/run/libvirt/libvirt-sock:/var/run/libvirt/libvirt-sock`
 
 ## 📖 See Also
 
-- **Example DAGs**: 
+- **Example DAGs**:
   - `/opt/airflow/dags/example_kcli_vm_provisioning.py`
   - `/opt/airflow/dags/example_kcli_virsh_combined.py`
 - **Plugin Code**: `/opt/airflow/plugins/qubinode/`

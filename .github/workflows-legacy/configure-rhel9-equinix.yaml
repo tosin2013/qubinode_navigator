@@ -27,7 +27,7 @@ env:
     ACTIVE_BRIDGE: 'false'
     INTERFACE: 'bond0'
     USE_HASHICORP_CLOUD: 'false'
-   
+
 jobs:
   configure-rhel9-equinix:
     runs-on: ubuntu-latest
@@ -56,7 +56,7 @@ jobs:
         key: ${{ secrets.KEY }}
         port: ${{ secrets.PORT }}
         command_timeout: 30m
-        script: | 
+        script: |
           sudo yum install -y git
           if [ -d "/opt/qubinode_navigator" ]; then
             cd /opt/qubinode_navigator
@@ -79,7 +79,7 @@ jobs:
           echo "export ACTIVE_BRIDGE=${{ env.ACTIVE_BRIDGE }}" >> /opt/qubinode_navigator/.env
           echo "export INTERFACE=${{ env.INTERFACE }}" >> /opt/qubinode_navigator/.env
           source /opt/qubinode_navigator/.env && sudo -E /opt/qubinode_navigator/rhel9-linux-hypervisor.sh || exit $?
-   
+
     - name: Send a repository dispatch event to restart the workflow if it failed
       if: ${{ failure() }}
       uses: actions/github-script@v8

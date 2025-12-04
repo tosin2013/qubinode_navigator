@@ -1,14 +1,11 @@
----
-layout: default
-title: ADR-0049 Multi-Agent LLM Memory Architecture
-parent: Architecture & Design
-grand_parent: Architectural Decision Records
-nav_order: 0049
----
+______________________________________________________________________
+
+## layout: default title: ADR-0049 Multi-Agent LLM Memory Architecture parent: Architecture & Design grand_parent: Architectural Decision Records nav_order: 0049
 
 # ADR-0049: Multi-Agent LLM Memory Architecture with PgVector and OpenLineage
 
 ## Status
+
 Proposed (2025-12-01)
 
 ## Context
@@ -18,13 +15,14 @@ Proposed (2025-12-01)
 Current LLM interactions with Qubinode suffer from critical context loss:
 
 1. **Session Amnesia**: LLMs forget earlier troubleshooting attempts, repeating failed approaches
-2. **Cross-Component Blindness**: When debugging DAGs + application code together, context fragments
-3. **No Learning**: Each session starts fresh; past successes and failures aren't leveraged
-4. **Single-Model Limitations**: Small local models (Granite) lack capacity for complex architectural decisions
+1. **Cross-Component Blindness**: When debugging DAGs + application code together, context fragments
+1. **No Learning**: Each session starts fresh; past successes and failures aren't leveraged
+1. **Single-Model Limitations**: Small local models (Granite) lack capacity for complex architectural decisions
 
 ### Current State (ADR-0027)
 
 ADR-0027 established the AI Deployment Assistant with:
+
 - ChromaDB for vector storage (document RAG)
 - Single-agent architecture
 - No execution lineage tracking
@@ -32,13 +30,13 @@ ADR-0027 established the AI Deployment Assistant with:
 
 ### Why Change?
 
-| Current Limitation | Impact |
-|-------------------|--------|
-| ChromaDB is separate from Airflow's PostgreSQL | Two databases to manage, no unified queries |
-| No execution history in RAG | Can't learn from past deployments |
-| Single agent model | Small model can't handle architecture decisions |
-| No lineage tracking | Can't trace DAG relationships or failure blast radius |
-| Session-bound context | Troubleshooting restarts lose all progress |
+| Current Limitation                             | Impact                                                |
+| ---------------------------------------------- | ----------------------------------------------------- |
+| ChromaDB is separate from Airflow's PostgreSQL | Two databases to manage, no unified queries           |
+| No execution history in RAG                    | Can't learn from past deployments                     |
+| Single agent model                             | Small model can't handle architecture decisions       |
+| No lineage tracking                            | Can't trace DAG relationships or failure blast radius |
+| Session-bound context                          | Troubleshooting restarts lose all progress            |
 
 ## Decision
 
@@ -121,12 +119,14 @@ Implement a **Multi-Agent LLM Architecture** with persistent memory using PgVect
 For any task, Developer Agent MUST:
 
 1. **Query RAG** for relevant context:
+
    - Airflow provider documentation
    - Qubinode infrastructure patterns
    - Related DAGs and ADRs
    - Past troubleshooting attempts
 
-2. **Compute confidence score**:
+1. **Compute confidence score**:
+
    ```python
    confidence = (
        0.4 * rag_similarity_score +      # How close are matching docs
@@ -136,12 +136,14 @@ For any task, Developer Agent MUST:
    )
    ```
 
-3. **Act based on confidence**:
+1. **Act based on confidence**:
+
    - **High (≥0.8)**: Proceed with task
    - **Medium (0.6-0.8)**: Proceed with caveats noted
-   - **Low (<0.6)**: STOP and escalate
+   - **Low (\<0.6)**: STOP and escalate
 
-4. **Low confidence escalation**:
+1. **Low confidence escalation**:
+
    ```
    Developer → Manager: "I don't have enough docs for <X>.
                         Request docs or links for RAG ingestion."
@@ -159,8 +161,8 @@ For any task, Developer Agent MUST:
 For any external system integration, Developer Agent MUST:
 
 1. **Check Airflow provider registry** (via RAG or provider index)
-2. **If provider exists**: Use official operators/hooks
-3. **If NO provider exists**: STOP and escalate
+1. **If provider exists**: Use official operators/hooks
+1. **If NO provider exists**: STOP and escalate
 
 ```
 Developer: "No Airflow provider found for <X>.
@@ -169,6 +171,7 @@ Developer: "No Airflow provider found for <X>.
 ```
 
 Developer will NOT:
+
 - Invent pseudo-provider layers in DAGs
 - Use BashOperator/PythonOperator when official provider exists
 - Guess at API interactions without documentation
@@ -178,33 +181,37 @@ Developer will NOT:
 When Provider-First Rule fails:
 
 1. **Developer reports**:
+
    - What it searched for
    - Why provider doesn't exist (no docs, no matches)
 
-2. **Manager + Calling LLM collaborate**:
+1. **Manager + Calling LLM collaborate**:
+
    - Sketch provider architecture
    - Define required connections, APIs, operators
    - Consider alternatives ("Should this be in Airflow at all?")
 
-3. **Output is a plan document**:
+1. **Output is a plan document**:
+
    - `docs/provider_plan_<name>.md`
    - ADR if architectural significance
    - TODOs/issues in tracker
 
-4. **Developer STOPS there** - no auto-generated provider code
+1. **Developer STOPS there** - no auto-generated provider code
 
 #### Policy 4: Calling LLM Override Authority
 
 The Calling LLM (Claude/GPT-4) can override Developer Agent when:
 
-| Trigger | Action |
-|---------|--------|
-| **Repeated Failure** | Same error class 2+ times → Calling LLM reviews full history, provides explicit approach |
-| **Architecture Scope** | Change affects multiple DAGs → Developer MUST NOT proceed alone |
-| **Confidence Deadlock** | Developer stuck at low confidence → Calling LLM provides context or accepts risk |
-| **User Request** | Human says "take over" → Calling LLM assumes direct control |
+| Trigger                 | Action                                                                                   |
+| ----------------------- | ---------------------------------------------------------------------------------------- |
+| **Repeated Failure**    | Same error class 2+ times → Calling LLM reviews full history, provides explicit approach |
+| **Architecture Scope**  | Change affects multiple DAGs → Developer MUST NOT proceed alone                          |
+| **Confidence Deadlock** | Developer stuck at low confidence → Calling LLM provides context or accepts risk         |
+| **User Request**        | Human says "take over" → Calling LLM assumes direct control                              |
 
 Override instruction format:
+
 ```json
 {
   "override": true,
@@ -220,6 +227,7 @@ Override instruction format:
 #### 1. PgVector Integration (Replaces ChromaDB)
 
 **Why PgVector over ChromaDB:**
+
 - Already have PostgreSQL for Airflow
 - Single database to manage
 - ACID compliance for vector operations
@@ -227,6 +235,7 @@ Override instruction format:
 - SQL queries can join vectors with execution metadata
 
 **Schema:**
+
 ```sql
 -- Enable pgvector extension
 CREATE EXTENSION IF NOT EXISTS vector;
@@ -279,6 +288,7 @@ CREATE INDEX ON troubleshooting_attempts USING ivfflat (embedding vector_cosine_
 **Purpose:** Track execution lineage, DAG relationships, failure blast radius
 
 **Deployment:**
+
 ```yaml
 # docker-compose addition
 services:
@@ -300,6 +310,7 @@ services:
 ```
 
 **Airflow Configuration:**
+
 ```python
 # airflow.cfg or environment
 AIRFLOW__OPENLINEAGE__TRANSPORT = '{"type": "http", "url": "http://localhost:5001/api/v1/lineage"}'
@@ -307,6 +318,7 @@ AIRFLOW__OPENLINEAGE__NAMESPACE = 'qubinode'
 ```
 
 **Custom Facets for Code Lineage:**
+
 ```json
 // .OpenLineage.job.facets.json (in DAG deployment)
 {
@@ -469,6 +481,7 @@ async def check_provider_exists(system_name: str) -> str:
 #### 4. Embedding Model Selection
 
 **For Disconnected/Air-gapped Environments:**
+
 ```python
 # Local embedding model (runs on CPU)
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"  # 384 dimensions
@@ -476,12 +489,14 @@ EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"  # 384 dimensions
 ```
 
 **For Connected Environments:**
+
 ```python
 # OpenAI embeddings via LiteLLM
 EMBEDDING_MODEL = "text-embedding-ada-002"  # 1536 dimensions
 ```
 
 **Configuration:**
+
 ```yaml
 # Environment-based selection
 embedding:
@@ -495,32 +510,37 @@ embedding:
 Initial RAG population order:
 
 1. **Phase 1: Core Documentation**
+
    ```
    - docs/adrs/*.md (all ADRs)
    - airflow/dags/*.py (existing DAGs as examples)
    - README files
    ```
 
-2. **Phase 2: Airflow Provider Docs**
+1. **Phase 2: Airflow Provider Docs**
+
    ```
    - apache-airflow-providers-* documentation
    - Focus on: postgres, ssh, http, kubernetes
    ```
 
-3. **Phase 3: Qubinode-Specific**
+1. **Phase 3: Qubinode-Specific**
+
    ```
    - kcli-pipelines scripts and docs
    - freeipa-workshop-deployer docs
    - Existing deployment patterns
    ```
 
-4. **Phase 4: On-Demand**
+1. **Phase 4: On-Demand**
+
    ```
    - User-provided docs when confidence is low
    - External documentation fetched on request
    ```
 
 Bootstrap DAG:
+
 ```python
 # dags/rag_bootstrap.py
 from airflow.decorators import dag, task
@@ -561,12 +581,12 @@ rag_bootstrap()
 
 ### Model Selection
 
-| Agent | Model | Context Window | Purpose |
-|-------|-------|----------------|---------|
-| **Calling LLM** | Claude/GPT-4 (via MCP) | 100K+ | Global context, architecture, override authority |
-| **Manager LLM** | Granite-8B (via LiteLLM) | 8K | Session orchestration, escalation decisions |
-| **Developer Agent** | Granite-3B + Aider | 4K | Task execution, code generation |
-| **Embeddings** | MiniLM-L6 (local) or ada-002 | N/A | Vector generation |
+| Agent               | Model                        | Context Window | Purpose                                          |
+| ------------------- | ---------------------------- | -------------- | ------------------------------------------------ |
+| **Calling LLM**     | Claude/GPT-4 (via MCP)       | 100K+          | Global context, architecture, override authority |
+| **Manager LLM**     | Granite-8B (via LiteLLM)     | 8K             | Session orchestration, escalation decisions      |
+| **Developer Agent** | Granite-3B + Aider           | 4K             | Task execution, code generation                  |
+| **Embeddings**      | MiniLM-L6 (local) or ada-002 | N/A            | Vector generation                                |
 
 ### Workflow Example: Troubleshooting with Memory
 
@@ -624,35 +644,36 @@ rag_bootstrap()
 ### Positive
 
 1. **No More Context Loss**: PgVector persists all troubleshooting attempts across sessions
-2. **Learning System**: Past successes and failures inform future decisions
-3. **Unified RAG**: AI assistant, MCP server, and DAGs share same knowledge base
-4. **Appropriate Model for Task**: Large model for architecture, small model for execution
-5. **Calling LLM Override**: Prevents small model from spinning on repeated failures
-6. **Execution Lineage**: OpenLineage tracks DAG relationships and failure blast radius
-7. **Provider Compliance**: Forces use of official Airflow providers
-8. **Disconnected Support**: Local embedding model works air-gapped
+1. **Learning System**: Past successes and failures inform future decisions
+1. **Unified RAG**: AI assistant, MCP server, and DAGs share same knowledge base
+1. **Appropriate Model for Task**: Large model for architecture, small model for execution
+1. **Calling LLM Override**: Prevents small model from spinning on repeated failures
+1. **Execution Lineage**: OpenLineage tracks DAG relationships and failure blast radius
+1. **Provider Compliance**: Forces use of official Airflow providers
+1. **Disconnected Support**: Local embedding model works air-gapped
 
 ### Negative
 
 1. **Increased Complexity**: Multiple agents, databases, and orchestration layers
-2. **PostgreSQL Dependency**: PgVector requires PostgreSQL (already have for Airflow)
-3. **Marquez Overhead**: Additional container for lineage visualization
-4. **Bootstrap Time**: Initial RAG population takes time
-5. **Model Coordination**: LiteLLM routing adds latency
+1. **PostgreSQL Dependency**: PgVector requires PostgreSQL (already have for Airflow)
+1. **Marquez Overhead**: Additional container for lineage visualization
+1. **Bootstrap Time**: Initial RAG population takes time
+1. **Model Coordination**: LiteLLM routing adds latency
 
 ### Mitigations
 
-| Risk | Mitigation |
-|------|------------|
-| Complexity | Phased implementation, clear component boundaries |
-| PostgreSQL dependency | Already required for Airflow |
-| Marquez overhead | Optional component, can start with PgVector only |
-| Bootstrap time | Background DAG, prioritized ingestion |
-| Latency | Cache frequent queries, async operations |
+| Risk                  | Mitigation                                        |
+| --------------------- | ------------------------------------------------- |
+| Complexity            | Phased implementation, clear component boundaries |
+| PostgreSQL dependency | Already required for Airflow                      |
+| Marquez overhead      | Optional component, can start with PgVector only  |
+| Bootstrap time        | Background DAG, prioritized ingestion             |
+| Latency               | Cache frequent queries, async operations          |
 
 ## Implementation Phases
 
 ### Phase 1: PgVector Foundation (Week 1-2)
+
 - Add pgvector extension to Airflow PostgreSQL
 - Create schema for RAG documents and troubleshooting
 - Implement embedding generation (local model)
@@ -660,6 +681,7 @@ rag_bootstrap()
 - Migrate existing ChromaDB data (if any)
 
 ### Phase 2: MCP Enhancement (Week 3-4)
+
 - Add new MCP tools for RAG queries
 - Add troubleshooting history tools
 - Add developer delegation tools
@@ -667,6 +689,7 @@ rag_bootstrap()
 - Test with Calling LLM (Claude Code)
 
 ### Phase 3: Agent Architecture (Week 5-6)
+
 - Implement Manager LLM via LiteLLM
 - Implement Developer Agent with confidence scoring
 - Integrate Aider for code generation
@@ -674,6 +697,7 @@ rag_bootstrap()
 - End-to-end workflow testing
 
 ### Phase 4: OpenLineage Integration (Week 7-8)
+
 - Deploy Marquez alongside Airflow
 - Configure Airflow OpenLineage provider
 - Add custom facets for code lineage
@@ -681,6 +705,7 @@ rag_bootstrap()
 - Dashboard for visualization
 
 ### Phase 5: Bootstrap & Polish (Week 9-10)
+
 - Create RAG bootstrap DAG
 - Ingest core documentation
 - Performance tuning
@@ -701,7 +726,7 @@ rag_bootstrap()
 ## Future Considerations
 
 1. **Feedback Loop**: Human approval/rejection training the confidence model
-2. **Cost Management**: Rate limiting for external LLM APIs
-3. **Multi-tenant**: Namespace isolation for different users/projects
-4. **Metrics Dashboard**: Confidence scores, override frequency, RAG hit rates
-5. **Provider Auto-Generation**: Eventually, auto-generate missing providers (carefully)
+1. **Cost Management**: Rate limiting for external LLM APIs
+1. **Multi-tenant**: Namespace isolation for different users/projects
+1. **Metrics Dashboard**: Confidence scores, override frequency, RAG hit rates
+1. **Provider Auto-Generation**: Eventually, auto-generate missing providers (carefully)

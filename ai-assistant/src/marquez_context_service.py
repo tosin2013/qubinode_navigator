@@ -11,10 +11,8 @@ to the AI assistant, enabling smarter responses about:
 - Data lineage relationships
 """
 
-import asyncio
 import logging
 import os
-from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 
 import httpx
@@ -29,9 +27,9 @@ class MarquezContextService:
     # Order: explicit env var > host.containers.internal (podman/docker) > localhost
     DEFAULT_HOSTS = [
         "host.containers.internal",  # Podman/Docker host access
-        "host.docker.internal",      # Docker Desktop host access
-        "172.17.0.1",                # Default Docker bridge gateway
-        "localhost",                 # Local development
+        "host.docker.internal",  # Docker Desktop host access
+        "172.17.0.1",  # Default Docker bridge gateway
+        "localhost",  # Local development
     ]
 
     def __init__(self, marquez_url: str = None):
@@ -55,10 +53,7 @@ class MarquezContextService:
         for host in self.DEFAULT_HOSTS:
             test_url = f"http://{host}:5001"
             try:
-                response = await self.client.get(
-                    f"{test_url}/api/v1/namespaces",
-                    timeout=3.0
-                )
+                response = await self.client.get(f"{test_url}/api/v1/namespaces", timeout=3.0)
                 if response.status_code == 200:
                     logger.info(f"Discovered Marquez at {test_url}")
                     self._discovered_url = test_url
@@ -91,7 +86,7 @@ class MarquezContextService:
             # Get all jobs in namespace
             response = await self.client.get(
                 f"{self.marquez_url}/api/v1/namespaces/{self.namespace}/jobs",
-                params={"limit": 50}
+                params={"limit": 50},
             )
             if response.status_code != 200:
                 return []
@@ -104,20 +99,22 @@ class MarquezContextService:
                 # Get latest run for this job
                 run_response = await self.client.get(
                     f"{self.marquez_url}/api/v1/namespaces/{self.namespace}/jobs/{job_name}/runs",
-                    params={"limit": 1}
+                    params={"limit": 1},
                 )
                 if run_response.status_code == 200:
                     job_runs = run_response.json().get("runs", [])
                     if job_runs:
                         run = job_runs[0]
-                        runs.append({
-                            "job_name": job_name,
-                            "run_id": run.get("id"),
-                            "state": run.get("state"),
-                            "started_at": run.get("startedAt"),
-                            "ended_at": run.get("endedAt"),
-                            "duration_ms": run.get("durationMs"),
-                        })
+                        runs.append(
+                            {
+                                "job_name": job_name,
+                                "run_id": run.get("id"),
+                                "state": run.get("state"),
+                                "started_at": run.get("startedAt"),
+                                "ended_at": run.get("endedAt"),
+                                "duration_ms": run.get("durationMs"),
+                            }
+                        )
 
             # Sort by start time, most recent first
             runs.sort(key=lambda x: x.get("started_at") or "", reverse=True)
@@ -140,9 +137,7 @@ class MarquezContextService:
     async def get_job_details(self, job_name: str) -> Optional[Dict[str, Any]]:
         """Get detailed information about a specific job."""
         try:
-            response = await self.client.get(
-                f"{self.marquez_url}/api/v1/namespaces/{self.namespace}/jobs/{job_name}"
-            )
+            response = await self.client.get(f"{self.marquez_url}/api/v1/namespaces/{self.namespace}/jobs/{job_name}")
             if response.status_code != 200:
                 return None
 
@@ -151,7 +146,7 @@ class MarquezContextService:
             # Get recent runs
             runs_response = await self.client.get(
                 f"{self.marquez_url}/api/v1/namespaces/{self.namespace}/jobs/{job_name}/runs",
-                params={"limit": 5}
+                params={"limit": 5},
             )
             recent_runs = []
             if runs_response.status_code == 200:
@@ -184,18 +179,16 @@ class MarquezContextService:
             if not available:
                 return {
                     "available": False,
-                    "message": "Marquez lineage service is not available"
+                    "message": "Marquez lineage service is not available",
                 }
 
             # Get namespace info
-            ns_response = await self.client.get(
-                f"{self.marquez_url}/api/v1/namespaces/{self.namespace}"
-            )
+            await self.client.get(f"{self.marquez_url}/api/v1/namespaces/{self.namespace}")
 
             # Get jobs
             jobs_response = await self.client.get(
                 f"{self.marquez_url}/api/v1/namespaces/{self.namespace}/jobs",
-                params={"limit": 100}
+                params={"limit": 100},
             )
 
             jobs = []
@@ -223,7 +216,11 @@ class MarquezContextService:
                 "namespace": self.namespace,
                 "job_stats": job_stats,
                 "recent_failures": [
-                    {"job": r["job_name"], "state": r["state"], "when": r.get("started_at")}
+                    {
+                        "job": r["job_name"],
+                        "state": r["state"],
+                        "when": r.get("started_at"),
+                    }
                     for r in failed_runs[:5]
                 ],
                 "jobs": [
@@ -236,17 +233,14 @@ class MarquezContextService:
             }
         except Exception as e:
             logger.error(f"Error getting lineage summary: {e}")
-            return {
-                "available": False,
-                "error": str(e)
-            }
+            return {"available": False, "error": str(e)}
 
     async def search_jobs(self, query: str) -> List[Dict[str, Any]]:
         """Search for jobs matching a query string."""
         try:
             response = await self.client.get(
                 f"{self.marquez_url}/api/v1/namespaces/{self.namespace}/jobs",
-                params={"limit": 100}
+                params={"limit": 100},
             )
             if response.status_code != 200:
                 return []
@@ -258,11 +252,13 @@ class MarquezContextService:
             for job in jobs:
                 name = job.get("name", "").lower()
                 if query_lower in name:
-                    matches.append({
-                        "name": job.get("name"),
-                        "latest_state": job.get("latestRun", {}).get("state"),
-                        "description": job.get("description"),
-                    })
+                    matches.append(
+                        {
+                            "name": job.get("name"),
+                            "latest_state": job.get("latestRun", {}).get("state"),
+                            "description": job.get("description"),
+                        }
+                    )
 
             return matches
         except Exception as e:
@@ -288,10 +284,7 @@ class MarquezContextService:
             # Job statistics
             stats = summary.get("job_stats", {})
             context_parts.append(
-                f"DAG Status: {stats.get('total', 0)} total jobs, "
-                f"{stats.get('running', 0)} running, "
-                f"{stats.get('completed', 0)} completed, "
-                f"{stats.get('failed', 0)} failed"
+                f"DAG Status: {stats.get('total', 0)} total jobs, " f"{stats.get('running', 0)} running, " f"{stats.get('completed', 0)} completed, " f"{stats.get('failed', 0)} failed"
             )
 
             # Recent failures (important for troubleshooting)
@@ -312,9 +305,7 @@ class MarquezContextService:
                     if matches:
                         context_parts.append(f"\nRelevant DAGs for '{keyword}':")
                         for m in matches[:3]:
-                            context_parts.append(
-                                f"  - {m['name']}: {m.get('latest_state', 'UNKNOWN')}"
-                            )
+                            context_parts.append(f"  - {m['name']}: {m.get('latest_state', 'UNKNOWN')}")
 
             context_parts.append("=== End Lineage Context ===\n")
 

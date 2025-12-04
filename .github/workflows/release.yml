@@ -152,10 +152,10 @@ jobs:
         run: |
           VERSION="${{ needs.validate.outputs.version }}"
           TAG="${{ needs.validate.outputs.tag }}"
-          
+
           # Get previous tag
           PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-          
+
           if [ -z "$PREV_TAG" ]; then
             echo "## Initial Release" > CHANGELOG.md
             echo "" >> CHANGELOG.md
@@ -163,7 +163,7 @@ jobs:
           else
             echo "## Changes since ${PREV_TAG}" > CHANGELOG.md
             echo "" >> CHANGELOG.md
-            
+
             # Features
             FEATURES=$(git log ${PREV_TAG}..HEAD --pretty=format:"- %s" --grep="^feat" || echo "")
             if [ -n "$FEATURES" ]; then
@@ -171,7 +171,7 @@ jobs:
               echo "$FEATURES" >> CHANGELOG.md
               echo "" >> CHANGELOG.md
             fi
-            
+
             # Bug fixes
             FIXES=$(git log ${PREV_TAG}..HEAD --pretty=format:"- %s" --grep="^fix" || echo "")
             if [ -n "$FIXES" ]; then
@@ -179,7 +179,7 @@ jobs:
               echo "$FIXES" >> CHANGELOG.md
               echo "" >> CHANGELOG.md
             fi
-            
+
             # Documentation
             DOCS=$(git log ${PREV_TAG}..HEAD --pretty=format:"- %s" --grep="^docs" || echo "")
             if [ -n "$DOCS" ]; then
@@ -187,12 +187,12 @@ jobs:
               echo "$DOCS" >> CHANGELOG.md
               echo "" >> CHANGELOG.md
             fi
-            
+
             # All commits
             echo "### 📝 All Changes" >> CHANGELOG.md
             git log ${PREV_TAG}..HEAD --pretty=format:"- %s (%h)" >> CHANGELOG.md
           fi
-          
+
           echo "" >> CHANGELOG.md
           echo "---" >> CHANGELOG.md
           echo "" >> CHANGELOG.md
@@ -210,7 +210,7 @@ jobs:
           echo "- [Complete Documentation](https://qubinode.github.io/qubinode_navigator/)" >> CHANGELOG.md
           echo "- [MCP Quick Start](MCP-QUICK-START.md)" >> CHANGELOG.md
           echo "- [Installation Guide](docs/tutorials/getting-started.md)" >> CHANGELOG.md
-          
+
           cat CHANGELOG.md
 
       - name: Create or update tag
@@ -248,11 +248,11 @@ jobs:
           script: |
             const version = '${{ needs.validate.outputs.version }}';
             const tag = '${{ needs.validate.outputs.tag }}';
-            
+
             const body = `## 🎉 Release ${version} is now available!
-            
+
             **Release Notes**: https://github.com/${{ github.repository }}/releases/tag/${tag}
-            
+
             ### Quick Start
             \`\`\`bash
             git clone https://github.com/${{ github.repository }}.git
@@ -260,13 +260,13 @@ jobs:
             git checkout ${tag}
             ./setup_modernized.sh
             \`\`\`
-            
+
             ### Documentation
             - [Complete Documentation](https://qubinode.github.io/qubinode_navigator/)
             - [MCP Quick Start](https://github.com/${{ github.repository }}/blob/${tag}/MCP-QUICK-START.md)
-            
+
             This issue is automatically created to track the release.`;
-            
+
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,

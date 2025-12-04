@@ -46,7 +46,7 @@ download_model() {
     log_info "Downloading Granite-4.0-Micro model (Q4_K_M quantization)..."
     log_info "Source: ${MODEL_URL}"
     log_info "Destination: ${MODEL_PATH}"
-    
+
     if [[ -f "${MODEL_PATH}" ]]; then
         log_warning "Model file already exists. Checking size..."
         local file_size=$(stat -c%s "${MODEL_PATH}" 2>/dev/null || echo "0")
@@ -58,7 +58,7 @@ download_model() {
             rm -f "${MODEL_PATH}"
         fi
     fi
-    
+
     # Download with wget for progress and resume capability
     if wget --progress=bar:force:noscroll \
            --timeout=30 \
@@ -67,16 +67,16 @@ download_model() {
            -O "${MODEL_PATH}" \
            "${MODEL_URL}"; then
         log_success "Model downloaded successfully"
-        
+
         # Verify download
         local file_size=$(stat -c%s "${MODEL_PATH}")
         log_info "Downloaded model size: ${file_size} bytes ($(( file_size / 1024 / 1024 )) MB)"
-        
+
         if [[ ${file_size} -lt 1000000 ]]; then  # < 1MB
             log_error "Downloaded file appears too small. Download may have failed."
             return 1
         fi
-        
+
     else
         log_error "Model download failed"
         return 1
@@ -86,25 +86,25 @@ download_model() {
 # Verify model file
 verify_model() {
     log_info "Verifying model file..."
-    
+
     if [[ ! -f "${MODEL_PATH}" ]]; then
         log_error "Model file not found: ${MODEL_PATH}"
         return 1
     fi
-    
+
     # Check if it's a GGUF file (basic check)
     if file "${MODEL_PATH}" | grep -q "data"; then
         log_success "Model file appears to be valid binary data"
     else
         log_warning "Model file format could not be verified"
     fi
-    
+
     # Check file size
     local file_size=$(stat -c%s "${MODEL_PATH}")
     local file_size_mb=$(( file_size / 1024 / 1024 ))
-    
+
     log_info "Model file size: ${file_size_mb} MB"
-    
+
     if [[ ${file_size_mb} -lt 100 ]]; then
         log_warning "Model file seems small for a 4B parameter model"
     elif [[ ${file_size_mb} -gt 5000 ]]; then
@@ -124,12 +124,12 @@ set_permissions() {
 # Main execution
 main() {
     log_info "Starting Granite-4.0-Micro model download..."
-    
+
     create_model_dir
     download_model
     verify_model
     set_permissions
-    
+
     log_success "Model download completed successfully!"
     log_info "Model location: ${MODEL_PATH}"
     log_info "You can now run the AI assistant container with the real model"

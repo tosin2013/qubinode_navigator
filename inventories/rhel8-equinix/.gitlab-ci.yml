@@ -2,7 +2,7 @@
 variables:
   YAML_FILE: "config.yml"
 
-  
+
 stages:
   - check_env
   - vault_query

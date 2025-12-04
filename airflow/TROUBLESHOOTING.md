@@ -5,6 +5,7 @@
 ### Issue: 400 Bad Request or Timeout Errors in AI Chat
 
 **Symptoms:**
+
 - Browser console shows: `Failed to load resource: the server responded with a status of 400 (BAD REQUEST)`
 - Chat requests timeout
 - Loading spinner never completes
@@ -13,11 +14,13 @@
 The AI Assistant's `/chat` endpoint uses LLM inference which can take 30-90 seconds to respond, especially on the first request or with complex queries.
 
 **Solution Applied:**
+
 1. **Backend timeout increased to 90 seconds** in `ai_chat_plugin.py`
-2. **Frontend shows informative loading message**: "🤔 Thinking... (this may take 30-60 seconds for AI inference)"
-3. **Network connectivity verified**: All containers on `airflow_default` network
+1. **Frontend shows informative loading message**: "🤔 Thinking... (this may take 30-60 seconds for AI inference)"
+1. **Network connectivity verified**: All containers on `airflow_default` network
 
 **Verification:**
+
 ```bash
 # Test AI Assistant from Airflow container
 podman exec airflow_airflow-webserver_1 curl http://qubinode-ai-assistant:8080/health
@@ -31,10 +34,12 @@ podman network inspect airflow_default --format '{{range .Containers}}{{.Name}} 
 ### Issue: Containers Not on Same Network
 
 **Symptoms:**
+
 - Cannot resolve `qubinode-ai-assistant` hostname
 - Connection refused errors
 
 **Solution:**
+
 ```bash
 # Connect AI Assistant to Airflow network
 podman network connect airflow_default qubinode-ai-assistant
@@ -46,10 +51,12 @@ podman network inspect airflow_default
 ### Issue: AI Assistant Not Responding
 
 **Symptoms:**
+
 - Health endpoint returns 503 Service Unavailable
 - `/chat` endpoint times out even with extended timeout
 
 **Diagnosis:**
+
 ```bash
 # Check AI Assistant logs
 podman logs qubinode-ai-assistant --tail 50
@@ -64,6 +71,7 @@ curl http://localhost:8080/health | jq
 ```
 
 **Solution:**
+
 ```bash
 # Restart AI Assistant
 podman restart qubinode-ai-assistant
@@ -78,10 +86,12 @@ done
 ### Issue: Airflow Webserver Not Loading Chat Plugin
 
 **Symptoms:**
+
 - `/ai-assistant` endpoint returns 404
 - Menu item not showing in Airflow UI
 
 **Solution:**
+
 ```bash
 # Restart webserver to reload plugins
 cd /root/qubinode_navigator/airflow
@@ -97,12 +107,13 @@ curl http://localhost:8888/health
 ### Faster AI Responses
 
 1. **Keep AI Assistant Running**: First request after restart is slowest (model loading)
-2. **Simple Queries**: Short, specific questions get faster responses
-3. **Context Matters**: Provide relevant context to avoid long inference times
+1. **Simple Queries**: Short, specific questions get faster responses
+1. **Context Matters**: Provide relevant context to avoid long inference times
 
 ### Resource Usage
 
 AI Assistant is CPU-intensive during inference:
+
 ```bash
 # Monitor resource usage
 podman stats qubinode-ai-assistant
@@ -144,6 +155,7 @@ podman stats qubinode-ai-assistant
 ## Logs and Debugging
 
 ### View Logs
+
 ```bash
 # Airflow webserver logs
 podman logs airflow_airflow-webserver_1 --tail 100
@@ -157,6 +169,7 @@ podman-compose logs -f
 ```
 
 ### Check Service Health
+
 ```bash
 # Use the status command
 ./deploy-airflow.sh status
@@ -167,6 +180,7 @@ curl http://localhost:8080/health  # AI Assistant
 ```
 
 ### Test Chat API Directly
+
 ```bash
 # From host
 curl -X POST http://localhost:8080/chat \
@@ -185,6 +199,7 @@ podman exec airflow_airflow-webserver_1 \
 ## Quick Fixes
 
 ### Complete Restart
+
 ```bash
 cd /root/qubinode_navigator/airflow
 podman-compose down
@@ -195,6 +210,7 @@ podman network connect airflow_default qubinode-ai-assistant
 ```
 
 ### Plugin Issues
+
 ```bash
 # Rebuild image with latest plugin changes
 cd /root/qubinode_navigator/airflow
@@ -205,8 +221,9 @@ podman-compose up -d --force-recreate
 ## Support
 
 For additional help:
+
 1. Check Airflow logs: `podman logs airflow_airflow-webserver_1`
-2. Check AI Assistant logs: `podman logs qubinode-ai-assistant`
-3. Verify network: `podman network inspect airflow_default`
-4. Test connectivity: Use curl commands above
-5. Review: `airflow/README.md` and `airflow/TOOLS-AVAILABLE.md`
+1. Check AI Assistant logs: `podman logs qubinode-ai-assistant`
+1. Verify network: `podman network inspect airflow_default`
+1. Test connectivity: Use curl commands above
+1. Review: `airflow/README.md` and `airflow/TOOLS-AVAILABLE.md`

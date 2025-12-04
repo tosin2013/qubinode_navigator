@@ -14,11 +14,11 @@ from .config_manager import ConfigManager
 from .base_plugin import QubiNodePlugin, PluginResult, SystemState, ExecutionContext
 
 __all__ = [
-    'PluginManager',
-    'EventSystem', 
-    'ConfigManager',
-    'QubiNodePlugin',
-    'PluginResult',
-    'SystemState',
-    'ExecutionContext'
+    "PluginManager",
+    "EventSystem",
+    "ConfigManager",
+    "QubiNodePlugin",
+    "PluginResult",
+    "SystemState",
+    "ExecutionContext",
 ]

@@ -1,28 +1,32 @@
 # ADR-0054: Unified Certificate Management
 
 ## Status
+
 Accepted
 
 ## Date
+
 2025-12-01
 
 ## Context
 
 Qubinode Navigator manages infrastructure across various environments:
+
 - **Disconnected/air-gapped** - No internet access, need internal PKI
 - **Hybrid** - Some services internal, some public-facing
 - **Cloud/public** - Services exposed to internet needing trusted certificates
 
 Different certificate authorities (CAs) serve different needs:
 
-| CA | Best For | Trust | Auto-Renewal |
-|----|----------|-------|--------------|
-| **FreeIPA CA** | Domain-joined hosts, Kerberos environments | Private (enterprise PKI) | Yes (certmonger) |
-| **Step-CA** | Internal services, disconnected environments | Private (must distribute root CA) | Yes (ACME) |
-| **Vault PKI** | Dynamic/short-lived certs, microservices | Private (must distribute root CA) | Yes (via operators) |
-| **Let's Encrypt** | Public-facing services | Public (trusted by browsers) | Yes (ACME/certbot) |
+| CA                | Best For                                     | Trust                             | Auto-Renewal        |
+| ----------------- | -------------------------------------------- | --------------------------------- | ------------------- |
+| **FreeIPA CA**    | Domain-joined hosts, Kerberos environments   | Private (enterprise PKI)          | Yes (certmonger)    |
+| **Step-CA**       | Internal services, disconnected environments | Private (must distribute root CA) | Yes (ACME)          |
+| **Vault PKI**     | Dynamic/short-lived certs, microservices     | Private (must distribute root CA) | Yes (via operators) |
+| **Let's Encrypt** | Public-facing services                       | Public (trusted by browsers)      | Yes (ACME/certbot)  |
 
 Currently, certificate management is fragmented:
+
 - Step-CA DAGs exist but require manual intervention
 - Vault SSH signing is available but not PKI
 - No Let's Encrypt integration
@@ -33,9 +37,9 @@ Currently, certificate management is fragmented:
 Implement a **unified certificate management system** that:
 
 1. **Single entry point** - One script/DAG to request certificates from any CA
-2. **Automatic CA selection** - Choose appropriate CA based on use case
-3. **Service-aware installation** - Automatically configure certificates for the target service
-4. **Automatic renewal** - Set up renewal before expiration
+1. **Automatic CA selection** - Choose appropriate CA based on use case
+1. **Service-aware installation** - Automatically configure certificates for the target service
+1. **Automatic renewal** - Set up renewal before expiration
 
 ### Architecture
 
@@ -145,14 +149,14 @@ qubinode-cert revoke <hostname>
 
 Each service has a handler that knows how to install certificates:
 
-| Service | Cert Location | Key Location | Reload Command |
-|---------|---------------|--------------|----------------|
-| nginx | /etc/nginx/ssl/cert.pem | /etc/nginx/ssl/key.pem | systemctl reload nginx |
-| haproxy | /etc/haproxy/certs/combined.pem | (combined) | systemctl reload haproxy |
-| httpd | /etc/pki/tls/certs/server.crt | /etc/pki/tls/private/server.key | systemctl reload httpd |
-| harbor | /data/cert/server.crt | /data/cert/server.key | docker-compose restart |
-| postgresql | /var/lib/pgsql/data/server.crt | /var/lib/pgsql/data/server.key | systemctl reload postgresql |
-| generic | /etc/qubinode/certs/<hostname>/ | (same dir) | (none) |
+| Service    | Cert Location                   | Key Location                    | Reload Command              |
+| ---------- | ------------------------------- | ------------------------------- | --------------------------- |
+| nginx      | /etc/nginx/ssl/cert.pem         | /etc/nginx/ssl/key.pem          | systemctl reload nginx      |
+| haproxy    | /etc/haproxy/certs/combined.pem | (combined)                      | systemctl reload haproxy    |
+| httpd      | /etc/pki/tls/certs/server.crt   | /etc/pki/tls/private/server.key | systemctl reload httpd      |
+| harbor     | /data/cert/server.crt           | /data/cert/server.key           | docker-compose restart      |
+| postgresql | /var/lib/pgsql/data/server.crt  | /var/lib/pgsql/data/server.key  | systemctl reload postgresql |
+| generic    | /etc/qubinode/certs/<hostname>/ | (same dir)                      | (none)                      |
 
 ### Automatic Renewal
 
@@ -169,6 +173,7 @@ WantedBy=timers.target
 ```
 
 Renewal triggers:
+
 - Let's Encrypt: 30 days before expiry
 - Step-CA: 7 days before expiry
 - Vault PKI: 1 day before expiry (short-lived by design)
@@ -176,6 +181,7 @@ Renewal triggers:
 ### Airflow DAG Integration
 
 **`certificate_provisioning` DAG** provides:
+
 - Bulk certificate requests for multiple hosts
 - Certificate inventory reporting
 - Expiry alerting
@@ -184,14 +190,15 @@ Renewal triggers:
 ### Implementation Components
 
 1. **`/usr/local/bin/qubinode-cert`** - Universal CLI script
-2. **`/opt/qubinode/cert-handlers/`** - Service-specific handlers
-3. **`/etc/qubinode/cert-config.yaml`** - CA configuration
-4. **Airflow DAG** - `certificate_provisioning.py`
-5. **Ansible role** - `qubinode.certificate` for fleet management
+1. **`/opt/qubinode/cert-handlers/`** - Service-specific handlers
+1. **`/etc/qubinode/cert-config.yaml`** - CA configuration
+1. **Airflow DAG** - `certificate_provisioning.py`
+1. **Ansible role** - `qubinode.certificate` for fleet management
 
 ## Configuration
 
 **`/etc/qubinode/cert-config.yaml`**:
+
 ```yaml
 # Certificate Authority Configuration
 ca:
@@ -239,6 +246,7 @@ services:
 ## Consequences
 
 ### Positive
+
 - **Unified interface** - One command for all certificate needs
 - **Flexibility** - Right CA for each use case
 - **Automation** - Auto-renewal prevents expiry outages
@@ -246,16 +254,19 @@ services:
 - **Auditable** - Central inventory of all certificates
 
 ### Negative
+
 - **Complexity** - Multiple CAs to maintain
 - **Dependencies** - Requires Step-CA VM, Vault, and/or internet access
 - **Learning curve** - Users need to understand when to use each CA
 
 ### Risks
+
 - **CA unavailability** - If all CAs are down, no new certificates
 - **Key security** - Private keys stored on filesystem
 - **Renewal failures** - Silent failures could cause outages
 
 ### Mitigations
+
 - CA health monitoring in Airflow
 - Expiry alerting (7 days warning)
 - Private keys with restricted permissions (0600)
@@ -264,27 +275,32 @@ services:
 ## Implementation Plan
 
 ### Phase 1: Universal CLI Script
+
 - [ ] Create `qubinode-cert` script
 - [ ] Implement Step-CA backend
 - [ ] Implement Let's Encrypt backend (certbot wrapper)
 - [ ] Create service handlers
 
 ### Phase 2: Vault PKI Integration
+
 - [ ] Add Vault PKI secrets engine setup to `setup-vault.sh`
 - [ ] Implement Vault PKI backend in `qubinode-cert`
 - [ ] Create Vault PKI Airflow operators
 
 ### Phase 3: Airflow Integration
+
 - [ ] Create `certificate_provisioning.py` DAG
 - [ ] Add certificate tasks to VM deployment DAGs
 - [ ] Create expiry monitoring DAG
 
 ### Phase 4: Ansible Role
+
 - [ ] Create `qubinode.certificate` role
 - [ ] Integrate with existing deployment playbooks
 - [ ] Add to FreeIPA/Harbor/OpenShift deployments
 
 ## Related ADRs
+
 - ADR-0039: FreeIPA and VyOS Airflow DAG Integration
 - ADR-0048: Step-CA Integration for Disconnected Deployments
 - ADR-0051: HashiCorp Vault Secrets Management
@@ -292,6 +308,7 @@ services:
 - ADR-0055: Zero-Friction Infrastructure Services
 
 ## References
+
 - [Step-CA Documentation](https://smallstep.com/docs/step-ca)
 - [Vault PKI Secrets Engine](https://developer.hashicorp.com/vault/docs/secrets/pki)
 - [Let's Encrypt Documentation](https://letsencrypt.org/docs/)

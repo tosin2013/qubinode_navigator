@@ -4,40 +4,40 @@
 
 This guide explains how to connect your LLM application to Qubinode Navigator's MCP servers for infrastructure automation.
 
----
+______________________________________________________________________
 
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Available MCP Servers](#available-mcp-servers)
-3. [Client Configuration](#client-configuration)
+1. [Available MCP Servers](#available-mcp-servers)
+1. [Client Configuration](#client-configuration)
    - [Claude Desktop](#claude-desktop)
    - [Claude Code (CLI)](#claude-code-cli)
    - [Cursor IDE](#cursor-ide)
    - [Continue.dev](#continuedev)
    - [Custom Python Client](#custom-python-client)
    - [Custom Node.js Client](#custom-nodejs-client)
-4. [Tool Reference](#tool-reference)
-5. [LLM Interaction Patterns](#llm-interaction-patterns)
-6. [Authentication](#authentication)
-7. [Troubleshooting](#troubleshooting)
+1. [Tool Reference](#tool-reference)
+1. [LLM Interaction Patterns](#llm-interaction-patterns)
+1. [Authentication](#authentication)
+1. [Troubleshooting](#troubleshooting)
 
----
+______________________________________________________________________
 
 ## Overview
 
 Qubinode Navigator exposes two MCP (Model Context Protocol) servers that enable LLMs to manage infrastructure:
 
-| Server | Port | Purpose | Tools |
-|--------|------|---------|-------|
-| **Airflow MCP** | 8889 | Workflow orchestration, VM management, RAG queries | 25 |
-| **AI Assistant MCP** | 8081 | Documentation search, AI chat | 4 |
+| Server               | Port | Purpose                                            | Tools |
+| -------------------- | ---- | -------------------------------------------------- | ----- |
+| **Airflow MCP**      | 8889 | Workflow orchestration, VM management, RAG queries | 25    |
+| **AI Assistant MCP** | 8081 | Documentation search, AI chat                      | 4     |
 
 **Protocol**: SSE (Server-Sent Events) over HTTP
 **Authentication**: API Key via `X-API-Key` header
 **Transport**: `mcp-remote` npm package or direct SSE client
 
----
+______________________________________________________________________
 
 ## Available MCP Servers
 
@@ -51,6 +51,7 @@ Health:   http://<YOUR_SERVER>:8889/health
 ```
 
 **Capabilities:**
+
 - DAG management (list, trigger, status)
 - VM lifecycle (create, delete, start, stop)
 - RAG knowledge base queries
@@ -67,11 +68,12 @@ Health:   http://<YOUR_SERVER>:8081/health
 ```
 
 **Capabilities:**
+
 - RAG document search
 - Context-aware AI chat
 - Project status
 
----
+______________________________________________________________________
 
 ## Client Configuration
 
@@ -114,7 +116,7 @@ Health:   http://<YOUR_SERVER>:8081/health
 
 **After saving:** Restart Claude Desktop completely.
 
----
+______________________________________________________________________
 
 ### Claude Code (CLI)
 
@@ -136,11 +138,12 @@ Add to your project's `.mcp.json` or `~/.claude/mcp_servers.json`:
 ```
 
 Or configure via CLI:
+
 ```bash
 claude mcp add qubinode-airflow --transport sse --url "http://YOUR_SERVER:8889/sse"
 ```
 
----
+______________________________________________________________________
 
 ### Cursor IDE
 
@@ -163,7 +166,7 @@ Add to Cursor's MCP settings (`~/.cursor/mcp.json`):
 }
 ```
 
----
+______________________________________________________________________
 
 ### Continue.dev
 
@@ -187,7 +190,7 @@ Add to `~/.continue/config.json`:
 }
 ```
 
----
+______________________________________________________________________
 
 ### Custom Python Client
 
@@ -226,11 +229,12 @@ if __name__ == "__main__":
 ```
 
 **Install dependencies:**
+
 ```bash
 pip install mcp httpx-sse
 ```
 
----
+______________________________________________________________________
 
 ### Custom Node.js Client
 
@@ -279,82 +283,84 @@ main().catch(console.error);
 ```
 
 **Install dependencies:**
+
 ```bash
 npm install @modelcontextprotocol/sdk
 ```
 
----
+______________________________________________________________________
 
 ## Tool Reference
 
 ### DAG Management (3 tools)
 
-| Tool | Description | Parameters |
-|------|-------------|------------|
-| `list_dags` | List all Airflow DAGs with schedules and metadata | None |
-| `get_dag_info` | Get detailed info about a specific DAG | `dag_id: string` |
-| `trigger_dag` | Execute a DAG with optional config | `dag_id: string`, `conf?: object` |
+| Tool           | Description                                       | Parameters                        |
+| -------------- | ------------------------------------------------- | --------------------------------- |
+| `list_dags`    | List all Airflow DAGs with schedules and metadata | None                              |
+| `get_dag_info` | Get detailed info about a specific DAG            | `dag_id: string`                  |
+| `trigger_dag`  | Execute a DAG with optional config                | `dag_id: string`, `conf?: object` |
 
 ### VM Operations (5 tools)
 
-| Tool | Description | Parameters |
-|------|-------------|------------|
-| `list_vms` | List all VMs managed by kcli/virsh | None |
-| `get_vm_info` | Get details about a specific VM | `vm_name: string` |
-| `create_vm` | Create a new VM | `name: string`, `image?: string`, `memory?: int`, `cpus?: int`, `disk_size?: int` |
-| `delete_vm` | Delete a VM | `name: string` |
+| Tool                    | Description                                                                                 | Parameters                                                                        |
+| ----------------------- | ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `list_vms`              | List all VMs managed by kcli/virsh                                                          | None                                                                              |
+| `get_vm_info`           | Get details about a specific VM                                                             | `vm_name: string`                                                                 |
+| `create_vm`             | Create a new VM                                                                             | `name: string`, `image?: string`, `memory?: int`, `cpus?: int`, `disk_size?: int` |
+| `delete_vm`             | Delete a VM                                                                                 | `name: string`                                                                    |
 | `preflight_vm_creation` | **CALL BEFORE create_vm** - Validates resources, checks image availability, ensures success | `name: string`, `image?: string`, `memory?: int`, `cpus?: int`, `disk_size?: int` |
 
 ### RAG Operations (6 tools)
 
-| Tool | Description | Parameters |
-|------|-------------|------------|
-| `query_rag` | Semantic search in knowledge base | `query: string`, `doc_types?: list`, `limit?: int`, `threshold?: float` |
-| `ingest_to_rag` | Add documents to RAG | `content: string`, `doc_type: string`, `source?: string`, `metadata?: object` |
-| `manage_rag_documents` | Manage document ingestion | `operation: string`, `params?: object` |
-| `get_rag_stats` | Get RAG statistics | None |
-| `compute_confidence_score` | Assess task confidence | `task_description: string`, `doc_types?: list` |
-| `check_provider_exists` | Check for Airflow provider | `system_name: string` |
+| Tool                       | Description                       | Parameters                                                                    |
+| -------------------------- | --------------------------------- | ----------------------------------------------------------------------------- |
+| `query_rag`                | Semantic search in knowledge base | `query: string`, `doc_types?: list`, `limit?: int`, `threshold?: float`       |
+| `ingest_to_rag`            | Add documents to RAG              | `content: string`, `doc_type: string`, `source?: string`, `metadata?: object` |
+| `manage_rag_documents`     | Manage document ingestion         | `operation: string`, `params?: object`                                        |
+| `get_rag_stats`            | Get RAG statistics                | None                                                                          |
+| `compute_confidence_score` | Assess task confidence            | `task_description: string`, `doc_types?: list`                                |
+| `check_provider_exists`    | Check for Airflow provider        | `system_name: string`                                                         |
 
 ### Troubleshooting (2 tools)
 
-| Tool | Description | Parameters |
-|------|-------------|------------|
-| `get_troubleshooting_history` | Retrieve past solutions | `error_pattern?: string`, `component?: string`, `only_successful?: bool`, `limit?: int` |
+| Tool                          | Description                   | Parameters                                                                                           |
+| ----------------------------- | ----------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `get_troubleshooting_history` | Retrieve past solutions       | `error_pattern?: string`, `component?: string`, `only_successful?: bool`, `limit?: int`              |
 | `log_troubleshooting_attempt` | Log a troubleshooting attempt | `task: string`, `solution: string`, `result: string`, `error_message?: string`, `component?: string` |
 
 ### Lineage (4 tools)
 
-| Tool | Description | Parameters |
-|------|-------------|------------|
-| `get_dag_lineage` | Get DAG dependencies | `dag_id: string`, `depth?: int` |
-| `get_failure_blast_radius` | Analyze failure impact | `dag_id: string`, `task_id?: string` |
-| `get_dataset_lineage` | Get dataset producers/consumers | `dataset_name: string` |
-| `get_lineage_stats` | Get lineage system stats | None |
+| Tool                       | Description                     | Parameters                           |
+| -------------------------- | ------------------------------- | ------------------------------------ |
+| `get_dag_lineage`          | Get DAG dependencies            | `dag_id: string`, `depth?: int`      |
+| `get_failure_blast_radius` | Analyze failure impact          | `dag_id: string`, `task_id?: string` |
+| `get_dataset_lineage`      | Get dataset producers/consumers | `dataset_name: string`               |
+| `get_lineage_stats`        | Get lineage system stats        | None                                 |
 
 ### System (2 tools)
 
-| Tool | Description | Parameters |
-|------|-------------|------------|
-| `get_airflow_status` | Get Airflow health status | None |
-| `get_system_info` | Get comprehensive system info | None |
+| Tool                 | Description                   | Parameters |
+| -------------------- | ----------------------------- | ---------- |
+| `get_airflow_status` | Get Airflow health status     | None       |
+| `get_system_info`    | Get comprehensive system info | None       |
 
 ### Workflow Orchestration (2 tools) - NEW
 
 These tools dramatically improve multi-step operation success rates by providing structured guidance.
 
-| Tool | Description | Parameters |
-|------|-------------|------------|
-| `get_workflow_guide` | **CALL FIRST for multi-step tasks** - Returns step-by-step execution plan with tool sequence | `workflow_type?: string`, `goal_description?: string` |
-| `diagnose_issue` | Structured troubleshooting with component-specific diagnostic checks | `symptom: string`, `component?: string`, `error_message?: string`, `affected_resource?: string` |
+| Tool                 | Description                                                                                  | Parameters                                                                                      |
+| -------------------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `get_workflow_guide` | **CALL FIRST for multi-step tasks** - Returns step-by-step execution plan with tool sequence | `workflow_type?: string`, `goal_description?: string`                                           |
+| `diagnose_issue`     | Structured troubleshooting with component-specific diagnostic checks                         | `symptom: string`, `component?: string`, `error_message?: string`, `affected_resource?: string` |
 
 **Available workflow types:**
+
 - `create_openshift_cluster` - Full OpenShift deployment (45-90 min)
 - `setup_freeipa` - FreeIPA identity management (20-30 min)
 - `deploy_vm_basic` - Simple VM creation with validation (5-10 min)
 - `troubleshoot_vm` - Systematic VM troubleshooting (10-20 min)
 
----
+______________________________________________________________________
 
 ## LLM Interaction Patterns
 
@@ -477,7 +483,7 @@ Before retrying failed tasks:
    → Builds knowledge base for future issues
 ```
 
----
+______________________________________________________________________
 
 ## Authentication
 
@@ -504,17 +510,18 @@ export MCP_API_KEY="your-generated-key"
 ### Key Storage
 
 Keys are stored in:
+
 - `/root/qubinode_navigator/airflow/.env.mcp`
 - Environment variables in docker-compose.yml
 
 ### Security Best Practices
 
 1. **Never commit keys to git** - Use `.env` files or secrets management
-2. **Rotate keys regularly** - Regenerate every 90 days
-3. **Use read-only mode in production** - Set `AIRFLOW_MCP_TOOLS_READ_ONLY=true`
-4. **Restrict network access** - Only expose MCP ports to trusted networks
+1. **Rotate keys regularly** - Regenerate every 90 days
+1. **Use read-only mode in production** - Set `AIRFLOW_MCP_TOOLS_READ_ONLY=true`
+1. **Restrict network access** - Only expose MCP ports to trusted networks
 
----
+______________________________________________________________________
 
 ## Troubleshooting
 
@@ -534,9 +541,9 @@ curl -H "X-API-Key: YOUR_KEY" http://YOUR_SERVER:8889/sse
 ### Tools Not Appearing
 
 1. Verify server is running: `podman ps | grep mcp`
-2. Check logs: `podman logs airflow_airflow-mcp-server_1`
-3. Restart client completely (Claude Desktop, Cursor, etc.)
-4. Verify API key is correct
+1. Check logs: `podman logs airflow_airflow-mcp-server_1`
+1. Restart client completely (Claude Desktop, Cursor, etc.)
+1. Verify API key is correct
 
 ### Permission Errors
 
@@ -555,18 +562,18 @@ export AIRFLOW_MCP_TOOLS_READ_ONLY=false
 If connections drop frequently:
 
 1. Check server logs for errors
-2. Increase timeout in client config
-3. Verify network stability between client and server
+1. Increase timeout in client config
+1. Verify network stability between client and server
 
----
+______________________________________________________________________
 
 ## Quick Reference
 
 ### Endpoints
 
-| Service | SSE Endpoint | Health Check |
-|---------|--------------|--------------|
-| Airflow MCP | `http://SERVER:8889/sse` | `http://SERVER:8889/health` |
+| Service          | SSE Endpoint             | Health Check                |
+| ---------------- | ------------------------ | --------------------------- |
+| Airflow MCP      | `http://SERVER:8889/sse` | `http://SERVER:8889/health` |
 | AI Assistant MCP | `http://SERVER:8081/sse` | `http://SERVER:8081/health` |
 
 ### Environment Variables
@@ -596,7 +603,7 @@ After configuring your client, try these prompts:
 5. "Create a test VM with 2 CPUs and 4GB RAM"
 ```
 
----
+______________________________________________________________________
 
 ## Support
 
@@ -605,6 +612,6 @@ After configuring your client, try these prompts:
 - **Issues**: [GitHub Issues](https://github.com/Qubinode/qubinode_navigator/issues)
 - **ADR Reference**: `docs/adrs/adr-0038-fastmcp-framework-migration.md`
 
----
+______________________________________________________________________
 
 *Last Updated: December 2025*

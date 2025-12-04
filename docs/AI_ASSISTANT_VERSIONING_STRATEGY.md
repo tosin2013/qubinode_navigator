@@ -1,6 +1,6 @@
----
-nav_exclude: true
----
+______________________________________________________________________
+
+## nav_exclude: true
 
 # AI Assistant Container Versioning Strategy
 
@@ -17,6 +17,7 @@ MAJOR.MINOR.PATCH[-PRERELEASE][+BUILD]
 ```
 
 **Examples:**
+
 - `1.0.0` - Stable release
 - `1.0.0-alpha.1` - Prerelease version
 - `1.0.0+build.20241111` - Version with build metadata
@@ -55,16 +56,16 @@ The `ai-assistant/scripts/version-manager.sh` script provides comprehensive vers
 
 ### Available Commands
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `current` | Show current version | `./version-manager.sh current` |
-| `increment <type>` | Increment version | `./version-manager.sh increment patch` |
-| `set <version>` | Set specific version | `./version-manager.sh set 1.2.0` |
-| `validate <version>` | Validate version format | `./version-manager.sh validate 1.0.0-alpha.1` |
-| `tags [registry] [image]` | Generate container tags | `./version-manager.sh tags quay.io/takinosh` |
-| `build-metadata` | Generate version with build info | `./version-manager.sh build-metadata` |
-| `changelog <changes>` | Create changelog entry | `./version-manager.sh changelog "Bug fixes"` |
-| `release <type> [changes]` | Full release workflow | `./version-manager.sh release minor` |
+| Command                    | Description                      | Example                                       |
+| -------------------------- | -------------------------------- | --------------------------------------------- |
+| `current`                  | Show current version             | `./version-manager.sh current`                |
+| `increment <type>`         | Increment version                | `./version-manager.sh increment patch`        |
+| `set <version>`            | Set specific version             | `./version-manager.sh set 1.2.0`              |
+| `validate <version>`       | Validate version format          | `./version-manager.sh validate 1.0.0-alpha.1` |
+| `tags [registry] [image]`  | Generate container tags          | `./version-manager.sh tags quay.io/takinosh`  |
+| `build-metadata`           | Generate version with build info | `./version-manager.sh build-metadata`         |
+| `changelog <changes>`      | Create changelog entry           | `./version-manager.sh changelog "Bug fixes"`  |
+| `release <type> [changes]` | Full release workflow            | `./version-manager.sh release minor`          |
 
 ## Container Tagging Strategy
 
@@ -112,22 +113,24 @@ ai_assistant:
 
 ### Version Strategies
 
-| Strategy | Description | Use Case |
-|----------|-------------|----------|
-| `auto` | Prefer stable, fallback to latest | **Recommended** - Automatic selection |
-| `latest` | Always use latest tag | Development/testing |
-| `specific` | Use configured version | Production pinning |
-| `semver` | Use latest stable from VERSION file | Controlled releases |
+| Strategy   | Description                         | Use Case                              |
+| ---------- | ----------------------------------- | ------------------------------------- |
+| `auto`     | Prefer stable, fallback to latest   | **Recommended** - Automatic selection |
+| `latest`   | Always use latest tag               | Development/testing                   |
+| `specific` | Use configured version              | Production pinning                    |
+| `semver`   | Use latest stable from VERSION file | Controlled releases                   |
 
 ### Configuration Examples
 
 **Auto Strategy (Recommended)**:
+
 ```yaml
 ai_assistant:
   version_strategy: "auto"  # Intelligent version selection
 ```
 
 **Specific Version**:
+
 ```yaml
 ai_assistant:
   container_version: "1.2.0"
@@ -135,6 +138,7 @@ ai_assistant:
 ```
 
 **Latest Stable**:
+
 ```yaml
 ai_assistant:
   version_strategy: "semver"  # Read from VERSION file
@@ -169,10 +173,10 @@ VERSION_MANAGER=ai-assistant/scripts/version-manager.sh
 The GitHub Actions workflow automatically:
 
 1. **Reads Version**: From `ai-assistant/VERSION` file
-2. **Generates Tags**: Using version manager
-3. **Builds Container**: With semantic tags
-4. **Adds Labels**: OCI-compliant metadata
-5. **Pushes Images**: To Quay.io registry
+1. **Generates Tags**: Using version manager
+1. **Builds Container**: With semantic tags
+1. **Adds Labels**: OCI-compliant metadata
+1. **Pushes Images**: To Quay.io registry
 
 ### Workflow Steps
 
@@ -242,6 +246,7 @@ git push origin main --tags
 ### 4. Deployment
 
 The CI/CD pipeline automatically:
+
 - Builds container with semantic tags
 - Pushes to Quay.io registry
 - Updates deployment configurations
@@ -293,8 +298,8 @@ Automatically maintained changelog:
 ### Testing Strategy
 
 1. **Development**: Use local builds with current version
-2. **Staging**: Use specific version tags
-3. **Production**: Use stable semantic versions
+1. **Staging**: Use specific version tags
+1. **Production**: Use stable semantic versions
 
 ### Rollback Strategy
 
@@ -311,18 +316,21 @@ kubectl set image deployment/ai-assistant container=quay.io/takinosh/qubinode-ai
 ### Common Issues
 
 **Version File Not Found**:
+
 ```bash
 # Create VERSION file
 echo "1.0.0" > ai-assistant/VERSION
 ```
 
 **Invalid Version Format**:
+
 ```bash
 # Validate version
 ./scripts/version-manager.sh validate 1.2.0-alpha.1
 ```
 
 **Tag Generation Issues**:
+
 ```bash
 # Debug tag generation
 ./scripts/version-manager.sh tags localhost qubinode-ai-assistant
@@ -349,12 +357,14 @@ print(f'Image: {plugin.container_image}')
 ### From Hardcoded Versions
 
 **Before**:
+
 ```yaml
 ai_assistant:
   container_image: "quay.io/takinosh/qubinode-ai-assistant:latest"
 ```
 
 **After**:
+
 ```yaml
 ai_assistant:
   version_strategy: "auto"  # Intelligent version selection
@@ -389,17 +399,17 @@ ai_assistant:
 ### Planned Features
 
 1. **Multi-Architecture Support**: ARM64 and AMD64 builds
-2. **Registry Mirroring**: Support for multiple registries
-3. **Automated Testing**: Version-specific test suites
-4. **Release Notes**: Automated release note generation
-5. **Dependency Tracking**: Track AI model and dependency versions
+1. **Registry Mirroring**: Support for multiple registries
+1. **Automated Testing**: Version-specific test suites
+1. **Release Notes**: Automated release note generation
+1. **Dependency Tracking**: Track AI model and dependency versions
 
 ### Integration Roadmap
 
 1. **Kubernetes Operators**: Version-aware deployment operators
-2. **Helm Charts**: Semantic versioning for Helm releases
-3. **ArgoCD Integration**: GitOps-driven version management
-4. **Monitoring**: Version-aware monitoring and alerting
+1. **Helm Charts**: Semantic versioning for Helm releases
+1. **ArgoCD Integration**: GitOps-driven version management
+1. **Monitoring**: Version-aware monitoring and alerting
 
 ## Related Documentation
 

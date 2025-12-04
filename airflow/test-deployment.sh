@@ -17,7 +17,7 @@ TESTS_FAILED=0
 run_test() {
     local test_name="$1"
     local test_command="$2"
-    
+
     echo "📋 Test: $test_name"
     if eval "$test_command" > /dev/null 2>&1; then
         echo "   ✅ PASS"
@@ -33,7 +33,7 @@ run_test() {
 run_test_with_output() {
     local test_name="$1"
     local test_command="$2"
-    
+
     echo "📋 Test: $test_name"
     if output=$(eval "$test_command" 2>&1); then
         echo "   ✅ PASS"
@@ -146,9 +146,9 @@ echo "📋 Test: Create VM using kcli"
 if podman exec airflow_airflow-scheduler_1 kcli create vm "$VM_TEST_NAME" -i centos10stream -P memory=1024 -P numcpus=1 -P disks=[5] 2>&1 | grep -q "created on local"; then
     echo "   ✅ PASS - VM created"
     ((TESTS_PASSED++))
-    
+
     sleep 5
-    
+
     echo ""
     echo "📋 Test: Verify VM exists in virsh"
     if podman exec airflow_airflow-scheduler_1 virsh -c qemu:///system dominfo "$VM_TEST_NAME" > /dev/null 2>&1; then
@@ -158,7 +158,7 @@ if podman exec airflow_airflow-scheduler_1 kcli create vm "$VM_TEST_NAME" -i cen
         echo "   ❌ FAIL - VM not in virsh"
         ((TESTS_FAILED++))
     fi
-    
+
     echo ""
     echo "📋 Test: Verify VM exists in kcli list"
     if kcli list vms 2>/dev/null | grep -q "$VM_TEST_NAME"; then
@@ -168,7 +168,7 @@ if podman exec airflow_airflow-scheduler_1 kcli create vm "$VM_TEST_NAME" -i cen
         echo "   ❌ FAIL - VM not in kcli list"
         ((TESTS_FAILED++))
     fi
-    
+
     echo ""
     echo "📋 Test: Delete VM"
     if kcli delete vm "$VM_TEST_NAME" -y 2>&1 | grep -q "deleted"; then
@@ -178,7 +178,7 @@ if podman exec airflow_airflow-scheduler_1 kcli create vm "$VM_TEST_NAME" -i cen
         echo "   ❌ FAIL - VM deletion failed"
         ((TESTS_FAILED++))
     fi
-    
+
     echo ""
     echo "📋 Test: Verify VM removed"
     sleep 2

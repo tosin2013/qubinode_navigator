@@ -1,10 +1,6 @@
----
-layout: default
-title: Documentation & User Experience
-parent: Architectural Decision Records
-nav_order: 5
-has_children: true
----
+______________________________________________________________________
+
+## layout: default title: Documentation & User Experience parent: Architectural Decision Records nav_order: 5 has_children: true
 
 # Documentation & User Experience ADRs
 

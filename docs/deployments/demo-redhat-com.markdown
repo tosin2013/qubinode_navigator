@@ -1,21 +1,19 @@
----
-layout: default
-title:   "Deploying on Red Hat Product Demo System"
-parent: Deployment Documentation
-nav_order: 2
----
+______________________________________________________________________
+
+## layout: default title:   "Deploying on Red Hat Product Demo System" parent: Deployment Documentation nav_order: 2
 
 Deploy to [Red Hat Product Demo System](https://connect.redhat.com/en/training/product-demo-system) using the following steps.
 
 > **Documentation status**
+>
 > - Validation: `IN PROGRESS` – Steps have been used in prior demo environments but may lag behind current platform changes.
 > - Last reviewed: 2025-11-21
 > - Community: If you run this successfully or need fixes, please contribute improvements via [Contributing to docs](../how-to/contribute.md).
 
 **SSH into Equinix Metal baremetal**
 
-**create /tmp/config.yml as lab-user**   
-`you can uae ansiblesafe to generate the content of this file` - [link](https://github.com/tosin2013/ansiblesafe)   
+**create /tmp/config.yml as lab-user**
+`you can uae ansiblesafe to generate the content of this file` - [link](https://github.com/tosin2013/ansiblesafe)
 [Ansible Vault Secrets Documentation](https://dev.to/tosin2013/ansible-vault-secrets-documentation-3g1a)
 
 ```bash
@@ -36,6 +34,7 @@ aws_secret_key: secretkey # optional used for aws credentials and route53
 ```
 
 **Add the following to .bashrc as lab-user when using /tmp/config.yml file**
+
 ```bash
 $ SSH_PASSWORD=DontForgetToChangeMe # Use the password of the lab-user
 $ cat >notouch.env<<EOF
@@ -60,9 +59,10 @@ $ vi notouch.env
 
 **Recommned option: Setting Up Variables in HashiCorp Cloud Platform (HCP) Vault Secrets**
 [Setting Up Variables in HashiCorp Cloud Platform (HCP) Vault Secrets](https://github.com/tosin2013/ansiblesafe/blob/main/docs/hashicorp_cloud_secret_setup.md)
+
 ```bash
 $ SSH_PASSWORD=DontForgetToChangeMe # Use the password of the lab-user
-$ DOMAIN=sandbox000.opentlc.com 
+$ DOMAIN=sandbox000.opentlc.com
 $ EMAIL=user@example.com # used for letsencrypt
 $ GUID=your-guid
 $ cat >notouch.env<<EOF
@@ -94,21 +94,24 @@ EOF
 $ vi notouch.env
 ```
 
-**Run the following commands as lab-user**  
+**Run the following commands as lab-user**
+
 ```bash
-sudo dnf install -y tmux curl git vim 
-curl -OL https://raw.githubusercontent.com/Qubinode/qubinode_navigator/main/rhel9-linux-hypervisor.sh 
+sudo dnf install -y tmux curl git vim
+curl -OL https://raw.githubusercontent.com/Qubinode/qubinode_navigator/main/rhel9-linux-hypervisor.sh
 chmod +x rhel9-linux-hypervisor.sh
-tmux new-session -s rhel9-linux-hypervisor 
+tmux new-session -s rhel9-linux-hypervisor
 source notouch.env && sudo -E  ./rhel9-linux-hypervisor.sh
 ```
 
 *The install will fail on the first time to re-run un the following below*
+
 ```
 source notouch.env && sudo -E  ./rhel9-linux-hypervisor.sh
 ```
 
 **ssh into vm and run the following**
+
 ```
 $ sudo kcli download image rhel8
 $ sudo kcli download image rhel9
@@ -119,24 +122,26 @@ When the prompt below comes up follow the link and look for the corresponding rh
 right click on the link and copy the link address
 ![20230607131930](https://i.imgur.com/83Gar1k.png)
 
-Once deployment is complete you can run [kcli](https://kcli.readthedocs.io/en/latest/) commands or go to [kcli-pipelines](https://github.com/tosin2013/kcli-pipelines) repo to run vms. 
+Once deployment is complete you can run [kcli](https://kcli.readthedocs.io/en/latest/) commands or go to [kcli-pipelines](https://github.com/tosin2013/kcli-pipelines) repo to run vms.
+
 ```
 $ kcli --help
 ```
 
-## To Access the Baremetal Node 
-**Option 1: Access the VM via the console**  
+## To Access the Baremetal Node
+
+**Option 1: Access the VM via the console**
 Login to the VM using ssh or cockpit console. The endpoint will be `https://SERVER_ADDRESS:9090` and the username and password are the same as the lab-user password you set in the config.yml file.
 ![20240531095517](https://i.imgur.com/Z9WimBp.png)
 
-**Option 2: RDP into Server on  Red Hat Product Demo System**  
-Login via RDP using the remote user and password you set in the config.yml file.  
+**Option 2: RDP into Server on  Red Hat Product Demo System**
+Login via RDP using the remote user and password you set in the config.yml file.
 
 ![20230610101107](https://i.imgur.com/DjPE6NR.png)
 
 `You can also use Remmina to login to the VM`
 
-## Post Steps 
+## Post Steps
 
 After the Red Hat Product Demo System deployment is complete, you can use **Apache Airflow** and the AI Assistant to orchestrate and monitor end-to-end workflows instead of relying on OneDev-based pipelines.
 

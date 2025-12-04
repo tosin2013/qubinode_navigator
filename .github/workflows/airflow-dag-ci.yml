@@ -28,33 +28,33 @@ jobs:
   validate-dags:
     name: Validate Airflow DAGs
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-        
+
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
-      
+
       - name: Install Airflow and dependencies
         run: |
           python -m pip install --upgrade pip
           pip install "apache-airflow[postgres,celery]==${{ env.AIRFLOW_VERSION }}"
           pip install pytest pytest-asyncio
-          
+
           # Install project dependencies
           if [ -f requirements.txt ]; then
             pip install -r requirements.txt
           fi
-      
+
       - name: Initialize Airflow Database
         run: |
           export AIRFLOW_HOME=${{ env.AIRFLOW_HOME }}
           airflow db init
-      
+
       - name: Install PyYAML for Registry Validation
         run: |
           pip install pyyaml
@@ -168,12 +168,12 @@ jobs:
               echo "✅ $(basename $dag) syntax valid"
             fi
           done
-      
+
       - name: Test DAG Imports
         run: |
           export AIRFLOW_HOME=${{ env.AIRFLOW_HOME }}
           export PYTHONPATH="${PYTHONPATH}:${PWD}/airflow/dags:${PWD}/airflow/plugins"
-          
+
           echo "Testing DAG imports..."
           for dag in airflow/dags/*.py; do
             if [[ "$dag" != *"__init__.py"* && "$dag" != *"dag_logging_mixin.py"* ]]; then
@@ -182,32 +182,32 @@ jobs:
               python -c "import $dag_name; print('✅ $dag_name imported successfully')"
             fi
           done
-      
+
       - name: Validate DAG Definitions
         run: |
           export AIRFLOW_HOME=${{ env.AIRFLOW_HOME }}
           export PYTHONPATH="${PYTHONPATH}:${PWD}"
-          
+
           # Copy DAGs to Airflow DAGs folder
           mkdir -p ${{ env.AIRFLOW_HOME }}/dags
           cp -r airflow/dags/* ${{ env.AIRFLOW_HOME }}/dags/ || true
-          
+
           # List and validate DAGs
           echo "Listing DAGs..."
           airflow dags list || echo "⚠️  No DAGs found or error listing"
-          
+
           # Test DAG loading
           python << 'PYTHON_SCRIPT'
           import sys
           from pathlib import Path
           sys.path.insert(0, 'airflow/dags')
           sys.path.insert(0, 'airflow/plugins')
-          
+
           dag_files = list(Path('airflow/dags').glob('*.py'))
           dag_files = [f for f in dag_files if not f.name.startswith('__') and f.name != 'dag_logging_mixin.py']
-          
+
           print(f"Found {len(dag_files)} DAG files to validate")
-          
+
           for dag_file in dag_files:
               try:
                   with open(dag_file) as f:
@@ -225,46 +225,46 @@ jobs:
     name: Test RAG Document Ingestion DAG
     runs-on: ubuntu-latest
     needs: validate-dags
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-      
+
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install "apache-airflow[postgres]==${{ env.AIRFLOW_VERSION }}"
           pip install pytest langchain chromadb
-      
+
       - name: Initialize Airflow
         run: |
           export AIRFLOW_HOME=${{ env.AIRFLOW_HOME }}
           airflow db init
-      
+
       - name: Validate RAG Ingestion DAG
         run: |
           export AIRFLOW_HOME=${{ env.AIRFLOW_HOME }}
           export PYTHONPATH="${PYTHONPATH}:${PWD}/airflow/dags:${PWD}/airflow/plugins"
-          
+
           if [ -f "airflow/dags/rag_document_ingestion.py" ]; then
             echo "Testing RAG document ingestion DAG..."
             python -c "import rag_document_ingestion; print('✅ RAG ingestion DAG imported')"
-            
+
             # Check for required components
             python << 'PYTHON_SCRIPT'
           import rag_document_ingestion
-          
+
           # Verify DAG exists
           if hasattr(rag_document_ingestion, 'dag'):
               print("✅ DAG object found")
           else:
               print("⚠️  No DAG object found in rag_document_ingestion.py")
-          
+
           # Check for task definitions
           content = open('airflow/dags/rag_document_ingestion.py').read()
           if 'PythonOperator' in content or 'BashOperator' in content or '@task' in content:
@@ -275,21 +275,21 @@ jobs:
           else
             echo "⚠️  rag_document_ingestion.py not found"
           fi
-      
+
       - name: Test DAG Structure
         run: |
           export AIRFLOW_HOME=${{ env.AIRFLOW_HOME }}
           export PYTHONPATH="${PYTHONPATH}:${PWD}/airflow/dags"
-          
+
           # Copy DAG to Airflow home
           mkdir -p ${{ env.AIRFLOW_HOME }}/dags
           cp airflow/dags/rag_document_ingestion.py ${{ env.AIRFLOW_HOME }}/dags/ || true
-          
+
           # Test DAG structure (don't run, just validate)
           python << 'PYTHON_SCRIPT'
           import sys
           from pathlib import Path
-          
+
           try:
               import rag_document_ingestion
               print("✅ RAG ingestion DAG structure valid")
@@ -303,29 +303,29 @@ jobs:
   test-airflow-plugins:
     name: Test Airflow Plugins
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-      
+
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install "apache-airflow[postgres]==${{ env.AIRFLOW_VERSION }}"
           pip install fastmcp httpx pytest
-      
+
       - name: Test MCP Plugin in Airflow
         run: |
           export PYTHONPATH="${PYTHONPATH}:${PWD}/airflow/plugins"
-          
+
           if [ -d "airflow/plugins/qubinode" ]; then
             echo "Testing Airflow MCP plugin..."
-            
+
             # Test plugin imports
             python -c "import sys; sys.path.insert(0, 'airflow/plugins'); \
               from qubinode import mcp_server_fastmcp; \
@@ -334,13 +334,13 @@ jobs:
           else
             echo "⚠️  No qubinode plugins directory found"
           fi
-      
+
       - name: Validate Plugin Structure
         run: |
           if [ -d "airflow/plugins/qubinode" ]; then
             echo "Airflow plugins found:"
             find airflow/plugins/qubinode -name "*.py" -type f
-            
+
             # Check for __init__.py
             if [ -f "airflow/plugins/qubinode/__init__.py" ]; then
               echo "✅ Plugin package structure valid"
@@ -354,27 +354,27 @@ jobs:
     runs-on: ubuntu-latest
     needs: [validate-dags, test-rag-ingestion-dag, test-airflow-plugins]
     if: always()
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-      
+
       - name: Generate Report
         run: |
           echo "## Airflow DAG Validation Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### DAG Files" >> $GITHUB_STEP_SUMMARY
-          
+
           dag_count=$(find airflow/dags -name "*.py" -type f ! -name "__init__.py" ! -name "dag_logging_mixin.py" | wc -l)
           echo "- Total DAG files: $dag_count" >> $GITHUB_STEP_SUMMARY
-          
+
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Validation Status" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ DAG syntax validation complete" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ DAG imports tested" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ RAG ingestion DAG validated" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Airflow plugins tested" >> $GITHUB_STEP_SUMMARY
-          
+
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### DAG List" >> $GITHUB_STEP_SUMMARY
           for dag in airflow/dags/*.py; do

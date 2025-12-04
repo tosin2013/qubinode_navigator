@@ -1,9 +1,11 @@
 # ADR-0046: DAG Validation Pipeline and Host-Based Execution Strategy
 
 ## Status
+
 Proposed
 
 ## Date
+
 2025-11-27
 
 ## Context and Problem Statement
@@ -11,14 +13,18 @@ Proposed
 During FreeIPA DAG development, we encountered two significant issues:
 
 ### Issue 1: Ansible Version Mismatch
+
 The Airflow container may have a different Ansible version than the host system. This causes:
+
 - Playbook compatibility issues
 - Missing collections/modules
 - Different behavior between container and host execution
 - Maintenance burden of keeping container Ansible in sync with host
 
 ### Issue 2: No DAG Validation Before Deployment
+
 Users can deploy DAGs with:
+
 - Syntax errors (Python)
 - Bash command issues (Unicode, quoting, PATH)
 - Missing dependencies
@@ -28,11 +34,11 @@ These errors are only discovered at runtime, causing failed DAG runs.
 
 ## Decision Drivers
 
-* Ansible playbooks should run with the host's Ansible installation
-* DAGs should be validated before deployment
-* Validation should be automated and easy to use
-* Errors should be caught early in the development cycle
-* Solution should work in CI/CD pipelines
+- Ansible playbooks should run with the host's Ansible installation
+- DAGs should be validated before deployment
+- Validation should be automated and easy to use
+- Errors should be caught early in the development cycle
+- Solution should work in CI/CD pipelines
 
 ## Decision Outcome
 
@@ -60,12 +66,14 @@ ssh -o StrictHostKeyChecking=no root@localhost \
 ```
 
 **Benefits:**
+
 - Uses host's Ansible version and collections
 - No need to maintain Ansible in container
 - Consistent with manual execution
 - Access to host's SSH keys and credentials
 
 **Requirements:**
+
 - SSH key from container to host (passwordless)
 - Host SSH server running on localhost
 - Container must have SSH client installed
@@ -206,17 +214,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      
+
       - name: Install dependencies
         run: |
           pip install apache-airflow==2.10.4
           pip install kcli
-      
+
       - name: Validate DAGs
         run: |
           for dag in airflow/dags/*.py; do
@@ -225,27 +233,30 @@ jobs:
           done
 ```
 
----
+______________________________________________________________________
 
 ## Implementation Plan
 
 ### Phase 1: SSH-Based Execution (Immediate)
+
 1. Add SSH client to Airflow container Dockerfile
-2. Configure SSH key sharing between container and host
-3. Update DAGs to use SSH for Ansible execution
-4. Document the SSH execution pattern
+1. Configure SSH key sharing between container and host
+1. Update DAGs to use SSH for Ansible execution
+1. Document the SSH execution pattern
 
 ### Phase 2: Validation Script (Short-term)
+
 1. Create `airflow/scripts/validate-dag.sh`
-2. Add to repository with executable permissions
-3. Document usage in ADR-0045
+1. Add to repository with executable permissions
+1. Document usage in ADR-0045
 
 ### Phase 3: CI/CD Integration (Medium-term)
-1. Add pre-commit hook configuration
-2. Create GitHub Actions workflow
-3. Add validation to PR template checklist
 
----
+1. Add pre-commit hook configuration
+1. Create GitHub Actions workflow
+1. Add validation to PR template checklist
+
+______________________________________________________________________
 
 ## SSH Execution Pattern
 
@@ -276,11 +287,11 @@ run_ansible = BashOperator(
     task_id='run_ansible_on_host',
     bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
-    
+
     # Variables
     INVENTORY_DIR="/root/.generated/.idm.example.com"
     PLAYBOOK_DIR="/opt/freeipa-workshop-deployer"
-    
+
     # Execute Ansible on host via SSH
     ssh -o StrictHostKeyChecking=no \
         -o UserKnownHostsFile=/dev/null \
@@ -296,7 +307,7 @@ run_ansible = BashOperator(
 )
 ```
 
----
+______________________________________________________________________
 
 ## Validation Checklist
 
@@ -310,11 +321,12 @@ run_ansible = BashOperator(
 - [ ] SSH execution pattern used for Ansible playbooks
 - [ ] Tested locally with `airflow dags test`
 
----
+______________________________________________________________________
 
 ## Consequences
 
 ### Positive
+
 - Ansible version consistency with host
 - Early error detection before deployment
 - Automated validation in CI/CD
@@ -322,11 +334,13 @@ run_ansible = BashOperator(
 - Better developer experience
 
 ### Negative
+
 - SSH setup required between container and host
 - Additional validation step in development workflow
 - Slightly more complex DAG patterns for Ansible
 
 ### Risks
+
 - SSH key security must be managed carefully
 - Host must have SSH server running
 - Network policies may block localhost SSH
@@ -352,9 +366,9 @@ fi
 
 This ensures the Airflow container can SSH to the host for Ansible execution without manual intervention.
 
----
+______________________________________________________________________
 
----
+______________________________________________________________________
 
 ## Solution 3: DAG Factory Pattern for Consistent Deployments
 
@@ -366,16 +380,16 @@ This ensures the Airflow container can SSH to the host for Ansible execution wit
 Even with validation and SSH execution patterns established, contributors still face challenges:
 
 1. **Boilerplate duplication** - Each DAG repeats 50-100 lines of standard configuration
-2. **Inconsistent implementations** - Standards from ADR-0045 require manual compliance
-3. **High barrier to entry** - Contributors must understand Airflow Python API
-4. **Configuration drift** - DAGs diverge over time as patterns evolve
+1. **Inconsistent implementations** - Standards from ADR-0045 require manual compliance
+1. **High barrier to entry** - Contributors must understand Airflow Python API
+1. **Configuration drift** - DAGs diverge over time as patterns evolve
 
 ### Decision
 
 Implement a **hybrid DAG Factory Pattern** that provides:
 
 1. **YAML Registry** - Simple deployments defined in configuration (80% of DAGs)
-2. **Python Factory** - Complex workflows using factory helper functions (20% of DAGs)
+1. **Python Factory** - Complex workflows using factory helper functions (20% of DAGs)
 
 Both approaches enforce ADR-0045 standards automatically and use the SSH execution pattern from this ADR.
 
@@ -990,7 +1004,7 @@ chmod +x <component>/deploy.sh
 
 Create `<component>/README.md`:
 
-```markdown
+````markdown
 # <Component Name>
 
 ## Description
@@ -1010,24 +1024,28 @@ Trigger the `<component>_deployment` DAG from the Airflow UI.
 ```bash
 cd /opt/kcli-pipelines/<component>
 ACTION=create ./deploy.sh
-```
+````
 
 ## Parameters
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| ACTION | (required) | create, delete, or status |
-| COMPONENT_VERSION | 1.0.0 | Version to deploy |
+| Parameter         | Default    | Description               |
+| ----------------- | ---------- | ------------------------- |
+| ACTION            | (required) | create, delete, or status |
+| COMPONENT_VERSION | 1.0.0      | Version to deploy         |
 
 ## Troubleshooting
+
 Common issues and solutions.
+
 ```
 
 ```
+
 ┌─────────────────────────────────────────────────────────────────┐
 │         STEP 4: Add Entry to DAG Registry                        │
 └─────────────────────────────────────────────────────────────────┘
-```
+
+````
 
 Edit `dags/registry.yaml` and add your component:
 
@@ -1043,9 +1061,10 @@ Edit `dags/registry.yaml` and add your component:
       <component>_version: "1.0.0"
     volume_mounts:                            # Optional: if component needs host paths
       - /path/on/host:/path/in/container
-```
+````
 
 **Valid Categories:**
+
 - `compute` - VMs, containers, clusters
 - `network` - Routers, firewalls, load balancers
 - `identity` - Authentication, authorization, directory services
@@ -1167,10 +1186,11 @@ Describe how you tested the deployment.
 ```
 
 GitHub Actions will automatically:
+
 1. Validate registry schema
-2. Check Python syntax (if any)
-3. Test DAG loading in Airflow
-4. Report results on your PR
+1. Check Python syntax (if any)
+1. Test DAG loading in Airflow
+1. Report results on your PR
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -1187,7 +1207,7 @@ cd /opt/kcli-pipelines && git pull
 # DAG appears automatically in Airflow UI as: <component>_deployment
 ```
 
----
+______________________________________________________________________
 
 #### Step-by-Step Process for Complex DAGs (Python Factory)
 
@@ -1287,7 +1307,7 @@ else:
 
 Continue with Steps 6-8 from the simple process.
 
----
+______________________________________________________________________
 
 #### Quick Reference Card
 
@@ -1468,6 +1488,7 @@ echo "  4. Submit PR"
 ```
 
 Usage:
+
 ```bash
 ./scaffold-dag.sh keycloak identity "Deploy Keycloak Identity Provider"
 ```
@@ -1549,26 +1570,26 @@ jobs:
 
 ### Success Metrics
 
-| Metric | Target | Measurement |
-|--------|--------|-------------|
-| DAG deployment success rate | >95% | Airflow task success rate |
-| Time to create new DAG | <15 minutes | PR submission time |
-| Boilerplate reduction | >70% | Lines of code per DAG |
-| Standard compliance | 100% | Factory validation |
-| Configuration drift | 0% | All DAGs use factory |
-| Contributor onboarding | <1 hour | Time to first DAG PR |
+| Metric                      | Target       | Measurement               |
+| --------------------------- | ------------ | ------------------------- |
+| DAG deployment success rate | >95%         | Airflow task success rate |
+| Time to create new DAG      | \<15 minutes | PR submission time        |
+| Boilerplate reduction       | >70%         | Lines of code per DAG     |
+| Standard compliance         | 100%         | Factory validation        |
+| Configuration drift         | 0%           | All DAGs use factory      |
+| Contributor onboarding      | \<1 hour     | Time to first DAG PR      |
 
 ### When to Use Each Approach
 
-| Use YAML Registry | Use Python Factory |
-|-------------------|-------------------|
-| Single deploy.sh script | Multi-stage deployments |
-| No manual steps needed | Manual approval required |
-| Standard create/delete actions | Conditional branching |
-| FreeIPA, VyOS, Step-CA, Keycloak | OpenShift, Disconnected OCP |
-| New contributors | Experienced Python developers |
+| Use YAML Registry                | Use Python Factory            |
+| -------------------------------- | ----------------------------- |
+| Single deploy.sh script          | Multi-stage deployments       |
+| No manual steps needed           | Manual approval required      |
+| Standard create/delete actions   | Conditional branching         |
+| FreeIPA, VyOS, Step-CA, Keycloak | OpenShift, Disconnected OCP   |
+| New contributors                 | Experienced Python developers |
 
----
+______________________________________________________________________
 
 ## Related ADRs
 

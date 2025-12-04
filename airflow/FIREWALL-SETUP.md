@@ -43,15 +43,16 @@ http://<your-ip>:8888
 
 ## 🚀 Access URLs
 
-| Service | URL | Credentials |
-|---------|-----|-------------|
-| **Airflow UI** | http://localhost:8888 | admin / admin |
-| **AI Assistant** | http://localhost:8080 | (no auth) |
-| **Cockpit** | https://localhost:9090 | (system user) |
+| Service          | URL                    | Credentials   |
+| ---------------- | ---------------------- | ------------- |
+| **Airflow UI**   | http://localhost:8888  | admin / admin |
+| **AI Assistant** | http://localhost:8080  | (no auth)     |
+| **Cockpit**      | https://localhost:9090 | (system user) |
 
 ## 🔒 Security Notes
 
 ### Current Setup (Development)
+
 ```
 ✅ Port 8888 (Airflow) - Open
 ✅ Port 8080 (AI Assistant) - Open
@@ -62,6 +63,7 @@ http://<your-ip>:8888
 ### Production Recommendations
 
 1. **Use Reverse Proxy**
+
    ```bash
    # Instead of exposing 8888 directly, use nginx/haproxy
    firewall-cmd --permanent --remove-port=8888/tcp
@@ -69,19 +71,22 @@ http://<your-ip>:8888
    firewall-cmd --permanent --add-service=https
    ```
 
-2. **Enable SSL/TLS**
+1. **Enable SSL/TLS**
+
    ```bash
    # Get certificates (Let's Encrypt)
    # Configure in docker-compose or reverse proxy
    ```
 
-3. **Add Authentication**
+1. **Add Authentication**
+
    ```yaml
    # docker-compose.yml
    AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth'
    ```
 
-4. **Restrict Source IPs**
+1. **Restrict Source IPs**
+
    ```bash
    # Only allow from specific networks
    firewall-cmd --permanent --add-rich-rule='
@@ -149,30 +154,35 @@ telnet localhost 8888
 ### Issue: Can't access UI from browser
 
 **Check 1: Is service running?**
+
 ```bash
 podman ps | grep airflow_airflow-webserver
 # Should show: Up X minutes (healthy)
 ```
 
 **Check 2: Is port open on firewall?**
+
 ```bash
 firewall-cmd --list-ports | grep 8888
 # Should show: 8888/tcp
 ```
 
 **Check 3: Is it listening?**
+
 ```bash
 ss -tlnp | grep 8888
 # Should show: LISTEN ... 0.0.0.0:8888
 ```
 
 **Check 4: Can localhost access it?**
+
 ```bash
 curl http://localhost:8888
 # Should return HTML or JSON
 ```
 
 **Check 5: SELinux blocking?**
+
 ```bash
 getenforce
 # If "Enforcing", check:
@@ -238,6 +248,7 @@ echo "   Login: admin / admin"
 ```
 
 Save as `/root/qubinode_navigator/airflow/setup-firewall.sh` and run:
+
 ```bash
 chmod +x setup-firewall.sh
 ./setup-firewall.sh
@@ -257,11 +268,11 @@ $ curl http://localhost:8888/health
 {"metadatabase": {"status": "healthy"}, "scheduler": {"status": "healthy"}}
 ```
 
-✅ **Firewall configured correctly!**  
-✅ **Airflow UI accessible!**  
+✅ **Firewall configured correctly!**
+✅ **Airflow UI accessible!**
 ✅ **Ready to use!**
 
----
+______________________________________________________________________
 
-**Last Updated:** 2025-11-20 01:15 UTC  
+**Last Updated:** 2025-11-20 01:15 UTC
 **Ports Opened:** 8080/tcp, 8888/tcp

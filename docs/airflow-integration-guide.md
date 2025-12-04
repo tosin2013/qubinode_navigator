@@ -1,6 +1,6 @@
----
-nav_exclude: true
----
+______________________________________________________________________
+
+## nav_exclude: true
 
 # Apache Airflow Integration Guide
 
@@ -9,12 +9,12 @@ This guide provides step-by-step instructions for integrating Apache Airflow wit
 ## Table of Contents
 
 1. [Prerequisites](#prerequisites)
-2. [Installation Methods](#installation-methods)
-3. [Starting Airflow UI](#starting-airflow-ui)
-4. [Configuration](#configuration)
-5. [Creating Custom Plugins](#creating-custom-plugins)
-6. [Example DAGs](#example-dags)
-7. [Troubleshooting](#troubleshooting)
+1. [Installation Methods](#installation-methods)
+1. [Starting Airflow UI](#starting-airflow-ui)
+1. [Configuration](#configuration)
+1. [Creating Custom Plugins](#creating-custom-plugins)
+1. [Example DAGs](#example-dags)
+1. [Troubleshooting](#troubleshooting)
 
 ## Prerequisites
 
@@ -350,15 +350,15 @@ import logging
 class QubinodeDeployOperator(BaseOperator):
     """
     Operator to deploy Qubinode infrastructure
-    
+
     :param target_host: Target host for deployment
     :param deployment_type: Type of deployment (kvm, openshift, etc.)
     :param config_file: Path to configuration file
     """
-    
+
     template_fields = ('target_host', 'config_file')
     ui_color = '#4CAF50'
-    
+
     @apply_defaults
     def __init__(
         self,
@@ -373,21 +373,21 @@ class QubinodeDeployOperator(BaseOperator):
         self.deployment_type = deployment_type
         self.config_file = config_file
         self.log = logging.getLogger(__name__)
-    
+
     def execute(self, context):
         self.log.info(f"Starting Qubinode deployment to {self.target_host}")
         self.log.info(f"Deployment type: {self.deployment_type}")
-        
+
         # Build deployment command
         cmd = [
             '/root/qubinode_navigator/setup.sh',
             '--host', self.target_host,
             '--type', self.deployment_type
         ]
-        
+
         if self.config_file:
             cmd.extend(['--config', self.config_file])
-        
+
         # Execute deployment
         try:
             result = subprocess.run(
@@ -396,14 +396,14 @@ class QubinodeDeployOperator(BaseOperator):
                 text=True,
                 check=True
             )
-            
+
             self.log.info(f"Deployment output: {result.stdout}")
             return {
                 'status': 'success',
                 'target_host': self.target_host,
                 'output': result.stdout
             }
-            
+
         except subprocess.CalledProcessError as e:
             self.log.error(f"Deployment failed: {e.stderr}")
             raise
@@ -421,13 +421,13 @@ import subprocess
 class QubinodeDeploymentSensor(BaseSensorOperator):
     """
     Sensor to check if Qubinode deployment is complete
-    
+
     :param target_host: Target host to check
     :param timeout: Sensor timeout in seconds
     """
-    
+
     template_fields = ('target_host',)
-    
+
     @apply_defaults
     def __init__(
         self,
@@ -437,11 +437,11 @@ class QubinodeDeploymentSensor(BaseSensorOperator):
     ):
         super().__init__(*args, **kwargs)
         self.target_host = target_host
-    
+
     def poke(self, context):
         """Check if deployment is complete"""
         self.log.info(f"Checking deployment status on {self.target_host}")
-        
+
         try:
             # Check if deployment is complete
             result = subprocess.run(
@@ -450,14 +450,14 @@ class QubinodeDeploymentSensor(BaseSensorOperator):
                 text=True,
                 timeout=10
             )
-            
+
             if result.returncode == 0 and 'active' in result.stdout:
                 self.log.info(f"Deployment complete on {self.target_host}")
                 return True
             else:
                 self.log.info(f"Deployment still in progress...")
                 return False
-                
+
         except Exception as e:
             self.log.warning(f"Error checking deployment: {e}")
             return False
@@ -677,10 +677,10 @@ docker-compose exec airflow-webserver airflow variables list
 ## Next Steps
 
 1. Review [ADR-0036](./adrs/adr-0036-apache-airflow-workflow-orchestration-integration.md) for architectural decisions
-2. Explore [Airflow Documentation](https://airflow.apache.org/docs/)
-3. Join [Airflow Slack Community](https://apache-airflow-slack.herokuapp.com/)
-4. Create custom plugins for your use case
-5. Set up monitoring and alerting
+1. Explore [Airflow Documentation](https://airflow.apache.org/docs/)
+1. Join [Airflow Slack Community](https://apache-airflow-slack.herokuapp.com/)
+1. Create custom plugins for your use case
+1. Set up monitoring and alerting
 
 ## Support
 

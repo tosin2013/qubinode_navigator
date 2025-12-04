@@ -114,7 +114,7 @@ cat >/tmp/playbook.yml<<EOF
   - ansible_role_update_ip_route53
 EOF
 
-if [ "${ACTION}" != "delete" ]; then 
+if [ "${ACTION}" != "delete" ]; then
   ansible-playbook  /tmp/playbook.yml ${VERBOSE_LEVEL} || exit $?
 fi
 

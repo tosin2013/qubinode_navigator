@@ -41,16 +41,16 @@ jobs:
   test-ai-components:
     name: Test AI Assistant Components
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-        
+
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          
+
       - name: Cache Python dependencies
         uses: actions/cache@v4
         with:
@@ -58,18 +58,18 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('ai-assistant/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-            
+
       - name: Install AI Assistant dependencies
         run: |
           cd ai-assistant
           pip install -r requirements.txt
           pip install pytest-cov
-          
+
       - name: Run diagnostic tools tests
         run: |
           cd ai-assistant
           python -m pytest tests/test_diagnostic_tools.py -v --cov=src --cov-report=xml --cov-report=term
-          
+
       - name: Upload diagnostic tools coverage
         uses: codecov/codecov-action@v5
         with:
@@ -81,25 +81,25 @@ jobs:
   test-plugin-integration:
     name: Test Plugin Framework Integration
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-        
+
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          
+
       - name: Install plugin framework dependencies
         run: |
           pip install pytest-cov pytest-mock
           pip install -r requirements.txt
-          
+
       - name: Run AI Assistant plugin tests
         run: |
           python -m pytest tests/test_ai_assistant_plugin.py -v --cov=plugins/services --cov-report=xml --cov-report=term
-          
+
       - name: Upload plugin integration coverage
         uses: codecov/codecov-action@v5
         with:
@@ -112,28 +112,28 @@ jobs:
     name: Build and Test AI Assistant Container
     runs-on: ubuntu-latest
     needs: [test-ai-components, test-plugin-integration]
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-        
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        
+
       - name: Log in to Red Hat Registry
         uses: docker/login-action@v3
         with:
           registry: registry.redhat.io
           username: ${{ secrets.REDHAT_USERNAME }}
           password: ${{ secrets.REDHAT_PASSWORD }}
-          
+
       - name: Log in to Quay.io
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY_HOSTNAME }}
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
-        
+
       - name: Build AI Assistant container
         uses: docker/build-push-action@v6
         with:
@@ -144,20 +144,20 @@ jobs:
           tags: ${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.AI_IMAGE_NAME }}:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          
+
       - name: Test container health
         run: |
           set -e
-          
+
           # Configuration (with model download)
           CONTAINER_NAME="ai-test"
           PORT="8080"
           MAX_WAIT_TIME=600  # 10 minutes for model download + startup
           HEALTH_CHECK_INTERVAL=5  # Check every 5 seconds like integration tests
           MAX_ATTEMPTS=$((MAX_WAIT_TIME / HEALTH_CHECK_INTERVAL))
-          
+
           echo "🚀 Starting AI Assistant container with optimized settings..."
-          
+
           # Start container with optimized settings for CI
           docker run -d --name $CONTAINER_NAME -p $PORT:8080 \
             -e HUGGINGFACE_TOKEN=${{ secrets.HUGGINGFACE_TOKEN }} \
@@ -173,7 +173,7 @@ jobs:
             --health-timeout '30s' \
             --health-retries '5' \
             ${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.AI_IMAGE_NAME }}:test
-          
+
           # Function to check for critical errors
           check_critical_errors() {
             local logs=$(docker logs $CONTAINER_NAME 2>&1 | tail -20)
@@ -184,7 +184,7 @@ jobs:
             fi
             return 0
           }
-          
+
           # Function to show download progress
           show_progress() {
             local logs=$(docker logs $CONTAINER_NAME 2>&1 | grep -E "(Download progress|Model.*downloaded|Starting.*server)" | tail -3)
@@ -193,10 +193,10 @@ jobs:
               echo "$logs"
             fi
           }
-          
+
           echo "⏳ Waiting for container startup and model download (max ${MAX_WAIT_TIME}s)..."
           sleep 10
-          
+
           # Initial error check and container verification
           echo "🔍 Verifying container is running..."
           if ! docker ps | grep -q $CONTAINER_NAME; then
@@ -205,7 +205,7 @@ jobs:
             docker rm $CONTAINER_NAME 2>/dev/null || true
             exit 1
           fi
-          
+
           # Wait for service to be accessible before health checks
           echo "🔌 Waiting for service to be accessible on port $PORT..."
           for port_check in {1..12}; do
@@ -222,14 +222,14 @@ jobs:
               sleep 5
             fi
           done
-          
+
           if ! check_critical_errors; then
             echo "❌ Critical errors detected during startup"
             docker logs $CONTAINER_NAME
             docker stop $CONTAINER_NAME && docker rm $CONTAINER_NAME
             exit 1
           fi
-          
+
           # Health check loop with intelligent retry logic
           echo "🔍 Testing health endpoint (attempt interval: ${HEALTH_CHECK_INTERVAL}s)..."
           for i in $(seq 1 $MAX_ATTEMPTS); do
@@ -240,7 +240,7 @@ jobs:
               docker rm $CONTAINER_NAME 2>/dev/null || true
               exit 1
             fi
-            
+
             # Check for critical errors first
             if ! check_critical_errors; then
               echo "❌ Critical errors detected on attempt $i"
@@ -248,15 +248,15 @@ jobs:
               docker stop $CONTAINER_NAME && docker rm $CONTAINER_NAME
               exit 1
             fi
-            
+
             # Try health check with proper error handling (accept both 200 and 503 degraded)
             echo "🔗 Attempting health check $i/$MAX_ATTEMPTS..."
             HEALTH_RESPONSE=$(curl -s --max-time 30 --connect-timeout 10 http://localhost:$PORT/health 2>&1)
             CURL_EXIT_CODE=$?
-            
+
             if [ $CURL_EXIT_CODE -eq 0 ] && echo "$HEALTH_RESPONSE" | grep -q '"status":"healthy"\|"status":"degraded"'; then
               echo "✅ Health check passed on attempt $i (after $((i * HEALTH_CHECK_INTERVAL))s)"
-              
+
               # Show the actual health status
               echo "🧪 Service status:"
               echo "$HEALTH_RESPONSE" | head -c 200
@@ -270,12 +270,12 @@ jobs:
               echo "⚠️ Health check failed with exit code $CURL_EXIT_CODE - attempt $i/$MAX_ATTEMPTS"
               echo "Response: $HEALTH_RESPONSE"
             fi
-            
+
             # Show progress every 6 attempts (30s intervals)
             if [ $((i % 6)) -eq 0 ]; then
               show_progress
             fi
-            
+
             # Final attempt check
             if [ $i -eq $MAX_ATTEMPTS ]; then
               echo "❌ Health check failed after $MAX_ATTEMPTS attempts (${MAX_WAIT_TIME}s total)"
@@ -284,32 +284,32 @@ jobs:
               docker stop $CONTAINER_NAME && docker rm $CONTAINER_NAME
               exit 1
             fi
-            
+
             sleep $HEALTH_CHECK_INTERVAL
           done
-          
+
           # Test core functionality
           echo "🧪 Testing core API endpoints..."
-          
+
           # Test root endpoint
           if curl -f --max-time 10 http://localhost:$PORT/ >/dev/null 2>&1; then
             echo "✅ Root endpoint working"
           else
             echo "⚠️ Root endpoint test failed"
           fi
-          
+
           # Test chat endpoint (allow failure for degraded state)
           echo "🗣️ Testing chat endpoint..."
           CHAT_RESPONSE=$(curl -s --max-time 60 -X POST http://localhost:$PORT/chat \
             -H "Content-Type: application/json" \
             -d '{"message": "test"}' || echo "degraded")
-          
+
           if echo "$CHAT_RESPONSE" | grep -q "response\|error\|degraded"; then
             echo "✅ Chat endpoint responding (may be degraded during model load)"
           else
             echo "⚠️ Chat endpoint test inconclusive"
           fi
-          
+
           # Test RAG ingestion endpoint
           echo "📚 Testing RAG ingestion endpoint availability..."
           if curl -f --max-time 10 http://localhost:$PORT/docs >/dev/null 2>&1; then
@@ -317,11 +317,11 @@ jobs:
           else
             echo "⚠️ API docs test failed"
           fi
-          
+
           echo "🧹 Cleaning up test container..."
           docker stop $CONTAINER_NAME
           docker rm $CONTAINER_NAME
-          
+
           echo "✅ Container health test completed successfully!"
 
   # Security Scanning
@@ -329,28 +329,28 @@ jobs:
     name: Security Scan AI Assistant
     runs-on: ubuntu-latest
     needs: build-and-test-container
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-        
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        
+
       - name: Log in to Red Hat Registry
         uses: docker/login-action@v3
         with:
           registry: registry.redhat.io
           username: ${{ secrets.REDHAT_USERNAME }}
           password: ${{ secrets.REDHAT_PASSWORD }}
-          
+
       - name: Log in to Quay.io
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY_HOSTNAME }}
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
-        
+
       - name: Build container for scanning
         uses: docker/build-push-action@v6
         with:
@@ -361,21 +361,21 @@ jobs:
           tags: ${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.AI_IMAGE_NAME }}:scan
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.AI_IMAGE_NAME }}:scan
           format: 'sarif'
           output: 'trivy-results.sarif'
-          
+
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
           category: trivy
-          
+
       - name: Run Hadolint Dockerfile linter
         uses: hadolint/hadolint-action@v3.3.0
         if: always()  # Always run Hadolint even if Trivy fails
@@ -384,7 +384,7 @@ jobs:
           format: sarif
           output-file: hadolint-results.sarif
           no-fail: true
-          
+
       - name: Upload Hadolint scan results
         uses: github/codeql-action/upload-sarif@v4
         if: always() && hashFiles('hadolint-results.sarif') != ''
@@ -397,28 +397,28 @@ jobs:
     name: Performance Benchmark AI Assistant
     runs-on: ubuntu-latest
     needs: build-and-test-container
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-        
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        
+
       - name: Log in to Red Hat Registry
         uses: docker/login-action@v3
         with:
           registry: registry.redhat.io
           username: ${{ secrets.REDHAT_USERNAME }}
           password: ${{ secrets.REDHAT_PASSWORD }}
-          
+
       - name: Log in to Quay.io
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY_HOSTNAME }}
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
-        
+
       - name: Build container for benchmarking
         uses: docker/build-push-action@v6
         with:
@@ -429,20 +429,20 @@ jobs:
           tags: ${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.AI_IMAGE_NAME }}:benchmark
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          
+
       - name: Run performance benchmarks
         run: |
           set -e
-          
+
           # Configuration (with model download)
           CONTAINER_NAME="ai-benchmark"
           PORT="8080"
           MAX_WAIT_TIME=600  # 10 minutes for model download + startup
           HEALTH_CHECK_INTERVAL=5  # Check every 5 seconds like container test
           MAX_ATTEMPTS=$((MAX_WAIT_TIME / HEALTH_CHECK_INTERVAL))
-          
+
           echo "🚀 Starting AI Assistant benchmark container with optimized settings..."
-          
+
           # Start container with optimized settings for CI (same as container test)
           docker run -d --name $CONTAINER_NAME -p $PORT:8080 \
             -e HUGGINGFACE_TOKEN=${{ secrets.HUGGINGFACE_TOKEN }} \
@@ -458,7 +458,7 @@ jobs:
             --health-timeout '30s' \
             --health-retries '5' \
             ${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.AI_IMAGE_NAME }}:benchmark
-          
+
           # Function to check for critical errors
           check_critical_errors() {
             local logs=$(docker logs $CONTAINER_NAME 2>&1 | tail -20)
@@ -469,7 +469,7 @@ jobs:
             fi
             return 0
           }
-          
+
           # Function to show download progress
           show_progress() {
             local logs=$(docker logs $CONTAINER_NAME 2>&1 | grep -E "(Download progress|Model.*downloaded|Starting.*server)" | tail -3)
@@ -478,10 +478,10 @@ jobs:
               echo "$logs"
             fi
           }
-          
+
           echo "⏳ Waiting for benchmark container startup and model download (max ${MAX_WAIT_TIME}s)..."
           sleep 10
-          
+
           # Initial error check and container verification
           echo "🔍 Verifying container is running..."
           if ! docker ps | grep -q $CONTAINER_NAME; then
@@ -490,7 +490,7 @@ jobs:
             docker rm $CONTAINER_NAME 2>/dev/null || true
             exit 1
           fi
-          
+
           # Wait for service to be accessible before health checks
           echo "🔌 Waiting for service to be accessible on port $PORT..."
           for port_check in {1..12}; do
@@ -507,14 +507,14 @@ jobs:
               sleep 5
             fi
           done
-          
+
           if ! check_critical_errors; then
             echo "❌ Critical errors detected during startup"
             docker logs $CONTAINER_NAME
             docker stop $CONTAINER_NAME && docker rm $CONTAINER_NAME
             exit 1
           fi
-          
+
           # Health check loop with intelligent retry logic
           echo "🔍 Testing health endpoint (attempt interval: ${HEALTH_CHECK_INTERVAL}s)..."
           for i in $(seq 1 $MAX_ATTEMPTS); do
@@ -525,7 +525,7 @@ jobs:
               docker rm $CONTAINER_NAME 2>/dev/null || true
               exit 1
             fi
-            
+
             # Check for critical errors first
             if ! check_critical_errors; then
               echo "❌ Critical errors detected on attempt $i"
@@ -533,15 +533,15 @@ jobs:
               docker stop $CONTAINER_NAME && docker rm $CONTAINER_NAME
               exit 1
             fi
-            
+
             # Try health check with proper error handling (accept both 200 and 503 degraded)
             echo "🔗 Attempting health check $i/$MAX_ATTEMPTS..."
             HEALTH_RESPONSE=$(curl -s --max-time 30 --connect-timeout 10 http://localhost:$PORT/health 2>&1)
             CURL_EXIT_CODE=$?
-            
+
             if [ $CURL_EXIT_CODE -eq 0 ] && echo "$HEALTH_RESPONSE" | grep -q '"status":"healthy"\|"status":"degraded"'; then
               echo "✅ Benchmark container ready after $((i * HEALTH_CHECK_INTERVAL))s"
-              
+
               # Show the actual health status
               echo "🧪 Service status:"
               echo "$HEALTH_RESPONSE" | head -c 200
@@ -555,12 +555,12 @@ jobs:
               echo "⚠️ Health check failed with exit code $CURL_EXIT_CODE - attempt $i/$MAX_ATTEMPTS"
               echo "Response: $HEALTH_RESPONSE"
             fi
-            
+
             # Show progress every 6 attempts (30s intervals)
             if [ $((i % 6)) -eq 0 ]; then
               show_progress
             fi
-            
+
             # Final attempt check
             if [ $i -eq $MAX_ATTEMPTS ]; then
               echo "❌ Health check failed after $MAX_ATTEMPTS attempts (${MAX_WAIT_TIME}s total)"
@@ -569,20 +569,20 @@ jobs:
               docker stop $CONTAINER_NAME && docker rm $CONTAINER_NAME
               exit 1
             fi
-            
+
             sleep $HEALTH_CHECK_INTERVAL
           done
-          
+
           # Install benchmarking tools
           pip install requests
-          
+
           # Create benchmark script
           cat > benchmark.py << 'EOF'
           import requests
           import time
           import statistics
           import json
-          
+
           def benchmark_health_endpoint():
               """Benchmark health endpoint - accept both healthy (200) and degraded (503) status"""
               times = []
@@ -601,10 +601,10 @@ jobs:
                           print(f"Health check {i+1}/10: Unexpected status {response.status_code}")
                   except Exception as e:
                       print(f"Health check {i+1}/10: Failed - {e}")
-              
+
               print(f"Health endpoint: {successful_requests}/10 successful requests")
               return times
-          
+
           def benchmark_chat_endpoint():
               """Benchmark chat endpoint - accept various response codes"""
               times = []
@@ -624,15 +624,15 @@ jobs:
                           print(f"Chat request {i+1}/5: Status {response.status_code}")
                   except Exception as e:
                       print(f"Chat request {i+1}/5: Failed - {e}")
-              
+
               print(f"Chat endpoint: {successful_requests}/5 successful requests")
               return times
-          
+
           # Run benchmarks with error handling
           print("Starting performance benchmarks...")
           health_times = benchmark_health_endpoint()
           chat_times = benchmark_chat_endpoint()
-          
+
           # Create results with fallback for empty data
           def safe_stats(times, endpoint_name):
               if not times:
@@ -652,7 +652,7 @@ jobs:
                   'min': min(times),
                   'max': max(times)
               }
-          
+
           results = {
               'health_endpoint': safe_stats(health_times, 'health'),
               'chat_endpoint': safe_stats(chat_times, 'chat'),
@@ -662,14 +662,14 @@ jobs:
                   'benchmark_successful': len(health_times) > 0 or len(chat_times) > 0
               }
           }
-          
+
           print("\nPerformance Benchmark Results:")
           print(json.dumps(results, indent=2))
-          
+
           # Write to GitHub step summary
           with open('benchmark_results.json', 'w') as f:
               json.dump(results, f, indent=2)
-              
+
           # Exit successfully even if some requests failed (as long as we got some data)
           if results['summary']['benchmark_successful']:
               print("Benchmark completed successfully!")
@@ -678,14 +678,14 @@ jobs:
               print("Warning: No successful requests, but benchmark script completed")
               exit(0)  # Don't fail the job, just note the issue
           EOF
-          
+
           # Run benchmark
           python benchmark.py
-          
+
           # Stop container
           docker stop ai-benchmark
           docker rm ai-benchmark
-          
+
       - name: Upload benchmark results
         uses: actions/upload-artifact@v5
         with:
@@ -697,50 +697,50 @@ jobs:
     name: Integration Tests
     runs-on: ubuntu-latest
     needs: [test-ai-components, test-plugin-integration]
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-        
+
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          
+
       - name: Install dependencies
         run: |
           pip install pyyaml requests
           cd ai-assistant && pip install -r requirements.txt
-          
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        
+
       - name: Log in to Red Hat Registry
         uses: docker/login-action@v3
         with:
           registry: registry.redhat.io
           username: ${{ secrets.REDHAT_USERNAME }}
           password: ${{ secrets.REDHAT_PASSWORD }}
-          
+
       - name: Log in to Quay.io
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY_HOSTNAME }}
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
-        
+
       - name: Prepare RAG documents for testing
         run: |
           # Prepare RAG documents for integration testing
           echo "Preparing RAG documents for testing..."
           cd ai-assistant
-          
+
           # Run the RAG document preparation script
           python scripts/prepare-rag-docs.py || echo "RAG preparation failed, continuing with basic setup"
-          
+
           # Ensure the RAG docs directory exists with at least basic content
           mkdir -p data/rag-docs
-          
+
           # Create minimal test documents if preparation failed
           if [ ! -f "data/rag-docs/document_chunks.json" ]; then
             echo "Creating minimal test RAG documents..."
@@ -762,7 +762,7 @@ jobs:
           ]
           RAGEOF
           fi
-          
+
       - name: Create test configuration
         run: |
           # Create a test-optimized configuration for faster startup
@@ -777,37 +777,37 @@ jobs:
             context_length: 1024
             temperature: 0.7
             max_tokens: 256
-            
+
           server:
             host: "0.0.0.0"
             port: 8080
             log_level: "info"
             timeout: 30
-            
+
           features:
             diagnostics: true
             system_monitoring: false
             log_analysis: false
             rag_enabled: true
-            
+
           security:
             enable_auth: false
             api_key: null
             allowed_hosts: ["*"]
             rate_limit: 1000
-            
+
           storage:
             models_dir: "/app/models"
             data_dir: "/app/data"
             logs_dir: "/app/logs"
-            
+
           test_mode:
             enabled: false
             mock_ai_responses: false
             skip_model_loading: false
             fast_startup: true
           EOF
-          
+
       - name: Build AI Assistant container
         uses: docker/build-push-action@v6
         with:
@@ -818,7 +818,7 @@ jobs:
           tags: ${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.AI_IMAGE_NAME }}:integration
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          
+
       - name: Create integration test
         run: |
           cat > integration_test.py << 'EOF'
@@ -830,32 +830,32 @@ jobs:
           import sys
           import os
           from pathlib import Path
-          
+
           # Add project root to path
           project_root = Path(__file__).parent
           sys.path.insert(0, str(project_root))
-          
+
           from plugins.services.ai_assistant_plugin import AIAssistantPlugin
           from core.base_plugin import ExecutionContext
-          
+
           class TestAIAssistantIntegration:
               """Integration tests for AI Assistant"""
-              
+
               @classmethod
               def setup_class(cls):
                   """Start AI Assistant container"""
                   container_name = 'ai-integration-test'
                   image_name = '${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }}/${{ env.AI_IMAGE_NAME }}:integration'
-                  
+
                   try:
                       # Clean up any existing container
                       subprocess.run(['docker', 'stop', container_name], check=False, capture_output=True)
                       subprocess.run(['docker', 'rm', container_name], check=False, capture_output=True)
-                      
+
                       print(f"Starting container: {image_name}")
                       result = subprocess.run([
                           'docker', 'run', '-d', '--name', container_name,
-                          '-p', '8080:8080', 
+                          '-p', '8080:8080',
                           '-e', 'AI_CONFIG_FILE=/app/config/test_config.yaml',
                           '-e', 'AI_MODEL_TYPE=test-mode',
                           '-e', 'AI_SKIP_MODEL_DOWNLOAD=true',
@@ -867,13 +867,13 @@ jobs:
                           '--health-retries', '5',
                           image_name
                       ], check=True, capture_output=True, text=True)
-                      
+
                       print(f"Container started with ID: {result.stdout.strip()}")
-                      
+
                       # Wait for container to start with extended timeout for AI model loading
                       print("Waiting for container to start (AI models may take time to load)...")
                       max_attempts = 60  # Wait up to 5 minutes (60 * 5 seconds)
-                      
+
                       for i in range(max_attempts):
                           time.sleep(5)
                           try:
@@ -881,11 +881,11 @@ jobs:
                               health_result = subprocess.run([
                                   'docker', 'inspect', '--format={{.State.Health.Status}}', container_name
                               ], capture_output=True, text=True, check=False)
-                              
+
                               if health_result.returncode == 0:
                                   health_status = health_result.stdout.strip()
                                   print(f"Container health status: {health_status}")
-                              
+
                               # Try health endpoint
                               response = requests.get('http://localhost:8080/health', timeout=10)
                               if response.status_code == 200:
@@ -907,7 +907,7 @@ jobs:
                                                   print(f"Container ready after {(i+1)*5} seconds (degraded due to RAG)")
                                                   print(f"Health response: {detail}")
                                                   return
-                                      
+
                                       print(f"Service starting up (503), attempt {i+1}/{max_attempts}")
                                       if i % 6 == 0:  # Every 30 seconds, show details
                                           print(f"Health check details: {error_data}")
@@ -916,7 +916,7 @@ jobs:
                               else:
                                   print(f"Health check returned status {response.status_code}")
                                   print(f"Response text: {response.text}")
-                                  
+
                               # Also check if port is accessible
                               try:
                                   import socket
@@ -927,31 +927,31 @@ jobs:
                                   print(f"Port 8080 accessible: {port_accessible}")
                               except Exception as port_e:
                                   print(f"Port check failed: {port_e}")
-                                  
+
                           except requests.exceptions.RequestException as e:
                               print(f"Attempt {i+1}/{max_attempts}: Connection failed - {e}")
-                              
+
                           except Exception as e:
                               print(f"Attempt {i+1}/{max_attempts}: Unexpected error - {e}")
-                      
+
                       # If we get here, container didn't start properly
                       print("Container failed to start, checking logs...")
-                      log_result = subprocess.run(['docker', 'logs', '--tail', '50', container_name], 
+                      log_result = subprocess.run(['docker', 'logs', '--tail', '50', container_name],
                                                 capture_output=True, text=True, check=False)
                       print("Container logs:")
                       print(log_result.stdout)
                       if log_result.stderr:
                           print("Container stderr:")
                           print(log_result.stderr)
-                      
+
                       # Check container status
-                      status_result = subprocess.run(['docker', 'ps', '-a', '--filter', f'name={container_name}'], 
+                      status_result = subprocess.run(['docker', 'ps', '-a', '--filter', f'name={container_name}'],
                                                    capture_output=True, text=True, check=False)
                       print("Container status:")
                       print(status_result.stdout)
-                      
+
                       raise Exception(f"Container failed to start within {max_attempts*5} seconds (5 minutes)")
-                      
+
                   except subprocess.CalledProcessError as e:
                       print(f"Failed to start container: {e}")
                       print(f"Command output: {e.stdout}")
@@ -961,20 +961,20 @@ jobs:
                       print(f"Failed to start container: {e}")
                       subprocess.run(['docker', 'logs', '--tail', '20', container_name], check=False)
                       raise
-                  
+
               @classmethod
               def teardown_class(cls):
                   """Stop AI Assistant container"""
                   subprocess.run(['docker', 'stop', 'ai-integration-test'], check=False)
                   subprocess.run(['docker', 'rm', 'ai-integration-test'], check=False)
-                  
+
               def test_health_endpoint(self):
                   """Test health endpoint"""
                   max_retries = 3
                   for attempt in range(max_retries):
                       try:
                           response = requests.get('http://localhost:8080/health', timeout=15)
-                          
+
                           # Accept both 200 (healthy) and 503 (degraded) as valid responses
                           if response.status_code == 200:
                               data = response.json()
@@ -990,26 +990,26 @@ jobs:
                                       if detail.get('status') == 'degraded':
                                           ai_service = detail.get('ai_service', {})
                                           warnings = ai_service.get('warnings', [])
-                                          
+
                                           # Check if degraded status is only due to RAG documents
                                           if len(warnings) == 1 and 'RAG documents not loaded' in warnings[0]:
                                               print(f"Health endpoint test passed - service is degraded only due to RAG documents")
                                               print(f"Health response: {data}")
                                               return
-                                  
+
                                   print(f"Health endpoint returned degraded status: {data}")
                               except:
                                   print(f"Health endpoint returned 503 but couldn't parse response")
-                          
+
                           # If we get here, status was not acceptable
                           assert False, f"Unexpected health endpoint status: {response.status_code}"
-                          
+
                       except Exception as e:
                           print(f"Health endpoint attempt {attempt + 1} failed: {e}")
                           if attempt == max_retries - 1:
                               raise
                           time.sleep(10)
-                  
+
               def test_chat_endpoint(self):
                   """Test chat endpoint"""
                   max_retries = 2
@@ -1017,7 +1017,7 @@ jobs:
                       try:
                           response = requests.post('http://localhost:8080/chat',
                               json={'message': 'What is KVM virtualization?'}, timeout=45)
-                          
+
                           if response.status_code == 200:
                               data = response.json()
                               assert 'response' in data
@@ -1039,21 +1039,21 @@ jobs:
                               print(f"Chat endpoint returned unexpected status: {response.status_code}")
                               print(f"Response: {response.text}")
                               return  # Accept other statuses as valid for integration tests
-                              
+
                       except requests.exceptions.RequestException as e:
                           print(f"Chat endpoint attempt {attempt + 1} failed: {e}")
                           if attempt < max_retries - 1:
                               time.sleep(15)
                           else:
                               pytest.skip("Chat endpoint connection failed after retries")
-                  
+
               def test_diagnostics_endpoint(self):
                   """Test diagnostics endpoint"""
                   max_retries = 3
                   for attempt in range(max_retries):
                       try:
                           response = requests.get('http://localhost:8080/diagnostics/tools', timeout=20)
-                          
+
                           if response.status_code == 200:
                               data = response.json()
                               assert 'available_tools' in data or 'tools' in data
@@ -1075,14 +1075,14 @@ jobs:
                               return  # Accept 500 as valid for integration tests
                           else:
                               assert False, f"Unexpected status code: {response.status_code}"
-                              
+
                       except Exception as e:
                           print(f"Diagnostics endpoint attempt {attempt + 1} failed: {e}")
                           if attempt < max_retries - 1:
                               time.sleep(10)
                           else:
                               raise
-                  
+
               def test_plugin_integration(self):
                   """Test AI Assistant plugin integration"""
                   config = {
@@ -1091,23 +1091,23 @@ jobs:
                       'auto_start': False,  # Container already running
                       'health_check_timeout': 10
                   }
-                  
+
                   plugin = AIAssistantPlugin(config)
                   context = ExecutionContext(
                       inventory="localhost",
                       environment="test",
                       config={"test": True}
                   )
-                  
+
                   # Test plugin methods with debugging
                   print("Testing plugin health...")
-                  
+
                   # Check individual components for debugging
                   container_exists = plugin._container_exists()
                   container_running = plugin._container_running()
                   print(f"Container exists: {container_exists}")
                   print(f"Container running: {container_running}")
-                  
+
                   # Test health endpoint directly
                   try:
                       import requests
@@ -1119,22 +1119,22 @@ jobs:
                           print(f"Health endpoint returned: {response.status_code}")
                   except Exception as e:
                       print(f"Direct health check failed: {e}")
-                  
+
                   # Test plugin health (accept failure for now)
                   is_healthy = plugin.is_healthy()
                   print(f"Plugin is_healthy result: {is_healthy}")
-                  
+
                   # Don't fail the test if plugin health check fails
                   # This is acceptable for integration testing
                   if not is_healthy:
                       print("Plugin health check failed - acceptable for integration test")
-                  
+
                   # Test basic plugin functionality
                   print("Testing plugin capabilities...")
                   capabilities = plugin.capabilities
                   assert len(capabilities) > 0
                   print(f"Plugin capabilities: {len(capabilities)} found")
-                  
+
                   # Test AI query (accept failure)
                   print("Testing AI query...")
                   try:
@@ -1145,10 +1145,10 @@ jobs:
                           print(f"AI query returned error (acceptable): {response}")
                   except Exception as e:
                       print(f"AI query failed (acceptable): {e}")
-                  
+
                   print("Plugin integration test completed")
           EOF
-          
+
       - name: Verify container image exists
         run: |
           echo "Checking if container image exists..."
@@ -1157,35 +1157,35 @@ jobs:
             docker images
             exit 1
           }
-          
+
       - name: Run integration tests
         env:
           HUGGINGFACE_TOKEN: ${{ secrets.HUGGINGFACE_TOKEN }}
         run: |
           python -m pytest integration_test.py -v -s --tb=short
-          
+
   # Publish Results Summary
   publish-results:
     name: Publish Test Results
     runs-on: ubuntu-latest
     needs: [test-ai-components, test-plugin-integration, build-and-test-container, security-scan, performance-benchmark, integration-tests]
     if: always()
-    
+
     steps:
       - name: Download benchmark results
         uses: actions/download-artifact@v6
         continue-on-error: true  # Don't fail if artifact doesn't exist
         with:
           name: performance-benchmarks
-          
+
       - name: Create test summary
         run: |
           set +e  # Disable strict error handling for this script
-          
+
           echo "# AI Assistant CI/CD Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## Test Results" >> $GITHUB_STEP_SUMMARY
-          
+
           # Function to get result icon
           get_result_icon() {
             case "$1" in
@@ -1196,7 +1196,7 @@ jobs:
               *) echo "❓" ;;
             esac
           }
-          
+
           # Store job results in variables for safer handling
           ai_components_result="${{ needs.test-ai-components.result }}"
           plugin_integration_result="${{ needs.test-plugin-integration.result }}"
@@ -1204,7 +1204,7 @@ jobs:
           security_result="${{ needs.security-scan.result }}"
           performance_result="${{ needs.performance-benchmark.result }}"
           integration_result="${{ needs.integration-tests.result }}"
-          
+
           echo "- $(get_result_icon "$ai_components_result") AI Components Tests: $ai_components_result" >> $GITHUB_STEP_SUMMARY
           echo "- $(get_result_icon "$plugin_integration_result") Plugin Integration Tests: $plugin_integration_result" >> $GITHUB_STEP_SUMMARY
           echo "- $(get_result_icon "$container_result") Container Build & Test: $container_result" >> $GITHUB_STEP_SUMMARY
@@ -1212,7 +1212,7 @@ jobs:
           echo "- $(get_result_icon "$performance_result") Performance Benchmark: $performance_result" >> $GITHUB_STEP_SUMMARY
           echo "- $(get_result_icon "$integration_result") Integration Tests: $integration_result" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           # Check if benchmark results exist and display them
           if [ -f benchmark_results.json ]; then
             echo "## Performance Benchmarks" >> $GITHUB_STEP_SUMMARY
@@ -1223,14 +1223,14 @@ jobs:
             echo "## Performance Benchmarks" >> $GITHUB_STEP_SUMMARY
             echo "⚠️ Performance benchmark results not available (job may have been cancelled or failed)" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## Summary" >> $GITHUB_STEP_SUMMARY
-          
+
           # Count successful jobs using safer arithmetic
           success_count=0
           total_count=6
-          
+
           # Use safer arithmetic operations
           [[ "$ai_components_result" == "success" ]] && success_count=$((success_count + 1))
           [[ "$plugin_integration_result" == "success" ]] && success_count=$((success_count + 1))
@@ -1238,9 +1238,9 @@ jobs:
           [[ "$security_result" == "success" ]] && success_count=$((success_count + 1))
           [[ "$performance_result" == "success" ]] && success_count=$((success_count + 1))
           [[ "$integration_result" == "success" ]] && success_count=$((success_count + 1))
-          
+
           echo "**Overall Status: $success_count/$total_count jobs successful**" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ $success_count -eq $total_count ]; then
             echo "🎉 All tests passed!" >> $GITHUB_STEP_SUMMARY
           elif [ $success_count -ge 4 ]; then
@@ -1248,7 +1248,7 @@ jobs:
           else
             echo "❌ Multiple test failures - requires attention" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           # Always exit successfully for summary job
           exit 0
 
@@ -1258,51 +1258,51 @@ jobs:
     runs-on: ubuntu-latest
     needs: [test-ai-components, test-plugin-integration, build-and-test-container, security-scan, performance-benchmark, integration-tests]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-        
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        
+
       - name: Log in to Red Hat Registry
         uses: docker/login-action@v3
         with:
           registry: registry.redhat.io
           username: ${{ secrets.REDHAT_USERNAME }}
           password: ${{ secrets.REDHAT_PASSWORD }}
-          
+
       - name: Log in to Quay.io
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY_HOSTNAME }}
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
-      
+
       - name: Generate version and tags
         id: version
         run: |
           # Make version manager executable
           chmod +x ${{ env.VERSION_MANAGER }}
-          
+
           # Get current version
           CURRENT_VERSION=$(${{ env.VERSION_MANAGER }} current | grep "Current version:" | cut -d' ' -f3)
           BUILD_VERSION=$(${{ env.VERSION_MANAGER }} build-metadata)
-          
+
           echo "current-version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
           echo "build-version=$BUILD_VERSION" >> $GITHUB_OUTPUT
-          
+
           # Generate container tags
           TAGS=$(${{ env.VERSION_MANAGER }} tags ${{ env.REGISTRY_HOSTNAME }}/${{ env.REGISTRY_NAMESPACE }} ${{ env.AI_IMAGE_NAME }})
-          
+
           # Convert to comma-separated format for docker/build-push-action
           TAGS_CSV=$(echo "$TAGS" | tr '\n' ',' | sed 's/,$//')
           echo "container-tags=$TAGS_CSV" >> $GITHUB_OUTPUT
-          
+
           echo "Generated tags:"
           echo "$TAGS"
-        
+
       - name: Build and push production image
         uses: docker/build-push-action@v6
         with:

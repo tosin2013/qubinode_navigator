@@ -29,8 +29,8 @@ nano test-my-feature.sh
 **Customize these sections:**
 
 1. **Lines 8-15**: Configuration (name, description, parameters)
-2. **Lines 40-79**: Your test logic
-3. **Lines 87-96**: DAG code example
+1. **Lines 40-79**: Your test logic
+1. **Lines 87-96**: DAG code example
 
 ### Step 3: Test It (30 seconds)
 
@@ -221,9 +221,9 @@ esac
 The AI Assistant (RAG) becomes aware of scripts through:
 
 1. **File Content** - When users reference scripts, AI reads them
-2. **Documentation** - README.md and markdown docs
-3. **Conversations** - When you discuss scripts with AI
-4. **Context Files** - .mcp-server-context.md updates
+1. **Documentation** - README.md and markdown docs
+1. **Conversations** - When you discuss scripts with AI
+1. **Context Files** - .mcp-server-context.md updates
 
 ### Best Practices for RAG Awareness
 
@@ -235,7 +235,7 @@ The AI Assistant (RAG) becomes aware of scripts through:
 # Purpose: Tests custom VM network configuration
 # Usage: ./test-custom-feature.sh <vm_name> <network>
 # Example: ./test-custom-feature.sh myvm default
-# 
+#
 # This script:
 #   1. Checks if VM exists
 #   2. Configures network settings
@@ -257,7 +257,7 @@ vim scripts/README.md
 
 #### 3. Create a Companion Markdown Doc (Optional)
 
-```bash
+````bash
 # For complex scripts, create documentation
 cat > ../CUSTOM-FEATURE-GUIDE.md << 'EOF'
 # Custom Feature Testing Guide
@@ -268,11 +268,13 @@ This guide explains how to test custom network configurations...
 ## Script Usage
 ```bash
 ./scripts/test-custom-feature.sh myvm default
-```
+````
 
 ## When to Use
+
 Use this before adding CustomNetworkOperator to your DAGs...
 EOF
+
 ```
 
 #### 4. Use Consistent Naming
@@ -280,6 +282,7 @@ EOF
 Follow the pattern: `test-<category>-<action>.sh`
 
 ```
+
 ✅ Good names:
 test-vm-snapshot-create.sh
 test-network-attach-vm.sh
@@ -289,7 +292,8 @@ test-storage-pool-create.sh
 my_script.sh
 temp-test.sh
 script1.sh
-```
+
+````
 
 ### Example: Making a Script Discoverable
 
@@ -298,9 +302,10 @@ script1.sh
 #!/bin/bash
 # temp script
 kcli info vm $1
-```
+````
 
 **After (high discoverability):**
+
 ```bash
 #!/bin/bash
 # ============================================
@@ -363,6 +368,7 @@ virsh -c qemu:///system domblklist "$VM_NAME"
 ```
 
 Now the AI can:
+
 - Understand what the script does
 - Recommend it when users ask about VM info
 - Explain how to use it
@@ -420,7 +426,7 @@ git commit -m "Add test script for new feature"
 
 # Tell AI about it
 # Go to AI Assistant and say:
-# "I created a new test script at scripts/test-my-new-feature.sh 
+# "I created a new test script at scripts/test-my-new-feature.sh
 #  that tests X. Can you help me document it?"
 ```
 
@@ -495,7 +501,7 @@ echo "Creating $NUM_VMS VMs..."
 for i in $(seq 1 $NUM_VMS); do
     VM_NAME="${BASE_NAME}-${i}"
     echo "Creating $VM_NAME..."
-    
+
     kcli create vm "$VM_NAME" \
         -i centos10stream \
         -P memory=1024 \
@@ -536,7 +542,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "Deleting $vm..."
         kcli delete vm "$vm" -y || true
     done <<< "$TEST_VMS"
-    
+
     echo "✅ Cleanup complete!"
 fi
 ```
@@ -546,18 +552,21 @@ fi
 ### For Different Use Cases
 
 **Network Testing:**
+
 ```bash
 cp TEMPLATE-new-script.sh test-network-custom.sh
 # Edit to test network operations
 ```
 
 **Storage Testing:**
+
 ```bash
 cp TEMPLATE-new-script.sh test-storage-pool.sh
 # Edit to test storage operations
 ```
 
 **Performance Testing:**
+
 ```bash
 cp TEMPLATE-new-script.sh test-vm-performance.sh
 # Edit to test VM performance
@@ -570,7 +579,7 @@ cp TEMPLATE-new-script.sh test-vm-performance.sh
 Go to http://localhost:8888/ai-assistant and ask:
 
 ```
-"I want to create a test script that [does X]. 
+"I want to create a test script that [does X].
  Can you help me based on the template?"
 
 "How do I test [Y] before adding it to a DAG?"
@@ -594,17 +603,20 @@ cat scripts/HOW-TO-ADD-SCRIPTS.md
 ## ✅ Summary
 
 **Adding scripts is easy:**
+
 1. Copy template (1 command)
-2. Edit 3 sections (2 minutes)
-3. Test it (30 seconds)
+1. Edit 3 sections (2 minutes)
+1. Test it (30 seconds)
 
 **RAG awareness happens through:**
+
 1. Clear documentation in scripts
-2. Updates to README.md
-3. Companion markdown docs
-4. Consistent naming patterns
+1. Updates to README.md
+1. Companion markdown docs
+1. Consistent naming patterns
 
 **The AI Assistant will know about your scripts when:**
+
 - You reference them in conversations
 - They're well-documented
 - They're in the scripts/ directory

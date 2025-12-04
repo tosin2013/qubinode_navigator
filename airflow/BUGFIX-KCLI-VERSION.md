@@ -3,11 +3,13 @@
 ## 🐛 Issue Report
 
 **Error from DAG logs:**
+
 ```python
 AttributeError: 'xml.etree.ElementTree.Element' object has no attribute 'getiterator'
 ```
 
 **Full traceback:**
+
 ```
 File "/home/airflow/.local/lib/python3.11/site-packages/kvirt/kvm/__init__.py", line 281, in create
   default_pooltype = list(root.getiterator('pool'))[0].get('type')
@@ -20,33 +22,38 @@ AttributeError: 'xml.etree.ElementTree.Element' object has no attribute 'getiter
 ### The Problem
 
 **kcli version `99.0` uses deprecated Python method:**
+
 - `getiterator()` was deprecated in Python 3.2
 - Removed completely in Python 3.9
 - kcli 99.0 still uses this method in `/kvirt/kvm/__init__.py`
 
 **Why it happened:**
+
 ```python
 # kcli 99.0 code (BROKEN):
 default_pooltype = list(root.getiterator('pool'))[0].get('type')
-                        ^^^^^^^^^^^^^^^^ 
+                        ^^^^^^^^^^^^^^^^
                         # This method doesn't exist in Python 3.9+
 ```
 
 ### Investigation Steps
 
 **1. Checked Python version:**
+
 ```bash
 $ podman exec airflow_airflow-scheduler_1 python --version
 Python 3.11.11  ✅ (Correct version)
 ```
 
 **2. Checked kcli version:**
+
 ```bash
 $ podman exec airflow_airflow-scheduler_1 python -m pip list | grep kcli
 kcli  99.0  ❌ (Old version with bug)
 ```
 
 **3. Checked for updates:**
+
 ```bash
 $ podman exec airflow_airflow-scheduler_1 python -m pip index versions kcli
 LATEST: 99.0.202511192102  ✅ (Much newer!)
@@ -61,6 +68,7 @@ LATEST: 99.0.202511192102  ✅ (Much newer!)
 **File:** `/root/qubinode_navigator/airflow/Dockerfile`
 
 **Before:**
+
 ```dockerfile
 # Install kcli via pip
 RUN pip install --no-cache-dir \
@@ -70,6 +78,7 @@ RUN pip install --no-cache-dir \
 ```
 
 **After:**
+
 ```dockerfile
 # Install kcli via pip (use latest version to avoid getiterator bug in 99.0)
 RUN pip install --no-cache-dir \
@@ -81,6 +90,7 @@ RUN pip install --no-cache-dir \
 ## 🧪 Verification
 
 ### Before Fix:
+
 ```bash
 $ podman exec airflow_airflow-scheduler_1 kcli create vm test -i centos10stream ...
 
@@ -91,6 +101,7 @@ AttributeError: 'xml.etree.ElementTree.Element' object has no attribute 'getiter
 ```
 
 ### After Fix:
+
 ```bash
 $ podman exec airflow_airflow-scheduler_1 python -m pip list | grep kcli
 kcli  99.0.202511192102  ✅
@@ -111,22 +122,24 @@ test-fix-v2  running
 
 ## 📊 Version Comparison
 
-| Version | Release Date | Python 3.11 | `getiterator()` | Status |
-|---------|--------------|-------------|-----------------|--------|
-| 99.0 | Old | ✅ | ❌ Uses it (broken) | ❌ Broken |
-| 99.0.202511192102 | 2025-11-19 | ✅ | ✅ Fixed | ✅ Works |
+| Version           | Release Date | Python 3.11 | `getiterator()`     | Status    |
+| ----------------- | ------------ | ----------- | ------------------- | --------- |
+| 99.0              | Old          | ✅          | ❌ Uses it (broken) | ❌ Broken |
+| 99.0.202511192102 | 2025-11-19   | ✅          | ✅ Fixed            | ✅ Works  |
 
 ## 🎓 Why This Matters
 
 ### Silent Failures vs Explicit Errors
 
 **This bug is "loud" - it fails fast:**
+
 - ✅ Clear error message
 - ✅ Fails immediately
 - ✅ Easy to debug
 - ✅ Traceback shows exact line
 
 **Compare to our earlier bug (missing genisoimage):**
+
 - ❌ Silent failure
 - ❌ Returns success code
 - ❌ No exception raised
@@ -149,30 +162,35 @@ root.iter('pool')
 ## 🔄 Update Process
 
 ### Step 1: Update Dockerfile
+
 ```bash
 vim /root/qubinode_navigator/airflow/Dockerfile
 # Change: kcli==99.0 → kcli
 ```
 
 ### Step 2: Rebuild Image
+
 ```bash
 cd /root/qubinode_navigator/airflow
 podman build -t qubinode-airflow:2.10.4-python3.11 -f Dockerfile .
 ```
 
 ### Step 3: Restart Airflow
+
 ```bash
 podman-compose down
 podman-compose up -d
 ```
 
 ### Step 4: Verify
+
 ```bash
 podman exec airflow_airflow-scheduler_1 python -m pip list | grep kcli
 # Should show: 99.0.202511192102 (or later)
 ```
 
 ### Step 5: Test
+
 ```bash
 ./scripts/test-kcli-create-vm.sh test-verify centos10stream 1024 1 10
 ```
@@ -182,11 +200,13 @@ podman exec airflow_airflow-scheduler_1 python -m pip list | grep kcli
 ### Two Bugs Found & Fixed:
 
 **1. Missing `genisoimage` package**
+
 - **Symptom:** Silent failure, VM not created
 - **Fix:** Added `genisoimage` to Dockerfile
 - **Status:** ✅ Fixed
 
 **2. Old kcli version with `getiterator()` bug**
+
 - **Symptom:** AttributeError on VM creation
 - **Fix:** Updated to latest kcli (removed version pin)
 - **Status:** ✅ Fixed
@@ -242,22 +262,26 @@ RUN pip install --no-cache-dir \
 ### Test Your DAG!
 
 1. **Go to Airflow UI:**
+
    ```
    http://localhost:8888
    ```
 
-2. **Trigger the DAG:**
+1. **Trigger the DAG:**
+
    - Click on `example_kcli_vm_provisioning`
    - Click play button ▶️
    - Select "Trigger DAG"
 
-3. **Watch it work:**
+1. **Watch it work:**
+
    ```bash
    # In another terminal, monitor VMs:
    watch -n 2 'kcli list vms'
    ```
 
-4. **Expected behavior:**
+1. **Expected behavior:**
+
    - ✅ VM gets created
    - ✅ VM runs for 5 minutes
    - ✅ You can see it with `kcli list vms`
@@ -279,23 +303,27 @@ http://localhost:8888/ai-assistant/logs/example_kcli_vm_provisioning/create_test
 ### If DAG still fails:
 
 **1. Check kcli version:**
+
 ```bash
 podman exec airflow_airflow-scheduler_1 python -m pip list | grep kcli
 # Must be 99.0.202511192102 or newer
 ```
 
 **2. Check genisoimage:**
+
 ```bash
 podman exec airflow_airflow-scheduler_1 which genisoimage
 # Must show: /usr/bin/genisoimage
 ```
 
 **3. Test manually:**
+
 ```bash
 podman exec airflow_airflow-scheduler_1 kcli create vm manual-test -i centos10stream -P memory=512 -P numcpus=1 -P disks=[5]
 ```
 
 **4. Check image exists:**
+
 ```bash
 virsh -c qemu:///system vol-list default | grep centos10stream
 ```
@@ -316,6 +344,7 @@ You know everything is working when:
 ## 🎉 Expected Result
 
 **Complete DAG workflow:**
+
 ```
 1. Trigger DAG
    ✅ All services healthy
@@ -352,12 +381,12 @@ VMs on host: ✅ Created and cleaned up
 Logs: ✅ No errors!
 ```
 
----
+______________________________________________________________________
 
-**Status:** ✅ **FULLY FIXED**  
-**Root Cause:** Old kcli version + missing package  
-**Solution:** Update kcli + add genisoimage  
-**Testing:** ✅ VM creation verified working  
+**Status:** ✅ **FULLY FIXED**
+**Root Cause:** Old kcli version + missing package
+**Solution:** Update kcli + add genisoimage
+**Testing:** ✅ VM creation verified working
 **Ready for Production:** ✅ Yes!
 
 🎯 **Your DAGs will now work perfectly!**

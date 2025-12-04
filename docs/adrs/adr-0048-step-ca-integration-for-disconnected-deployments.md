@@ -1,14 +1,17 @@
 # ADR-0048: Step-CA Integration for Disconnected Deployments
 
 ## Status
+
 Proposed
 
 ## Date
+
 2025-11-28
 
 ## Context
 
 Qubinode Navigator needs to support disconnected/air-gapped deployments for:
+
 - OpenShift clusters (via `ocp4-disconnected-helper`)
 - Container registries (Harbor, Quay, mirror-registry)
 - Kubernetes clusters
@@ -19,6 +22,7 @@ Currently, these deployments require manual certificate management or rely on ex
 ### Research Findings (Context7)
 
 **Step-CA Capabilities:**
+
 - Online certificate authority for X.509 TLS and SSH certificates
 - ACME protocol support (compatible with Certbot, Caddy, Traefik)
 - Short-lived certificates for zero-trust architectures
@@ -27,11 +31,13 @@ Currently, these deployments require manual certificate management or rely on ex
 - Kubernetes integration via `autocert` controller
 
 **Integration Patterns:**
+
 1. **ACME Protocol** - Standard automated certificate workflows
-2. **Bootstrap Functions** - Zero-config client/server setup with auto-renewal
-3. **SDK Integration** - Fine-grained control for custom applications
+1. **Bootstrap Functions** - Zero-config client/server setup with auto-renewal
+1. **SDK Integration** - Fine-grained control for custom applications
 
 **Kubernetes Integration Options:**
+
 - `smallstep/autocert` - Automatic TLS injection into pods
 - `cert-manager` - Native Kubernetes certificate management with Step-CA issuer
 
@@ -69,6 +75,7 @@ Implement Step-CA as a core infrastructure component in Qubinode Navigator with 
 ### Integration Points
 
 #### 1. Mirror Registry (Harbor/Quay)
+
 ```yaml
 # Harbor values.yaml
 expose:
@@ -81,6 +88,7 @@ expose:
 ```
 
 Certificate obtained via:
+
 ```bash
 step ca certificate registry.example.com registry.crt registry.key \
   --ca-url https://step-ca-server.example.com:443 \
@@ -88,6 +96,7 @@ step ca certificate registry.example.com registry.crt registry.key \
 ```
 
 #### 2. OpenShift Disconnected Install
+
 ```yaml
 # install-config.yaml
 additionalTrustBundle: |
@@ -102,6 +111,7 @@ imageContentSources:
 ```
 
 #### 3. Kubernetes with cert-manager
+
 ```yaml
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
@@ -119,6 +129,7 @@ spec:
 ```
 
 #### 4. Kubernetes with autocert
+
 ```bash
 # Install autocert controller
 kubectl run autocert-init -it --rm \
@@ -154,6 +165,7 @@ step_ca_deployment DAG:
 ### Configuration Files
 
 **Step-CA Config (`ca.json`):**
+
 ```json
 {
   "root": "/etc/step-ca/certs/root_ca.crt",
@@ -185,6 +197,7 @@ step_ca_deployment DAG:
 ### Ansible Playbook Integration
 
 Create `/root/kcli-pipelines/step-ca-server/ansible/deploy_step_ca.yaml`:
+
 ```yaml
 ---
 - name: Deploy Step-CA Server
@@ -193,20 +206,20 @@ Create `/root/kcli-pipelines/step-ca-server/ansible/deploy_step_ca.yaml`:
   vars:
     step_ca_domain: "{{ domain }}"
     step_ca_dns_ip: "{{ dns_ip }}"
-  
+
   tasks:
     - name: Install Step CLI
       dnf:
         name: "https://dl.smallstep.com/cli/docs-ca-install/latest/step-cli_amd64.rpm"
         state: present
         disable_gpg_check: yes
-    
+
     - name: Install Step CA
       dnf:
         name: "https://dl.smallstep.com/certificates/docs-ca-install/latest/step-ca_amd64.rpm"
         state: present
         disable_gpg_check: yes
-    
+
     - name: Initialize Step CA
       command: >
         step ca init
@@ -218,16 +231,16 @@ Create `/root/kcli-pipelines/step-ca-server/ansible/deploy_step_ca.yaml`:
         --password-file=/etc/step/initial_password
       args:
         creates: /root/.step/config/ca.json
-    
+
     - name: Add ACME provisioner
       command: step ca provisioner add acme --type ACME
       ignore_errors: yes
-    
+
     - name: Create systemd service
       template:
         src: step-ca.service.j2
         dest: /etc/systemd/system/step-ca.service
-    
+
     - name: Start Step CA service
       systemd:
         name: step-ca
@@ -239,6 +252,7 @@ Create `/root/kcli-pipelines/step-ca-server/ansible/deploy_step_ca.yaml`:
 ## Consequences
 
 ### Positive
+
 - **Automated PKI** - No manual certificate management
 - **ACME Support** - Standard protocol, works with existing tools
 - **Short-lived Certs** - Enhanced security with automatic renewal
@@ -246,16 +260,19 @@ Create `/root/kcli-pipelines/step-ca-server/ansible/deploy_step_ca.yaml`:
 - **Multi-use** - Single CA for registry, OpenShift, Kubernetes, services
 
 ### Negative
+
 - **Additional VM** - Requires dedicated Step-CA server
 - **Complexity** - Another component to manage
 - **Learning Curve** - Team needs to understand PKI concepts
 
 ### Risks
+
 - **Single Point of Failure** - CA unavailability blocks certificate issuance
 - **Key Security** - Root CA key must be protected
 - **Certificate Expiry** - Must ensure renewal automation works
 
 ### Mitigations
+
 - Deploy Step-CA with HA (future enhancement)
 - Store root key in HSM or vault (production)
 - Monitor certificate expiry with alerts
@@ -264,30 +281,34 @@ Create `/root/kcli-pipelines/step-ca-server/ansible/deploy_step_ca.yaml`:
 ## Implementation Plan
 
 ### Phase 1: Basic Deployment (Current)
+
 - [x] Create `step_ca_deployment.py` DAG
 - [ ] Test DAG with RHEL9 VM
 - [ ] Validate certificate issuance
 
 ### Phase 2: Registry Integration
+
 - [ ] Update `registry_deployment.py` DAG to use Step-CA
 - [ ] Document Harbor/Quay TLS configuration
 - [ ] Test with `ocp4-disconnected-helper`
 
 ### Phase 3: Kubernetes Integration
+
 - [ ] Create cert-manager issuer configuration
 - [ ] Document autocert deployment
 - [ ] Test with Kubernetes cluster
 
 ### Phase 4: OpenShift Integration
+
 - [ ] Document `additionalTrustBundle` configuration
 - [ ] Test disconnected OpenShift install
 - [ ] Update `ocp_agent_installer.py` DAG
 
 ## Related DAGs
 
-| DAG | Purpose |
-|-----|---------|
-| `step_ca_deployment.py` | Deploy Step-CA server VM |
+| DAG                     | Purpose                                                    |
+| ----------------------- | ---------------------------------------------------------- |
+| `step_ca_deployment.py` | Deploy Step-CA server VM                                   |
 | `step_ca_operations.py` | Certificate operations (request, renew, revoke, bootstrap) |
 
 ## Documentation

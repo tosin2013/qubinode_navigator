@@ -4,21 +4,23 @@
 
 Your MCP servers are **configured and running**!
 
----
+______________________________________________________________________
 
 ## 🔑 Your API Keys
 
 ### AI Assistant (Port 8081):
+
 ```
 74008c5dde3fca81946c7a5c019ee1e64aef85dbe7a08c2ea9a709bdcfae1e0f
 ```
 
 ### Airflow (Port 8889):
+
 ```
 65efb281f1ea9dc8498ec563f7bf42af4f8bf8a6b7bb542141902ce462cdb98a
 ```
 
----
+______________________________________________________________________
 
 ## 🚀 Claude Desktop Setup (Copy & Paste)
 
@@ -59,7 +61,7 @@ Your MCP servers are **configured and running**!
 }
 ```
 
----
+______________________________________________________________________
 
 ## 🎯 Test These Commands in Claude Desktop
 
@@ -73,11 +75,12 @@ After configuring Claude Desktop, restart it and try:
 5. "Search the documentation for kcli commands"
 ```
 
----
+______________________________________________________________________
 
 ## 🛠️ Available Tools (12 Total)
 
 ### Via Airflow MCP:
+
 - ✅ list_dags, get_dag_info, get_dag_runs
 - ✅ trigger_dag (start workflows)
 - ✅ list_vms, get_vm_info
@@ -85,11 +88,12 @@ After configuring Claude Desktop, restart it and try:
 - ✅ get_task_logs
 
 ### Via AI Assistant MCP:
+
 - ✅ query_documents (RAG search)
 - ✅ chat_with_context (AI chat)
 - ✅ get_project_status
 
----
+______________________________________________________________________
 
 ## ✅ What's Enabled
 
@@ -102,7 +106,7 @@ After configuring Claude Desktop, restart it and try:
 ⚠️  Write Access:        ENABLED (full control)
 ```
 
----
+______________________________________________________________________
 
 ## ⚡ Quick Commands
 
@@ -120,7 +124,7 @@ cd /root/qubinode_navigator/airflow && podman-compose restart
 podman logs -f airflow_airflow-webserver_1 | grep MCP
 ```
 
----
+______________________________________________________________________
 
 ## 📚 Full Documentation
 
@@ -128,7 +132,7 @@ podman logs -f airflow_airflow-webserver_1 | grep MCP
 - **Configuration:** `MCP-CONFIGURATION-ACTIVE.md`
 - **Architecture:** `docs/MCP-SERVER-DESIGN.md`
 
----
+______________________________________________________________________
 
 ## 🎉 You're All Set!
 

@@ -20,10 +20,10 @@ start_mcp_server() {
         python3 /app/mcp_http_server.py &
         MCP_PID=$!
         echo "MCP Server started with PID: $MCP_PID"
-        
+
         # Wait a moment for server to start
         sleep 2
-        
+
         # Verify it's running
         if kill -0 $MCP_PID 2>/dev/null; then
             echo "✓ MCP Server is running"

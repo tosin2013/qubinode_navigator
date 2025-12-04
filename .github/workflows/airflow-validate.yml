@@ -65,6 +65,10 @@ jobs:
           pip install apache-airflow==2.10.4
           pip install apache-airflow-providers-postgres
           pip install pyyaml
+          # Add pip scripts to PATH for airflow CLI
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          # Also check where pip installed airflow
+          pip show -f apache-airflow | grep "bin/airflow" || true
 
       - name: Validate DAG syntax
         run: |
@@ -88,14 +92,19 @@ jobs:
           export AIRFLOW__CORE__LOAD_EXAMPLES=false
           export AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=sqlite:///airflow.db
 
+          # Verify airflow is accessible (use python -m for reliability)
+          echo "Airflow location: $(which airflow || echo 'not in PATH')"
+          echo "Python location: $(which python3)"
+          python3 -m airflow version || { echo "[ERROR] airflow module not found"; exit 1; }
+
           # Initialize minimal Airflow DB
-          airflow db init
+          python3 -m airflow db init
 
           # List DAGs to check for import errors
-          airflow dags list 2>&1 | tee dag_list.txt
+          python3 -m airflow dags list 2>&1 | tee dag_list.txt
 
-          # Check for import errors
-          if grep -i "error" dag_list.txt; then
+          # Check for import errors (exclude "No data found" which is normal)
+          if grep -i "error" dag_list.txt | grep -v "No data found"; then
             echo "[ERROR] DAG import errors found"
             exit 1
           fi
@@ -226,6 +235,8 @@ jobs:
           pip install openlineage-airflow
           pip install pyyaml
           pip install httpx  # For MCP server testing
+          # Add pip scripts to PATH for airflow CLI
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Initialize Airflow DB
         env:
@@ -235,8 +246,9 @@ jobs:
           OPENLINEAGE_URL: http://localhost:5001
           OPENLINEAGE_NAMESPACE: smoke_test
         run: |
-          airflow db init
-          airflow users create \
+          echo "Airflow location: $(which airflow || echo 'not in PATH, using python -m')"
+          python3 -m airflow db init
+          python3 -m airflow users create \
             --username admin \
             --password admin \
             --firstname Admin \
@@ -272,10 +284,10 @@ jobs:
           echo "========================================"
 
           # List all DAGs
-          airflow dags list
+          python3 -m airflow dags list
 
           # Check for import errors
-          airflow dags list 2>&1 | tee dag_list.txt
+          python3 -m airflow dags list 2>&1 | tee dag_list.txt
           if grep -i "error" dag_list.txt | grep -v "No data found"; then
             echo "[ERROR] DAG import errors detected"
             exit 1
@@ -298,7 +310,7 @@ jobs:
           echo "========================================"
 
           # Run the smoke test DAG - this will emit OpenLineage events
-          airflow dags test smoke_test_dag 2025-01-01 2>&1 | tee dag_execution.log
+          python3 -m airflow dags test smoke_test_dag 2025-01-01 2>&1 | tee dag_execution.log
 
           # Check for success
           if grep -q "\[OK\] Smoke test completed successfully" dag_execution.log; then
@@ -362,7 +374,7 @@ jobs:
           echo "========================================"
 
           # Run with should_fail=True to test error handling
-          airflow dags test smoke_test_dag 2025-01-02 \
+          python3 -m airflow dags test smoke_test_dag 2025-01-02 \
             --conf '{"should_fail": true}' 2>&1 | tee failure_test.log || true
 
           if grep -q "Simulated failure" failure_test.log; then
@@ -389,12 +401,12 @@ jobs:
             echo "Checking DAG: $dag_id"
 
             # Show DAG details (validates structure)
-            if airflow dags show $dag_id 2>/dev/null; then
+            if python3 -m airflow dags show $dag_id 2>/dev/null; then
               echo "[OK] $dag_id structure valid"
 
               # List tasks
               echo "Tasks:"
-              airflow tasks list $dag_id 2>/dev/null | head -20
+              python3 -m airflow tasks list $dag_id 2>/dev/null | head -20
             else
               echo "[SKIP] $dag_id not found or has errors"
             fi

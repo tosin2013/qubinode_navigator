@@ -40,16 +40,16 @@ This site uses the [Just the Docs](https://just-the-docs.com/) theme for clean, 
 When adding new documentation:
 
 1. Follow the existing structure and naming conventions
-2. Add appropriate front matter to new pages
-3. Update navigation in `_config.yml` if needed
-4. Test locally before committing
-5. The site will auto-deploy after merging to main
+1. Add appropriate front matter to new pages
+1. Update navigation in `_config.yml` if needed
+1. Test locally before committing
+1. The site will auto-deploy after merging to main
 
 ## Troubleshooting
 
 If the site isn't building:
 
 1. Check the GitHub Actions workflow status
-2. Verify Jekyll syntax with `bundle exec jekyll build`
-3. Ensure all required gems are in the Gemfile
-4. Check for any broken internal links
+1. Verify Jekyll syntax with `bundle exec jekyll build`
+1. Ensure all required gems are in the Gemfile
+1. Check for any broken internal links

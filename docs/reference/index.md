@@ -1,9 +1,6 @@
----
-title: Reference
-description: Information-oriented technical descriptions
-nav_order: 4
-has_children: true
----
+______________________________________________________________________
+
+## title: Reference description: Information-oriented technical descriptions nav_order: 4 has_children: true
 
 # Reference
 
@@ -13,8 +10,8 @@ Information-oriented technical descriptions
 
 This section contains reference documentation following the Diataxis framework.
 
-
 **Reference** documentation is information-oriented:
+
 - Describe the machinery
 - Be accurate and complete
 - Focus on describing, not explaining

@@ -66,16 +66,16 @@ function deploy_freeipa(){
     if [ ! -d /opt/freeipa-workshop-deployer ]; then
         cd /opt/
         sudo git clone https://github.com/tosin2013/freeipa-workshop-deployer.git
-    else 
+    else
         cd /opt/freeipa-workshop-deployer
         sudo git pull
-    fi 
+    fi
 
     if [ -d /opt/qubinode_navigator/kcli-plan-samples ]; then
         echo "kcli-plan-samples folder  already exists"
-    else 
+    else
         update_profiles_file
-    fi 
+    fi
 
     cd /opt/freeipa-workshop-deployer || return
     sudo cp  example.vars.sh vars.sh

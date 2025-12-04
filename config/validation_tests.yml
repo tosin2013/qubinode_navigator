@@ -1,5 +1,5 @@
 # Qubinode Navigator Update Validation Test Definitions
-# 
+#
 # This file defines test templates and environment configurations
 # for automated update validation infrastructure.
 
@@ -357,29 +357,29 @@ environment_configs:
 execution_settings:
   # Maximum parallel tests per stage
   max_parallel_tests: 3
-  
+
   # Default timeouts (seconds)
   default_timeout: 300
   quick_timeout: 30
   long_timeout: 600
-  
+
   # Retry settings
   max_retries: 2
   retry_delay: 5
-  
+
   # Container settings
   container_runtime: "podman"
   container_timeout: 120
   cleanup_timeout: 30
-  
+
   # Test result evaluation
   critical_failure_stops_suite: true
   warning_threshold: 2
-  
+
   # Logging settings
   log_test_output: true
   max_output_length: 1000
-  
+
   # AI integration
   ai_analysis_enabled: true
   ai_timeout: 10

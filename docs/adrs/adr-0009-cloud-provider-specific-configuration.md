@@ -1,25 +1,25 @@
----
-layout: default
-title: ADR-0009 Cloud Provider-Specific Configuration
-parent: Infrastructure & Deployment
-grand_parent: Architectural Decision Records
-nav_order: 0009
----
+______________________________________________________________________
+
+## layout: default title: ADR-0009 Cloud Provider-Specific Configuration parent: Infrastructure & Deployment grand_parent: Architectural Decision Records nav_order: 0009
 
 # ADR-0009: Cloud Provider-Specific Configuration Management
 
 ## Status
+
 Accepted
 
 ## Context
+
 Qubinode Navigator needed to support deployment across multiple cloud providers, each with unique networking models, authentication mechanisms, storage options, and operational requirements. Hetzner Cloud requires specific SSH authentication workflows, user management patterns, and network configurations that differ significantly from bare-metal RHEL deployments or other cloud providers like Equinix Metal. The project required a strategy to handle cloud provider-specific requirements while maintaining consistent automation workflows and avoiding vendor lock-in.
 
 ## Decision
+
 Implement cloud provider-specific configuration management through dedicated deployment scripts and inventory configurations. Each cloud provider receives a specialized script (e.g., `rocky-linux-hetzner.sh`) that encapsulates provider-specific networking, authentication, user management, and service configurations. Cloud-specific logic is isolated within these scripts while maintaining integration with the core Qubinode Navigator automation framework.
 
 ## Consequences
 
 ### Positive Consequences
+
 - Enables optimal integration with each cloud provider's native services and APIs
 - Provides clear separation between cloud-specific logic and core automation
 - Allows independent optimization for each cloud provider's unique characteristics
@@ -28,7 +28,8 @@ Implement cloud provider-specific configuration management through dedicated dep
 - Reduces complexity in shared automation code by isolating provider-specific logic
 - Supports multi-cloud deployment strategies without vendor lock-in
 
-### Negative Consequences  
+### Negative Consequences
+
 - Increases maintenance overhead with multiple cloud-specific configurations
 - Potential for configuration drift between different cloud provider implementations
 - Requires expertise in multiple cloud providers and their specific requirements
@@ -39,10 +40,10 @@ Implement cloud provider-specific configuration management through dedicated dep
 ## Alternatives Considered
 
 1. **Single unified script with cloud provider detection** - Rejected due to complexity and maintainability issues
-2. **Cloud-agnostic configuration with runtime detection** - Would lose cloud-specific optimizations
-3. **Terraform or cloud-specific infrastructure-as-code tools** - Inconsistent with Ansible-based approach
-4. **Container-based deployment abstracting cloud differences** - Would lose native cloud integration benefits
-5. **Multi-cloud abstraction layer** - Too complex and would reduce cloud-specific capabilities
+1. **Cloud-agnostic configuration with runtime detection** - Would lose cloud-specific optimizations
+1. **Terraform or cloud-specific infrastructure-as-code tools** - Inconsistent with Ansible-based approach
+1. **Container-based deployment abstracting cloud differences** - Would lose native cloud integration benefits
+1. **Multi-cloud abstraction layer** - Too complex and would reduce cloud-specific capabilities
 
 ## Evidence Supporting This Decision
 
@@ -56,6 +57,7 @@ Implement cloud provider-specific configuration management through dedicated dep
 ## Implementation Details
 
 ### Hetzner Cloud Specific Configuration
+
 ```bash
 # Hetzner-specific inventory and pipeline settings
 export CICD_PIPELINE="false"
@@ -74,6 +76,7 @@ function check_for_lab_user() {
 ```
 
 ### Progressive SSH Security for Cloud Environments
+
 ```bash
 # Enable SSH password authentication for initial setup
 function enable_ssh_password_authentication() {
@@ -89,6 +92,7 @@ function disable_ssh_password_authentication() {
 ```
 
 ### Cloud Provider Integration Patterns
+
 - **Inventory Mapping**: Cloud-specific inventory configurations
 - **Authentication**: Provider-specific authentication and credential management
 - **Networking**: Cloud-native networking and security group configurations
@@ -96,6 +100,7 @@ function disable_ssh_password_authentication() {
 - **Monitoring**: Cloud provider monitoring and alerting integration
 
 ### Supported Cloud Providers
+
 - **Hetzner Cloud**: Rocky Linux optimized with Hetzner-specific configurations
 - **Equinix Metal**: RHEL 8/9 support with bare-metal optimizations
 - **Localhost/Bare-metal**: Direct hardware deployment configurations
@@ -104,6 +109,7 @@ function disable_ssh_password_authentication() {
 ## Cloud Provider Characteristics
 
 ### Hetzner Cloud Optimizations
+
 - **OS Choice**: Rocky Linux for cost-effectiveness and compatibility
 - **Authentication**: Progressive SSH security model
 - **User Management**: Automated lab-user provisioning
@@ -111,6 +117,7 @@ function disable_ssh_password_authentication() {
 - **Cost Optimization**: Streamlined package sets and configurations
 
 ### Bare-Metal/RHEL Optimizations
+
 - **Enterprise Features**: Full RHEL enterprise capabilities
 - **Hardware Integration**: Direct hardware management and optimization
 - **Security**: Enterprise-grade security configurations
@@ -134,15 +141,18 @@ function disable_ssh_password_authentication() {
 - **Monitoring**: Cloud provider monitoring and observability integration
 
 ## Related Decisions
+
 - ADR-0002: Multi-Cloud Inventory Strategy with Environment-Specific Configurations
 - ADR-0004: Security Architecture with Ansible Vault and AnsibleSafe
 - ADR-0008: OS-Specific Deployment Script Strategy
 - ADR-0010: Progressive SSH Security Model (planned)
 
 ## Date
+
 2025-01-09
 
 ## Stakeholders
+
 - Cloud Operations Team
 - DevOps Team
 - Infrastructure Team

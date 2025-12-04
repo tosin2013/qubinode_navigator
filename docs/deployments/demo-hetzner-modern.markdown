@@ -1,9 +1,6 @@
----
-layout: default
-title: "Modern Hetzner Cloud Deployment"
-parent: Deployment Documentation
-nav_order: 3
----
+______________________________________________________________________
+
+## layout: default title: "Modern Hetzner Cloud Deployment" parent: Deployment Documentation nav_order: 3
 
 # 🚀 Modern Hetzner Cloud Deployment
 
@@ -52,6 +49,7 @@ vi .env
 ```
 
 **Hetzner-specific configuration:**
+
 ```bash
 # =============================================================================
 # HETZNER CLOUD DEPLOYMENT CONFIGURATION
@@ -97,6 +95,7 @@ USE_HASHICORP_VAULT=false
 ```
 
 The deployment will:
+
 - ✅ **Automatically detect** Hetzner Cloud environment
 - ✅ **Configure OS packages** for your RHEL-based system
 - ✅ **Set up networking** with Hetzner-optimized settings
@@ -110,12 +109,14 @@ The deployment will:
 During deployment, the **AI Assistant** provides:
 
 ### **Real-Time Troubleshooting**
+
 - **Automatic error detection** and context-aware solutions
 - **Configuration guidance** for Hetzner-specific settings
 - **Network troubleshooting** for bond0 interface issues
 - **Performance optimization** recommendations
 
 ### **Interactive Help**
+
 ```bash
 # AI Assistant is available at:
 http://your-server-ip:8080
@@ -127,13 +128,15 @@ http://your-server-ip:8080
 ### **Common AI-Assisted Solutions**
 
 **Network Configuration Issues:**
+
 ```
-🤖 AI: "Detected bond0 interface configuration issue. 
-Hetzner Cloud typically uses bond0 for network redundancy. 
+🤖 AI: "Detected bond0 interface configuration issue.
+Hetzner Cloud typically uses bond0 for network redundancy.
 Checking interface status and applying Hetzner-specific fixes..."
 ```
 
 **Storage Configuration:**
+
 ```
 🤖 AI: "Optimizing storage for Hetzner Cloud SSD configuration.
 Recommended LVM setup for KVM guests detected and applied."
@@ -150,7 +153,7 @@ The deployment leverages plugins from `docs/plugins/` for enhanced functionality
 # File: plugins/cloud/hetzner_plugin.py
 # Provides: Hetzner-specific network and storage optimization
 
-# Environment plugin (automatically applied)  
+# Environment plugin (automatically applied)
 # File: plugins/environments/hetzner_deployment_plugin.py
 # Provides: Hetzner Cloud deployment patterns and best practices
 ```
@@ -195,16 +198,18 @@ https://your-server-ip:9090
 ## 🔄 **Migration from Legacy Method**
 
 ### **Legacy Process (Old Way)**
+
 ```bash
 # OLD: Manual multi-step process
 curl -OL https://raw.githubusercontent.com/Qubinode/qubinode_navigator/main/rocky-linux-hetzner.sh
 # Create notouch.env manually
-# Create /tmp/config.yml manually  
+# Create /tmp/config.yml manually
 # Run rocky-linux-hetzner.sh
 # Manual troubleshooting
 ```
 
 ### **Modern Process (New Way)**
+
 ```bash
 # NEW: AI-enhanced one-shot deployment
 git clone https://github.com/Qubinode/qubinode_navigator.git
@@ -222,10 +227,10 @@ cp .env.example .env
 The AI Assistant automatically helps with:
 
 1. **Hetzner-specific network issues**
-2. **Bond0 interface configuration**
-3. **Storage optimization for SSD**
-4. **Firewall configuration for Hetzner Cloud**
-5. **Performance tuning recommendations**
+1. **Bond0 interface configuration**
+1. **Storage optimization for SSD**
+1. **Firewall configuration for Hetzner Cloud**
+1. **Performance tuning recommendations**
 
 ### **Manual Troubleshooting**
 
@@ -247,20 +252,20 @@ ip addr show bond0
 
 ### **Common Issues & Solutions**
 
-| Issue | AI-Assisted Solution | Manual Solution |
-|-------|---------------------|-----------------|
+| Issue                | AI-Assisted Solution                          | Manual Solution                     |
+| -------------------- | --------------------------------------------- | ----------------------------------- |
 | Bond0 not configured | AI detects and applies Hetzner network config | `sudo systemctl restart networking` |
-| Storage optimization | AI applies SSD-optimized LVM settings | Manual LVM configuration |
-| Firewall blocking | AI configures Hetzner Cloud firewall rules | `sudo firewall-cmd --list-all` |
+| Storage optimization | AI applies SSD-optimized LVM settings         | Manual LVM configuration            |
+| Firewall blocking    | AI configures Hetzner Cloud firewall rules    | `sudo firewall-cmd --list-all`      |
 
 ## 🎯 **Next Steps**
 
 After successful deployment:
 
 1. **VM Management**: Use `kcli` to create and manage VMs
-2. **Monitoring**: Access Cockpit at `https://your-server:9090`
-3. **AI Assistance**: Continue using AI Assistant for operations
-4. **Scaling**: Add more nodes or resources as needed
+1. **Monitoring**: Access Cockpit at `https://your-server:9090`
+1. **AI Assistance**: Continue using AI Assistant for operations
+1. **Scaling**: Add more nodes or resources as needed
 
 ### **Recommended Post-Deployment Actions**
 
@@ -283,13 +288,14 @@ kcli create vm -P rhel9 myvm
 - **kcli Documentation**: [https://kcli.readthedocs.io/](https://kcli.readthedocs.io/)
 - **Qubinode Navigator**: [GitHub Repository](https://github.com/Qubinode/qubinode_navigator)
 
----
+______________________________________________________________________
 
 ## 🎉 **Success!**
 
 Your Hetzner Cloud deployment is complete with:
+
 - ✅ **Modern RHEL-based hypervisor** ready for workloads
-- ✅ **AI Assistant** available for ongoing support  
+- ✅ **AI Assistant** available for ongoing support
 - ✅ **Optimized configuration** for Hetzner Cloud
 - ✅ **Enterprise-ready** KVM virtualization platform
 

@@ -146,7 +146,7 @@ check_ports() {
 # Function to create Dockerfile for Jekyll
 create_dockerfile() {
     local dockerfile_path="$PROJECT_ROOT/Dockerfile.jekyll"
-    
+
     cat > "$dockerfile_path" << 'EOF'
 FROM docker.io/library/ruby:3.1.4-alpine
 
@@ -189,26 +189,26 @@ EOF
 # Function to build Jekyll container image
 build_image() {
     local image_name="qubinode-jekyll:latest"
-    
+
     log_info "Building Jekyll container image..."
-    
+
     if ! podman build -t "$image_name" -f "$PROJECT_ROOT/Dockerfile.jekyll" "$PROJECT_ROOT"; then
         log_error "Failed to build Jekyll container image"
         exit 1
     fi
-    
+
     log_success "Jekyll container image built: $image_name"
 }
 
 # Function to run Jekyll container
 run_jekyll_container() {
     local image_name="qubinode-jekyll:latest"
-    
+
     log_info "Starting Jekyll development server in container..."
     log_info "Container name: $CONTAINER_NAME"
     log_info "Jekyll URL: http://localhost:$JEKYLL_PORT"
     log_info "LiveReload: http://localhost:$LIVERELOAD_PORT"
-    
+
     # Run container with volume mount and port forwarding
     podman run -d \
         --name "$CONTAINER_NAME" \
@@ -217,7 +217,7 @@ run_jekyll_container() {
         -p "${LIVERELOAD_PORT}:35729" \
         -v "$DOCS_DIR:/site:Z" \
         "$image_name"
-    
+
     if [[ $? -eq 0 ]]; then
         log_success "Jekyll container started successfully!"
         log_info "Access your site at: http://localhost:$JEKYLL_PORT"
@@ -260,7 +260,7 @@ show_status() {
 open_browser() {
     local url="http://localhost:$JEKYLL_PORT"
     log_info "Opening browser to: $url"
-    
+
     if command -v xdg-open &> /dev/null; then
         xdg-open "$url"
     elif command -v open &> /dev/null; then
@@ -314,7 +314,7 @@ cleanup() {
 # Main function
 main() {
     local command="${1:-start}"
-    
+
     case "$command" in
         "start")
             log_info "Starting Jekyll development server..."

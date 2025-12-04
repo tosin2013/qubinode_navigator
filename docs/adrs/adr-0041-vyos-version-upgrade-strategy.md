@@ -1,16 +1,12 @@
----
-layout: default
-title: ADR-0041 VyOS Version Upgrade Strategy
-parent: Infrastructure & Deployment
-grand_parent: Architectural Decision Records
-nav_order: 41
----
+______________________________________________________________________
+
+## layout: default title: ADR-0041 VyOS Version Upgrade Strategy parent: Infrastructure & Deployment grand_parent: Architectural Decision Records nav_order: 41
 
 # ADR-0041: VyOS Router Version Pinning and Upgrade Strategy
 
-**Status:** Accepted  
-**Date:** 2025-11-27  
-**Decision Makers:** Platform Team, Network Team  
+**Status:** Accepted
+**Date:** 2025-11-27
+**Decision Makers:** Platform Team, Network Team
 **Related ADRs:** ADR-0039 (FreeIPA/VyOS DAG Integration)
 
 ## Context and Problem Statement
@@ -23,19 +19,20 @@ ISO_LOC=https://github.com/vyos/vyos-nightly-build/releases/download/${VYOS_VERS
 ```
 
 **Problems with Current Approach:**
+
 1. Rolling releases are snapshots that may contain bugs or breaking changes
-2. Version `1.5-rolling-202409250007` is from September 2024 and is outdated
-3. No defined upgrade path or testing procedure
-4. Different environments may run different versions causing inconsistency
-5. Rolling releases are not suitable for production-like environments
+1. Version `1.5-rolling-202409250007` is from September 2024 and is outdated
+1. No defined upgrade path or testing procedure
+1. Different environments may run different versions causing inconsistency
+1. Rolling releases are not suitable for production-like environments
 
 ## Decision Drivers
 
-* Ensure deployment stability and reproducibility
-* Maintain consistent behavior across environments
-* Enable controlled upgrade cycles with testing
-* Support both development (rolling) and production (stable) use cases
-* Minimize disruption to existing deployments
+- Ensure deployment stability and reproducibility
+- Maintain consistent behavior across environments
+- Enable controlled upgrade cycles with testing
+- Support both development (rolling) and production (stable) use cases
+- Minimize disruption to existing deployments
 
 ## Decision Outcome
 
@@ -57,11 +54,11 @@ ISO_LOC=https://github.com/vyos/vyos-nightly-build/releases/download/${VYOS_VERS
 
 ### Recommended Versions
 
-| Channel | Version | Release Date | Notes |
-|---------|---------|--------------|-------|
-| **stable** | 1.5-rolling-202411* | Nov 2025 | Latest tested rolling |
-| **lts** | 1.4.0 | When available | Long-term support |
-| **rolling** | Latest nightly | Daily | For testing only |
+| Channel     | Version              | Release Date   | Notes                 |
+| ----------- | -------------------- | -------------- | --------------------- |
+| **stable**  | 1.5-rolling-202411\* | Nov 2025       | Latest tested rolling |
+| **lts**     | 1.4.0                | When available | Long-term support     |
+| **rolling** | Latest nightly       | Daily          | For testing only      |
 
 ### Configuration Approach
 
@@ -72,11 +69,11 @@ vyos:
   version: "1.5-rolling-202411250007"  # Pinned version for stable
   auto_update: false
   download_url_template: "https://github.com/vyos/vyos-nightly-build/releases/download/{version}/vyos-{version}-generic-amd64.iso"
-  
+
   # Version validation
   min_version: "1.4.0"
   max_version: "1.6.0"
-  
+
   # Upgrade settings
   upgrade_window: "quarterly"
   test_before_upgrade: true
@@ -115,7 +112,7 @@ get_vyos_version() {
             exit 1
             ;;
     esac
-    
+
     echo "Using VyOS version: $VYOS_VERSION (channel: $VYOS_CHANNEL)"
 }
 ```
@@ -131,17 +128,17 @@ vyos:
     tested_by: "platform-team"
     notes: "Tested with FreeIPA integration"
     sha256: "abc123..."
-    
+
   lts:
     version: "1.4.0"
     tested_date: "2025-11-01"
     notes: "Long-term support release"
     sha256: "def456..."
-    
+
   rolling:
     # Always fetches latest
     auto_fetch: true
-    
+
   deprecated:
     - version: "1.5-rolling-202409250007"
       reason: "Outdated, replaced by newer stable"
@@ -211,42 +208,42 @@ fi
 
 ## Upgrade Schedule
 
-| Quarter | Activity |
-|---------|----------|
-| Q1 | Review available releases, select candidate |
-| Q1+2w | Test candidate in dev environment |
-| Q1+4w | Deploy to staging, run integration tests |
-| Q2 start | Update stable version, notify users |
+| Quarter  | Activity                                    |
+| -------- | ------------------------------------------- |
+| Q1       | Review available releases, select candidate |
+| Q1+2w    | Test candidate in dev environment           |
+| Q1+4w    | Deploy to staging, run integration tests    |
+| Q2 start | Update stable version, notify users         |
 
 ## Positive Consequences
 
-* **Stability**: Pinned versions ensure consistent behavior
-* **Reproducibility**: Same version across all environments
-* **Controlled Updates**: Quarterly review prevents surprise breakages
-* **Rollback Capability**: Previous versions documented for rollback
-* **Flexibility**: Multiple channels for different use cases
+- **Stability**: Pinned versions ensure consistent behavior
+- **Reproducibility**: Same version across all environments
+- **Controlled Updates**: Quarterly review prevents surprise breakages
+- **Rollback Capability**: Previous versions documented for rollback
+- **Flexibility**: Multiple channels for different use cases
 
 ## Negative Consequences
 
-* **Maintenance Overhead**: Quarterly version reviews required
-* **Potential Lag**: May miss security fixes between updates
-* **Storage**: Multiple ISO versions may need caching
+- **Maintenance Overhead**: Quarterly version reviews required
+- **Potential Lag**: May miss security fixes between updates
+- **Storage**: Multiple ISO versions may need caching
 
 ## Risks and Mitigations
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| Security vulnerability in pinned version | High | Monitor VyOS security advisories, emergency updates |
-| Breaking changes in new version | Medium | Thorough testing before promotion to stable |
-| ISO download unavailable | Low | Cache ISOs locally, mirror to internal storage |
+| Risk                                     | Impact | Mitigation                                          |
+| ---------------------------------------- | ------ | --------------------------------------------------- |
+| Security vulnerability in pinned version | High   | Monitor VyOS security advisories, emergency updates |
+| Breaking changes in new version          | Medium | Thorough testing before promotion to stable         |
+| ISO download unavailable                 | Low    | Cache ISOs locally, mirror to internal storage      |
 
 ## References
 
-* [VyOS Nightly Builds](https://github.com/vyos/vyos-nightly-build/releases)
-* [VyOS Documentation](https://docs.vyos.io/)
-* [VyOS Release Notes](https://docs.vyos.io/en/latest/changelog/)
-* Current script: `/root/kcli-pipelines/vyos-router/deploy.sh`
+- [VyOS Nightly Builds](https://github.com/vyos/vyos-nightly-build/releases)
+- [VyOS Documentation](https://docs.vyos.io/)
+- [VyOS Release Notes](https://docs.vyos.io/en/latest/changelog/)
+- Current script: `/root/kcli-pipelines/vyos-router/deploy.sh`
 
----
+______________________________________________________________________
 
 **This ADR ensures stable and predictable VyOS deployments! 🛡️**

@@ -1,16 +1,12 @@
----
-layout: default
-title: ADR-0040 DAG Distribution from kcli-pipelines
-parent: Configuration & Automation
-grand_parent: Architectural Decision Records
-nav_order: 40
----
+______________________________________________________________________
+
+## layout: default title: ADR-0040 DAG Distribution from kcli-pipelines parent: Configuration & Automation grand_parent: Architectural Decision Records nav_order: 40
 
 # ADR-0040: DAG Distribution Strategy from kcli-pipelines Repository
 
-**Status:** Accepted  
-**Date:** 2025-11-27  
-**Decision Makers:** Platform Team, DevOps Team  
+**Status:** Accepted
+**Date:** 2025-11-27
+**Decision Makers:** Platform Team, DevOps Team
 **Related ADRs:** ADR-0037 (Git-Based DAG Repository), ADR-0039 (FreeIPA/VyOS DAG Integration)
 
 ## Context and Problem Statement
@@ -18,22 +14,23 @@ nav_order: 40
 The `kcli-pipelines` repository (https://github.com/Qubinode/kcli-pipelines) contains infrastructure deployment scripts that need to be converted to Airflow DAGs. Users need a mechanism to:
 
 1. Store DAGs in the kcli-pipelines repository alongside related scripts
-2. Synchronize DAGs to their local qubinode_navigator installation
-3. Receive updates when new DAGs are added or existing ones are modified
-4. Validate DAGs before deployment to prevent runtime errors
+1. Synchronize DAGs to their local qubinode_navigator installation
+1. Receive updates when new DAGs are added or existing ones are modified
+1. Validate DAGs before deployment to prevent runtime errors
 
 **Current State:**
+
 - DAGs are manually created in `/root/qubinode_navigator/airflow/dags/`
 - No standardized distribution mechanism exists
 - kcli-pipelines contains shell scripts but no DAGs yet
 
 ## Decision Drivers
 
-* Enable community contribution of DAGs via kcli-pipelines
-* Provide simple sync mechanism for users
-* Maintain DAG quality through validation
-* Support both manual and automated synchronization
-* Preserve local customizations when syncing
+- Enable community contribution of DAGs via kcli-pipelines
+- Provide simple sync mechanism for users
+- Maintain DAG quality through validation
+- Support both manual and automated synchronization
+- Preserve local customizations when syncing
 
 ## Decision Outcome
 
@@ -61,9 +58,9 @@ kcli-pipelines/
 ```bash
 #!/bin/bash
 # sync-dags-to-qubinode.sh
-# 
+#
 # Synchronizes DAGs from kcli-pipelines to qubinode_navigator
-# 
+#
 # Usage:
 #   ./sync-dags-to-qubinode.sh [options]
 #
@@ -119,11 +116,11 @@ kcli-pipelines/
 ### Sync Script Features
 
 1. **Validation**: Python syntax check and import validation
-2. **Backup**: Timestamped backup of existing DAGs before overwrite
-3. **Selective Sync**: Option to sync specific DAGs only
-4. **Conflict Detection**: Warn about local modifications
-5. **Dry Run**: Preview changes without applying
-6. **Logging**: Detailed sync logs for troubleshooting
+1. **Backup**: Timestamped backup of existing DAGs before overwrite
+1. **Selective Sync**: Option to sync specific DAGs only
+1. **Conflict Detection**: Warn about local modifications
+1. **Dry Run**: Preview changes without applying
+1. **Logging**: Detailed sync logs for troubleshooting
 
 ### Integration with Qubinode Navigator
 
@@ -140,13 +137,13 @@ async def sync_dags_from_kcli_pipelines(
 ) -> str:
     """
     Synchronize DAGs from kcli-pipelines repository.
-    
+
     Args:
         source_repo: Git repository URL
         branch: Branch to sync from
         validate: Validate DAGs before copying
         backup: Backup existing DAGs
-    
+
     Returns:
         Sync status report
     """
@@ -155,6 +152,7 @@ async def sync_dags_from_kcli_pipelines(
 ### Automated Sync Options
 
 #### Option 1: Systemd Timer
+
 ```ini
 # /etc/systemd/system/qubinode-dag-sync.timer
 [Unit]
@@ -169,12 +167,14 @@ WantedBy=timers.target
 ```
 
 #### Option 2: Cron Job
+
 ```bash
 # /etc/cron.d/qubinode-dag-sync
 0 2 * * * root /opt/kcli-pipelines/scripts/sync-dags-to-qubinode.sh --validate --backup
 ```
 
 #### Option 3: Git Hook (for developers)
+
 ```bash
 # .git/hooks/post-merge
 #!/bin/bash
@@ -186,49 +186,52 @@ fi
 
 ## Positive Consequences
 
-* **Community Contribution**: Easy for users to contribute DAGs via PR
-* **Version Control**: DAGs tracked in Git with full history
-* **Validation**: Syntax errors caught before deployment
-* **Flexibility**: Users can customize sync behavior
-* **Discoverability**: Central location for all infrastructure DAGs
-* **Documentation**: DAGs documented alongside related scripts
+- **Community Contribution**: Easy for users to contribute DAGs via PR
+- **Version Control**: DAGs tracked in Git with full history
+- **Validation**: Syntax errors caught before deployment
+- **Flexibility**: Users can customize sync behavior
+- **Discoverability**: Central location for all infrastructure DAGs
+- **Documentation**: DAGs documented alongside related scripts
 
 ## Negative Consequences
 
-* **Manual Step**: Users must run sync (unless automated)
-* **Potential Conflicts**: Local modifications may be overwritten
-* **Network Dependency**: Requires Git access for updates
-* **Maintenance**: Sync script needs maintenance
+- **Manual Step**: Users must run sync (unless automated)
+- **Potential Conflicts**: Local modifications may be overwritten
+- **Network Dependency**: Requires Git access for updates
+- **Maintenance**: Sync script needs maintenance
 
 ## Alternatives Considered
 
 ### Git Submodule
+
 - **Pros**: Automatic version tracking
 - **Cons**: Complex for users, merge conflicts
 
 ### Package Distribution (PyPI)
+
 - **Pros**: Standard Python packaging
 - **Cons**: Overkill for DAG files, slower updates
 
 ### Shared Volume Mount
+
 - **Pros**: Real-time sync
 - **Cons**: Requires infrastructure changes, no validation
 
 ## Success Metrics
 
-| Metric | Target | Measurement |
-|--------|--------|-------------|
-| Sync success rate | >99% | Script exit codes |
-| Validation accuracy | 100% | No invalid DAGs deployed |
-| User adoption | 80% use sync | Usage analytics |
-| Sync time | <30 seconds | Script timing |
+| Metric              | Target       | Measurement              |
+| ------------------- | ------------ | ------------------------ |
+| Sync success rate   | >99%         | Script exit codes        |
+| Validation accuracy | 100%         | No invalid DAGs deployed |
+| User adoption       | 80% use sync | Usage analytics          |
+| Sync time           | \<30 seconds | Script timing            |
 
 ## References
 
-* [kcli-pipelines Repository](https://github.com/Qubinode/kcli-pipelines)
-* ADR-0037: Git-Based DAG Repository Management
-* ADR-0039: FreeIPA and VyOS Airflow DAG Integration
+- [kcli-pipelines Repository](https://github.com/Qubinode/kcli-pipelines)
+- ADR-0037: Git-Based DAG Repository Management
+- ADR-0039: FreeIPA and VyOS Airflow DAG Integration
 
----
+______________________________________________________________________
 
 **This ADR enables seamless DAG distribution from the community repository! 📦**

@@ -45,21 +45,21 @@ check_root() {
 # Check system requirements
 check_requirements() {
     log_info "Checking system requirements..."
-    
+
     # Check Python 3.8+
     if ! command -v python3 &> /dev/null; then
         log_error "Python 3 is required but not installed"
         exit 1
     fi
-    
+
     python_version=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
     if ! python3 -c "import sys; exit(0 if sys.version_info >= (3, 8) else 1)"; then
         log_error "Python 3.8+ is required (found: $python_version)"
         exit 1
     fi
-    
+
     log_success "Python $python_version detected"
-    
+
     # Check required tools
     local required_tools=("curl" "git" "sudo")
     for tool in "${required_tools[@]}"; do
@@ -68,53 +68,53 @@ check_requirements() {
             exit 1
         fi
     done
-    
+
     log_success "All required tools found"
 }
 
 # Install Python dependencies
 install_dependencies() {
     log_info "Installing Python dependencies..."
-    
+
     # Create virtual environment
     python3 -m venv "$INSTALL_DIR/venv"
     source "$INSTALL_DIR/venv/bin/activate"
-    
+
     # Upgrade pip
     pip install --upgrade pip
-    
+
     # Install required packages
     pip install psutil requests aiofiles
-    
+
     log_success "Dependencies installed"
 }
 
 # Download bootstrap assistant
 download_bootstrap() {
     log_info "Downloading Qubinode Navigator Bootstrap Assistant..."
-    
+
     # Create installation directory
     sudo mkdir -p "$INSTALL_DIR"
     sudo chown "$USER:$USER" "$INSTALL_DIR"
-    
+
     # Download bootstrap script
     curl -sSL "${BOOTSTRAP_URL}/bootstrap.py" -o "$INSTALL_DIR/bootstrap.py"
     chmod +x "$INSTALL_DIR/bootstrap.py"
-    
+
     # Download requirements if available
     if curl -sSL "${BOOTSTRAP_URL}/requirements.txt" -o "$INSTALL_DIR/requirements.txt" 2>/dev/null; then
         log_info "Installing additional requirements..."
         source "$INSTALL_DIR/venv/bin/activate"
         pip install -r "$INSTALL_DIR/requirements.txt"
     fi
-    
+
     log_success "Bootstrap assistant downloaded"
 }
 
 # Create launcher script
 create_launcher() {
     log_info "Creating launcher script..."
-    
+
     cat > "$INSTALL_DIR/qubinode-bootstrap" << 'EOF'
 #!/bin/bash
 # Qubinode Navigator Bootstrap Assistant Launcher
@@ -127,12 +127,12 @@ source "$INSTALL_DIR/venv/bin/activate"
 # Run bootstrap assistant
 python3 "$INSTALL_DIR/bootstrap.py" "$@"
 EOF
-    
+
     chmod +x "$INSTALL_DIR/qubinode-bootstrap"
-    
+
     # Create system-wide symlink
     sudo ln -sf "$INSTALL_DIR/qubinode-bootstrap" /usr/local/bin/qubinode-bootstrap
-    
+
     log_success "Launcher created at /usr/local/bin/qubinode-bootstrap"
 }
 
@@ -159,7 +159,7 @@ main() {
     echo "🚀 Qubinode Navigator Bootstrap Assistant Installer"
     echo "=================================================="
     echo ""
-    
+
     check_root
     check_requirements
     download_bootstrap

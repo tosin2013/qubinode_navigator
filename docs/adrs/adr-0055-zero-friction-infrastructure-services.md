@@ -1,10 +1,6 @@
----
-layout: default
-title: ADR-0055 Zero-Friction Infrastructure Services
-parent: Infrastructure & Deployment
-grand_parent: Architectural Decision Records
-nav_order: 55
----
+______________________________________________________________________
+
+## layout: default title: ADR-0055 Zero-Friction Infrastructure Services parent: Infrastructure & Deployment grand_parent: Architectural Decision Records nav_order: 55
 
 # ADR-0055: Zero-Friction Infrastructure Services
 
@@ -16,10 +12,11 @@ nav_order: 55
 ## Context and Problem Statement
 
 Developers deploying VMs and services in Qubinode environments currently need to:
+
 1. Manually request certificates from Step-CA, Vault, or FreeIPA
-2. Manually add DNS entries to FreeIPA
-3. Configure each service to use the certificates
-4. Remember to clean up DNS and certificates when services are removed
+1. Manually add DNS entries to FreeIPA
+1. Configure each service to use the certificates
+1. Remember to clean up DNS and certificates when services are removed
 
 This creates friction and leads to inconsistent infrastructure state.
 
@@ -27,22 +24,23 @@ This creates friction and leads to inconsistent infrastructure state.
 
 ## Decision Drivers
 
-* Eliminate manual DNS and certificate management
-* Automatic registration on VM creation
-* Automatic cleanup on VM destruction
-* Support multiple CA backends (FreeIPA CA, Step-CA, Vault PKI, Let's Encrypt)
-* Support multiple DNS backends (FreeIPA, Route53, Cloudflare)
-* Idempotent operations (safe to run multiple times)
-* Works in disconnected environments
+- Eliminate manual DNS and certificate management
+- Automatic registration on VM creation
+- Automatic cleanup on VM destruction
+- Support multiple CA backends (FreeIPA CA, Step-CA, Vault PKI, Let's Encrypt)
+- Support multiple DNS backends (FreeIPA, Route53, Cloudflare)
+- Idempotent operations (safe to run multiple times)
+- Works in disconnected environments
 
 ## Decision Outcome
 
 **Chosen approach:** Implement automatic infrastructure service integration with:
+
 1. **qubinode-dns** - CLI for DNS management via FreeIPA
-2. **qubinode-cert** - CLI for certificate management (already exists from ADR-0054)
-3. **Auto-registration hooks** - Triggered on VM create/destroy
-4. **Ansible roles** - For fleet-wide operations
-5. **Airflow DAGs** - For orchestrated workflows
+1. **qubinode-cert** - CLI for certificate management (already exists from ADR-0054)
+1. **Auto-registration hooks** - Triggered on VM create/destroy
+1. **Ansible roles** - For fleet-wide operations
+1. **Airflow DAGs** - For orchestrated workflows
 
 ### Architecture
 
@@ -104,12 +102,14 @@ qubinode-dns sync-inventory
 ### 2. FreeIPA DNS Operations
 
 FreeIPA provides DNS management via:
+
 - **ipa dnsrecord-add** - Add records
 - **ipa dnsrecord-del** - Remove records
 - **ipa dnsrecord-find** - List records
 - **ipa dnszone-add** - Create zones
 
 Requirements:
+
 - Kerberos ticket (kinit admin)
 - FreeIPA domain membership or admin credentials
 
@@ -172,22 +172,22 @@ qubinode-cert revoke "${VM_NAME}.${DOMAIN}" || true
 
 ### 5. Certificate Authority Selection
 
-| Environment | CA Selection | Use Case |
-|------------|--------------|----------|
-| Internal + FreeIPA | FreeIPA CA (Dogtag) | Domain-joined hosts |
-| Internal + Step-CA | Step-CA (ACME) | Container/ephemeral workloads |
-| Internal + Vault | Vault PKI | Short-lived dynamic certs |
-| Public | Let's Encrypt | Public-facing services |
-| Disconnected | FreeIPA or Step-CA | Air-gapped environments |
+| Environment        | CA Selection        | Use Case                      |
+| ------------------ | ------------------- | ----------------------------- |
+| Internal + FreeIPA | FreeIPA CA (Dogtag) | Domain-joined hosts           |
+| Internal + Step-CA | Step-CA (ACME)      | Container/ephemeral workloads |
+| Internal + Vault   | Vault PKI           | Short-lived dynamic certs     |
+| Public             | Let's Encrypt       | Public-facing services        |
+| Disconnected       | FreeIPA or Step-CA  | Air-gapped environments       |
 
 ### 6. DNS Provider Selection
 
-| Environment | DNS Provider | Configuration |
-|------------|--------------|---------------|
-| Internal | FreeIPA | Default for Qubinode |
-| AWS | Route53 | Via AWS credentials |
-| Cloudflare | Cloudflare API | Via API token |
-| Generic | nsupdate | RFC 2136 dynamic DNS |
+| Environment | DNS Provider   | Configuration        |
+| ----------- | -------------- | -------------------- |
+| Internal    | FreeIPA        | Default for Qubinode |
+| AWS         | Route53        | Via AWS credentials  |
+| Cloudflare  | Cloudflare API | Via API token        |
+| Generic     | nsupdate       | RFC 2136 dynamic DNS |
 
 ## Use Cases
 
@@ -322,22 +322,26 @@ vault write pki/issue/qubinode-issuer \
 ## Implementation Phases
 
 ### Phase 1: DNS CLI and Ansible Role
+
 - [ ] Create `qubinode-dns` CLI script
 - [ ] Create `qubinode_dns` Ansible role
 - [ ] Add FreeIPA DNS operations
 - [ ] Add Route53 support (optional)
 
 ### Phase 2: Auto-Registration Hooks
+
 - [ ] Create kcli hook scripts
 - [ ] Integrate with VM lifecycle
 - [ ] Add inventory synchronization
 
 ### Phase 3: Airflow DAG Integration
+
 - [ ] Create `dns_management` DAG
 - [ ] Add DNS tasks to existing deployment DAGs
 - [ ] Create `infrastructure_sync` DAG
 
 ### Phase 4: FreeIPA CA Integration
+
 - [ ] Add FreeIPA CA to qubinode-cert
 - [ ] Support ipa-getcert for enrollment
 - [ ] Auto-renewal via certmonger
@@ -345,29 +349,29 @@ vault write pki/issue/qubinode-issuer \
 ## Success Criteria
 
 1. Developer can deploy VM without manual DNS/cert steps
-2. DNS entries created within 30 seconds of VM boot
-3. Certificates issued within 60 seconds of VM boot
-4. Cleanup happens automatically on VM deletion
-5. Works in disconnected environments with FreeIPA only
+1. DNS entries created within 30 seconds of VM boot
+1. Certificates issued within 60 seconds of VM boot
+1. Cleanup happens automatically on VM deletion
+1. Works in disconnected environments with FreeIPA only
 
 ## Risks and Mitigations
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| FreeIPA unavailable | DNS/cert fails | Graceful fallback, retry logic |
-| Hook execution failure | Inconsistent state | Idempotent operations, manual sync |
-| Certificate CA mismatch | Trust issues | Clear CA selection logic |
-| DNS propagation delay | Service unreachable | Health checks, TTL tuning |
+| Risk                    | Impact              | Mitigation                         |
+| ----------------------- | ------------------- | ---------------------------------- |
+| FreeIPA unavailable     | DNS/cert fails      | Graceful fallback, retry logic     |
+| Hook execution failure  | Inconsistent state  | Idempotent operations, manual sync |
+| Certificate CA mismatch | Trust issues        | Clear CA selection logic           |
+| DNS propagation delay   | Service unreachable | Health checks, TTL tuning          |
 
 ## References
 
-* ADR-0039: FreeIPA and VyOS Airflow DAG Integration
-* ADR-0048: Step-CA Integration for Disconnected Deployments
-* ADR-0054: Unified Certificate Management
-* [FreeIPA DNS Documentation](https://www.freeipa.org/page/DNS)
-* [FreeIPA PKI Documentation](https://www.freeipa.org/page/PKI)
-* [kcli Documentation](https://kcli.readthedocs.io/)
+- ADR-0039: FreeIPA and VyOS Airflow DAG Integration
+- ADR-0048: Step-CA Integration for Disconnected Deployments
+- ADR-0054: Unified Certificate Management
+- [FreeIPA DNS Documentation](https://www.freeipa.org/page/DNS)
+- [FreeIPA PKI Documentation](https://www.freeipa.org/page/PKI)
+- [kcli Documentation](https://kcli.readthedocs.io/)
 
----
+______________________________________________________________________
 
 **Zero-friction infrastructure: Deploy VMs, get DNS and certificates automatically!**

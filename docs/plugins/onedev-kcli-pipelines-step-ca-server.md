@@ -1,9 +1,6 @@
----
-layout: default
-title:  "Legacy: Deploy Step CA Server using OneDev Kcli Pipelines"
-parent: Plugins
-nav_order: 3
----
+______________________________________________________________________
+
+## layout: default title:  "Legacy: Deploy Step CA Server using OneDev Kcli Pipelines" parent: Plugins nav_order: 3
 
 ## Deploy Step CA Server using Kcli Pipelines
 
@@ -15,14 +12,15 @@ nav_order: 3
 > - DAG workflows: [airflow-dag-deployment-workflows.md](../airflow-dag-deployment-workflows.md)
 
 ## Requirements
-* [OneDev - Kcli Pipelines](../plugins/onedev-kcli-pipelines.md)  - is configured and running.  
-  
+
+- [OneDev - Kcli Pipelines](../plugins/onedev-kcli-pipelines.md)  - is configured and running.
+
 **ssh into baremetl server and run the following**
+
 ```
 $ sudo kcli download image rhel8
 $ sudo kcli download image rhel9
 ```
-
 
 ## Example pipelines
 
@@ -41,30 +39,33 @@ Git Repo: [https://github.com/tosin2013/kcli-pipelines.git](https://github.com/t
 
 ![20240320093959](https://i.imgur.com/pVvwaTR.png)
 
-# Start Job 
+# Start Job
+
 **Click .onedev-buildspec.yml**
 ![20240416105606](https://i.imgur.com/YxCRKv7.png)
 
-*Click on `step-ca server` 
+\*Click on `step-ca server`
 ![20240416105655](https://i.imgur.com/6DR9I3D.png)
 
-* *GIT_REPO  Flag allow us to set the git repo for the step-ca server*
-* *DOMAIN  Flag allow us to set the domain for the step-ca server*
-* *COMMUNITY_VERSION  Flag allow us to deploy on rhel9 if set to false and centos 9 Streams if set to true*
-* *INITIAL_PASSWORD  Flag allow us to set the initial password for the step-ca server*
+- *GIT_REPO  Flag allow us to set the git repo for the step-ca server*
+- *DOMAIN  Flag allow us to set the domain for the step-ca server*
+- *COMMUNITY_VERSION  Flag allow us to deploy on rhel9 if set to false and centos 9 Streams if set to true*
+- *INITIAL_PASSWORD  Flag allow us to set the initial password for the step-ca server*
 
 ![20240416163140](https://i.imgur.com/J9yPo0r.png)
 
-Access step-ca server using 
+Access step-ca server using
+
 ```
 $ sudo kcli ssh step-ca-server
 $ sudo su -
 $ systemctl status step-ca
-$ cat /var/log/step-ca.log 
+$ cat /var/log/step-ca.log
 ```
 
-Extend the step-ca server certificate maxTLSCertDuration ```2000h``` and defaultTLSCertDuration ```2000h```
-``` 
+Extend the step-ca server certificate maxTLSCertDuration `2000h` and defaultTLSCertDuration `2000h`
+
+```
 jq '.authority.provisioners[0].claims = {"minTLSCertDuration": "5m", "maxTLSCertDuration": "2000h", "defaultTLSCertDuration": "2000h"}' .step/config/ca.json > .step/config/ca.json.tmp
 mv .step/config/ca.json .step/config/ca.json.bak
 mv .step/config/ca.json.tmp .step/config/ca.json
@@ -73,14 +74,16 @@ systemctl status step-ca
 ```
 
 Allow jumpbox to use root certificate
+
 ```
-$ sudo su - remoteuser 
+$ sudo su - remoteuser
 $ /opt/kcli-pipelines/step-ca-server/register-step-ca.sh  <ca-url> <fingerprint>
 ```
 
-
 ## Configure Certs on OpenShift
+
 *run on jumpbox or baremetal host connected to openshift cluster*
+
 ```
 $ curl -OL https://raw.githubusercontent.com/tosin2013/openshift-4-deployment-notes/master/pre-steps/configure-openshift-packages.sh
 $ chmod +x configure-openshift-packages.sh

@@ -195,7 +195,7 @@ function configure_navigator() {
     if [ -d $1/qubinode_navigator ]; then
         cd $1/qubinode_navigator
         if ! command -v ansible-navigator &> /dev/null; then
-            if [ ${BASE_OS}  == "RHEL8" ]; then 
+            if [ ${BASE_OS}  == "RHEL8" ]; then
                 # Enable the Python 3.9 Module
                 sudo dnf module install -y python39
                 sudo dnf install -y python39 python39-devel python39-pip
@@ -237,7 +237,7 @@ EOF
             else
                 make install-ansible-navigator
             fi
-            
+
             make copy-navigator
             # Check if running as root
             if [ "$EUID" -eq 0 ]; then
@@ -256,7 +256,7 @@ EOF
     if [ $CICD_PIPELINE == "false" ];
     then
         python3 load-variables.py
-    else 
+    else
         if [[ -z "$ENV_USERNAME" && -z "$DOMAIN" && -z "$FORWARDER" && -z "$ACTIVE_BRIDGE" && -z "$INTERFACE" && -z "$DISK" ]]; then
             echo "Error: One or more environment variables are not set"
             exit 1
@@ -272,29 +272,29 @@ function configure_vault() {
     if [ -d $1/qubinode_navigator ]; then
         cd $1/qubinode_navigator
         if ! command -v ansible-vault &> /dev/null; then
-            sudo dnf install ansible-core -y 
+            sudo dnf install ansible-core -y
         fi
         if ! command -v ansiblesafe &> /dev/null; then
             curl -OL https://github.com/tosin2013/ansiblesafe/releases/download/v0.0.12/ansiblesafe-v0.0.14-linux-amd64.tar.gz
             tar -zxvf ansiblesafe-v0.0.14-linux-amd64.tar.gz
-            chmod +x ansiblesafe-linux-amd64 
+            chmod +x ansiblesafe-linux-amd64
             sudo mv ansiblesafe-linux-amd64 /usr/local/bin/ansiblesafe
         fi
         echo "Configure Ansible Vault password file"
         echo "****************"
-        
+
         if [ ! -f ~/qubinode_navigator/ansible_vault_setup.sh ];
-        then 
+        then
             curl -OL https://gist.githubusercontent.com/tosin2013/022841d90216df8617244ab6d6aceaf8/raw/92400b9e459351d204feb67b985c08df6477d7fa/ansible_vault_setup.sh
             chmod +x ansible_vault_setup.sh
         fi
         rm -f ~/.vault_password
-        sudo rm -rf /root/.vault_password 
-       
+        sudo rm -rf /root/.vault_password
+
         if [ $USE_HASHICORP_VAULT == "true" ];
         then
             echo "$SSH_PASSWORD" > ~/.vault_password
-            sudo cp ~/.vault_password /root/.vault_password 
+            sudo cp ~/.vault_password /root/.vault_password
             bash  ./ansible_vault_setup.sh
             if [ $(id -u) -ne 0 ]; then
                 if [ ! -f /home/${USER}/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml ];
@@ -302,7 +302,7 @@ function configure_vault() {
                     ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml -o 4
                     ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml -o 1
                 fi
-            else 
+            else
                 if [ ! -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml ];
                 then
                     ansiblesafe -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml -o 4
@@ -317,13 +317,13 @@ function configure_vault() {
                 then
                     ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml
                 fi
-            else 
+            else
                 if [ ! -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml ];
                 then
                     ansiblesafe -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml
                 fi
             fi
-        fi 
+        fi
         #ansible-navigator inventory --list -m stdout --vault-password-file $HOME/.vault_password
     else
         echo "Qubinode Installer does not exist"
@@ -350,14 +350,14 @@ function generate_inventory(){
         else
             control_user="$USER"
         fi
-        
+
         echo "[control]" > inventories/${INVENTORY}/hosts
         echo "control ansible_host=${control_host} ansible_user=${control_user}" >> inventories/${INVENTORY}/hosts
         if ! command -v ansible-navigator &> /dev/null; then
             sudo pip3 install ansible-navigator
             whereis ansible-navigator
             ANSIBLE_NAVIAGATOR=$(whereis ansible-navigator | awk '{print $2}')
-        else 
+        else
             ANSIBLE_NAVIAGATOR="ansible-navigator "
         fi
         ${ANSIBLE_NAVIAGATOR} inventory --list -m stdout --vault-password-file $HOME/.vault_password
@@ -377,14 +377,14 @@ function configure_ssh(){
         ssh-keygen -f ~/.ssh/id_rsa -t rsa -N ''
         # Check if running as root
         if [ $CICD_PIPELINE == "true" ];
-        then 
+        then
             if [ "$EUID" -eq 0 ]; then
                 sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no $control_user@${IP_ADDRESS}
             else
                 sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no $USER@${IP_ADDRESS}
                 sudo ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
             fi
-        else 
+        else
             if [ "$EUID" -eq 0 ]; then
                 read -p "Enter the target username to ssh into machine: " control_user
                 ssh-copy-id $control_user@${IP_ADDRESS}
@@ -392,7 +392,7 @@ function configure_ssh(){
                 ssh-copy-id $USER@${IP_ADDRESS}
                 sudo ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
             fi
-        fi 
+        fi
     fi
 }
 
@@ -463,7 +463,7 @@ function test_inventory(){
         cd $1/qubinode_navigator
         if ! command -v ansible-navigator &> /dev/null; then
             ANSIBLE_NAVIAGATOR=$(whereis ansible-navigator | awk '{print $2}')
-        else 
+        else
             ANSIBLE_NAVIAGATOR="ansible-navigator "
         fi
         ${ANSIBLE_NAVIAGATOR}  inventory --list -m stdout --vault-password-file $HOME/.vault_password || exit 1
@@ -482,7 +482,7 @@ function deploy_kvmhost() {
     cd "$HOME"/qubinode_navigator
     if ! command -v ansible-navigator &> /dev/null; then
         ANSIBLE_NAVIAGATOR=$(whereis ansible-navigator | awk '{print $2}')
-    else 
+    else
         ANSIBLE_NAVIAGATOR="ansible-navigator"
     fi
     ${ANSIBLE_NAVIAGATOR} run ansible-navigator/setup_kvmhost.yml \
@@ -546,7 +546,7 @@ get_rhel_version
 
 
 if [  $BASE_OS == "ROCKY8" ];
-then 
+then
   echo "Please run the rocky-linux-hypervisor.sh script"
   exit 1
 fi
@@ -570,7 +570,7 @@ if [ $# -eq 0 ]; then
     deploy_kvmhost
     configure_bash_aliases $MY_DIR
     setup_kcli_base  $MY_DIR
-    configure_onedev 
+    configure_onedev
 fi
 
 while [[ $# -gt 0 ]]; do

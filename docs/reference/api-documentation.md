@@ -1,12 +1,11 @@
----
-title: API Documentation
-parent: Reference
-nav_order: 1
----
+______________________________________________________________________
+
+## title: API Documentation parent: Reference nav_order: 1
 
 # API Documentation
 
 > **Documentation status**
+>
 > - Validation: `IN PROGRESS` – This page summarizes the main APIs and integrations exposed by Qubinode Navigator.
 > - Last reviewed: 2025-11-21
 > - Community: If you rely on a specific API or discover missing details, please help improve this page via [Contributing to docs](../how-to/contribute.md).
@@ -101,11 +100,12 @@ python3 qubinode_cli.py info --plugin centos_stream10
 
 Additional CLI behavior and plugin options are documented throughout the deployment and development guides. Future iterations may add a dedicated CLI reference page under `docs/reference/`.
 
----
+______________________________________________________________________
 
 If you need deeper, per-endpoint details for any of the above, please open an issue or contribute examples to this page so it can evolve alongside the platform.
 
 **Response:**
+
 ```json
 {
   "field1": "value",
@@ -119,14 +119,14 @@ Creates...
 
 ## Configuration Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| option1 | string | "default" | Description of option1 |
-| option2 | boolean | false | Description of option2 |
+| Option  | Type    | Default   | Description            |
+| ------- | ------- | --------- | ---------------------- |
+| option1 | string  | "default" | Description of option1 |
+| option2 | boolean | false     | Description of option2 |
 
 ## Error Codes
 
-| Code | Description | Resolution |
-|------|-------------|------------|
+| Code | Description       | Resolution |
+| ---- | ----------------- | ---------- |
 | E001 | Error description | How to fix |
 | E002 | Error description | How to fix |

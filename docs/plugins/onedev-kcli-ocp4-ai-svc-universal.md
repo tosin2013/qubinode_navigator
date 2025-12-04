@@ -1,15 +1,12 @@
----
-layout: default
-title:  "Legacy: OneDev OpenShift Assisted Installer (Universal)"
-parent: Plugins
-nav_order: 3
----
+______________________________________________________________________
+
+## layout: default title:  "Legacy: OneDev OpenShift Assisted Installer (Universal)" parent: Plugins nav_order: 3
 
 This repository provides a plan which deploys a vm where:
 
-* openshift-baremetal-install is downloaded with the specific version and tag specified (and renamed openshift-install)
-* stop the nodes to deploy through redfish
-* launch the install against a set of baremetal nodes. Virtual ctlplanes and workers can also be deployed
+- openshift-baremetal-install is downloaded with the specific version and tag specified (and renamed openshift-install)
+- stop the nodes to deploy through redfish
+- launch the install against a set of baremetal nodes. Virtual ctlplanes and workers can also be deployed
 
 > **Status:** Legacy integration
 >
@@ -18,19 +15,21 @@ This repository provides a plan which deploys a vm where:
 > - Airflow overview: [AIRFLOW-INTEGRATION.md](../AIRFLOW-INTEGRATION.md)
 > - DAG workflows: [airflow-dag-deployment-workflows.md](../airflow-dag-deployment-workflows.md)
 
-
 # Prerequisites
-* [OneDev - Kcli Pipelines](../plugins/onedev-kcli-pipelines.md)  - is configured and running.  
+
+- [OneDev - Kcli Pipelines](../plugins/onedev-kcli-pipelines.md)  - is configured and running.
 
 **ssh into  baremetl server and run the following**
+
 ```
 $ sudo kcli download image rhel8
 $ sudo kcli download image rhel9
 ```
-  
+
 Reference Git Repo: [https://github.com/Red-Hat-SE-RTO/ocp4-ai-svc-universal](https://github.com/Red-Hat-SE-RTO/ocp4-ai-svc-universal)
 
 ## Configure pipelines
+
 Git Repo: [https://github.com/Red-Hat-SE-RTO/ocp4-ai-svc-universal.git](https://github.com/Red-Hat-SE-RTO/ocp4-ai-svc-universal.git)
 
 *Click on `import`*
@@ -44,7 +43,8 @@ Git Repo: [https://github.com/Red-Hat-SE-RTO/ocp4-ai-svc-universal.git](https://
 
 ![20240320093959](https://i.imgur.com/pVvwaTR.png)
 
-# Start Job 
+# Start Job
+
 **Click .onedev-buildspec.yml**
 ![20240323193344](https://i.imgur.com/mi3udC6.png)
 
@@ -57,21 +57,23 @@ Git Repo: [https://github.com/Red-Hat-SE-RTO/ocp4-ai-svc-universal.git](https://
 
 ![20240323213443](https://i.imgur.com/NnqvNFx.png)
 
-
 *Click on `Deploy VM` - Deploy FreeIPA VM first this will allow you to access the vms*
 ![20240320100623](https://i.imgur.com/kigo2L3.png)
 
 **Configure DNS**
+
 ```
 $ /opt/kcli-pipelines/configure-dns.sh
 ```
 
 **SSH into the bastion node to get the kubeconfig**
+
 ```
 ssh admin@baremetalhost.com
 ```
 
 **ssh into jump host**
+
 ```
 sudo kcli list vms
 sudo kcli ssh lab-installer
@@ -83,12 +85,13 @@ install-config.yaml  ocp             scripts
 [root@lab-installer ~]# cat ocp/.openshift_install.log
 ```
 
-
 ![20240324151019](https://i.imgur.com/ASoWhOt.png)
 
-## Option Deploy OpenShift Workloads 
+## Option Deploy OpenShift Workloads
+
 **OpenShift Virtulization**
 *Ensure you are using Openshift version 4.15 for menu option 5*
+
 ```
 git clone https://github.com/tosin2013/sno-quickstarts.git
 cd sno-quickstarts/gitops
@@ -104,7 +107,9 @@ cd sno-quickstarts/gitops
 ```
 
 ## Check the status of the deployment in ArgoCD
+
 *NOTE: You may have to set the default stroage based on deployment Type*
+
 ```
 # oc patch storageclass ocs-storagecluster-cephfs -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
 # Recommened for Openshift Virtualization

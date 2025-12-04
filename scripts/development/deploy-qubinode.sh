@@ -147,15 +147,15 @@ EOF
 # OS Detection Engine - Refactored from setup.sh with modern OS support
 get_rhel_version() {
     log_info "Detecting operating system..."
-    
+
     if [[ ! -f /etc/redhat-release ]]; then
         log_error "This script requires a RHEL-based operating system"
         return 1
     fi
-    
+
     local os_info=$(cat /etc/redhat-release)
     log_info "Detected OS: $os_info"
-    
+
     # Modern RHEL-based OS detection (removes RHEL 8, adds RHEL 10/CentOS 10)
     if [[ $os_info =~ "Red Hat Enterprise Linux release 10" ]]; then
         export BASE_OS="RHEL10"
@@ -196,7 +196,7 @@ get_rhel_version() {
         ask_ai_for_help "unsupported_os" "Unsupported OS detected: $os_info"
         return 1
     fi
-    
+
     log_success "OS Detection: $BASE_OS (Type: $OS_TYPE, Version: $OS_VERSION)"
     return 0
 }
@@ -204,7 +204,7 @@ get_rhel_version() {
 # Deployment Target Detection - Based on research of existing patterns
 detect_deployment_target() {
     log_info "Detecting deployment target and configuration..."
-    
+
     # Check for existing deployment configurations
     if [[ -f "$SCRIPT_DIR/notouch.env" ]]; then
         log_info "Found existing notouch.env configuration"
@@ -212,10 +212,10 @@ detect_deployment_target() {
             log_warning "Failed to source notouch.env, continuing..."
         }
     fi
-    
+
     # Detect deployment target based on environment or domain
     local deployment_target="unknown"
-    
+
     if [[ "$QUBINODE_DOMAIN" =~ "hetzner" || "$QUBINODE_DOMAIN" =~ "qubinodelab.io" || "$INVENTORY" == "hetzner" ]]; then
         deployment_target="hetzner"
         export DEPLOYMENT_TARGET="hetzner"
@@ -246,7 +246,7 @@ detect_deployment_target() {
         export INTERFACE="${INTERFACE:-$(ip route | grep default | awk '{print $5}' | head -1)}"
         log_info "Using custom deployment configuration"
     fi
-    
+
     # Set deployment-specific defaults
     export CICD_PIPELINE="${CICD_PIPELINE:-true}"
     export ENV_USERNAME="${ENV_USERNAME:-$SSH_USER}"
@@ -255,71 +255,71 @@ detect_deployment_target() {
     export ACTIVE_BRIDGE="${ACTIVE_BRIDGE:-false}"
     export USE_ROUTE53="${USE_ROUTE53:-false}"
     export DISK="${DISK:-skip}"  # Default to skip disk selection for automated deployment
-    
+
     log_success "Deployment target: $deployment_target (Inventory: $INVENTORY)"
     log_info "Network configuration: Interface=$INTERFACE, Forwarder=$FORWARDER"
-    
+
     return 0
 }
 
 check_prerequisites() {
     log_step "Checking prerequisites..."
-    
+
     # Check if running as root
     if [[ $EUID -ne 0 ]]; then
         log_error "This script must be run as root"
         return 1
     fi
-    
+
     # Check system resources
     local mem_gb=$(free -g | awk '/^Mem:/{print $2}')
     local disk_gb=$(df / | awk 'NR==2{print int($4/1024/1024)}')
-    
+
     log_info "System Resources:"
     log_info "  Memory: ${mem_gb}GB"
     log_info "  Disk Space: ${disk_gb}GB available"
-    
+
     if [[ $mem_gb -lt 8 ]]; then
         log_warning "Minimum 8GB RAM recommended (found ${mem_gb}GB)"
     fi
-    
+
     if [[ $disk_gb -lt 50 ]]; then
         log_warning "Minimum 50GB disk space recommended (found ${disk_gb}GB available)"
     fi
-    
+
     # Check network connectivity
     if ! ping -c 1 8.8.8.8 &> /dev/null; then
         log_error "No internet connectivity detected"
         return 1
     fi
-    
+
     log_success "Prerequisites check completed"
     return 0
 }
 
 validate_configuration() {
     log_step "Validating configuration..."
-    
+
     # Check required variables
     local required_vars=(
         "QUBINODE_DOMAIN"
         "QUBINODE_ADMIN_USER"
         "QUBINODE_CLUSTER_NAME"
     )
-    
+
     for var in "${required_vars[@]}"; do
         if [[ -z "${!var:-}" ]]; then
             log_error "Required environment variable $var is not set"
             return 1
         fi
     done
-    
+
     # Validate domain format
     if [[ ! $QUBINODE_DOMAIN =~ ^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.[a-zA-Z]{2,}$ ]]; then
         log_error "Invalid domain format: $QUBINODE_DOMAIN"
         return 1
     fi
-    
+
     log_success "Configuration validation completed"
     return 0
 }
@@ -333,9 +333,9 @@ start_ai_assistant() {
         log_info "AI Assistant disabled, skipping..."
         return 0
     fi
-    
+
     log_step "Starting AI Assistant for troubleshooting support..."
-    
+
     # Check if podman is available
     if ! command -v podman &> /dev/null; then
         log_info "Podman not found, installing for AI Assistant..."
@@ -345,7 +345,7 @@ start_ai_assistant() {
         fi
         log_success "Podman installed successfully"
     fi
-    
+
     # Check if AI Assistant container is already running
     if podman ps --format "{{.Names}}" | grep -q "^qubinode-ai-assistant$"; then
         log_info "AI Assistant container is already running"
@@ -361,7 +361,7 @@ start_ai_assistant() {
             podman rm qubinode-ai-assistant &> /dev/null || true
         fi
     fi
-    
+
     # Pull and start AI Assistant container
     log_info "Pulling AI Assistant container..."
     if podman pull quay.io/takinosh/qubinode-ai-assistant:${AI_ASSISTANT_VERSION}; then
@@ -372,7 +372,7 @@ start_ai_assistant() {
             -e DEPLOYMENT_MODE=${QUBINODE_DEPLOYMENT_MODE} \
             -e LOG_LEVEL=INFO \
             quay.io/takinosh/qubinode-ai-assistant:${AI_ASSISTANT_VERSION})
-        
+
         # Wait for AI Assistant to be ready
         log_info "Waiting for AI Assistant to be ready..."
         for i in {1..30}; do
@@ -383,7 +383,7 @@ start_ai_assistant() {
             fi
             sleep 2
         done
-        
+
         log_warning "AI Assistant started but health check failed"
         return 1
     else
@@ -395,14 +395,14 @@ start_ai_assistant() {
 ask_ai_for_help() {
     local error_context="$1"
     local error_message="$2"
-    
+
     if [[ -z "$AI_ASSISTANT_CONTAINER" ]]; then
         log_warning "AI Assistant not available for troubleshooting"
         return 1
     fi
-    
+
     log_ai "Analyzing error and providing troubleshooting guidance..."
-    
+
     # Prepare context for AI Assistant
     local context_data=$(cat << EOF
 {
@@ -423,7 +423,7 @@ ask_ai_for_help() {
 }
 EOF
     )
-    
+
     # Query AI Assistant for help
     # Properly escape the context data for JSON
     local escaped_context=$(echo "$context_data" | jq -R -s .)
@@ -431,7 +431,7 @@ EOF
         -H "Content-Type: application/json" \
         -d "{\"message\": \"I encountered an error during Qubinode deployment. Context: $escaped_context\", \"max_tokens\": 500}" \
         http://localhost:${AI_ASSISTANT_PORT}/chat 2>/dev/null)
-    
+
     if [[ $? -eq 0 ]] && [[ -n "$ai_response" ]]; then
         echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
         echo -e "${CYAN}║                    AI ASSISTANT GUIDANCE                     ║${NC}"
@@ -455,15 +455,15 @@ deploy_airflow_services() {
         log_info "Airflow deployment disabled, skipping..."
         return 0
     fi
-    
+
     log_step "Deploying Apache Airflow for workflow orchestration..."
-    
+
     # Check if podman is available
     if ! command -v podman &> /dev/null; then
         log_warning "Podman not found, Airflow will not be available"
         return 1
     fi
-    
+
     # Check if podman-compose is available
     if ! command -v podman-compose &> /dev/null; then
         log_info "Installing podman-compose for Airflow..."
@@ -473,28 +473,28 @@ deploy_airflow_services() {
         fi
         log_success "podman-compose installed successfully"
     fi
-    
+
     # Change to airflow directory
     cd "$SCRIPT_DIR/airflow" || {
         log_warning "Airflow directory not found, skipping Airflow deployment"
         return 1
     }
-    
+
     # Enable Airflow in configuration
     log_info "Enabling Airflow services..."
     export ENABLE_AIRFLOW="true"
-    
+
     # Call the dedicated Airflow deployment script
     log_info "Starting Airflow services via deploy-airflow.sh..."
     if bash ./deploy-airflow.sh deploy; then
         log_success "Airflow deployment initiated successfully"
-        
+
         # Wait for Airflow to be ready
         log_info "Waiting for Airflow webserver to be ready on port ${AIRFLOW_PORT}..."
         for i in {1..60}; do
             if curl -s http://localhost:${AIRFLOW_PORT}/health &> /dev/null; then
                 log_success "Airflow webserver is ready at http://localhost:${AIRFLOW_PORT}"
-                
+
                 # Attempt to connect AI Assistant to Airflow network if it's running
                 if [[ "$QUBINODE_ENABLE_AI_ASSISTANT" == "true" ]]; then
                     if podman ps --format "{{.Names}}" | grep -q "^qubinode-ai-assistant$"; then
@@ -508,12 +508,12 @@ deploy_airflow_services() {
                         log_warning "AI Assistant not running - restart it after Airflow for full integration"
                     fi
                 fi
-                
+
                 return 0
             fi
             sleep 2
         done
-        
+
         log_warning "Airflow webserver health check did not complete in time, but services may still be running"
         return 0
     else
@@ -604,9 +604,9 @@ setup_nginx_reverse_proxy() {
         log_info "Airflow not enabled, skipping nginx reverse proxy setup..."
         return 0
     fi
-    
+
     log_step "Setting up nginx reverse proxy for unified access..."
-    
+
     # Install nginx if not present
     if ! command -v nginx &> /dev/null; then
         log_info "Installing nginx..."
@@ -616,7 +616,7 @@ setup_nginx_reverse_proxy() {
         fi
         log_success "nginx installed successfully"
     fi
-    
+
     # Create nginx configuration for Airflow and AI Assistant
     log_info "Creating nginx reverse proxy configuration..."
     cat > /etc/nginx/conf.d/qubinode.conf << 'NGINX_CONF'
@@ -645,12 +645,12 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        
+
         # WebSocket support for Airflow live updates
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
-        
+
         # Timeouts
         proxy_connect_timeout 300s;
         proxy_send_timeout 300s;
@@ -664,7 +664,7 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        
+
         proxy_connect_timeout 300s;
         proxy_send_timeout 300s;
         proxy_read_timeout 300s;
@@ -677,7 +677,7 @@ server {
     }
 }
 NGINX_CONF
-    
+
     # Test nginx configuration
     log_info "Testing nginx configuration..."
     if ! nginx -t; then
@@ -685,25 +685,25 @@ NGINX_CONF
         return 1
     fi
     log_success "nginx configuration is valid"
-    
+
     # Enable and start nginx
     log_info "Starting nginx service..."
     if ! systemctl enable nginx; then
         log_warning "Failed to enable nginx for auto-start"
     fi
-    
+
     if ! systemctl restart nginx; then
         log_error "Failed to start nginx"
         return 1
     fi
-    
+
     if systemctl is-active --quiet nginx; then
         log_success "nginx reverse proxy is running"
     else
         log_error "nginx failed to start"
         return 1
     fi
-    
+
     return 0
 }
 
@@ -715,7 +715,7 @@ NGINX_CONF
 configure_os() {
     local base_os="$1"
     log_step "Configuring OS packages for $base_os..."
-    
+
     # Update system first
     log_info "Updating system packages..."
     sudo dnf update -y || {
@@ -723,7 +723,7 @@ configure_os() {
         ask_ai_for_help "package_update" "dnf update failed for $base_os"
         return 1
     }
-    
+
     # Install packages based on OS type
     case "$base_os" in
         "RHEL10")
@@ -779,7 +779,7 @@ configure_os() {
             return 1
             ;;
     esac
-    
+
     log_success "OS packages configured successfully for $base_os"
     return 0
 }
@@ -787,7 +787,7 @@ configure_os() {
 # Enhanced package installation with development tools
 install_packages() {
     log_step "Installing additional packages and development tools..."
-    
+
     # Core packages required for containerized Ansible execution
     local core_packages=(
         "openssl-devel"
@@ -809,7 +809,7 @@ install_packages() {
         "python3-pip"
         "cockpit-leapp"
     )
-    
+
     log_info "Installing core packages..."
     for package in "${core_packages[@]}"; do
         if rpm -q "$package" >/dev/null 2>&1; then
@@ -821,7 +821,7 @@ install_packages() {
             }
         fi
     done
-    
+
     # Install Development Tools group
     if dnf group info "Development Tools" >/dev/null 2>&1; then
         log_info "Development Tools group already installed"
@@ -831,7 +831,7 @@ install_packages() {
             log_warning "Failed to install Development Tools group"
         }
     fi
-    
+
     log_success "Package installation completed"
     return 0
 }
@@ -839,7 +839,7 @@ install_packages() {
 # SSH Configuration - Refactored from setup.sh
 configure_ssh() {
     log_step "Configuring SSH..."
-    
+
     if [[ -f ~/.ssh/id_rsa ]]; then
         log_info "SSH key already exists"
     else
@@ -850,7 +850,7 @@ configure_ssh() {
             ask_ai_for_help "ssh_keygen" "ssh-keygen failed"
             return 1
         }
-        
+
         # Configure SSH key for local access
         if [[ "$CICD_PIPELINE" == "true" ]]; then
             if [[ "$EUID" -eq 0 ]]; then
@@ -875,7 +875,7 @@ configure_ssh() {
             fi
         fi
     fi
-    
+
     log_success "SSH configuration completed"
     return 0
 }
@@ -883,7 +883,7 @@ configure_ssh() {
 # Firewall Configuration - Refactored from setup.sh
 configure_firewalld() {
     log_step "Configuring firewalld..."
-    
+
     if systemctl is-active --quiet firewalld; then
         log_info "firewalld is already active"
     else
@@ -897,21 +897,21 @@ configure_firewalld() {
             log_warning "Failed to enable firewalld"
         }
     fi
-    
+
     # If Airflow is enabled, configure firewall for nginx proxy
     if [[ "$QUBINODE_ENABLE_AIRFLOW" == "true" ]]; then
         log_info "Configuring firewall for Airflow deployment..."
-        
+
         # Close direct access to Airflow and AI Assistant ports (nginx will proxy them)
         log_info "Closing direct access to internal service ports..."
         firewall-cmd --permanent --remove-port=8888/tcp 2>/dev/null || log_info "Port 8888 already closed or not open"
         firewall-cmd --permanent --remove-port=8080/tcp 2>/dev/null || log_info "Port 8080 already closed or not open"
-        
+
         # Open HTTP/HTTPS for nginx reverse proxy
         log_info "Opening HTTP/HTTPS ports for nginx..."
         firewall-cmd --permanent --add-service=http || log_warning "HTTP service already added"
         firewall-cmd --permanent --add-service=https || log_warning "HTTPS service already added"
-        
+
         # Reload firewall rules
         log_info "Reloading firewall rules..."
         if firewall-cmd --reload; then
@@ -920,7 +920,7 @@ configure_firewalld() {
             log_warning "Failed to reload firewall, continuing anyway..."
         fi
     fi
-    
+
     log_success "Firewall configuration completed"
     return 0
 }
@@ -929,7 +929,7 @@ configure_firewalld() {
 get_qubinode_navigator() {
     local target_dir="$1"
     log_step "Setting up Qubinode Navigator repository..."
-    
+
     if [[ -d "$target_dir/qubinode_navigator" ]]; then
         log_info "Qubinode Navigator already exists, updating..."
         git -C "$target_dir/qubinode_navigator" pull || {
@@ -943,33 +943,33 @@ get_qubinode_navigator() {
             ask_ai_for_help "git_clone" "Failed to clone $GIT_REPO"
             return 1
         }
-        
+
         # Create system-wide symlink
         sudo ln -sf "$target_dir/qubinode_navigator" /opt/qubinode_navigator || {
             log_warning "Failed to create system symlink"
         }
     fi
-    
+
     # Set proper permissions
     chmod +x "$target_dir/qubinode_navigator"/*.sh 2>/dev/null || true
     chmod +x "$target_dir/qubinode_navigator/ai-assistant/scripts/"*.sh 2>/dev/null || true
-    
+
     log_success "Qubinode Navigator repository setup completed"
     return 0
 }
 
 configure_environment() {
     log_step "Configuring Qubinode environment..."
-    
+
     # Create/update environment configuration in current directory
     local env_file="$SCRIPT_DIR/.env"
-    
+
     # Backup existing .env if it exists
     if [[ -f "$env_file" ]]; then
         cp "$env_file" "${env_file}.backup.$(date +%Y%m%d-%H%M%S)"
         log_info "Backed up existing .env file"
     fi
-    
+
     # Create comprehensive environment configuration
     log_info "Creating environment configuration..."
     cat > "$env_file" << EOF
@@ -1021,7 +1021,7 @@ BASE_OS=${BASE_OS}
 DEPLOYMENT_TIMESTAMP=$(date -Iseconds)
 DEPLOYMENT_LOG=${DEPLOYMENT_LOG}
 EOF
-    
+
     log_success "Environment configuration created at $env_file"
     return 0
 }
@@ -1030,24 +1030,24 @@ EOF
 deploy_qubinode_infrastructure() {
     local my_dir="$1"
     log_step "Deploying Qubinode infrastructure using existing architecture..."
-    
+
     # Change to the qubinode directory
     cd "$my_dir/qubinode_navigator" || {
         log_error "Failed to change to qubinode_navigator directory"
         return 1
     }
-    
+
     log_info "Working directory: $(pwd)"
     log_info "Deployment mode: $QUBINODE_DEPLOYMENT_MODE"
     log_info "Target OS: $BASE_OS"
-    
+
     # Determine the appropriate deployment approach
     if [[ "$BASE_OS" == "ROCKY8" ]]; then
         log_error "Rocky Linux 8 should use the rocky-linux-hypervisor.sh script"
         log_error "This script focuses on modern RHEL-based systems (9+)"
         return 1
     fi
-    
+
     # Use the existing setup.sh workflow but with our environment
     log_info "Executing Qubinode Navigator setup workflow..."
     log_info "This process includes:"
@@ -1058,37 +1058,37 @@ deploy_qubinode_infrastructure() {
     log_info "  5. Inventory generation"
     log_info "  6. KVM host deployment"
     log_info "  7. Bash aliases and kcli setup"
-    
+
     # Execute the setup workflow step by step
     configure_os "$BASE_OS" || return 1
     install_packages || return 1
     configure_ssh || return 1
     configure_firewalld || return 1
-    
+
     # Create notouch.env for compatibility with existing scripts
     create_notouch_env || return 1
-    
+
     # Configure ansible navigator (from setup.sh)
     configure_navigator "$my_dir" || return 1
-    
+
     # Configure vault (from setup.sh)
     configure_vault "$my_dir" || return 1
-    
+
     # Generate inventory (from setup.sh)
     generate_inventory "$my_dir" || return 1
-    
+
     # Test inventory (from setup.sh)
     test_inventory "$my_dir" || return 1
-    
+
     # Deploy KVM host (from setup.sh)
     deploy_kvmhost || return 1
-    
+
     # Configure bash aliases (from setup.sh)
     configure_bash_aliases || return 1
-    
+
     # Setup kcli base (from setup.sh)
     setup_kcli_base || return 1
-    
+
     log_success "Qubinode infrastructure deployment completed successfully!"
     return 0
 }
@@ -1101,10 +1101,10 @@ deploy_qubinode_infrastructure() {
 configure_navigator() {
     local target_dir="$1"
     log_step "Configuring ansible navigator..."
-    
+
     if [[ -d "$target_dir/qubinode_navigator" ]]; then
         cd "$target_dir/qubinode_navigator" || return 1
-        
+
         if ! command -v ansible-navigator &> /dev/null; then
             log_info "Installing ansible-navigator..."
             make install-ansible-navigator || {
@@ -1112,11 +1112,11 @@ configure_navigator() {
                 ask_ai_for_help "ansible_navigator_install" "make install-ansible-navigator failed"
                 return 1
             }
-            
+
             make copy-navigator || {
                 log_warning "Failed to copy navigator configuration"
             }
-            
+
             # Update navigator configuration for current user
             if [[ "$EUID" -eq 0 ]]; then
                 sed -i "s|/home/admin/qubinode_navigator/inventories/localhost|/root/qubinode_navigator/inventories/${INVENTORY}|g" ~/.ansible-navigator.yml
@@ -1124,27 +1124,27 @@ configure_navigator() {
                 sed -i "s|/home/admin/qubinode_navigator/inventories/localhost|/home/$USER/qubinode_navigator/inventories/${INVENTORY}|g" ~/.ansible-navigator.yml
             fi
         fi
-        
+
         # Install Python requirements
         sudo pip3 install -r requirements.txt || {
             log_warning "Failed to install Python requirements"
         }
-        
+
         # Install passlib for Ansible password_hash filter
         log_info "Ensuring passlib is installed for password hashing..."
         sudo pip3 install passlib || {
             log_warning "Failed to install passlib, password operations may fail"
         }
-        
+
         # Load variables
         log_info "Loading variables..."
-        
+
         # Auto-detect /tmp/config.yml and use non-interactive mode
         if [[ -f "/tmp/config.yml" ]]; then
             log_info "Found existing /tmp/config.yml, using automated configuration"
             # Use CI/CD mode with environment variables when config file exists
             export CICD_PIPELINE="true"
-            
+
             # Set reasonable defaults for CI/CD mode when config file exists
             export ENV_USERNAME="${ENV_USERNAME:-$SSH_USER}"
             export DOMAIN="${DOMAIN:-$QUBINODE_DOMAIN}"
@@ -1152,14 +1152,14 @@ configure_navigator() {
             export ACTIVE_BRIDGE="${ACTIVE_BRIDGE:-false}"
             export INTERFACE="${INTERFACE:-$(ip route | grep default | awk '{print $5}' | head -1)}"
             export DISK="${DISK:-skip}"
-            
+
             # Use appropriate inventory - force to hetzner when config file exists
             # (Override the default localhost set earlier in the script)
             export INVENTORY="hetzner"
-            
+
             log_info "Using configuration: Domain=$DOMAIN, User=$ENV_USERNAME, Interface=$INTERFACE"
         fi
-        
+
         if [[ "$CICD_PIPELINE" == "false" ]]; then
             python3 load-variables.py || {
                 log_error "Failed to load variables"
@@ -1180,7 +1180,7 @@ configure_navigator() {
         log_error "Qubinode Navigator directory not found"
         return 1
     fi
-    
+
     log_success "Ansible Navigator configuration completed"
     return 0
 }
@@ -1189,10 +1189,10 @@ configure_navigator() {
 configure_vault() {
     local target_dir="$1"
     log_step "Configuring ansible vault..."
-    
+
     if [[ -d "$target_dir/qubinode_navigator" ]]; then
         cd "$target_dir/qubinode_navigator" || return 1
-        
+
         # Install ansible-core if not present
         if ! command -v ansible-vault &> /dev/null; then
             sudo dnf install ansible-core -y || {
@@ -1200,7 +1200,7 @@ configure_vault() {
                 return 1
             }
         fi
-        
+
         # Install ansiblesafe if not present
         if ! command -v ansiblesafe &> /dev/null; then
             log_info "Installing ansiblesafe..."
@@ -1212,17 +1212,17 @@ configure_vault() {
             chmod +x ansiblesafe-linux-amd64
             sudo mv ansiblesafe-linux-amd64 /usr/local/bin/ansiblesafe
         fi
-        
+
         # Configure Ansible Vault
         log_info "Configuring Ansible Vault password file..."
         if [[ ! -f ~/qubinode_navigator/ansible_vault_setup.sh ]]; then
             curl -OL https://gist.githubusercontent.com/tosin2013/022841d90216df8617244ab6d6aceaf8/raw/92400b9e459351d204feb67b985c08df6477d7fa/ansible_vault_setup.sh
             chmod +x ansible_vault_setup.sh
         fi
-        
+
         rm -f ~/.vault_password
         sudo rm -rf /root/.vault_password
-        
+
         if [[ "$USE_HASHICORP_VAULT" == "true" ]]; then
             echo "$SSH_PASSWORD" > ~/.vault_password
             sudo cp ~/.vault_password /root/.vault_password
@@ -1243,7 +1243,7 @@ configure_vault() {
         log_error "Qubinode Navigator directory not found"
         return 1
     fi
-    
+
     log_success "Vault configuration completed"
     return 0
 }
@@ -1252,41 +1252,41 @@ configure_vault() {
 generate_inventory() {
     local target_dir="$1"
     log_step "Generating inventory..."
-    
+
     if [[ -d "$target_dir/qubinode_navigator" ]]; then
         cd "$target_dir/qubinode_navigator" || return 1
-        
+
         # Create inventory directory structure
         if [[ ! -d "inventories/${INVENTORY}" ]]; then
             mkdir -p "inventories/${INVENTORY}"
             mkdir -p "inventories/${INVENTORY}/group_vars/control"
         fi
-        
+
         # Update bash aliases
         sed -i "s|export CURRENT_INVENTORY=\"localhost\"|export CURRENT_INVENTORY=\"${INVENTORY}\"|g" bash-aliases/functions.sh
-        
+
         # Set up control host
         local control_host=$(hostname -I | awk '{print $1}')
         local control_user
-        
+
         if [[ "$EUID" -eq 0 ]]; then
             control_user="$SSH_USER"
         else
             control_user="$USER"
         fi
-        
+
         # Generate hosts file
         echo "[control]" > "inventories/${INVENTORY}/hosts"
         echo "control ansible_host=${control_host} ansible_user=${control_user}" >> "inventories/${INVENTORY}/hosts"
-        
+
         # Create vault.yml if it doesn't exist
         local vault_file="inventories/${INVENTORY}/group_vars/control/vault.yml"
         if [[ ! -f "$vault_file" ]]; then
             log_info "Creating vault.yml with default credentials..."
-            
+
             # Get password from environment or use default
             local vault_password="${SSH_PASSWORD:-COmp123\$%}"
-            
+
             # Create unencrypted vault file first
             cat > "$vault_file" << VAULTEOF
 ---
@@ -1305,7 +1305,7 @@ rhsm_password: ""
 # OpenShift Pull Secret (optional)
 openshift_pull_secret: ""
 VAULTEOF
-            
+
             # Encrypt the vault file
             if [[ -f "$HOME/.vault_password" ]]; then
                 ansible-vault encrypt "$vault_file" --vault-password-file "$HOME/.vault_password" --encrypt-vault-id default 2>/dev/null || \
@@ -1318,13 +1318,13 @@ VAULTEOF
         else
             log_info "vault.yml already exists"
         fi
-        
+
         log_success "Inventory generated for ${INVENTORY}"
     else
         log_error "Qubinode Navigator directory not found"
         return 1
     fi
-    
+
     return 0
 }
 
@@ -1332,66 +1332,66 @@ VAULTEOF
 test_inventory() {
     local target_dir="$1"
     log_step "Testing inventory..."
-    
+
     if [[ -d "$target_dir/qubinode_navigator" ]]; then
         cd "$target_dir/qubinode_navigator" || return 1
-        
+
         local ansible_navigator_cmd
         if ! command -v ansible-navigator &> /dev/null; then
             ansible_navigator_cmd=$(whereis ansible-navigator | awk '{print $2}')
         else
             ansible_navigator_cmd="ansible-navigator"
         fi
-        
+
         $ansible_navigator_cmd inventory --list -i "inventories/${INVENTORY}" -m stdout --vault-password-file "$HOME/.vault_password" || {
             log_error "Inventory test failed"
             ask_ai_for_help "inventory_test" "ansible-navigator inventory test failed"
             return 1
         }
-        
+
         log_success "Inventory test completed successfully"
     else
         log_error "Qubinode Navigator directory not found"
         return 1
     fi
-    
+
     return 0
 }
 
 # Deploy KVM Host - From setup.sh
 deploy_kvmhost() {
     log_step "Deploying KVM Host..."
-    
+
     # Set up SSH agent
     eval $(ssh-agent)
     ssh-add ~/.ssh/id_rsa || {
         log_error "Failed to add SSH key to agent"
         return 1
     }
-    
+
     cd "$HOME/qubinode_navigator" || {
         log_error "Failed to change to qubinode_navigator directory"
         return 1
     }
-    
+
     # Install required Ansible collections and roles when running without execution environment
     log_info "Installing required Ansible collections..."
     ansible-galaxy collection install -r ansible-builder/requirements.yml --force || {
         log_warning "Failed to install some Ansible collections, continuing anyway..."
     }
-    
+
     log_info "Installing required Ansible roles..."
     ansible-galaxy role install linux-system-roles.cockpit linux-system-roles.network linux-system-roles.firewall --force || {
         log_warning "Failed to install some Ansible roles, continuing anyway..."
     }
-    
+
     local ansible_navigator_cmd
     if ! command -v ansible-navigator &> /dev/null; then
         ansible_navigator_cmd=$(whereis ansible-navigator | awk '{print $2}')
     else
         ansible_navigator_cmd="ansible-navigator"
     fi
-    
+
     $ansible_navigator_cmd run ansible-navigator/setup_kvmhost.yml \
         --vault-password-file "$HOME/.vault_password" \
         --execution-environment false \
@@ -1400,7 +1400,7 @@ deploy_kvmhost() {
         ask_ai_for_help "kvmhost_deploy" "ansible-navigator run setup_kvmhost.yml failed"
         return 1
     }
-    
+
     log_success "KVM host deployment completed"
     return 0
 }
@@ -1408,33 +1408,33 @@ deploy_kvmhost() {
 # Configure Bash Aliases - From setup.sh
 configure_bash_aliases() {
     log_step "Configuring bash aliases..."
-    
+
     if [[ "$(pwd)" != "/root/qubinode_navigator" ]]; then
         cd /root/qubinode_navigator || {
             log_error "Failed to change to /root/qubinode_navigator"
             return 1
         }
     fi
-    
+
     # Source the function and alias definitions
     source bash-aliases/functions.sh || {
         log_warning "Failed to source functions.sh"
     }
-    
+
     source bash-aliases/aliases.sh || {
         log_warning "Failed to source aliases.sh"
     }
-    
+
     # Apply bash aliases
     if [[ -f ~/.bash_aliases ]]; then
         source ~/.bash_aliases
     fi
-    
+
     # Ensure .bash_aliases is sourced from .bashrc
     if ! grep -qF "source ~/.bash_aliases" ~/.bashrc; then
         echo "source ~/.bash_aliases" >> ~/.bashrc
     fi
-    
+
     log_success "Bash aliases configuration completed"
     return 0
 }
@@ -1442,29 +1442,29 @@ configure_bash_aliases() {
 # Setup Kcli Base - From setup.sh
 setup_kcli_base() {
     log_step "Setting up kcli base..."
-    
+
     if [[ "$(pwd)" != "/root/qubinode_navigator" ]]; then
         cd /root/qubinode_navigator || {
             log_error "Failed to change to /root/qubinode_navigator"
             return 1
         }
     fi
-    
+
     # Source bash aliases to get kcli functions
     source ~/.bash_aliases || {
         log_warning "Failed to source bash aliases"
     }
-    
+
     # Setup kcli
     qubinode_setup_kcli || {
         log_warning "Failed to setup kcli"
     }
-    
+
     # Configure kcli images
     kcli_configure_images || {
         log_warning "Failed to configure kcli images"
     }
-    
+
     log_success "Kcli base setup completed"
     return 0
 }
@@ -1472,18 +1472,18 @@ setup_kcli_base() {
 # Create notouch.env for compatibility with existing deployment scripts
 create_notouch_env() {
     log_step "Creating notouch.env for compatibility with existing scripts..."
-    
+
     local notouch_file="$SCRIPT_DIR/notouch.env"
-    
+
     # Backup existing notouch.env if it exists
     if [[ -f "$notouch_file" ]]; then
         cp "$notouch_file" "${notouch_file}.backup.$(date +%Y%m%d-%H%M%S)"
         log_info "Backed up existing notouch.env"
     fi
-    
+
     # Create notouch.env based on deployment target and current configuration
     log_info "Creating notouch.env for deployment target: $DEPLOYMENT_TARGET"
-    
+
     cat > "$notouch_file" << EOF
 # Qubinode Navigator Environment Configuration
 # Generated by deploy-qubinode.sh on $(date)
@@ -1509,7 +1509,7 @@ EOF
     if [[ -n "${SSH_PASSWORD:-}" ]]; then
         echo "export SSH_PASSWORD='$SSH_PASSWORD'" >> "$notouch_file"
     fi
-    
+
     # Add HashiCorp Cloud configuration if enabled
     if [[ "$USE_HASHICORP_CLOUD" == "true" ]]; then
         cat >> "$notouch_file" << EOF
@@ -1520,7 +1520,7 @@ export HCP_PROJECT_ID=\${HCP_PROJECT_ID:-}
 export APP_NAME=\${APP_NAME:-qubinode}
 EOF
     fi
-    
+
     # Add deployment-target specific configuration
     case "$DEPLOYMENT_TARGET" in
         "hetzner")
@@ -1548,65 +1548,65 @@ export GUID=\${GUID:-local-$(date +%s)}
 EOF
             ;;
     esac
-    
+
     # Make notouch.env executable
     chmod +x "$notouch_file"
-    
+
     log_success "Created notouch.env for compatibility with existing deployment scripts"
     log_info "notouch.env location: $notouch_file"
-    
+
     return 0
 }
 
 # Fix DNS configuration in inventory files - Auto-update CHANGEME values
 fix_dns_configuration() {
     log_step "Fixing DNS configuration in inventory files..."
-    
+
     local inventory_dir="$SCRIPT_DIR/inventories/$INVENTORY"
     local all_vars_file="$inventory_dir/group_vars/all.yml"
     local kvm_host_file="$inventory_dir/group_vars/control/kvm_host.yml"
-    
+
     # Auto-detect current DNS servers from system
     local current_dns_servers=($(awk '/^nameserver/ {print $2}' /etc/resolv.conf))
     local primary_dns="${current_dns_servers[0]:-8.8.8.8}"
     local secondary_dns="${current_dns_servers[1]:-$FORWARDER}"
-    
+
     # Use detected forwarder if available, otherwise use secondary DNS
     local dns_forwarder="${FORWARDER:-$secondary_dns}"
-    
+
     log_info "Auto-detected DNS configuration:"
     log_info "  Primary DNS: $primary_dns"
     log_info "  DNS Forwarder: $dns_forwarder"
     log_info "  Domain: $QUBINODE_DOMAIN"
-    
+
     # Function to update DNS in a YAML file
     update_dns_in_file() {
         local yaml_file="$1"
-        
+
         if [[ ! -f "$yaml_file" ]]; then
             log_warning "File not found: $yaml_file"
             return 1
         fi
-        
+
         # Create backup
         local backup_file="${yaml_file}.backup.$(date +%Y%m%d-%H%M%S)"
         cp "$yaml_file" "$backup_file"
         log_info "Created backup: $backup_file"
-        
+
         # Update DNS configuration using sed
         sed -i "s/dns_forwarder: \"CHANGEME\"/dns_forwarder: \"$dns_forwarder\"/" "$yaml_file"
         sed -i "s/dns_forwarder: CHANGEME/dns_forwarder: \"$dns_forwarder\"/" "$yaml_file"
         sed -i "s/primary_dns_server: \"8.8.8.8\"/primary_dns_server: \"$primary_dns\"/" "$yaml_file"
         sed -i "s/kvm_host_dns_server: \"8.8.8.8\"/kvm_host_dns_server: \"$primary_dns\"/" "$yaml_file"
         sed -i "s/kvm_host_domain: \"lab.local\"/kvm_host_domain: \"$QUBINODE_DOMAIN\"/" "$yaml_file"
-        
+
         # Update search domains
         sed -i "s/- \"lab.local\"/- \"$QUBINODE_DOMAIN\"/" "$yaml_file"
         sed -i "s/- lab.local/- \"$QUBINODE_DOMAIN\"/" "$yaml_file"
-        
+
         log_success "Updated DNS configuration in: $yaml_file"
     }
-    
+
     # Update main inventory file
     if [[ -f "$all_vars_file" ]]; then
         update_dns_in_file "$all_vars_file"
@@ -1614,12 +1614,12 @@ fix_dns_configuration() {
         log_error "Main inventory file not found: $all_vars_file"
         return 1
     fi
-    
+
     # Update control host configuration if it exists
     if [[ -f "$kvm_host_file" ]]; then
         update_dns_in_file "$kvm_host_file"
     fi
-    
+
     # Validate the changes
     if grep -q "CHANGEME" "$all_vars_file"; then
         log_warning "Some CHANGEME values may still exist in inventory files"
@@ -1628,24 +1628,24 @@ fix_dns_configuration() {
     else
         log_success "All CHANGEME values have been replaced with auto-detected DNS configuration"
     fi
-    
+
     log_success "DNS configuration fix completed"
     return 0
 }
 
 verify_deployment() {
     log_step "Verifying deployment..."
-    
+
     # Check libvirt
     if ! virsh list &> /dev/null; then
         log_error "libvirt verification failed"
         return 1
     fi
-    
+
     # Check for running VMs (if any were created)
     local vm_count=$(virsh list --all | grep -c "running\|shut off" || echo "0")
     log_info "Virtual machines found: $vm_count"
-    
+
     # Check AI Assistant if enabled
     if [[ "$QUBINODE_ENABLE_AI_ASSISTANT" == "true" ]] && [[ -n "$AI_ASSISTANT_CONTAINER" ]]; then
         if curl -s http://localhost:${AI_ASSISTANT_PORT}/health &> /dev/null; then
@@ -1654,7 +1654,7 @@ verify_deployment() {
             log_warning "AI Assistant is not responding"
         fi
     fi
-    
+
     log_success "Deployment verification completed"
     return 0
 }
@@ -1666,14 +1666,14 @@ verify_deployment() {
 cleanup_on_error() {
     log_error "Deployment failed, performing cleanup..."
     DEPLOYMENT_FAILED=true
-    
+
     # Stop AI Assistant container if it was started
     if [[ -n "$AI_ASSISTANT_CONTAINER" ]]; then
         log_info "Stopping AI Assistant container..."
         podman stop qubinode-ai-assistant &> /dev/null || true
         podman rm qubinode-ai-assistant &> /dev/null || true
     fi
-    
+
     # Show deployment log location
     if [[ -f "$DEPLOYMENT_LOG" ]]; then
         log_info "Deployment log available at: $DEPLOYMENT_LOG"
@@ -1694,7 +1694,7 @@ show_completion_summary() {
     echo -e "  • Mode: ${QUBINODE_DEPLOYMENT_MODE}"
     echo -e "  • DNS: Auto-configured from system settings"
     echo ""
-    
+
     if [[ "$QUBINODE_ENABLE_AI_ASSISTANT" == "true" ]] && [[ -n "$AI_ASSISTANT_CONTAINER" ]]; then
         echo -e "${CYAN}AI Assistant Available:${NC}"
         echo -e "  • URL: http://localhost:${AI_ASSISTANT_PORT}"
@@ -1702,7 +1702,7 @@ show_completion_summary() {
         echo -e "  • Ask for help with: deployment issues, troubleshooting, best practices"
         echo ""
     fi
-    
+
     if [[ "$QUBINODE_ENABLE_AIRFLOW" == "true" ]]; then
         echo -e "${CYAN}Apache Airflow Orchestration:${NC}"
         echo -e "  • Airflow Web UI: http://localhost:${AIRFLOW_PORT}"
@@ -1710,7 +1710,7 @@ show_completion_summary() {
         echo -e "  • Password: admin"
         echo -e "  • Documentation: airflow/README.md"
         echo ""
-        
+
         if systemctl is-active --quiet nginx; then
             echo -e "${CYAN}Nginx Reverse Proxy (Web UIs):${NC}"
             echo -e "  • Status: Running on port 80"
@@ -1720,7 +1720,7 @@ show_completion_summary() {
             fi
             echo ""
         fi
-        
+
         echo -e "${CYAN}MCP Servers (Direct Access for LLMs):${NC}"
         echo -e "  • Airflow MCP: http://localhost:8889/sse"
         echo -e "    └─ Tools: DAG management (3), VM operations (5), Status (1)"
@@ -1729,19 +1729,19 @@ show_completion_summary() {
             echo -e "    └─ Tools: Chat, query documents, RAG integration"
         fi
         echo ""
-        
+
         echo -e "${CYAN}📖 Architecture & Documentation:${NC}"
         echo -e "  • Main: airflow/README.md"
         echo -e "  • MCP Servers: docs/MCP-SERVER-ARCHITECTURE.md"
         echo -e "  • Tools: airflow/TOOLS-AVAILABLE.md"
         echo ""
     fi
-    
+
     echo -e "${BLUE}Next Steps:${NC}"
     echo -e "  1. Review deployment log: ${DEPLOYMENT_LOG}"
     echo -e "  2. Check running VMs: virsh list --all"
     echo -e "  3. Access Qubinode Navigator: /opt/qubinode-navigator"
-    
+
     if [[ "$QUBINODE_ENABLE_AIRFLOW" == "true" ]]; then
         echo -e "  4. Access Airflow UI (port 80 via nginx or port ${AIRFLOW_PORT} direct)"
         echo -e "  5. Connect MCP servers to Claude Desktop for AI-powered automation"
@@ -1750,11 +1750,11 @@ show_completion_summary() {
             echo -e "     └─ AI Assistant MCP: http://localhost:8081"
         fi
     fi
-    
+
     if [[ "$QUBINODE_ENABLE_AI_ASSISTANT" == "true" ]]; then
         echo -e "  • Ask AI Assistant for guidance: http://localhost:${AI_ASSISTANT_PORT}/chat"
     fi
-    
+
     echo ""
     log_success "Qubinode Navigator deployment completed successfully!"
 }
@@ -1767,12 +1767,12 @@ show_failure_summary() {
     echo ""
     echo -e "${YELLOW}Troubleshooting Resources:${NC}"
     echo -e "  • Deployment log: ${DEPLOYMENT_LOG}"
-    
+
     if [[ "$QUBINODE_ENABLE_AI_ASSISTANT" == "true" ]] && [[ -n "$AI_ASSISTANT_CONTAINER" ]]; then
         echo -e "  • AI Assistant: http://localhost:${AI_ASSISTANT_PORT}"
         echo -e "  • Ask AI for help with the specific error you encountered"
     fi
-    
+
     echo -e "  • Check system resources: free -h && df -h"
     echo -e "  • Verify network connectivity: ping 8.8.8.8"
     echo -e "  • Check virtualization: grep -E '(vmx|svm)' /proc/cpuinfo"
@@ -1792,15 +1792,15 @@ show_failure_summary() {
 main() {
     # Set up error handling
     trap cleanup_on_error ERR
-    
+
     # Show banner
     show_banner
-    
+
     # Start deployment log
     log_info "Starting Qubinode Navigator deployment..."
     log_info "Deployment log: $DEPLOYMENT_LOG"
     echo "Qubinode Navigator Deployment Log - $(date)" > "$DEPLOYMENT_LOG"
-    
+
     # Execute deployment steps following ADR-0001 architecture
     get_rhel_version || exit 1
     check_prerequisites || exit 1
@@ -1815,7 +1815,7 @@ main() {
     deploy_qubinode_infrastructure "$MY_DIR" || exit 1
     setup_nginx_reverse_proxy  # Non-blocking, only active if Airflow is enabled
     verify_deployment || exit 1
-    
+
     # Show completion summary
     show_completion_summary
 }

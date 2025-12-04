@@ -16,63 +16,68 @@ Features:
 from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.bash import BashOperator
-from airflow.operators.python import BranchPythonOperator, PythonOperator
+from airflow.operators.python import BranchPythonOperator
 from airflow.models import Variable
-from airflow.sensors.base import BaseSensorOperator
-from airflow.utils.decorators import apply_defaults
 
 # Default arguments
 default_args = {
-    'owner': 'qubinode',
-    'depends_on_past': False,
-    'start_date': datetime(2025, 11, 27),
-    'email_on_failure': False,
-    'email_on_retry': False,
-    'retries': 2,
-    'retry_delay': timedelta(minutes=3),
+    "owner": "qubinode",
+    "depends_on_past": False,
+    "start_date": datetime(2025, 11, 27),
+    "email_on_failure": False,
+    "email_on_retry": False,
+    "retries": 2,
+    "retry_delay": timedelta(minutes=3),
 }
 
 # DAG definition
 dag = DAG(
-    'vyos_router_deployment',
+    "vyos_router_deployment",
     default_args=default_args,
-    description='Deploy VyOS Router for network segmentation via kcli/virsh',
+    description="Deploy VyOS Router for network segmentation via kcli/virsh",
     schedule=None,  # Manual trigger only
     catchup=False,
-    tags=['qubinode', 'vyos', 'router', 'networking', 'infrastructure', 'kcli-pipelines'],
+    tags=[
+        "qubinode",
+        "vyos",
+        "router",
+        "networking",
+        "infrastructure",
+        "kcli-pipelines",
+    ],
     params={
-        'action': 'create',  # create or destroy
-        'vyos_version': '2025.11.24-0021-rolling',  # VyOS version (check https://vyos.net/get/nightly-builds/)
-        'vyos_channel': 'stable',  # stable, lts, or rolling
-        'configure_router': 'true',  # Run configuration script
-        'add_host_routes': 'true',  # Add routes to host
+        "action": "create",  # create or destroy
+        "vyos_version": "2025.11.24-0021-rolling",  # VyOS version (check https://vyos.net/get/nightly-builds/)
+        "vyos_channel": "stable",  # stable, lts, or rolling
+        "configure_router": "true",  # Run configuration script
+        "add_host_routes": "true",  # Add routes to host
     },
 )
 
 # Environment setup
-KCLI_PIPELINES_DIR = Variable.get('KCLI_PIPELINES_DIR', default_var='/opt/kcli-pipelines')
-DEMO_VIRT_DIR = Variable.get('DEMO_VIRT_DIR', default_var='/opt/demo-virt')
+KCLI_PIPELINES_DIR = Variable.get("KCLI_PIPELINES_DIR", default_var="/opt/kcli-pipelines")
+DEMO_VIRT_DIR = Variable.get("DEMO_VIRT_DIR", default_var="/opt/demo-virt")
 
 
 def decide_action(**context):
     """Branch based on action parameter (create or destroy)."""
-    action = context['params'].get('action', 'create')
-    if action == 'destroy':
-        return 'destroy_vyos'
-    return 'validate_environment'
+    action = context["params"].get("action", "create")
+    if action == "destroy":
+        return "destroy_vyos"
+    return "validate_environment"
 
 
 # Task: Decide action
 decide_action_task = BranchPythonOperator(
-    task_id='decide_action',
+    task_id="decide_action",
     python_callable=decide_action,
     dag=dag,
 )
 
 # Task: Validate environment
 validate_environment = BashOperator(
-    task_id='validate_environment',
-    bash_command='''
+    task_id="validate_environment",
+    bash_command="""
     echo "========================================"
     echo "Validating VyOS Deployment Environment"
     echo "========================================"
@@ -117,15 +122,15 @@ validate_environment = BashOperator(
 
     echo ""
     echo "[OK] Environment validation complete"
-    ''',
+    """,
     dag=dag,
 )
 
 # Task: Create libvirt networks
 # ADR-0046: All virsh commands must use SSH to host
 create_networks = BashOperator(
-    task_id='create_libvirt_networks',
-    bash_command='''
+    task_id="create_libvirt_networks",
+    bash_command="""
     echo "========================================"
     echo "Creating Isolated Libvirt Networks"
     echo "========================================"
@@ -191,34 +196,34 @@ NETEOF"
     echo "Current networks:"
     ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
         "virsh -c qemu:///system net-list --all"
-    ''',
+    """,
     dag=dag,
 )
 
 # Task: Download VyOS ISO
 # ADR-0046: Download on host via SSH
 download_vyos = BashOperator(
-    task_id='download_vyos_iso',
-    bash_command='''
+    task_id="download_vyos_iso",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Downloading VyOS ISO"
     echo "========================================"
-    
+
     VYOS_VERSION="{{ params.vyos_version }}"
-    
+
     echo "VyOS Version: $VYOS_VERSION"
-    
+
     # The ISO name format is: vyos-<version>-generic-amd64.iso
     # where version already includes -rolling suffix (e.g., 2025.11.24-0021-rolling)
     ISO_NAME="vyos-${VYOS_VERSION}-generic-amd64.iso"
     ISO_PATH="/var/lib/libvirt/images/${ISO_NAME}"
     ISO_URL="https://github.com/vyos/vyos-nightly-build/releases/download/${VYOS_VERSION}/${ISO_NAME}"
-    
+
     echo "ISO Name: $ISO_NAME"
     echo "ISO Path: $ISO_PATH"
     echo "ISO URL: $ISO_URL"
-    
+
     # Check if ISO already exists on host
     if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost "test -f $ISO_PATH"; then
         echo "[OK] VyOS ISO already exists on host: $ISO_PATH"
@@ -227,16 +232,16 @@ download_vyos = BashOperator(
     else
         echo "Downloading VyOS ISO to host..."
         echo "This may take several minutes..."
-        
+
         # Download on host via SSH
         if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
             "curl -L -o $ISO_PATH '$ISO_URL'"; then
             echo "[OK] VyOS ISO downloaded successfully"
-            
+
             # Verify size
             SIZE=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost "stat -c%s $ISO_PATH")
             echo "ISO Size: $((SIZE / 1024 / 1024)) MB"
-            
+
             if [ "$SIZE" -lt 100000000 ]; then
                 echo "[WARN] ISO seems too small, may be corrupted or download failed"
                 echo "Please download manually from: https://vyos.net/get/nightly-builds/"
@@ -252,7 +257,7 @@ download_vyos = BashOperator(
             exit 1
         fi
     fi
-    ''',
+    """,
     execution_timeout=timedelta(minutes=20),
     dag=dag,
 )
@@ -260,26 +265,26 @@ download_vyos = BashOperator(
 # Task: Create VyOS VM
 # ADR-0047: Call kcli-pipelines deploy.sh via SSH to host
 create_vyos_vm = BashOperator(
-    task_id='create_vyos_vm',
-    bash_command='''
+    task_id="create_vyos_vm",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     set -e
     echo "========================================"
     echo "Creating VyOS Router VM via kcli-pipelines"
     echo "========================================"
-    
+
     VM_NAME="vyos-router"
     VYOS_VERSION="{{ params.vyos_version }}"
-    
+
     # Check if VM already exists via SSH to host
     if ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR root@localhost \
         "virsh dominfo $VM_NAME" &>/dev/null; then
         echo "[OK] VM $VM_NAME already exists"
-        
+
         STATE=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
             "virsh domstate $VM_NAME")
         echo "Current state: $STATE"
-        
+
         if [ "$STATE" != "running" ]; then
             echo "Starting existing VM..."
             ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
@@ -287,7 +292,7 @@ create_vyos_vm = BashOperator(
         fi
         exit 0
     fi
-    
+
     # Execute kcli-pipelines deploy.sh on host via SSH (ADR-0047)
     echo "Calling kcli-pipelines/vyos-router/deploy.sh..."
     ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
@@ -295,11 +300,11 @@ create_vyos_vm = BashOperator(
          export VYOS_VERSION=$VYOS_VERSION && \
          cd /opt/kcli-pipelines/vyos-router && \
          ./deploy.sh"
-    
+
     echo ""
     echo "The DAG will now wait for you to complete the manual installation steps."
     echo "Check the output above for instructions."
-    ''',
+    """,
     execution_timeout=timedelta(minutes=15),
     dag=dag,
 )
@@ -308,8 +313,8 @@ create_vyos_vm = BashOperator(
 # Pattern from OneDev: Wait for Vyos Router Configuration
 # Polls until the router's external interface is pingable
 wait_for_install = BashOperator(
-    task_id='wait_for_vyos_install',
-    bash_command='''
+    task_id="wait_for_vyos_install",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Waiting for VyOS Router Configuration"
@@ -338,16 +343,16 @@ wait_for_install = BashOperator(
     echo "     scp /root/vyos-config.sh vyos@192.168.122.2:/tmp/"
     echo "     ssh vyos@192.168.122.2 'vbash /tmp/vyos-config.sh'"
     echo ""
-    
+
     IP_ADDRESS="192.168.122.2"
     MAX_WAIT_TIME=1800  # 30 minutes in seconds
     WAIT_INTERVAL=300   # 5 minutes in seconds
-    
+
     start_time=$(date +%s)
     end_time=$((start_time + MAX_WAIT_TIME))
-    
+
     echo "Waiting for $IP_ADDRESS to be accessible..."
-    
+
     while true; do
         # Check if the IP is accessible via ping from host
         if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
@@ -361,7 +366,7 @@ wait_for_install = BashOperator(
         else
             current_time=$(date +%s)
             remaining_time=$((end_time - current_time))
-            
+
             if [ $remaining_time -gt 0 ]; then
                 echo "----------------------------------------"
                 echo "$(date): Router is not accessible yet."
@@ -377,7 +382,7 @@ wait_for_install = BashOperator(
             fi
         fi
     done
-    ''',
+    """,
     execution_timeout=timedelta(minutes=35),
     dag=dag,
 )
@@ -386,8 +391,8 @@ wait_for_install = BashOperator(
 # Pattern from OneDev: Wait for Vyos Route 192.168.50.1
 # This confirms the VyOS config script has been applied
 wait_for_boot = BashOperator(
-    task_id='wait_for_vyos_boot',
-    bash_command='''
+    task_id="wait_for_vyos_boot",
+    bash_command="""
     export PATH="/home/airflow/.local/bin:/usr/local/bin:$PATH"
     echo "========================================"
     echo "Waiting for VyOS Internal Network"
@@ -400,16 +405,16 @@ wait_for_boot = BashOperator(
     echo "  scp /root/vyos-config.sh vyos@192.168.122.2:/tmp/"
     echo "  ssh vyos@192.168.122.2 'vbash /tmp/vyos-config.sh'"
     echo ""
-    
+
     IP_ADDRESS="192.168.50.1"
     MAX_WAIT_TIME=1800  # 30 minutes in seconds
     WAIT_INTERVAL=300   # 5 minutes in seconds
-    
+
     start_time=$(date +%s)
     end_time=$((start_time + MAX_WAIT_TIME))
-    
+
     echo "Waiting for $IP_ADDRESS to be accessible..."
-    
+
     while true; do
         # Check if the internal IP is accessible via ping from host
         if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
@@ -427,7 +432,7 @@ wait_for_boot = BashOperator(
         else
             current_time=$(date +%s)
             remaining_time=$((end_time - current_time))
-            
+
             if [ $remaining_time -gt 0 ]; then
                 echo "----------------------------------------"
                 echo "$(date): Internal network not accessible yet."
@@ -444,7 +449,7 @@ wait_for_boot = BashOperator(
             fi
         fi
     done
-    ''',
+    """,
     execution_timeout=timedelta(minutes=35),
     dag=dag,
 )
@@ -452,8 +457,8 @@ wait_for_boot = BashOperator(
 # Task: Configure VyOS (optional)
 # ADR-0046: All virsh commands must use SSH to host
 configure_vyos = BashOperator(
-    task_id='configure_vyos',
-    bash_command=f'''
+    task_id="configure_vyos",
+    bash_command=f"""
     echo "========================================"
     echo "VyOS Configuration Instructions"
     echo "========================================"
@@ -511,15 +516,15 @@ configure_vyos = BashOperator(
     echo "Default VyOS credentials:"
     echo "  Username: vyos"
     echo "  Password: vyos"
-    ''',
+    """,
     dag=dag,
 )
 
 # Task: Add host routes
 # ADR-0046: All virsh/ip route commands must use SSH to host
 add_host_routes = BashOperator(
-    task_id='add_host_routes',
-    bash_command='''
+    task_id="add_host_routes",
+    bash_command="""
     echo "========================================"
     echo "Adding Host Routes"
     echo "========================================"
@@ -583,15 +588,15 @@ add_host_routes = BashOperator(
     echo "Current routes to VyOS networks:"
     ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
         "ip route show | grep '$GATEWAY'" || echo "No routes found"
-    ''',
+    """,
     dag=dag,
 )
 
 # Task: Validate deployment
 # ADR-0046: All virsh commands must use SSH to host
 validate_deployment = BashOperator(
-    task_id='validate_deployment',
-    bash_command='''
+    task_id="validate_deployment",
+    bash_command="""
     echo "========================================"
     echo "Validating VyOS Deployment"
     echo "========================================"
@@ -644,15 +649,15 @@ validate_deployment = BashOperator(
     echo "  Username: vyos"
     echo "  Password: vyos"
     echo ""
-    ''',
+    """,
     dag=dag,
 )
 
 # Task: Destroy VyOS
 # ADR-0046: All virsh commands must use SSH to host
 destroy_vyos = BashOperator(
-    task_id='destroy_vyos',
-    bash_command='''
+    task_id="destroy_vyos",
+    bash_command="""
     echo "========================================"
     echo "Destroying VyOS Router"
     echo "========================================"
@@ -694,7 +699,7 @@ destroy_vyos = BashOperator(
     echo "Note: Isolated networks (1924-1928) were preserved."
     echo "To remove them (on host), run:"
     echo "  for NET in 1924 1925 1926 1927 1928; do virsh net-destroy \\$NET; virsh net-undefine \\$NET; done"
-    ''',
+    """,
     dag=dag,
 )
 
@@ -702,7 +707,7 @@ destroy_vyos = BashOperator(
 decide_action_task >> validate_environment
 validate_environment >> create_networks >> download_vyos >> create_vyos_vm
 # wait_for_install polls until VyOS is installed (user completes manual steps)
-create_vyos_vm >> wait_for_install >> wait_for_boot >> configure_vyos >> add_host_routes >> validate_deployment
+(create_vyos_vm >> wait_for_install >> wait_for_boot >> configure_vyos >> add_host_routes >> validate_deployment)
 
 decide_action_task >> destroy_vyos
 

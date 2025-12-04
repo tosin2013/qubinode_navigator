@@ -1,9 +1,6 @@
----
-layout: default
-title:  Configure Rhel9 Equinix
-parent: GitHub Actions
-nav_order: 4
----
+______________________________________________________________________
+
+## layout: default title:  Configure Rhel9 Equinix parent: GitHub Actions nav_order: 4
 
 The script can be triggered manually via GitHub Actions with the following inputs:
 

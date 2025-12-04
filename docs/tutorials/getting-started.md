@@ -1,8 +1,6 @@
----
-title: Getting Started
-parent: Tutorials
-nav_order: 1
----
+______________________________________________________________________
+
+## title: Getting Started parent: Tutorials nav_order: 1
 
 # Getting Started
 
@@ -11,6 +9,7 @@ This tutorial will guide you through the process step by step.
 ## Prerequisites
 
 Before you begin, ensure you have:
+
 - Requirement 1
 - Requirement 2
 
@@ -29,6 +28,7 @@ Finally, verify...
 ## Summary
 
 In this tutorial, you learned how to:
+
 - Achievement 1
 - Achievement 2
 - Achievement 3

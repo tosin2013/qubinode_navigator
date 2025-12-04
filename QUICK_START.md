@@ -24,6 +24,7 @@ vi .env
 ```
 
 **Minimum required configuration:**
+
 ```bash
 QUBINODE_DOMAIN=your-domain.com
 QUBINODE_ADMIN_USER=admin
@@ -43,6 +44,7 @@ chmod +x deploy-qubinode.sh
 #### 3. Access Your Cluster
 
 After successful deployment:
+
 - **AI Assistant**: http://localhost:8080 (for troubleshooting help)
 - **Cluster Management**: `/opt/qubinode-navigator`
 - **Virtual Machines**: `virsh list --all`
@@ -50,6 +52,7 @@ After successful deployment:
 ### 🤖 AI Assistant Integration
 
 The deployment includes an **AI Assistant** that can help with:
+
 - **Real-time troubleshooting** during deployment
 - **Configuration guidance** and best practices
 - **Error resolution** with context-aware suggestions
@@ -59,11 +62,11 @@ If you encounter issues, the AI Assistant will automatically provide guidance!
 
 ### 📊 Deployment Modes
 
-| Mode | Use Case | Features |
-|------|----------|----------|
-| **development** | Local dev/testing | Debug tools, relaxed security |
-| **staging** | Pre-production | Production-like, testing features |
-| **production** | Live workloads | Full security, monitoring, HA |
+| Mode            | Use Case          | Features                          |
+| --------------- | ----------------- | --------------------------------- |
+| **development** | Local dev/testing | Debug tools, relaxed security     |
+| **staging**     | Pre-production    | Production-like, testing features |
+| **production**  | Live workloads    | Full security, monitoring, HA     |
 
 ### 🔧 Advanced Configuration
 
@@ -86,6 +89,7 @@ export QUBINODE_ENABLE_AI_ASSISTANT=true
 #### Cloud Provider Support
 
 **AWS Example:**
+
 ```bash
 export QUBINODE_DOMAIN=cluster.aws.company.com
 export AWS_REGION=us-west-2
@@ -95,6 +99,7 @@ export AWS_SECRET_ACCESS_KEY=...
 ```
 
 **Hetzner Cloud Example:**
+
 ```bash
 export QUBINODE_DOMAIN=cluster.hetzner.company.com
 export HETZNER_TOKEN=your_token
@@ -106,6 +111,7 @@ export HETZNER_TOKEN=your_token
 #### Common Issues & Solutions
 
 **1. Hardware Virtualization Not Supported**
+
 ```bash
 # Check CPU support
 grep -E '(vmx|svm)' /proc/cpuinfo
@@ -115,6 +121,7 @@ grep -E '(vmx|svm)' /proc/cpuinfo
 ```
 
 **2. Insufficient Resources**
+
 ```bash
 # Check current resources
 free -h        # Memory
@@ -124,6 +131,7 @@ df -h          # Disk space
 ```
 
 **3. Network Connectivity Issues**
+
 ```bash
 # Test connectivity
 ping 8.8.8.8
@@ -134,6 +142,7 @@ nslookup github.com
 ```
 
 **4. Package Installation Failures**
+
 ```bash
 # Update package cache
 dnf clean all
@@ -156,6 +165,7 @@ firefox http://localhost:8080
 ```
 
 The AI Assistant provides:
+
 - **Error analysis** with specific solutions
 - **System diagnostics** and recommendations
 - **Best practices** for your environment
@@ -164,6 +174,7 @@ The AI Assistant provides:
 ### 📁 File Structure
 
 After deployment:
+
 ```
 /opt/qubinode-navigator/
 ├── deploy-qubinode.sh          # One-shot deployment script
@@ -197,21 +208,22 @@ lscpu | grep -i virtual
 ### 📚 Next Steps
 
 1. **Explore the AI Assistant**: Visit http://localhost:8080
-2. **Deploy workloads**: Use the cluster management tools
-3. **Monitor resources**: Check system and cluster metrics
-4. **Scale up**: Add more nodes or resources as needed
-5. **Get help**: Ask the AI Assistant for guidance
+1. **Deploy workloads**: Use the cluster management tools
+1. **Monitor resources**: Check system and cluster metrics
+1. **Scale up**: Add more nodes or resources as needed
+1. **Get help**: Ask the AI Assistant for guidance
 
 ### 🆘 Getting Help
 
 1. **AI Assistant**: http://localhost:8080 (primary support)
-2. **Deployment Logs**: Check `/tmp/qubinode-deployment-*.log`
-3. **System Logs**: `journalctl -u libvirtd -f`
-4. **Community**: GitHub issues and discussions
+1. **Deployment Logs**: Check `/tmp/qubinode-deployment-*.log`
+1. **System Logs**: `journalctl -u libvirtd -f`
+1. **Community**: GitHub issues and discussions
 
 ### 🎯 Success Indicators
 
 ✅ **Deployment Successful** when you see:
+
 - "DEPLOYMENT COMPLETED" message
 - AI Assistant accessible at http://localhost:8080
 - `virsh list` shows available domains
@@ -220,6 +232,7 @@ lscpu | grep -i virtual
 ### 🔄 Redeployment
 
 To redeploy or fix issues:
+
 ```bash
 # Clean up previous deployment
 ./deploy-qubinode.sh --cleanup  # (if available)
@@ -232,7 +245,7 @@ podman rm qubinode-ai-assistant
 ./deploy-qubinode.sh
 ```
 
----
+______________________________________________________________________
 
 ## 🎉 Welcome to Qubinode Navigator!
 

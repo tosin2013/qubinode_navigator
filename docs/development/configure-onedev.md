@@ -1,9 +1,6 @@
----
-layout: default
-title:  Configure Onedev
-parent: Developer Documentation
-nav_order: 1
----
+______________________________________________________________________
+
+## layout: default title:  Configure Onedev parent: Developer Documentation nav_order: 1
 
 # Configure Onedev
 
@@ -23,35 +20,36 @@ The script consists of two main functions: `open_firewall_ports` and `create_pod
 
 The script uses the following key code snippets:
 
-* `firewall-cmd --reload`: This command reloads the firewalld configuration to apply changes made by the script.
-* `podman rm -f $container_name`: This command removes any existing container with the name "onedev-server".
-* `podman run --name $container_name -id --rm -v /opt/onedev:/opt/onedev -p ${PORTS[0]}:${PORTS[0]} -p ${PORTS[1]}:${PORTS[1]} docker.io/1dev/server:latest`: This command creates a new Podman container and maps it to the `/opt/onedev` directory on the host machine.
-* `podman generate systemd --new --files --name  $container_name`: This command generates a systemd service file using `podman generate`.
-* `systemctl daemon-reload`: This command reloads the systemd daemon to recognize new services.
+- `firewall-cmd --reload`: This command reloads the firewalld configuration to apply changes made by the script.
+- `podman rm -f $container_name`: This command removes any existing container with the name "onedev-server".
+- `podman run --name $container_name -id --rm -v /opt/onedev:/opt/onedev -p ${PORTS[0]}:${PORTS[0]} -p ${PORTS[1]}:${PORTS[1]} docker.io/1dev/server:latest`: This command creates a new Podman container and maps it to the `/opt/onedev` directory on the host machine.
+- `podman generate systemd --new --files --name  $container_name`: This command generates a systemd service file using `podman generate`.
+- `systemctl daemon-reload`: This command reloads the systemd daemon to recognize new services.
 
 ## External Dependencies
 
 The script relies on the following external dependencies:
 
-* Podman: A container runtime that allows users to run and manage containers.
-* Docker Hub: A registry of Docker images, including the OneDev image used by the script.
-* firewalld: A firewall management tool that provides a command-line interface for configuring and managing firewalls.
+- Podman: A container runtime that allows users to run and manage containers.
+- Docker Hub: A registry of Docker images, including the OneDev image used by the script.
+- firewalld: A firewall management tool that provides a command-line interface for configuring and managing firewalls.
 
 ## Best Practices
 
 When modifying or extending the script, follow these best practices:
 
-* Use clear and concise variable names and function names to make the code easy to read and understand.
-* Follow coding conventions and style guidelines, such as using consistent indentation and spacing.
-* Test the script thoroughly before deploying it in production environments.
+- Use clear and concise variable names and function names to make the code easy to read and understand.
+- Follow coding conventions and style guidelines, such as using consistent indentation and spacing.
+- Test the script thoroughly before deploying it in production environments.
 
 ## References
 
 For more information on the Qubinode project and its components, refer to the following resources:
 
-* [Qubinode documentation](https://qubinode.com/docs/)
-* [Podman documentation](https://podman.io/documentation/)
+- [Qubinode documentation](https://qubinode.com/docs/)
+- [Podman documentation](https://podman.io/documentation/)
 
 ```
 
 Please let me know if these changes meet your requirements.
+```

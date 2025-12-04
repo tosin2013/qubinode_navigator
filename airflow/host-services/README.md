@@ -38,13 +38,14 @@ curl http://localhost:8891/health
 
 **API Endpoints:**
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/embed` | POST | Generate embeddings for texts |
-| `/health` | GET | Health check |
-| `/` | GET | Service info |
+| Endpoint  | Method | Description                   |
+| --------- | ------ | ----------------------------- |
+| `/embed`  | POST   | Generate embeddings for texts |
+| `/health` | GET    | Health check                  |
+| `/`       | GET    | Service info                  |
 
 **Example:**
+
 ```bash
 curl -X POST http://localhost:8891/embed \
   -H "Content-Type: application/json" \
@@ -54,6 +55,7 @@ curl -X POST http://localhost:8891/embed \
 ### 2. LiteLLM Proxy (Port 4000)
 
 Multi-model LLM router that connects to:
+
 - Local Ollama (Granite models) - works offline
 - External APIs (OpenAI, Anthropic) - requires API keys
 
@@ -85,16 +87,17 @@ curl http://localhost:4000/health
 
 **Available Models:**
 
-| Model Name | Backend | Notes |
-|------------|---------|-------|
-| `granite-code` | Ollama | Code generation |
-| `granite-instruct` | Ollama | General assistant |
-| `granite-3b` | Ollama | Lightweight tasks |
-| `local` | Ollama | Fallback |
-| `claude-sonnet` | Anthropic | Requires API key |
-| `gpt-4` | OpenAI | Requires API key |
+| Model Name         | Backend   | Notes             |
+| ------------------ | --------- | ----------------- |
+| `granite-code`     | Ollama    | Code generation   |
+| `granite-instruct` | Ollama    | General assistant |
+| `granite-3b`       | Ollama    | Lightweight tasks |
+| `local`            | Ollama    | Fallback          |
+| `claude-sonnet`    | Anthropic | Requires API key  |
+| `gpt-4`            | OpenAI    | Requires API key  |
 
 **Example:**
+
 ```bash
 curl -X POST http://localhost:4000/v1/chat/completions \
   -H "Content-Type: application/json" \
@@ -113,6 +116,7 @@ curl -X POST http://localhost:4000/v1/chat/completions \
 ```
 
 Or via deploy-qubinode.sh:
+
 ```bash
 QUBINODE_ENABLE_AIRFLOW=true QUBINODE_ENABLE_AI_SERVICES=true ./deploy-qubinode.sh
 ```
@@ -179,6 +183,7 @@ async def chat(prompt: str, model: str = "granite-instruct") -> str:
 ## Troubleshooting
 
 ### Embedding service won't start
+
 ```bash
 # Check logs
 journalctl -u qubinode-embedding.service -n 50
@@ -190,6 +195,7 @@ journalctl -u qubinode-embedding.service -n 50
 ```
 
 ### LiteLLM can't connect to Ollama
+
 ```bash
 # Check Ollama is running
 systemctl status ollama.service
@@ -201,6 +207,7 @@ ollama pull granite3.1-dense:8b
 ```
 
 ### Memory issues
+
 ```bash
 # Check memory usage
 systemctl status qubinode-embedding.service

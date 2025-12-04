@@ -32,14 +32,14 @@ if [ "$MCP_ENABLED" == "true" ]; then
     echo -e "${GREEN}✓ MCP Server is enabled${NC}"
     echo "  Port: ${AIRFLOW_MCP_PORT:-8889}"
     echo "  Starting with MCP profile..."
-    
+
     # Start with MCP profile
     podman-compose --profile mcp up -d
 else
     echo -e "${YELLOW}⚠ MCP Server is disabled${NC}"
     echo "  To enable: Set AIRFLOW_MCP_ENABLED=true in .env"
     echo "  Starting without MCP..."
-    
+
     # Start without MCP profile
     podman-compose up -d
 fi
