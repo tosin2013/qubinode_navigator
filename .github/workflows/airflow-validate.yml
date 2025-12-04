@@ -240,7 +240,7 @@ jobs:
 
       # Marquez API for lineage tracking
       marquez:
-        image: marquezproject/marquez:latest
+        image: docker.io/marquezproject/marquez:latest
         env:
           MARQUEZ_PORT: 5001
           MARQUEZ_ADMIN_PORT: 5002
@@ -261,10 +261,11 @@ jobs:
 
       # Marquez Web UI
       marquez-web:
-        image: marquezproject/marquez-web:latest
+        image: docker.io/marquezproject/marquez-web:latest
         env:
           MARQUEZ_HOST: marquez
           MARQUEZ_PORT: 5001
+          WEB_PORT: 3000
         ports:
           - 3000:3000
 
