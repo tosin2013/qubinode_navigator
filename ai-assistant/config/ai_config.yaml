@@ -1,10 +1,15 @@
 # Qubinode AI Assistant Configuration
 # Based on ADR-0027: CPU-Based AI Deployment Assistant Architecture
+#
+# Note: ADR-0027 originally specified Granite-4.0-Micro, but the implementation
+# uses Granite-3.0-2b-instruct which provides similar capabilities with the
+# same GGUF format and CPU-optimized inference. This is a minor version difference.
 
 ai_service:
   # Model configuration - can be overridden with environment variables
-  model_type: "${AI_MODEL_TYPE:-granite-4.0-micro}"  # granite-4.0-micro, granite-7b, llama3-8b, custom
-  model_path: "${AI_MODEL_PATH:-/app/models/granite-4.0-micro.gguf}"
+  # Default: granite-3.0-2b (Granite 3.0 2B Instruct, CPU-optimized)
+  model_type: "${AI_MODEL_TYPE:-granite-3.0-2b}"  # granite-3.0-2b, granite-7b, llama3-8b, custom
+  model_path: "${AI_MODEL_PATH:-/app/models/granite-3.0-2b.gguf}"
   model_url: "${AI_MODEL_URL:-https://huggingface.co/bartowski/granite-3.0-2b-instruct-GGUF/resolve/main/granite-3.0-2b-instruct-Q4_K_M.gguf}"
 
   # Hardware configuration
@@ -21,11 +26,18 @@ ai_service:
   # Model presets for different hardware configurations
   model_presets:
     # CPU-optimized models
-    granite-4.0-micro:
+    granite-3.0-2b:
       model_url: "https://huggingface.co/bartowski/granite-3.0-2b-instruct-GGUF/resolve/main/granite-3.0-2b-instruct-Q4_K_M.gguf"
-      model_path: "/app/models/granite-4.0-micro.gguf"
+      model_path: "/app/models/granite-3.0-2b.gguf"
       context_length: 4096
       recommended_for: "CPU-only, low memory (2GB+)"
+
+    # Legacy alias for ADR-0027 compatibility
+    granite-4.0-micro:
+      model_url: "https://huggingface.co/bartowski/granite-3.0-2b-instruct-GGUF/resolve/main/granite-3.0-2b-instruct-Q4_K_M.gguf"
+      model_path: "/app/models/granite-3.0-2b.gguf"
+      context_length: 4096
+      recommended_for: "Legacy alias - use granite-3.0-2b"
 
     granite-7b:
       model_url: "https://huggingface.co/instructlab/granite-7b-lab-GGUF/resolve/main/granite-7b-lab.Q4_K_M.gguf"
@@ -95,7 +107,12 @@ storage:
   models_dir: "/app/models"
   data_dir: "/app/data"
   logs_dir: "/app/logs"
-  vector_db_path: "/app/data/chromadb"
+  # Vector database path - Qdrant is the current implementation (ADR-0027 interim)
+  # Target: PgVector migration per ADR-0049 (completed in Airflow, pending in AI Assistant)
+  vector_db_path: "/app/data/qdrant-db"
+  # Legacy paths for backwards compatibility:
+  # - ChromaDB (deprecated): /app/data/vector-db
+  # - FAISS (alternative): /app/data/faiss-db
 
 qubinode:
   integration_enabled: true
