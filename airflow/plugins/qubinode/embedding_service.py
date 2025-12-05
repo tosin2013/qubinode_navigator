@@ -1,9 +1,12 @@
 """
 Embedding Service for Qubinode RAG System
 ADR-0049: Multi-Agent LLM Memory Architecture
+ADR-0050: Hybrid Host-Container Architecture
 
-Provides text embedding generation using local models (sentence-transformers)
-or remote APIs (OpenAI) based on configuration.
+Provides text embedding generation using:
+- Host service via HTTP (default, per ADR-0050)
+- Local models via sentence-transformers (fallback)
+- Remote APIs (OpenAI)
 
 Usage:
     from qubinode.embedding_service import EmbeddingService
@@ -21,14 +24,35 @@ from typing import List, Optional
 logger = logging.getLogger(__name__)
 
 # Configuration from environment
-EMBEDDING_PROVIDER = os.getenv("EMBEDDING_PROVIDER", "local")  # 'local' or 'openai'
-EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+# Default to 'host' per ADR-0050 (sentence-transformers runs on host, not in container)
+EMBEDDING_PROVIDER = os.getenv("EMBEDDING_PROVIDER", "host")  # 'host', 'local', or 'openai'
+# BGE-small-en-v1.5: Better retrieval than MiniLM (MTEB 62.17% vs 56%), 512 token context
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5")
 EMBEDDING_DIMENSIONS = int(os.getenv("EMBEDDING_DIMENSIONS", "384"))
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 
-# Lazy loading for models
+# Host embedding service URL (ADR-0050)
+EMBEDDING_SERVICE_URL = os.getenv("QUBINODE_EMBEDDING_SERVICE_URL", "http://localhost:8891")
+
+# Lazy loading for models/clients
 _local_model = None
 _openai_client = None
+_http_client = None
+
+
+def _get_http_client():
+    """Get or create HTTP client for host embedding service."""
+    global _http_client
+    if _http_client is None:
+        try:
+            import httpx
+
+            _http_client = httpx.Client(timeout=30.0)
+            logger.info(f"HTTP client initialized for embedding service: {EMBEDDING_SERVICE_URL}")
+        except ImportError:
+            logger.error("httpx not installed. Run: pip install httpx")
+            raise
+    return _http_client
 
 
 def _get_local_model():
@@ -71,12 +95,14 @@ class EmbeddingService:
     """
     Service for generating text embeddings.
 
-    Supports:
-    - Local models via sentence-transformers (default, works offline)
+    Supports (per ADR-0050 Hybrid Host-Container Architecture):
+    - Host service via HTTP (default, recommended for containers)
+    - Local models via sentence-transformers (fallback, requires large dependencies)
     - OpenAI API for ada-002 embeddings (requires API key)
 
     Configuration via environment variables:
-    - EMBEDDING_PROVIDER: 'local' or 'openai'
+    - EMBEDDING_PROVIDER: 'host' (default), 'local', or 'openai'
+    - QUBINODE_EMBEDDING_SERVICE_URL: Host service URL (default: http://localhost:8891)
     - EMBEDDING_MODEL: Model name/path
     - EMBEDDING_DIMENSIONS: Vector dimensions (384 for MiniLM, 1536 for ada-002)
     - OPENAI_API_KEY: Required if using OpenAI
@@ -116,7 +142,9 @@ class EmbeddingService:
             logger.warning("Empty text provided for embedding")
             return [0.0] * self.dimensions
 
-        if self.provider == "local":
+        if self.provider == "host":
+            return self._embed_host(text)
+        elif self.provider == "local":
             return self._embed_local(text)
         elif self.provider == "openai":
             return self._embed_openai(text)
@@ -149,7 +177,9 @@ class EmbeddingService:
             return [[0.0] * self.dimensions] * len(texts)
 
         # Generate embeddings for valid texts
-        if self.provider == "local":
+        if self.provider == "host":
+            valid_embeddings = self._embed_batch_host(valid_texts, batch_size)
+        elif self.provider == "local":
             valid_embeddings = self._embed_batch_local(valid_texts, batch_size)
         elif self.provider == "openai":
             valid_embeddings = self._embed_batch_openai(valid_texts, batch_size)
@@ -160,6 +190,47 @@ class EmbeddingService:
         results = [[0.0] * self.dimensions] * len(texts)
         for idx, embedding in zip(valid_indices, valid_embeddings):
             results[idx] = embedding
+
+        return results
+
+    def _embed_host(self, text: str) -> List[float]:
+        """Generate embedding using host embedding service (ADR-0050)."""
+        client = _get_http_client()
+        try:
+            response = client.post(
+                f"{EMBEDDING_SERVICE_URL}/embed",
+                json={"texts": [text], "normalize": True},
+            )
+            response.raise_for_status()
+            data = response.json()
+            # Update dimensions from response if available
+            if "dimensions" in data and data["dimensions"] != self.dimensions:
+                logger.info(f"Updating dimensions from host service: {data['dimensions']}")
+                self.dimensions = data["dimensions"]
+            return data["embeddings"][0]
+        except Exception as e:
+            logger.error(f"Host embedding service error: {e}")
+            raise RuntimeError(f"Failed to get embedding from host service: {e}") from e
+
+    def _embed_batch_host(self, texts: List[str], batch_size: int) -> List[List[float]]:
+        """Generate batch embeddings using host embedding service (ADR-0050)."""
+        client = _get_http_client()
+        results = []
+
+        # Host service has a limit of 100 texts per request
+        for i in range(0, len(texts), min(batch_size, 100)):
+            batch = texts[i : i + min(batch_size, 100)]
+            try:
+                response = client.post(
+                    f"{EMBEDDING_SERVICE_URL}/embed",
+                    json={"texts": batch, "normalize": True},
+                )
+                response.raise_for_status()
+                data = response.json()
+                results.extend(data["embeddings"])
+            except Exception as e:
+                logger.error(f"Host embedding service batch error: {e}")
+                raise RuntimeError(f"Failed to get embeddings from host service: {e}") from e
 
         return results
 

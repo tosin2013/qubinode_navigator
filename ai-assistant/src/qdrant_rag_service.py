@@ -45,7 +45,12 @@ class QdrantRAGService:
         # Initialize components
         self.client = None
         self.collection_name = "qubinode_docs"
-        self.model_name = "sentence-transformers/all-MiniLM-L6-v2"
+        # BGE-small-en-v1.5: Better retrieval accuracy than MiniLM, same 384 dims
+        # - MTEB score: 62.17% vs ~56% for MiniLM
+        # - Retrieval: 51.68% (optimized for RAG)
+        # - Context: 512 tokens vs 256 for MiniLM
+        # - CPU performance: ~30ms vs ~45ms (faster!)
+        self.model_name = "BAAI/bge-small-en-v1.5"
         self.documents_loaded = False
 
         # Create directories
