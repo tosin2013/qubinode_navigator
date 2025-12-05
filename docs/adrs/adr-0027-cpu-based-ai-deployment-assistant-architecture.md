@@ -6,7 +6,11 @@ ______________________________________________________________________
 
 ## Status
 
-Accepted - Implemented (2025-11-11)
+Accepted - Implemented (2025-11-11, Updated 2025-12-05)
+
+**Model Update (2025-12-05):** IBM Granite-4.0-Micro is now available on [HuggingFace](https://huggingface.co/ibm-granite/granite-4.0-micro-GGUF) and is configured as the default model. The Q4_K_M quantization provides optimal CPU performance with 3B parameters and 8K context length.
+
+**Note:** The RAG vector storage component of this ADR has been superseded by ADR-0049 (Multi-Agent LLM Memory Architecture), which specifies PgVector as the unified vector database. The current implementation uses Qdrant as an interim solution.
 
 AI Assistant has been fully implemented with containerized deployment, RAG system integration, and seamless terminal-based interaction through deploy-qubinode.sh.
 
@@ -111,7 +115,10 @@ Implement a CPU-based AI deployment assistant using the following architecture:
 ### Phase 2: Knowledge Integration (Weeks 5-8)
 
 - Structure existing documentation for RAG embedding
-- Implement vector database (ChromaDB) for knowledge retrieval
+- Implement vector database for knowledge retrieval
+  - *Original plan: ChromaDB*
+  - *Actual implementation: Qdrant (interim solution)*
+  - *Target: PgVector (see ADR-0049)*
 - Create tool-calling framework for system diagnostics
 - Test knowledge accuracy and retrieval performance
 
@@ -140,9 +147,9 @@ Implement a CPU-based AI deployment assistant using the following architecture:
 ### Software Dependencies
 
 - **Container Runtime**: Podman (existing requirement)
-- **Python Libraries**: langchain, chromadb, fastapi
+- **Python Libraries**: langchain, fastapi, qdrant-client (interim), fastembed
 - **Model Format**: GGUF-quantized Granite-4.0-Micro
-- **Vector Database**: ChromaDB for document embeddings
+- **Vector Database**: Qdrant (interim) → PgVector (target per ADR-0049)
 
 ## Related ADRs
 
@@ -150,6 +157,10 @@ Implement a CPU-based AI deployment assistant using the following architecture:
 - ADR-0004: Security Architecture (local processing, no external APIs)
 - ADR-0007: Bash-First Orchestration (CLI integration points)
 - ADR-0011: Comprehensive Platform Validation (enhanced with AI analysis)
+- ADR-0036: Apache Airflow Workflow Orchestration (RAG integration with workflows)
+- ADR-0038: FastMCP Framework Migration (MCP server implementation)
+- **ADR-0049: Multi-Agent LLM Memory Architecture** (supersedes RAG storage decisions)
+- ADR-0050: Hybrid Host-Container Architecture (resource optimization)
 
 ## Date
 

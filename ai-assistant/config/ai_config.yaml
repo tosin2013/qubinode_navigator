@@ -1,16 +1,16 @@
 # Qubinode AI Assistant Configuration
 # Based on ADR-0027: CPU-Based AI Deployment Assistant Architecture
 #
-# Note: ADR-0027 originally specified Granite-4.0-Micro, but the implementation
-# uses Granite-3.0-2b-instruct which provides similar capabilities with the
-# same GGUF format and CPU-optimized inference. This is a minor version difference.
+# Default model: IBM Granite-4.0-Micro (3B parameters, CPU-optimized)
+# This is a decoder-only dense transformer with GQA, RoPE, MLP with SwiGLU
+# Supports 12 languages including English, German, Spanish, French, Japanese
 
 ai_service:
   # Model configuration - can be overridden with environment variables
-  # Default: granite-3.0-2b (Granite 3.0 2B Instruct, CPU-optimized)
-  model_type: "${AI_MODEL_TYPE:-granite-3.0-2b}"  # granite-3.0-2b, granite-7b, llama3-8b, custom
-  model_path: "${AI_MODEL_PATH:-/app/models/granite-3.0-2b.gguf}"
-  model_url: "${AI_MODEL_URL:-https://huggingface.co/bartowski/granite-3.0-2b-instruct-GGUF/resolve/main/granite-3.0-2b-instruct-Q4_K_M.gguf}"
+  # Default: granite-4.0-micro (IBM Granite 4.0 Micro, CPU-optimized per ADR-0027)
+  model_type: "${AI_MODEL_TYPE:-granite-4.0-micro}"
+  model_path: "${AI_MODEL_PATH:-/app/models/granite-4.0-micro.gguf}"
+  model_url: "${AI_MODEL_URL:-https://huggingface.co/ibm-granite/granite-4.0-micro-GGUF/resolve/main/granite-4.0-micro-Q4_K_M.gguf}"
 
   # Hardware configuration
   use_gpu: "${AI_USE_GPU:-false}"
@@ -19,30 +19,51 @@ ai_service:
 
   # Server configuration
   llama_server_port: 8081
-  context_length: "${AI_CONTEXT_LENGTH:-4096}"
+  context_length: "${AI_CONTEXT_LENGTH:-8192}"  # Granite 4.0 supports longer context
   temperature: "${AI_TEMPERATURE:-0.7}"
   max_tokens: "${AI_MAX_TOKENS:-512}"
 
   # Model presets for different hardware configurations
   model_presets:
-    # CPU-optimized models
+    # Primary CPU-optimized model (ADR-0027 target)
+    granite-4.0-micro:
+      model_url: "https://huggingface.co/ibm-granite/granite-4.0-micro-GGUF/resolve/main/granite-4.0-micro-Q4_K_M.gguf"
+      model_path: "/app/models/granite-4.0-micro.gguf"
+      context_length: 8192
+      parameters: "3B"
+      recommended_for: "CPU-only, low memory (4GB+), ADR-0027 target model"
+
+    # Alternative: bartowski quantization (may have different optimizations)
+    granite-4.0-micro-bartowski:
+      model_url: "https://huggingface.co/bartowski/ibm-granite_granite-4.0-micro-GGUF/resolve/main/ibm-granite_granite-4.0-micro-Q4_K_M.gguf"
+      model_path: "/app/models/granite-4.0-micro-bartowski.gguf"
+      context_length: 8192
+      parameters: "3B"
+      recommended_for: "Alternative quantization with potential optimizations"
+
+    # Hybrid variant (may have different capabilities)
+    granite-4.0-h-micro:
+      model_url: "https://huggingface.co/ibm-granite/granite-4.0-h-micro-GGUF/resolve/main/granite-4.0-h-micro-Q4_K_M.gguf"
+      model_path: "/app/models/granite-4.0-h-micro.gguf"
+      context_length: 8192
+      parameters: "3B"
+      recommended_for: "CPU-only, hybrid architecture variant"
+
+    # Legacy model (deprecated - kept for backwards compatibility)
     granite-3.0-2b:
       model_url: "https://huggingface.co/bartowski/granite-3.0-2b-instruct-GGUF/resolve/main/granite-3.0-2b-instruct-Q4_K_M.gguf"
       model_path: "/app/models/granite-3.0-2b.gguf"
       context_length: 4096
-      recommended_for: "CPU-only, low memory (2GB+)"
+      parameters: "2B"
+      recommended_for: "Legacy - superseded by granite-4.0-micro"
+      deprecated: true
 
-    # Legacy alias for ADR-0027 compatibility
-    granite-4.0-micro:
-      model_url: "https://huggingface.co/bartowski/granite-3.0-2b-instruct-GGUF/resolve/main/granite-3.0-2b-instruct-Q4_K_M.gguf"
-      model_path: "/app/models/granite-3.0-2b.gguf"
-      context_length: 4096
-      recommended_for: "Legacy alias - use granite-3.0-2b"
-
+    # Larger model for systems with more resources
     granite-7b:
       model_url: "https://huggingface.co/instructlab/granite-7b-lab-GGUF/resolve/main/granite-7b-lab.Q4_K_M.gguf"
       model_path: "/app/models/granite-7b.gguf"
       context_length: 8192
+      parameters: "7B"
       recommended_for: "CPU with 8GB+ RAM or GPU"
 
     # GPU-optimized models
@@ -50,6 +71,7 @@ ai_service:
       model_url: "https://huggingface.co/bartowski/Meta-Llama-3-8B-Instruct-GGUF/resolve/main/Meta-Llama-3-8B-Instruct-Q4_K_M.gguf"
       model_path: "/app/models/llama3-8b.gguf"
       context_length: 8192
+      parameters: "8B"
       gpu_layers: 32
       recommended_for: "GPU with 6GB+ VRAM"
 
@@ -57,6 +79,7 @@ ai_service:
       model_url: "https://huggingface.co/microsoft/Phi-3-mini-4k-instruct-gguf/resolve/main/Phi-3-mini-4k-instruct-q4.gguf"
       model_path: "/app/models/phi3-mini.gguf"
       context_length: 4096
+      parameters: "3.8B"
       gpu_layers: 32
       recommended_for: "GPU with 4GB+ VRAM, fast inference"
 
