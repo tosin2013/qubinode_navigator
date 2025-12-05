@@ -3,11 +3,37 @@
 Documentation RAG Preparation Script
 Analyzes and structures existing documentation for RAG embedding integration
 Based on ADR-0027: CPU-Based AI Deployment Assistant Architecture
+
+Usage:
+    # Use defaults (scans qubinode_navigator, outputs to /app/data/rag-docs)
+    python prepare-rag-docs.py
+
+    # Custom input directory
+    python prepare-rag-docs.py --input /path/to/docs
+
+    # Custom output directory
+    python prepare-rag-docs.py --output /custom/output
+
+    # Both custom
+    python prepare-rag-docs.py --input /my/project --output /my/rag-data
+
+Supported file types:
+    - Markdown (.md) - Split by headers into semantic chunks
+    - YAML (.yml, .yaml) - Configuration files with metadata extraction
+    - ReStructuredText (.rst) - Documentation files
+    - Plain text (.txt) - Generic text files
+
+Output:
+    - document_chunks.json - All chunks in single file
+    - chunks_<type>.json - Chunks grouped by document type
+    - processing_summary.json - Statistics and metadata
 """
 
+import argparse
 import json
 import yaml
 import hashlib
+import os
 from pathlib import Path
 from typing import Dict, List, Any
 from dataclasses import dataclass, asdict
@@ -32,9 +58,9 @@ class DocumentChunk:
 class DocumentationAnalyzer:
     """Analyzes and prepares documentation for RAG integration"""
 
-    def __init__(self, project_root: str = "/root/qubinode_navigator"):
-        self.project_root = Path(project_root)
-        self.output_dir = self.project_root / "ai-assistant" / "data" / "rag-docs"
+    def __init__(self, project_root: str, output_dir: str):
+        self.project_root = Path(project_root).resolve()
+        self.output_dir = Path(output_dir).resolve()
         self.chunks: List[DocumentChunk] = []
 
         # Document type patterns
@@ -306,9 +332,11 @@ class DocumentationAnalyzer:
             "chunks_by_type": {k: len(v) for k, v in by_type.items()},
             "total_words": sum(chunk.word_count for chunk in self.chunks),
             "processed_at": datetime.now().isoformat(),
+            "input_directory": str(self.project_root),
+            "output_directory": str(self.output_dir),
             "output_files": {
-                "all_chunks": str(chunks_file.relative_to(self.project_root)),
-                "by_type": {k: str((self.output_dir / f"chunks_{k}.json").relative_to(self.project_root)) for k in by_type.keys()},
+                "all_chunks": str(chunks_file),
+                "by_type": [str(self.output_dir / f"chunks_{k}.json") for k in by_type.keys()],
             },
         }
 
@@ -320,17 +348,117 @@ class DocumentationAnalyzer:
         print(f"📊 Summary: {summary['total_words']} total words across {len(by_type)} document types")
 
 
+def get_default_input_dir() -> str:
+    """Get default input directory based on environment"""
+    # Check environment variable first
+    env_root = os.getenv("QUBINODE_ROOT")
+    if env_root and Path(env_root).exists():
+        return env_root
+
+    # Check common locations
+    common_paths = [
+        "/root/qubinode_navigator",
+        "/opt/qubinode_navigator",
+        Path.home() / "qubinode_navigator",
+    ]
+
+    for path in common_paths:
+        if Path(path).exists():
+            return str(path)
+
+    # Fall back to current directory
+    return str(Path.cwd())
+
+
+def get_default_output_dir() -> str:
+    """Get default output directory based on environment"""
+    # Check environment variable first
+    env_data = os.getenv("RAG_DATA_DIR")
+    if env_data:
+        return str(Path(env_data) / "rag-docs")
+
+    # Default to /app/data/rag-docs (container standard)
+    return "/app/data/rag-docs"
+
+
 def main():
     """Main execution function"""
-    print("🚀 Starting Documentation RAG Preparation")
-    print("=" * 50)
+    parser = argparse.ArgumentParser(
+        description="Prepare documentation for RAG embedding integration",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  %(prog)s                                    # Use defaults
+  %(prog)s --input /my/project                # Custom input directory
+  %(prog)s --output /my/rag-data              # Custom output directory
+  %(prog)s -i /docs -o /data/rag              # Both custom (short flags)
 
-    analyzer = DocumentationAnalyzer()
+Environment Variables:
+  QUBINODE_ROOT   - Default input directory
+  RAG_DATA_DIR    - Parent of default output directory
+
+Supported File Types:
+  .md             Markdown (split by headers)
+  .yml, .yaml     YAML configuration files
+  .rst            ReStructuredText
+  .txt            Plain text files
+
+Output Files:
+  document_chunks.json      All chunks combined
+  chunks_<type>.json        Chunks by document type (adr, config, etc.)
+  processing_summary.json   Statistics and metadata
+        """,
+    )
+
+    parser.add_argument(
+        "-i",
+        "--input",
+        type=str,
+        default=get_default_input_dir(),
+        help=f"Input directory to scan for documentation (default: {get_default_input_dir()})",
+    )
+
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        default=get_default_output_dir(),
+        help=f"Output directory for processed chunks (default: {get_default_output_dir()})",
+    )
+
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Show detailed processing information",
+    )
+
+    args = parser.parse_args()
+
+    # Validate input directory
+    input_path = Path(args.input)
+    if not input_path.exists():
+        print(f"❌ Error: Input directory does not exist: {args.input}")
+        print("   Set QUBINODE_ROOT or use --input to specify the documentation root")
+        return 1
+
+    print("🚀 Starting Documentation RAG Preparation")
+    print("=" * 60)
+    print(f"📂 Input:  {args.input}")
+    print(f"📁 Output: {args.output}")
+    print("=" * 60)
+
+    analyzer = DocumentationAnalyzer(args.input, args.output)
 
     # Analyze project structure
     analysis = analyzer.analyze_project_docs()
     print(f"📈 Found {analysis['total_files']} documentation files")
     print(f"📂 Document types: {', '.join(analysis['by_type'].keys())}")
+
+    if args.verbose:
+        print("\n📋 Files by type:")
+        for doc_type, count in sorted(analysis["by_type"].items()):
+            print(f"   {doc_type}: {count}")
 
     # Process all documents
     analyzer.process_all_documents()
@@ -341,10 +469,11 @@ def main():
     print("\n🎉 RAG documentation preparation complete!")
     print(f"📁 Output directory: {analyzer.output_dir}")
     print("\n📋 Next steps:")
-    print("  1. Review processed chunks in ai-assistant/data/rag-docs/")
-    print("  2. Integrate with vector database (ChromaDB)")
-    print("  3. Test RAG retrieval with AI assistant")
+    print("  1. Initialize RAG service (auto-builds Qdrant index on first query)")
+    print("  2. Test RAG retrieval: qubinode-ai --query 'How do I deploy OpenShift?'")
+
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    exit(main())
