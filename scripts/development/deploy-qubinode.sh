@@ -110,12 +110,12 @@ DEPLOYMENT_LOG="/tmp/qubinode-deployment-$(date +%Y%m%d-%H%M%S).log"
 AI_ASSISTANT_CONTAINER=""
 DEPLOYMENT_FAILED=false
 
-# Set working directory
-if [[ "$EUID" -eq 0 ]]; then
-    MY_DIR="/root"
-else
-    MY_DIR="$HOME"
-fi
+# Set working directory - use the parent directory of where the script is located
+# This ensures the script works correctly whether run directly or via sudo
+# If the script is at /path/to/qubinode_navigator/scripts/development/deploy-qubinode.sh,
+# SCRIPT_DIR is /path/to/qubinode_navigator/scripts/development
+# MY_DIR should be /path/to (three levels of dirname: scripts -> qubinode_navigator -> parent)
+MY_DIR="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 
 # =============================================================================
 # UTILITY FUNCTIONS
@@ -474,9 +474,18 @@ deploy_airflow_services() {
         log_success "podman-compose installed successfully"
     fi
 
-    # Change to airflow directory
-    cd "$SCRIPT_DIR/airflow" || {
-        log_warning "Airflow directory not found, skipping Airflow deployment"
+    # Change to airflow directory - calculate relative to repo root
+    # SCRIPT_DIR is /path/to/qubinode_navigator/scripts/development
+    # repo_root is /path/to/qubinode_navigator (go up two levels from SCRIPT_DIR)
+    local repo_root="$(dirname "$(dirname "$SCRIPT_DIR")")"
+    local airflow_dir="$repo_root/airflow"
+    if [[ ! -d "$airflow_dir" ]]; then
+        log_warning "Airflow directory not found at $airflow_dir, skipping Airflow deployment"
+        return 1
+    fi
+
+    cd "$airflow_dir" || {
+        log_warning "Failed to change to airflow directory, skipping Airflow deployment"
         return 1
     }
 
@@ -1161,7 +1170,7 @@ configure_navigator() {
         fi
 
         if [[ "$CICD_PIPELINE" == "false" ]]; then
-            python3 load-variables.py || {
+            python3 "$target_dir/qubinode_navigator/load-variables.py" || {
                 log_error "Failed to load variables"
                 ask_ai_for_help "load_variables" "python3 load-variables.py failed"
                 return 1
@@ -1171,7 +1180,7 @@ configure_navigator() {
                 log_error "Required environment variables not set for CI/CD mode"
                 return 1
             fi
-            python3 load-variables.py --username "$ENV_USERNAME" --domain "$DOMAIN" --forwarder "$FORWARDER" --bridge "$ACTIVE_BRIDGE" --interface "$INTERFACE" --disk "$DISK" || {
+            python3 "$target_dir/qubinode_navigator/load-variables.py" --username "$ENV_USERNAME" --domain "$DOMAIN" --forwarder "$FORWARDER" --bridge "$ACTIVE_BRIDGE" --interface "$INTERFACE" --disk "$DISK" || {
                 log_error "Failed to load variables with parameters"
                 return 1
             }
@@ -1376,7 +1385,7 @@ deploy_kvmhost() {
 
     # Install required Ansible collections and roles when running without execution environment
     log_info "Installing required Ansible collections..."
-    ansible-galaxy collection install -r ansible-builder/requirements.yml --force || {
+    ansible-galaxy collection install -r "$HOME/qubinode_navigator/ansible-builder/requirements.yml" --force || {
         log_warning "Failed to install some Ansible collections, continuing anyway..."
     }
 
@@ -1392,7 +1401,7 @@ deploy_kvmhost() {
         ansible_navigator_cmd="ansible-navigator"
     fi
 
-    $ansible_navigator_cmd run ansible-navigator/setup_kvmhost.yml \
+    $ansible_navigator_cmd run "$HOME/qubinode_navigator/ansible-navigator/setup_kvmhost.yml" \
         --vault-password-file "$HOME/.vault_password" \
         --execution-environment false \
         -m stdout || {

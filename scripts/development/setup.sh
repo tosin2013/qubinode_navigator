@@ -168,10 +168,11 @@ function get_qubinode_navigator() {
     echo "Cloning qubinode_navigator"
     if [ -d $1/qubinode_navigator ]; then
         echo "Qubinode Installer already exists"
-        git -C "$HOME/qubinode_navigator" pull
+        git -C "$1/qubinode_navigator" pull
     else
+        cd "$1" || exit 1
         git clone ${GIT_REPO}
-        ln -s /root/qubinode_navigator /opt/qubinode_navigator
+        sudo ln -sf "$1/qubinode_navigator" /opt/qubinode_navigator
     fi
 }
 
@@ -239,12 +240,9 @@ EOF
             fi
 
             make copy-navigator
-            # Check if running as root
-            if [ "$EUID" -eq 0 ]; then
-               sed -i  's|/home/admin/qubinode_navigator/inventories/localhost|/root/qubinode_navigator/inventories/'${INVENTORY}'|g'  ~/.ansible-navigator.yml
-            else
-                sed -i  's|/home/admin/qubinode_navigator/inventories/localhost|/home/'$USER'/qubinode_navigator/inventories/'${INVENTORY}'|g'  ~/.ansible-navigator.yml
-            fi
+            # Update ansible-navigator.yml with actual repository location
+            local qubinode_path="$MY_DIR/qubinode_navigator"
+            sed -i "s|/home/admin/qubinode_navigator/inventories/localhost|${qubinode_path}/inventories/${INVENTORY}|g" ~/.ansible-navigator.yml
         fi
     else
         echo "Qubinode Installer does not exist"
@@ -303,25 +301,20 @@ function configure_vault() {
                     ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml -o 1
                 fi
             else
-                if [ ! -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml ];
+                local vault_file="$1/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml"
+                if [ ! -f "$vault_file" ];
                 then
-                    ansiblesafe -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml -o 4
-                    ansiblesafe -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml -o 1
+                    ansiblesafe -f "$vault_file" -o 4
+                    ansiblesafe -f "$vault_file" -o 1
                 fi
             fi
         else
             read -t 360 -p "Press Enter to continue, or wait 5 minutes for the script to continue automatically" || true
             bash  ./ansible_vault_setup.sh
-            if [ $(id -u) -ne 0 ]; then
-                if [ ! -f /home/${USER}/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml ];
-                then
-                    ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml
-                fi
-            else
-                if [ ! -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml ];
-                then
-                    ansiblesafe -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml
-                fi
+            local vault_file="$1/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml"
+            if [ ! -f "$vault_file" ];
+            then
+                ansiblesafe -f "$vault_file"
             fi
         fi
         #ansible-navigator inventory --list -m stdout --vault-password-file $HOME/.vault_password
@@ -409,12 +402,13 @@ function configure_firewalld() {
 }
 
 function configure_onedev(){
-    if [ "$(pwd)" != "/root/qubinode_navigator" ]; then
-        echo "Current directory is not /root/qubinode_navigator."
-        echo "Changing to /root/qubinode_navigator..."
-        cd /root/qubinode_navigator
+    local qubinode_dir="$MY_DIR/qubinode_navigator"
+    if [ "$(pwd)" != "$qubinode_dir" ]; then
+        echo "Current directory is not $qubinode_dir."
+        echo "Changing to $qubinode_dir..."
+        cd "$qubinode_dir" || exit 1
     else
-        echo "Current directory is /root/qubinode_navigator."
+        echo "Current directory is $qubinode_dir."
     fi
     echo "Configuring OneDev"
     echo "******************"
@@ -479,7 +473,7 @@ function deploy_kvmhost() {
     echo "******************"
     eval $(ssh-agent)
     ssh-add ~/.ssh/id_rsa
-    cd "$HOME"/qubinode_navigator
+    cd "$MY_DIR"/qubinode_navigator || exit 1
     if ! command -v ansible-navigator &> /dev/null; then
         ANSIBLE_NAVIAGATOR=$(whereis ansible-navigator | awk '{print $2}')
     else
@@ -492,12 +486,13 @@ function deploy_kvmhost() {
 function configure_bash_aliases() {
     echo "Configuring bash aliases"
     echo "************************"
-    if [ "$(pwd)" != "/root/qubinode_navigator" ]; then
-        echo "Current directory is not /root/qubinode_navigator."
-        echo "Changing to /root/qubinode_navigator..."
-        cd /root/qubinode_navigator
+    local qubinode_dir="$MY_DIR/qubinode_navigator"
+    if [ "$(pwd)" != "$qubinode_dir" ]; then
+        echo "Current directory is not $qubinode_dir."
+        echo "Changing to $qubinode_dir..."
+        cd "$qubinode_dir" || exit 1
     else
-        echo "Current directory is /root/qubinode_navigator."
+        echo "Current directory is $qubinode_dir."
     fi
     # Source the function definitions
     source bash-aliases/functions.sh
@@ -517,12 +512,13 @@ function configure_bash_aliases() {
 }
 
 function setup_kcli_base() {
-    if [ "$(pwd)" != "/root/qubinode_navigator" ]; then
-        echo "Current directory is not /root/qubinode_navigator."
-        echo "Changing to /root/qubinode_navigator..."
-        cd /root/qubinode_navigator
+    local qubinode_dir="$MY_DIR/qubinode_navigator"
+    if [ "$(pwd)" != "$qubinode_dir" ]; then
+        echo "Current directory is not $qubinode_dir."
+        echo "Changing to $qubinode_dir..."
+        cd "$qubinode_dir" || exit 1
     else
-        echo "Current directory is /root/qubinode_navigator."
+        echo "Current directory is $qubinode_dir."
     fi
     echo "Configuring Kcli"
     echo "****************"
@@ -551,11 +547,13 @@ then
   exit 1
 fi
 
-if [ "$EUID" -eq 0 ]; then
-  MY_DIR="/root"
-else
-  MY_DIR="$HOME"
-fi
+# Set working directory - use script's actual location rather than user home
+# This ensures the script works correctly whether run directly or via sudo
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# If script is at /path/to/qubinode_navigator/scripts/development/setup.sh,
+# SCRIPT_DIR is /path/to/qubinode_navigator/scripts/development
+# MY_DIR should be /path/to (three levels of dirname: scripts -> qubinode_navigator -> parent)
+MY_DIR="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 
 if [ $# -eq 0 ]; then
     configure_os  $BASE_OS
