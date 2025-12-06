@@ -204,6 +204,53 @@ create_vm = KcliVMCreateOperator(
 - [ ] Enable audit logging
 - [ ] Scan custom plugins for security issues
 
+## 🔄 Cross-Repository DAG Architecture (ADR-0047)
+
+Qubinode uses a **two-repository pattern** for DAG management:
+
+| Repository           | DAG Type        | Location                        | Purpose                          |
+| -------------------- | --------------- | ------------------------------- | -------------------------------- |
+| `qubinode_navigator` | Platform DAGs   | `airflow/dags/`                 | dag_factory, rag\_\*, smoke_test |
+| `qubinode-pipelines` | Deployment DAGs | `/opt/qubinode-pipelines/dags/` | Infrastructure, OCP, networking  |
+
+### Production Layout
+
+```
+/opt/qubinode-pipelines/          # Volume mounted from qubinode-pipelines repo
+├── dags/
+│   ├── infrastructure/           # FreeIPA, VyOS, Step-CA, etc.
+│   ├── ocp/                      # OpenShift deployment DAGs
+│   ├── networking/               # Network configuration DAGs
+│   ├── storage/                  # Storage provisioning DAGs
+│   └── security/                 # Security automation DAGs
+└── scripts/                      # Deployment scripts called by DAGs
+```
+
+### CI/CD Cross-Repository Testing
+
+The `airflow-validate.yml` workflow validates DAGs from **both repositories** together:
+
+```bash
+# Trigger CI manually with specific qubinode-pipelines branch
+gh workflow run airflow-validate.yml -f pipelines_ref=develop
+
+# Or use GitHub Actions UI:
+# Actions → Airflow Validation → Run workflow → Enter branch/tag/SHA
+```
+
+**Workflow inputs:**
+
+- `pipelines_ref`: Branch, tag, or SHA of qubinode-pipelines to test against (default: `main`)
+
+This ensures DAG changes in either repository don't break the integrated system.
+
+### Related ADRs
+
+- **ADR-0045**: DAG Development Standards (quote style, naming, ASCII markers)
+- **ADR-0046**: DAG Validation Pipeline and Host-Based Execution
+- **ADR-0047**: qubinode-pipelines Integration Pattern
+- **ADR-0061**: Multi-Repository Architecture
+
 ## 🔄 Git-Based DAG Management (ADR-0037)
 
 ### Enable Git-Sync
