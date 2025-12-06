@@ -76,6 +76,8 @@ __pycache__/
 .coverage
 coverage.xml
 tmp_config_template.yml
+# Pip install artifacts
+=*
 
 # Test files should be in tests/ directory only
 /test_*.py
