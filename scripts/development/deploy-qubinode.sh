@@ -113,8 +113,9 @@ DEPLOYMENT_FAILED=false
 # Set working directory - use the parent directory of where the script is located
 # This ensures the script works correctly whether run directly or via sudo
 # If the script is at /path/to/qubinode_navigator/scripts/development/deploy-qubinode.sh,
-# MY_DIR should be /path/to (the grandparent of the script directory)
-MY_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
+# SCRIPT_DIR is /path/to/qubinode_navigator/scripts/development
+# MY_DIR should be /path/to (two levels up from SCRIPT_DIR)
+MY_DIR="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 
 # =============================================================================
 # UTILITY FUNCTIONS

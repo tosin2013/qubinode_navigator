@@ -551,8 +551,9 @@ fi
 # This ensures the script works correctly whether run directly or via sudo
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # If script is at /path/to/qubinode_navigator/scripts/development/setup.sh,
-# MY_DIR should be /path/to (the grandparent of the script directory)
-MY_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
+# SCRIPT_DIR is /path/to/qubinode_navigator/scripts/development
+# MY_DIR should be /path/to (two levels up from SCRIPT_DIR: ../scripts/.. = /)
+MY_DIR="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 
 if [ $# -eq 0 ]; then
     configure_os  $BASE_OS
