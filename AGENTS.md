@@ -691,6 +691,115 @@ When starting a new session:
 
 ______________________________________________________________________
 
-*Last updated: 2025-12-02*
-*Version: 2.0 - Added MCP/Lineage by default, Makefile commands, SSH helpers*
-*Compatible with: Claude Code, Cursor, GitHub Copilot, VS Code AI, and 20+ other agents*
+## AI Tool Configurations
+
+Qubinode Navigator provides custom commands and context rules for multiple AI coding tools. All configurations are derived from this AGENTS.md file as the single source of truth.
+
+### Supported Tools
+
+| Tool            | Config Location     | Format         | Command Style           |
+| --------------- | ------------------- | -------------- | ----------------------- |
+| **Claude Code** | `.claude/commands/` | Markdown (.md) | `/dag-list`, `/vm-info` |
+| **Gemini CLI**  | `.gemini/commands/` | TOML (.toml)   | `/dag:list`, `/vm:info` |
+| **Cursor**      | `.cursor/rules/`    | MDC (.mdc)     | Context-aware (auto)    |
+| **Windsurf**    | `.windsurf/rules/`  | Markdown (.md) | Context-aware (auto)    |
+
+### Available Commands/Rules
+
+**Slash Commands (Claude Code, Gemini CLI):**
+
+| Category       | Commands                                                      |
+| -------------- | ------------------------------------------------------------- |
+| DAG Management | `list`, `info`, `trigger`, `validate`, `scaffold`             |
+| VM Operations  | `list`, `info`, `create`, `delete`, `preflight`               |
+| Infrastructure | `cert-request`, `cert-list`, `dns-add`, `dns-check`, `status` |
+| RAG Knowledge  | `query`, `ingest`, `stats`                                    |
+| System Ops     | `deploy`, `logs`, `health`, `backup`, `adr`                   |
+| Diagnostics    | `diagnose`, `troubleshoot`                                    |
+
+**Context Rules (Cursor, Windsurf):**
+
+| Rule                      | Applies To                    | Purpose                      |
+| ------------------------- | ----------------------------- | ---------------------------- |
+| `qubinode-overview`       | Always                        | Project architecture context |
+| `dag-development`         | `**/dags/**/*.py`             | ADR-0045 standards           |
+| `vm-operations`           | `**/*vm*`, `**/*kcli*`        | kcli command reference       |
+| `troubleshooting`         | @mention                      | Debug guidance               |
+| `rag-knowledge`           | `**/*rag*`, `ai-assistant/**` | RAG operations               |
+| `infrastructure-services` | `**/*cert*`, `**/*dns*`       | Cert/DNS management          |
+| `system-operations`       | `**/deploy*`, `Makefile`      | Deployment ops               |
+| `adr-reference`           | `docs/adrs/**`                | ADR lookup                   |
+| `diagnostics`             | @mention                      | Issue diagnosis              |
+
+### Installing to Another Project
+
+Use the setup script to copy AI configurations to any project:
+
+```bash
+# Install all AI tool configs
+${QUBINODE_HOME:-$HOME/qubinode_navigator}/scripts/setup-ai-tools.sh /path/to/project
+
+# Install specific tools only
+${QUBINODE_HOME:-$HOME/qubinode_navigator}/scripts/setup-ai-tools.sh --claude --cursor
+
+# Use symlinks for auto-updates when AGENTS.md changes
+${QUBINODE_HOME:-$HOME/qubinode_navigator}/scripts/setup-ai-tools.sh --symlink
+```
+
+### Path Configuration
+
+All AI tool configurations use the `QUBINODE_HOME` environment variable with a fallback to `$HOME/qubinode_navigator`:
+
+```bash
+# Set QUBINODE_HOME if installed in non-standard location
+export QUBINODE_HOME=/path/to/qubinode_navigator
+
+# Default behavior (no env var needed if in $HOME)
+# Commands will use: ${QUBINODE_HOME:-$HOME/qubinode_navigator}
+```
+
+This allows the same configurations to work whether:
+
+- Running as root (`/root/qubinode_navigator`)
+- Running as regular user (`$HOME/qubinode_navigator`)
+- Custom installation path (set `QUBINODE_HOME`)
+
+### Updating AI Tool Configs
+
+When making significant changes to Qubinode Navigator:
+
+1. **Update AGENTS.md** (this file) with new information
+1. **Regenerate tool configs** by updating the corresponding files:
+   - Claude Code: `.claude/commands/*.md`
+   - Gemini CLI: `.gemini/commands/**/*.toml`
+   - Cursor: `.cursor/rules/*.mdc`
+   - Windsurf: `.windsurf/rules/*.md`
+1. **Test** the commands/rules work correctly
+1. **Commit** all changes together
+
+### Quick Reference Card
+
+```
+Claude Code                    Gemini CLI
+-----------                    ----------
+/dag-list                      /dag:list
+/dag-info <id>                 /dag:info <id>
+/vm-list                       /vm:list
+/vm-info <name>                /vm:info <name>
+/infra-status                  /infra:status
+/diagnose <issue>              /diagnose <issue>
+/system-health                 /system:health
+
+Cursor/Windsurf (auto-context)
+------------------------------
+Edit DAG file → dag-development rules apply
+Edit kcli code → vm-operations rules apply
+@troubleshooting → Diagnostic guidance
+@adr-reference → ADR lookup help
+```
+
+______________________________________________________________________
+
+*Last updated: 2025-12-06*
+*Version: 3.0 - Added AI tool configurations (Claude Code, Gemini CLI, Cursor, Windsurf)*
+*Compatible with: Claude Code, Cursor, Windsurf, Gemini CLI, GitHub Copilot, VS Code AI, and 20+ other agents*

@@ -1,0 +1,26 @@
+description = "Ingest a document into the RAG knowledge base"
+prompt = """You are helping ingest documents into Qubinode Navigator's RAG knowledge base.
+
+Document to ingest: {{args}}
+
+First, verify the document exists:
+!{ls -la {{args}} 2>/dev/null || echo "File not found"}
+
+Ingest using the RAG CLI:
+!{cd ${QUBINODE_HOME:-$HOME/qubinode_navigator}/ai-assistant && python3 scripts/rag-cli.py ingest {{args}} 2>/dev/null || echo "RAG CLI ingest failed"}
+
+Alternative - use the prepare-rag-docs script for bulk ingestion:
+!{cd ${QUBINODE_HOME:-$HOME/qubinode_navigator} && python3 scripts/prepare-rag-docs.py --help 2>/dev/null | head -20}
+
+Supported document types:
+- Markdown (.md)
+- Text files (.txt)
+- Python files (.py) - for code documentation
+- YAML/JSON configuration files
+
+After ingestion:
+1. Verify document was indexed
+2. Test a query related to the content
+3. Check RAG statistics
+
+!{cd ${QUBINODE_HOME:-$HOME/qubinode_navigator}/ai-assistant && python3 scripts/rag-cli.py stats 2>/dev/null || echo "Stats unavailable"}"""

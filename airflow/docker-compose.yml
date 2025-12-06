@@ -97,8 +97,9 @@ x-airflow-common:
     - /root/qubinode_navigator:/opt/qubinode_navigator:ro
     # Mount freeipa-workshop-deployer for Ansible playbooks
     - /root/freeipa-workshop-deployer:/opt/freeipa-workshop-deployer
-    # Mount kcli-pipelines for scripts
-    - /root/kcli-pipelines:/opt/kcli-pipelines:ro
+    # Mount qubinode-pipelines for deployment scripts (ADR-0047)
+    # Standard location: /opt/qubinode-pipelines (clone from https://github.com/Qubinode/qubinode-pipelines)
+    - /opt/qubinode-pipelines:/opt/qubinode-pipelines:ro
     # Mount SSH keys for Ansible
     - /root/.ssh:/root/.ssh:ro
     # Mount /etc/hosts for DNS updates

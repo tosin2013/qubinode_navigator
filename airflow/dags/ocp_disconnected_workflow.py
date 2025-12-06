@@ -106,9 +106,9 @@ dag = DAG(
 workflow_start = BashOperator(
     task_id="workflow_start",
     bash_command="""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "🚀 OCP Disconnected Workflow - Starting"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
+    echo "[START] OCP Disconnected Workflow - Starting"
+    echo "===================================================================="
     echo ""
     echo "Timestamp:        $(date -Iseconds)"
     echo "Configuration:    {{ params.example_config }}"
@@ -149,9 +149,9 @@ decide_infra = BranchPythonOperator(
 skip_infra_setup = BashOperator(
     task_id="skip_infra_setup",
     bash_command="""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     echo "⏭️  Skipping Infrastructure Setup"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     echo ""
     echo "Assuming Step-CA and Registry are already deployed."
     echo "Set skip_infra_setup=false to deploy infrastructure."
@@ -164,9 +164,9 @@ setup_infrastructure = BashOperator(
     bash_command="""
     set -euo pipefail
 
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     echo "🏗️  Setting Up Infrastructure"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     echo ""
 
     REGISTRY_TYPE="{{ params.registry_type }}"
@@ -181,7 +181,7 @@ setup_infrastructure = BashOperator(
         # In a real scenario, we would use TriggerDagRunOperator
         # For now, just report what needs to be done
     else
-        echo "  ✅ Step-CA is healthy"
+        echo "  [OK] Step-CA is healthy"
     fi
 
     # Check Registry
@@ -209,11 +209,11 @@ setup_infrastructure = BashOperator(
         echo "  Registry not responding - needs deployment"
         echo "  Run: airflow dags trigger $DEPLOY_DAG --conf '{\"action\": \"create\"}'"
     else
-        echo "  ✅ Registry is responding (HTTP $HTTP_CODE)"
+        echo "  [OK] Registry is responding (HTTP $HTTP_CODE)"
     fi
 
     echo ""
-    echo "✅ Infrastructure check complete"
+    echo "[OK] Infrastructure check complete"
     """,
     dag=dag,
 )
@@ -246,9 +246,9 @@ decide_sync = BranchPythonOperator(
 skip_image_sync = BashOperator(
     task_id="skip_image_sync",
     bash_command="""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     echo "⏭️  Skipping Image Sync"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     echo ""
     echo "Assuming images are already synced to registry."
     echo "Set skip_image_sync=false to sync images."
@@ -316,9 +316,9 @@ decide_deploy = BranchPythonOperator(
 skip_deployment = BashOperator(
     task_id="skip_deployment",
     bash_command="""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     echo "⏭️  Skipping KVM Deployment"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     echo ""
     echo "Validation passed. Agent ISO is ready for deployment."
     echo "Set deploy_on_kvm=true to deploy to local KVM."
@@ -360,9 +360,9 @@ workflow_complete = BashOperator(
     task_id="workflow_complete",
     bash_command="""
     echo ""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "✅ OCP Disconnected Workflow Complete"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
+    echo "[OK] OCP Disconnected Workflow Complete"
+    echo "===================================================================="
     echo ""
     echo "Timestamp:     $(date -Iseconds)"
     echo "Configuration: {{ params.example_config }}"
@@ -385,7 +385,7 @@ workflow_complete = BashOperator(
     fi
 
     echo ""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     """,
     trigger_rule=TriggerRule.ALL_SUCCESS,
     dag=dag,
@@ -398,9 +398,9 @@ workflow_failed = BashOperator(
     task_id="workflow_failed",
     bash_command="""
     echo ""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "❌ OCP Disconnected Workflow Failed"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
+    echo "[ERROR] OCP Disconnected Workflow Failed"
+    echo "===================================================================="
     echo ""
     echo "One or more stages failed. Review the failed task logs for details."
     echo ""
@@ -417,7 +417,7 @@ workflow_failed = BashOperator(
     echo "  - DNS missing: airflow dags trigger freeipa_dns_management"
     echo "  - Config error: Edit the file mentioned in the error"
     echo ""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     """,
     trigger_rule=TriggerRule.ONE_FAILED,
     dag=dag,

@@ -1,0 +1,109 @@
+# System Operations
+
+Apply when working with deployment, backup, health checks, or Makefiles.
+
+## Deployment
+
+### Full Stack Deployment
+
+```bash
+cd ${QUBINODE_HOME:-$HOME/qubinode_navigator}
+./deploy-qubinode-with-airflow.sh
+```
+
+### Airflow Only
+
+```bash
+cd ${QUBINODE_HOME:-$HOME/qubinode_navigator}/airflow
+make install    # Full setup
+make up         # Start services
+make up-vault   # Start with Vault
+make down       # Stop services
+make restart    # Restart all
+```
+
+### Prerequisites Check
+
+```bash
+${QUBINODE_HOME:-$HOME/qubinode_navigator}/scripts/preflight-check.sh
+# With auto-fix
+${QUBINODE_HOME:-$HOME/qubinode_navigator}/scripts/preflight-check.sh --fix
+```
+
+## Health Checks
+
+### Quick Health Check
+
+```bash
+# Container status
+cd ${QUBINODE_HOME:-$HOME/qubinode_navigator}/airflow && podman-compose ps
+
+# Service health
+curl -s http://localhost:8888/health  # Airflow
+curl -s http://localhost:8889/health  # MCP Server
+curl -s http://localhost:8080/health  # AI Assistant
+pg_isready -h localhost -p 5432       # PostgreSQL
+```
+
+### Comprehensive Health
+
+```bash
+cd ${QUBINODE_HOME:-$HOME/qubinode_navigator}/airflow
+make health
+make status
+```
+
+## Logs
+
+### View Service Logs
+
+```bash
+cd ${QUBINODE_HOME:-$HOME/qubinode_navigator}/airflow
+podman-compose logs airflow-webserver
+podman-compose logs airflow-scheduler
+podman-compose logs -f  # Follow all
+```
+
+### Clean Old Logs
+
+```bash
+make clean-logs
+```
+
+## Backup
+
+### Database Backup
+
+```bash
+pg_dump -h localhost -U airflow airflow > airflow_backup_$(date +%Y%m%d).sql
+```
+
+### Configuration Backup
+
+```bash
+tar -czf qubinode_config_$(date +%Y%m%d).tar.gz \
+  ${QUBINODE_HOME:-$HOME/qubinode_navigator}/vault.yml \
+  ${QUBINODE_HOME:-$HOME/qubinode_navigator}/inventory/ \
+  ${QUBINODE_HOME:-$HOME/qubinode_navigator}/airflow/config/
+```
+
+### DAG Backup
+
+```bash
+tar -czf qubinode_dags_$(date +%Y%m%d).tar.gz \
+  ${QUBINODE_HOME:-$HOME/qubinode_navigator}/airflow/dags/
+```
+
+## Makefile Targets
+
+| Target                 | Description     |
+| ---------------------- | --------------- |
+| `make up`              | Start services  |
+| `make down`            | Stop services   |
+| `make restart`         | Restart all     |
+| `make status`          | Show status     |
+| `make logs`            | View logs       |
+| `make health`          | Health check    |
+| `make clear-dag-cache` | Clear DAG cache |
+| `make validate-dags`   | Validate DAGs   |
+| `make test-mcp`        | Test MCP server |

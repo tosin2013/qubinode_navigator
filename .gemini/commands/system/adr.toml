@@ -1,0 +1,39 @@
+description = "Search and view Architecture Decision Records"
+prompt = """You are helping navigate Qubinode Navigator's Architecture Decision Records (ADRs).
+
+Search query: {{args}}
+
+List all ADRs:
+!{ls -la ${QUBINODE_HOME:-$HOME/qubinode_navigator}/docs/adrs/*.md 2>/dev/null | head -30}
+
+Search ADRs for topic:
+!{grep -l -i "{{args}}" ${QUBINODE_HOME:-$HOME/qubinode_navigator}/docs/adrs/*.md 2>/dev/null | head -10}
+
+Read the ADR index:
+@{docs/adrs/README.md}
+
+Key ADRs by topic:
+
+**Architecture**
+- ADR-0001: Core architecture decisions
+- ADR-0036: Airflow integration
+
+**DAG Development**
+- ADR-0045: DAG development standards (critical!)
+- ADR-0046: Validation pipeline
+- ADR-0047: qubinode-pipelines integration
+
+**Infrastructure**
+- ADR-0043: Host network access
+- ADR-0050: Hybrid architecture
+- ADR-0051: Vault secrets
+
+**AI/RAG**
+- ADR-0049: Multi-agent LLM memory
+- ADR-0055: Zero-friction services
+
+For the search "{{args}}", I'll identify:
+1. Most relevant ADRs
+2. Key decisions and rationale
+3. Implementation guidance
+4. Related ADRs to review"""

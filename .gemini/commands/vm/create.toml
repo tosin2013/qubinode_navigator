@@ -1,0 +1,31 @@
+description = "Create a new virtual machine"
+prompt = """You are helping create a new Qubinode Navigator virtual machine.
+
+VM requirements: {{args}}
+
+First, check available images:
+!{kcli list images 2>/dev/null | head -20}
+
+Check available plans (predefined VM configurations):
+!{kcli list plan 2>/dev/null}
+
+Before creating, verify:
+1. Sufficient resources (CPU, memory, disk)
+2. Network availability
+3. Image exists or can be downloaded
+
+IMPORTANT: Creating VMs consumes system resources. Confirm specifications with the user before executing.
+
+To create via kcli directly:
+```bash
+kcli create vm <name> -i <image> -P memory=<MB> -P cpus=<N> -P disks=['{"size": <GB>}']
+```
+
+Or trigger the appropriate Airflow DAG for managed creation:
+!{cd ${QUBINODE_HOME:-$HOME/qubinode_navigator}/airflow && podman-compose exec -T airflow-scheduler airflow dags list | grep -i vm}
+
+Provide:
+1. Recommended specifications based on use case
+2. The exact command or DAG to use
+3. Expected creation time
+4. Post-creation verification steps"""

@@ -16,6 +16,23 @@ This directory contains the Apache Airflow integration for Qubinode Navigator, e
 - **✅ Custom Operators**: Qubinode-specific operators for infrastructure automation
 - **✅ Community Extensibility**: Plugin system for custom workflows
 
+## 📦 Prerequisites for New Developers
+
+Before starting Airflow, you need to clone the required repositories:
+
+```bash
+# 1. Clone qubinode_navigator (if not already done)
+git clone https://github.com/Qubinode/qubinode_navigator.git /root/qubinode_navigator
+
+# 2. Clone qubinode-pipelines to the standard location (required for deployment DAGs)
+sudo git clone https://github.com/Qubinode/qubinode-pipelines.git /opt/qubinode-pipelines
+
+# 3. (Optional) If you have an existing kcli-pipelines clone, create a symlink instead:
+# sudo ln -s /path/to/your/kcli-pipelines /opt/qubinode-pipelines
+```
+
+**Why `/opt/qubinode-pipelines`?** This is the standard location defined in ADR-0047. The docker-compose.yml mounts this directory into the Airflow containers for DAG access.
+
 ## 🚀 Quick Start
 
 ### 1. Enable Airflow

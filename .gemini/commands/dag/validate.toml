@@ -1,0 +1,19 @@
+description = "Validate DAG syntax and check for errors"
+prompt = """You are helping validate Qubinode Navigator Airflow DAGs.
+
+Run DAG validation:
+!{cd ${QUBINODE_HOME:-$HOME/qubinode_navigator}/airflow && ./scripts/validate-dag.sh}
+
+Also check for import errors:
+!{cd ${QUBINODE_HOME:-$HOME/qubinode_navigator}/airflow && podman-compose exec -T airflow-scheduler airflow dags list-import-errors 2>/dev/null || docker-compose exec -T airflow-scheduler airflow dags list-import-errors}
+
+Review the DAG development standards from ADR-0045:
+@{docs/adrs/adr-0045-dag-development-standards.md}
+
+For any errors found:
+1. Identify the root cause
+2. Reference the specific ADR standard violated
+3. Provide the exact fix needed
+4. Explain how to prevent similar issues
+
+{{args}}"""

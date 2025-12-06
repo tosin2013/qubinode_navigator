@@ -1,0 +1,17 @@
+description = "Get detailed information about a specific DAG"
+prompt = """You are helping analyze a Qubinode Navigator Airflow DAG.
+
+Get details for the DAG: {{args}}
+
+First, get the DAG details:
+!{cd ${QUBINODE_HOME:-$HOME/qubinode_navigator}/airflow && podman-compose exec -T airflow-scheduler airflow dags show {{args}} 2>/dev/null || echo "Trying docker..." && docker-compose exec -T airflow-scheduler airflow dags show {{args}}}
+
+Then read the DAG source code:
+@{airflow/dags/}
+
+Provide:
+1. DAG purpose and what it automates
+2. Task dependencies and execution order
+3. Required configuration or variables
+4. How to trigger it and expected outcomes
+5. Any prerequisites (VMs, services, credentials)"""

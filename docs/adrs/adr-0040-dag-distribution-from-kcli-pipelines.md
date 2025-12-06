@@ -1,162 +1,209 @@
 ______________________________________________________________________
 
-## layout: default title: ADR-0040 DAG Distribution from kcli-pipelines parent: Configuration & Automation grand_parent: Architectural Decision Records nav_order: 40
+## layout: default title: ADR-0040 DAG Distribution from qubinode-pipelines parent: Configuration & Automation grand_parent: Architectural Decision Records nav_order: 40
 
-# ADR-0040: DAG Distribution Strategy from kcli-pipelines Repository
+# ADR-0040: DAG Distribution Strategy from qubinode-pipelines Repository
 
-**Status:** Accepted
-**Date:** 2025-11-27
+**Status:** Accepted (Amended 2025-12-05)
+**Date:** 2025-11-27 (Amended: 2025-12-05)
 **Decision Makers:** Platform Team, DevOps Team
-**Related ADRs:** ADR-0037 (Git-Based DAG Repository), ADR-0039 (FreeIPA/VyOS DAG Integration)
+**Related ADRs:** ADR-0037, ADR-0039, ADR-0061 (Multi-Repository Architecture), ADR-0062 (External Integration)
+
+> **Amendment Notice (2025-12-05):** This ADR has been updated to reflect the repository rename from `kcli-pipelines` to `qubinode-pipelines` and the adoption of volume-mount-based DAG distribution instead of sync scripts. See ADR-0061 for the full multi-repository architecture.
 
 ## Context and Problem Statement
 
-The `kcli-pipelines` repository (https://github.com/Qubinode/kcli-pipelines) contains infrastructure deployment scripts that need to be converted to Airflow DAGs. Users need a mechanism to:
+The `qubinode-pipelines` repository (https://github.com/Qubinode/qubinode-pipelines, formerly kcli-pipelines) serves as the middleware layer for deployment DAGs and scripts. Users need a mechanism to:
 
-1. Store DAGs in the kcli-pipelines repository alongside related scripts
-1. Synchronize DAGs to their local qubinode_navigator installation
+1. Access deployment DAGs from a central repository
 1. Receive updates when new DAGs are added or existing ones are modified
 1. Validate DAGs before deployment to prevent runtime errors
+1. Contribute new DAGs via PR-based workflow
 
-**Current State:**
+**Current State (Updated 2025-12-05):**
 
-- DAGs are manually created in `/root/qubinode_navigator/airflow/dags/`
-- No standardized distribution mechanism exists
-- kcli-pipelines contains shell scripts but no DAGs yet
+- Platform DAGs (rag\_\*.py) live in qubinode_navigator/airflow/dags/
+- Deployment DAGs live in qubinode-pipelines/dags/
+- qubinode-pipelines is mounted at /opt/qubinode-pipelines via volume mount
+- External projects contribute DAGs via PR to qubinode-pipelines
 
 ## Decision Drivers
 
-- Enable community contribution of DAGs via kcli-pipelines
-- Provide simple sync mechanism for users
+- Enable community contribution of DAGs via qubinode-pipelines
+- Provide automatic DAG availability via volume mount
 - Maintain DAG quality through validation
-- Support both manual and automated synchronization
-- Preserve local customizations when syncing
+- Support PR-based contribution workflow
+- Clear separation between platform and deployment DAGs
 
 ## Decision Outcome
 
-**Chosen approach:** Implement a pull-based DAG distribution system with a sync script that users can run manually or schedule via cron/systemd timer.
+**Chosen approach:** Volume-mount-based DAG distribution where qubinode-pipelines is cloned to /opt/qubinode-pipelines and mounted into the Airflow container. External projects contribute DAGs via PR to qubinode-pipelines.
 
 ### Repository Structure
 
 ```
-kcli-pipelines/
+qubinode-pipelines/                 # Renamed from kcli-pipelines
 ├── dags/                           # Airflow DAG definitions
-│   ├── README.md                   # DAG documentation
-│   ├── requirements.txt            # Python dependencies for DAGs
-│   ├── freeipa_deployment.py       # FreeIPA deployment DAG
-│   ├── vyos_router_deployment.py   # VyOS router deployment DAG
-│   └── __init__.py                 # Package marker
-├── scripts/
-│   └── sync-dags-to-qubinode.sh    # Sync script
-├── freeipa/                        # FreeIPA deployment scripts
-├── vyos-router/                    # VyOS deployment scripts
-└── ...
+│   ├── registry.yaml               # DAG manifest for discovery
+│   ├── ocp/                        # OCP deployment DAGs
+│   │   ├── ocp_initial_deployment.py
+│   │   ├── ocp_agent_deployment.py
+│   │   ├── ocp_disconnected_workflow.py
+│   │   └── ...
+│   ├── infrastructure/             # Infrastructure DAGs
+│   │   ├── freeipa_deployment.py
+│   │   ├── vyos_router_deployment.py
+│   │   └── generic_vm_deployment.py
+│   └── README.md
+├── scripts/                        # Deployment scripts
+│   ├── vyos-router/
+│   │   └── deploy.sh
+│   ├── freeipa/
+│   │   └── deploy.sh
+│   └── helper_scripts/
+│       └── default.env
+└── README.md
 ```
 
-### Sync Script Design
+### Volume Mount Configuration
 
-```bash
-#!/bin/bash
-# sync-dags-to-qubinode.sh
-#
-# Synchronizes DAGs from kcli-pipelines to qubinode_navigator
-#
-# Usage:
-#   ./sync-dags-to-qubinode.sh [options]
-#
-# Options:
-#   --source DIR      Source directory (default: /opt/kcli-pipelines/dags)
-#   --target DIR      Target directory (default: $QUBINODE_DAGS_DIR or auto-detect)
-#   --validate        Validate DAGs before copying (default: true)
-#   --backup          Backup existing DAGs before sync (default: true)
-#   --dry-run         Show what would be done without making changes
-#   --force           Overwrite local modifications
+The qubinode-pipelines repository is mounted directly into the Airflow container:
+
+```yaml
+# docker-compose.yml
+services:
+  airflow-worker:
+    volumes:
+      - /opt/qubinode-pipelines:/opt/qubinode-pipelines:ro
 ```
 
-### Sync Workflow
+### DAG Discovery Workflow
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                         User Workflow                            │
+│                    INSTALLATION WORKFLOW                         │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  1. Clone/Update kcli-pipelines                                  │
-│     git clone https://github.com/Qubinode/kcli-pipelines.git    │
-│     OR: git -C /opt/kcli-pipelines pull                         │
+│  1. Clone qubinode-pipelines                                     │
+│     git clone https://github.com/Qubinode/qubinode-pipelines    │
+│         /opt/qubinode-pipelines                                  │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  2. Run Sync Script                                              │
-│     /opt/kcli-pipelines/scripts/sync-dags-to-qubinode.sh        │
+│  2. Deploy qubinode_navigator                                    │
+│     ./deploy-qubinode-with-airflow.sh                           │
+│     (mounts /opt/qubinode-pipelines automatically)              │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  3. Sync Process                                                 │
-│     a. Validate Python syntax of each DAG                        │
-│     b. Check for import errors                                   │
-│     c. Backup existing DAGs (optional)                           │
-│     d. Copy validated DAGs to target directory                   │
-│     e. Report sync status                                        │
+│  3. DAG Loader discovers DAGs                                    │
+│     - Reads /opt/qubinode-pipelines/dags/registry.yaml          │
+│     - Imports DAGs from categorized directories                  │
+│     - Validates against ADR-0045 standards                       │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  4. Airflow Detects New DAGs                                     │
-│     - Scheduler picks up new/modified DAGs                       │
-│     - DAGs appear in Airflow UI                                  │
+│  4. Airflow UI shows available DAGs                              │
+│     - Platform DAGs from qubinode_navigator                      │
+│     - Deployment DAGs from qubinode-pipelines                    │
+└─────────────────────────────────────────────────────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────┐
+│                      UPDATE WORKFLOW                             │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  1. Pull latest changes                                          │
+│     git -C /opt/qubinode-pipelines pull                         │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  2. Airflow automatically detects changes                        │
+│     (scheduler rescans DAG directory)                           │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ## Implementation Details
 
-### Sync Script Features
+### DAG Loader Configuration
 
-1. **Validation**: Python syntax check and import validation
-1. **Backup**: Timestamped backup of existing DAGs before overwrite
-1. **Selective Sync**: Option to sync specific DAGs only
-1. **Conflict Detection**: Warn about local modifications
-1. **Dry Run**: Preview changes without applying
-1. **Logging**: Detailed sync logs for troubleshooting
-
-### Integration with Qubinode Navigator
-
-Add MCP tool for DAG synchronization:
+The dag_loader.py in qubinode_navigator discovers DAGs from qubinode-pipelines:
 
 ```python
-# In qubinode-airflow MCP server
-@mcp.tool()
-async def sync_dags_from_kcli_pipelines(
-    source_repo: str = "https://github.com/Qubinode/kcli-pipelines.git",
-    branch: str = "main",
-    validate: bool = True,
-    backup: bool = True
-) -> str:
-    """
-    Synchronize DAGs from kcli-pipelines repository.
+# airflow/dags/dag_loader.py
+import os
+from pathlib import Path
 
-    Args:
-        source_repo: Git repository URL
-        branch: Branch to sync from
-        validate: Validate DAGs before copying
-        backup: Backup existing DAGs
+PIPELINES_DAG_DIR = '/opt/qubinode-pipelines/dags'
+CATEGORIES = ['ocp', 'infrastructure', 'networking', 'storage', 'security']
 
-    Returns:
-        Sync status report
-    """
+def discover_dags():
+    """Discover all DAGs from qubinode-pipelines."""
+    for category in CATEGORIES:
+        category_path = Path(PIPELINES_DAG_DIR) / category
+        if category_path.exists():
+            for dag_file in category_path.glob('*.py'):
+                # Import and register DAG
+                pass
 ```
 
-### Automated Sync Options
+### Contribution Workflow
 
-#### Option 1: Systemd Timer
+External projects contribute DAGs via PR to qubinode-pipelines:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                   CONTRIBUTION WORKFLOW                          │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  1. Develop DAG locally in your project                          │
+│     your-project/airflow/dags/your_component.py                 │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  2. Validate using qubinode_navigator tools                      │
+│     ./airflow/scripts/validate-dag.sh your_component.py         │
+│     ./airflow/scripts/lint-dags.sh your_component.py            │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  3. Submit PR to qubinode-pipelines                              │
+│     Fork → Add DAG to dags/<category>/ → Create PR              │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  4. CI validates and maintainers review                          │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  5. Merge and DAG becomes available to all users                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+See ADR-0062 for detailed external project integration guidance.
+
+### Automated Update Options
+
+#### Option 1: Systemd Timer (Recommended)
 
 ```ini
-# /etc/systemd/system/qubinode-dag-sync.timer
+# /etc/systemd/system/qubinode-pipelines-update.timer
 [Unit]
-Description=Sync DAGs from kcli-pipelines daily
+Description=Update qubinode-pipelines daily
 
 [Timer]
 OnCalendar=daily
@@ -166,72 +213,85 @@ Persistent=true
 WantedBy=timers.target
 ```
 
+```ini
+# /etc/systemd/system/qubinode-pipelines-update.service
+[Unit]
+Description=Update qubinode-pipelines repository
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/git -C /opt/qubinode-pipelines pull --ff-only
+```
+
 #### Option 2: Cron Job
 
 ```bash
-# /etc/cron.d/qubinode-dag-sync
-0 2 * * * root /opt/kcli-pipelines/scripts/sync-dags-to-qubinode.sh --validate --backup
-```
-
-#### Option 3: Git Hook (for developers)
-
-```bash
-# .git/hooks/post-merge
-#!/bin/bash
-if git diff-tree --name-only -r HEAD@{1} HEAD | grep -q "^dags/"; then
-    echo "DAGs changed, running sync..."
-    /opt/kcli-pipelines/scripts/sync-dags-to-qubinode.sh
-fi
+# /etc/cron.d/qubinode-pipelines-update
+0 2 * * * root git -C /opt/qubinode-pipelines pull --ff-only
 ```
 
 ## Positive Consequences
 
 - **Community Contribution**: Easy for users to contribute DAGs via PR
 - **Version Control**: DAGs tracked in Git with full history
-- **Validation**: Syntax errors caught before deployment
-- **Flexibility**: Users can customize sync behavior
-- **Discoverability**: Central location for all infrastructure DAGs
-- **Documentation**: DAGs documented alongside related scripts
+- **Validation**: Syntax errors caught before deployment via CI
+- **Automatic Discovery**: Volume mount means no manual sync needed
+- **Discoverability**: Central location for all deployment DAGs
+- **Clear Separation**: Platform DAGs vs deployment DAGs clearly separated
 
 ## Negative Consequences
 
-- **Manual Step**: Users must run sync (unless automated)
-- **Potential Conflicts**: Local modifications may be overwritten
+- **Two Repositories**: Users must clone both qubinode_navigator and qubinode-pipelines
+- **PR Latency**: New DAGs require PR review before availability
 - **Network Dependency**: Requires Git access for updates
-- **Maintenance**: Sync script needs maintenance
 
 ## Alternatives Considered
 
 ### Git Submodule
 
-- **Pros**: Automatic version tracking
-- **Cons**: Complex for users, merge conflicts
+- **Pros**: Automatic version tracking, single clone
+- **Cons**: Complex for users, merge conflicts, harder contribution
 
 ### Package Distribution (PyPI)
 
 - **Pros**: Standard Python packaging
 - **Cons**: Overkill for DAG files, slower updates
 
-### Shared Volume Mount
+### Sync Script (Original Design)
 
-- **Pros**: Real-time sync
-- **Cons**: Requires infrastructure changes, no validation
+- **Pros**: Explicit control over what gets deployed
+- **Cons**: Manual step required, script maintenance burden
+
+**Decision**: Volume mount chosen for simplicity and automatic updates.
+
+## Backward Compatibility
+
+For existing installations using `/opt/kcli-pipelines`:
+
+```bash
+# Create symlink for backward compatibility
+ln -sf /opt/qubinode-pipelines /opt/kcli-pipelines
+```
+
+This ensures existing DAGs referencing `/opt/kcli-pipelines` continue to work.
 
 ## Success Metrics
 
 | Metric              | Target       | Measurement              |
 | ------------------- | ------------ | ------------------------ |
-| Sync success rate   | >99%         | Script exit codes        |
+| DAG discovery rate  | 100%         | All DAGs appear in UI    |
 | Validation accuracy | 100%         | No invalid DAGs deployed |
-| User adoption       | 80% use sync | Usage analytics          |
-| Sync time           | \<30 seconds | Script timing            |
+| PR merge time       | \<48 hours   | GitHub metrics           |
+| External PRs        | 5+ quarterly | GitHub PR count          |
 
 ## References
 
-- [kcli-pipelines Repository](https://github.com/Qubinode/kcli-pipelines)
+- [qubinode-pipelines Repository](https://github.com/Qubinode/qubinode-pipelines)
 - ADR-0037: Git-Based DAG Repository Management
 - ADR-0039: FreeIPA and VyOS Airflow DAG Integration
+- ADR-0061: Multi-Repository Architecture
+- ADR-0062: External Project Integration Guide
 
 ______________________________________________________________________
 
-**This ADR enables seamless DAG distribution from the community repository! 📦**
+**This ADR enables seamless DAG distribution from the community repository via volume mount.**

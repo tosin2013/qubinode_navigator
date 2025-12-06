@@ -600,7 +600,7 @@ with DAG(
     dag_id="rag_bootstrap",
     default_args=default_args,
     description="Bootstrap RAG knowledge base with ADRs, DAG examples, and documentation",
-    schedule_interval=None,  # Manual trigger only
+    schedule=None,  # Manual trigger only
     start_date=days_ago(1),
     catchup=False,
     tags=["rag", "bootstrap", "adr-0049"],

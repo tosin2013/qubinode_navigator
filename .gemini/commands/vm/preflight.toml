@@ -1,0 +1,25 @@
+description = "Run preflight checks before VM creation"
+prompt = """You are helping validate prerequisites for VM creation in Qubinode Navigator.
+
+VM configuration to validate: {{args}}
+
+Run preflight checks:
+!{${QUBINODE_HOME:-$HOME/qubinode_navigator}/scripts/preflight-check.sh 2>/dev/null || echo "Preflight script not found"}
+
+Check system resources:
+!{free -h && df -h / /var/lib/libvirt 2>/dev/null | head -10}
+
+Check libvirt status:
+!{systemctl is-active libvirtd && virsh nodeinfo 2>/dev/null | head -10}
+
+Check kcli configuration:
+!{cat ~/.kcli/config.yml 2>/dev/null | head -20 || echo "No kcli config found"}
+
+Validate:
+1. Sufficient CPU cores available
+2. Enough free memory
+3. Adequate disk space in libvirt storage
+4. Network bridges/pools configured
+5. Required images downloaded
+
+Report any blockers and how to resolve them."""

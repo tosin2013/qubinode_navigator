@@ -113,7 +113,7 @@ dag = DAG(
     dag_id="rag_document_ingestion",
     default_args=default_args,
     description="Scan and record documents for RAG ingestion (placeholder pipeline)",
-    schedule_interval=None,  # Manual trigger
+    schedule=None,  # Manual trigger
     catchup=False,
     tags=["rag", "documentation", "qubinode"],
 )

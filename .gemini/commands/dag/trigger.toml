@@ -1,0 +1,20 @@
+description = "Trigger an Airflow DAG execution"
+prompt = """You are helping trigger a Qubinode Navigator Airflow DAG.
+
+DAG to trigger: {{args}}
+
+Before triggering, verify:
+1. The DAG exists and is not paused
+2. Any required configuration is in place
+3. Prerequisites are met
+
+To trigger the DAG:
+!{cd ${QUBINODE_HOME:-$HOME/qubinode_navigator}/airflow && podman-compose exec -T airflow-scheduler airflow dags trigger {{args}}}
+
+After triggering:
+1. Explain what the DAG will do
+2. How to monitor its progress in the Airflow UI (http://localhost:8888)
+3. Expected duration and outcomes
+4. How to check logs if it fails
+
+IMPORTANT: Confirm with the user before executing any destructive DAGs (delete, cleanup, etc.)."""
