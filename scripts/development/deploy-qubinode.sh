@@ -114,7 +114,7 @@ DEPLOYMENT_FAILED=false
 # This ensures the script works correctly whether run directly or via sudo
 # If the script is at /path/to/qubinode_navigator/scripts/development/deploy-qubinode.sh,
 # SCRIPT_DIR is /path/to/qubinode_navigator/scripts/development
-# MY_DIR should be /path/to (two levels up from SCRIPT_DIR)
+# MY_DIR should be /path/to (three levels of dirname: scripts -> qubinode_navigator -> parent)
 MY_DIR="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 
 # =============================================================================
@@ -475,8 +475,10 @@ deploy_airflow_services() {
     fi
 
     # Change to airflow directory - calculate relative to repo root
+    # SCRIPT_DIR is /path/to/qubinode_navigator/scripts/development
+    # repo_root is /path/to/qubinode_navigator (go up two levels from SCRIPT_DIR)
     local repo_root="$(dirname "$(dirname "$SCRIPT_DIR")")"
-    local airflow_dir="$repo_root/qubinode_navigator/airflow"
+    local airflow_dir="$repo_root/airflow"
     if [[ ! -d "$airflow_dir" ]]; then
         log_warning "Airflow directory not found at $airflow_dir, skipping Airflow deployment"
         return 1

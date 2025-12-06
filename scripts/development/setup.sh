@@ -492,7 +492,7 @@ function configure_bash_aliases() {
         echo "Changing to $qubinode_dir..."
         cd "$qubinode_dir" || exit 1
     else
-        echo "Current directory is /root/qubinode_navigator."
+        echo "Current directory is $qubinode_dir."
     fi
     # Source the function definitions
     source bash-aliases/functions.sh
@@ -552,7 +552,7 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # If script is at /path/to/qubinode_navigator/scripts/development/setup.sh,
 # SCRIPT_DIR is /path/to/qubinode_navigator/scripts/development
-# MY_DIR should be /path/to (two levels up from SCRIPT_DIR: ../scripts/.. = /)
+# MY_DIR should be /path/to (three levels of dirname: scripts -> qubinode_navigator -> parent)
 MY_DIR="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 
 if [ $# -eq 0 ]; then
