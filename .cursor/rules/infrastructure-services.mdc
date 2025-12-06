@@ -1,0 +1,81 @@
+---
+globs: ["**/*cert*", "**/*dns*", "**/*tls*", "**/*ssl*", "scripts/**"]
+alwaysApply: false
+---
+
+# Infrastructure Services
+
+## Certificate Management (qubinode-cert)
+
+The `qubinode-cert` CLI manages TLS certificates across multiple CAs.
+
+### Request Certificate
+```bash
+${QUBINODE_HOME:-$HOME/qubinode_navigator}/scripts/qubinode-cert request <hostname>
+```
+Auto-selects CA: Step-CA > Vault > Let's Encrypt
+
+### List Certificates
+```bash
+${QUBINODE_HOME:-$HOME/qubinode_navigator}/scripts/qubinode-cert list
+```
+
+### Renew Certificate
+```bash
+${QUBINODE_HOME:-$HOME/qubinode_navigator}/scripts/qubinode-cert renew <hostname>
+# Or renew all
+${QUBINODE_HOME:-$HOME/qubinode_navigator}/scripts/qubinode-cert renew --all
+```
+
+### Manual Certificate Commands
+```bash
+# Step-CA
+step ca certificate hostname.example.com cert.crt key.key
+
+# Vault PKI
+vault write pki/issue/qubinode common_name=hostname.example.com
+
+# Let's Encrypt
+certbot certonly --standalone -d hostname.example.com
+```
+
+## DNS Management (qubinode-dns)
+
+The `qubinode-dns` CLI manages DNS records via FreeIPA or nsupdate.
+
+### Add DNS Record
+```bash
+${QUBINODE_HOME:-$HOME/qubinode_navigator}/scripts/qubinode-dns add <hostname> <ip>
+```
+
+### Check DNS Resolution
+```bash
+${QUBINODE_HOME:-$HOME/qubinode_navigator}/scripts/qubinode-dns check <hostname>
+
+# Manual check
+dig +short hostname.example.com
+nslookup hostname.example.com
+```
+
+### Remove DNS Record
+```bash
+${QUBINODE_HOME:-$HOME/qubinode_navigator}/scripts/qubinode-dns remove <hostname>
+```
+
+### Add CNAME Record
+```bash
+${QUBINODE_HOME:-$HOME/qubinode_navigator}/scripts/qubinode-dns add-cname <alias> <target>
+```
+
+## Service Ports Reference
+
+| Service | Port | Purpose |
+|---------|------|---------|
+| Airflow UI | 8888 | DAG management |
+| AI Assistant | 8080 | Chat and RAG |
+| MCP Server | 8889 | Tool API |
+| PostgreSQL | 5432 | Database |
+| Marquez API | 5001 | Lineage |
+| Marquez Web | 3000 | Lineage UI |
+| Embedding | 8891 | Vector embeddings |
+| LiteLLM | 4000 | LLM proxy |

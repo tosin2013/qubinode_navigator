@@ -1,0 +1,37 @@
+description = "Add a DNS record"
+prompt = """You are helping add a DNS record in Qubinode Navigator.
+
+DNS record request: {{args}}
+
+Expected format: <hostname> <ip> or just analyze the request.
+
+Check DNS backend availability:
+!{which ipa >/dev/null 2>&1 && echo "FreeIPA available" || echo "FreeIPA not found"}
+!{which nsupdate >/dev/null 2>&1 && echo "nsupdate available" || echo "nsupdate not found"}
+
+Add DNS record using qubinode-dns:
+!{${QUBINODE_HOME:-$HOME/qubinode_navigator}/scripts/qubinode-dns add {{args}} 2>/dev/null || echo "qubinode-dns not found - showing manual steps"}
+
+The qubinode-dns tool:
+- Auto-detects FreeIPA or nsupdate backend
+- Creates forward (A) record
+- Optionally creates reverse (PTR) record
+
+Manual alternatives:
+
+FreeIPA:
+```bash
+ipa dnsrecord-add <zone> <hostname> --a-rec=<ip>
+```
+
+nsupdate:
+```bash
+nsupdate <<EOF
+server <dns-server>
+update add <hostname>.<zone>. 3600 A <ip>
+send
+EOF
+```
+
+After adding, verify:
+!{dig +short {{args}} 2>/dev/null || nslookup {{args}} 2>/dev/null}"""

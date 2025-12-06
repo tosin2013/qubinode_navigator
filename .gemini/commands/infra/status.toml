@@ -1,0 +1,23 @@
+description = "Check status of all infrastructure services"
+prompt = """You are helping check infrastructure service status in Qubinode Navigator.
+
+Check core services:
+!{echo "=== Airflow ===" && systemctl is-active airflow-webserver airflow-scheduler 2>/dev/null || (cd ${QUBINODE_HOME:-$HOME/qubinode_navigator}/airflow && podman-compose ps 2>/dev/null || docker-compose ps 2>/dev/null)}
+
+!{echo "=== Libvirt ===" && systemctl is-active libvirtd && virsh list --all 2>/dev/null | head -10}
+
+!{echo "=== AI Assistant ===" && systemctl is-active qubinode-ai-assistant 2>/dev/null || curl -s http://localhost:8080/health 2>/dev/null | head -5}
+
+!{echo "=== MCP Server ===" && curl -s http://localhost:8889/health 2>/dev/null | head -5 || echo "MCP server not responding"}
+
+!{echo "=== PostgreSQL ===" && systemctl is-active postgresql 2>/dev/null || pg_isready -h localhost 2>/dev/null}
+
+!{echo "=== Marquez (Lineage) ===" && curl -s http://localhost:5001/api/v1/namespaces 2>/dev/null | head -5 || echo "Marquez not running"}
+
+Provide a summary:
+1. Overall system health
+2. Any services that need attention
+3. Resource utilization concerns
+4. Recommended actions
+
+{{args}}"""

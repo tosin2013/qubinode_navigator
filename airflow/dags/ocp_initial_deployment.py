@@ -53,7 +53,7 @@ dag = DAG(
     "ocp_initial_deployment",
     default_args=default_args,
     description="Complete OCP deployment workflow for disconnected environments",
-    schedule_interval=None,  # Manual trigger only
+    schedule=None,  # Manual trigger only
     catchup=False,
     tags=["ocp4-disconnected-helper", "openshift", "deployment", "disconnected"],
     params={
@@ -70,9 +70,9 @@ dag = DAG(
 validate_environment = BashOperator(
     task_id="validate_environment",
     bash_command="""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "🔍 TASK 1: Validating Environment"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
+    echo "[INFO] TASK 1: Validating Environment"
+    echo "===================================================================="
 
     ERRORS=0
 
@@ -81,9 +81,9 @@ validate_environment = BashOperator(
     for cmd in podman ansible-playbook oc oc-mirror; do
         if command -v $cmd &> /dev/null; then
             VERSION=$($cmd --version 2>/dev/null | head -1)
-            echo "✅ $cmd: $VERSION"
+            echo "[OK] $cmd: $VERSION"
         else
-            echo "❌ $cmd: NOT FOUND"
+            echo "[ERROR] $cmd: NOT FOUND"
             ERRORS=$((ERRORS + 1))
         fi
     done
@@ -93,9 +93,9 @@ validate_environment = BashOperator(
     echo "Checking pull secret..."
     PULL_SECRET="{{ params.pull_secret_path | default('/root/pull-secret.json') }}"
     if [ -f "$PULL_SECRET" ]; then
-        echo "✅ Pull secret found: $PULL_SECRET"
+        echo "[OK] Pull secret found: $PULL_SECRET"
     else
-        echo "❌ Pull secret not found: $PULL_SECRET"
+        echo "[ERROR] Pull secret not found: $PULL_SECRET"
         ERRORS=$((ERRORS + 1))
     fi
 
@@ -104,10 +104,10 @@ validate_environment = BashOperator(
     echo "Checking playbooks..."
     PLAYBOOKS_PATH="{{ params.playbooks_path | default('/root/ocp4-disconnected-helper/playbooks') }}"
     if [ -d "$PLAYBOOKS_PATH" ]; then
-        echo "✅ Playbooks directory: $PLAYBOOKS_PATH"
+        echo "[OK] Playbooks directory: $PLAYBOOKS_PATH"
         ls -la "$PLAYBOOKS_PATH"/*.yml 2>/dev/null | head -10
     else
-        echo "❌ Playbooks directory not found: $PLAYBOOKS_PATH"
+        echo "[ERROR] Playbooks directory not found: $PLAYBOOKS_PATH"
         ERRORS=$((ERRORS + 1))
     fi
 
@@ -118,18 +118,18 @@ validate_environment = BashOperator(
     mkdir -p "$MIRROR_PATH" 2>/dev/null || true
     AVAIL=$(df -BG "$MIRROR_PATH" 2>/dev/null | tail -1 | awk '{print $4}' | tr -d 'G')
     if [ "$AVAIL" -gt 100 ]; then
-        echo "✅ Available space: ${AVAIL}GB (minimum 100GB required)"
+        echo "[OK] Available space: ${AVAIL}GB (minimum 100GB required)"
     else
-        echo "⚠️  Available space: ${AVAIL}GB (100GB+ recommended)"
+        echo "[WARN]  Available space: ${AVAIL}GB (100GB+ recommended)"
     fi
 
     echo ""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     if [ $ERRORS -gt 0 ]; then
-        echo "❌ Validation FAILED with $ERRORS error(s)"
+        echo "[ERROR] Validation FAILED with $ERRORS error(s)"
         exit 1
     else
-        echo "✅ Environment validation PASSED"
+        echo "[OK] Environment validation PASSED"
     fi
     """,
     dag=dag,
@@ -141,9 +141,9 @@ validate_environment = BashOperator(
 provision_registry_vm = BashOperator(
     task_id="provision_registry_vm",
     bash_command="""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     echo "🖥️  TASK 2: Provisioning Registry VM"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
 
     PROVISION_VM="{{ params.provision_registry_vm | default('true') }}"
     PLAYBOOKS_PATH="{{ params.playbooks_path | default('/root/ocp4-disconnected-helper/playbooks') }}"
@@ -177,7 +177,7 @@ provision_registry_vm = BashOperator(
             -e "registry_vm_disk_size=$VM_DISK" -v
     fi
 
-    echo "✅ Registry VM ready"
+    echo "[OK] Registry VM ready"
     """,
     execution_timeout=timedelta(minutes=30),
     dag=dag,
@@ -189,9 +189,9 @@ provision_registry_vm = BashOperator(
 setup_certificates = BashOperator(
     task_id="setup_certificates",
     bash_command="""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "🔐 TASK 3: Setting Up Certificates"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
+    echo "[INFO] TASK 3: Setting Up Certificates"
+    echo "===================================================================="
 
     PLAYBOOKS_PATH="{{ params.playbooks_path | default('/root/ocp4-disconnected-helper/playbooks') }}"
     CERT_PLAYBOOK="$PLAYBOOKS_PATH/setup-certificates.yml"
@@ -201,12 +201,12 @@ setup_certificates = BashOperator(
         cd "$PLAYBOOKS_PATH"
         ansible-playbook -i inventory setup-certificates.yml -v
     else
-        echo "⚠️  Certificate playbook not found: $CERT_PLAYBOOK"
+        echo "[WARN]  Certificate playbook not found: $CERT_PLAYBOOK"
         echo "Skipping certificate setup - ensure certificates are configured manually"
         echo "See ADR 0016: Trusted Certificate Management"
     fi
 
-    echo "✅ Certificate setup complete"
+    echo "[OK] Certificate setup complete"
     """,
     dag=dag,
 )
@@ -217,9 +217,9 @@ setup_certificates = BashOperator(
 setup_registry = BashOperator(
     task_id="setup_registry",
     bash_command="""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "📦 TASK 3: Setting Up Registry"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
+    echo "[PACK] TASK 3: Setting Up Registry"
+    echo "===================================================================="
 
     PLAYBOOKS_PATH="{{ params.playbooks_path | default('/root/ocp4-disconnected-helper/playbooks') }}"
     REGISTRY_TYPE="{{ params.registry_type | default('harbor') }}"
@@ -233,7 +233,7 @@ setup_registry = BashOperator(
         if [ -f "setup-mirror-registry.yml" ]; then
             ansible-playbook -i inventory setup-mirror-registry.yml -v
         else
-            echo "❌ mirror-registry playbook not found"
+            echo "[ERROR] mirror-registry playbook not found"
             exit 1
         fi
     elif [ "$REGISTRY_TYPE" = "harbor" ]; then
@@ -241,7 +241,7 @@ setup_registry = BashOperator(
         if [ -f "setup-harbor-registry.yml" ]; then
             ansible-playbook -i inventory setup-harbor-registry.yml -v
         else
-            echo "❌ Harbor playbook not found"
+            echo "[ERROR] Harbor playbook not found"
             exit 1
         fi
     elif [ "$REGISTRY_TYPE" = "jfrog" ]; then
@@ -249,16 +249,16 @@ setup_registry = BashOperator(
         if [ -f "setup-jfrog-registry.yml" ]; then
             ansible-playbook -i inventory setup-jfrog-registry.yml -v
         else
-            echo "❌ JFrog playbook not found"
+            echo "[ERROR] JFrog playbook not found"
             exit 1
         fi
     else
-        echo "❌ Unknown registry type: $REGISTRY_TYPE"
+        echo "[ERROR] Unknown registry type: $REGISTRY_TYPE"
         echo "   Valid options: mirror-registry, harbor, jfrog"
         exit 1
     fi
 
-    echo "✅ Registry setup complete"
+    echo "[OK] Registry setup complete"
     """,
     dag=dag,
 )
@@ -269,9 +269,9 @@ setup_registry = BashOperator(
 download_to_tar = BashOperator(
     task_id="download_to_tar",
     bash_command="""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     echo "⬇️  TASK 4: Downloading Images to TAR"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
 
     PLAYBOOKS_PATH="{{ params.playbooks_path | default('/root/ocp4-disconnected-helper/playbooks') }}"
     EXTRA_VARS_PATH="{{ params.extra_vars_path | default('/root/ocp4-disconnected-helper/extra_vars') }}"
@@ -302,7 +302,7 @@ download_to_tar = BashOperator(
             -e "$EXTRA_VARS" -v
     fi
 
-    echo "✅ Download to TAR complete"
+    echo "[OK] Download to TAR complete"
     """,
     execution_timeout=timedelta(hours=4),  # Mirroring can take a long time
     dag=dag,
@@ -314,9 +314,9 @@ download_to_tar = BashOperator(
 push_to_registry = BashOperator(
     task_id="push_to_registry",
     bash_command="""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     echo "⬆️  TASK 5: Pushing Images to Registry"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
 
     PLAYBOOKS_PATH="{{ params.playbooks_path | default('/root/ocp4-disconnected-helper/playbooks') }}"
     EXTRA_VARS_PATH="{{ params.extra_vars_path | default('/root/ocp4-disconnected-helper/extra_vars') }}"
@@ -333,7 +333,7 @@ push_to_registry = BashOperator(
         ansible-playbook -i inventory push-tar-to-registry.yml -v
     fi
 
-    echo "✅ Push to registry complete"
+    echo "[OK] Push to registry complete"
     """,
     execution_timeout=timedelta(hours=2),
     dag=dag,
@@ -345,9 +345,9 @@ push_to_registry = BashOperator(
 build_appliance = BashOperator(
     task_id="build_appliance",
     bash_command="""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "🔧 TASK 6: Building OpenShift Appliance"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
+    echo "[FIX] TASK 6: Building OpenShift Appliance"
+    echo "===================================================================="
 
     PLAYBOOKS_PATH="{{ params.playbooks_path | default('/root/ocp4-disconnected-helper/playbooks') }}"
     EXTRA_VARS_PATH="{{ params.extra_vars_path | default('/root/ocp4-disconnected-helper/extra_vars') }}"
@@ -358,7 +358,7 @@ build_appliance = BashOperator(
 
     # Check if build-appliance playbook exists
     if [ ! -f "build-appliance.yml" ]; then
-        echo "❌ build-appliance.yml not found"
+        echo "[ERROR] build-appliance.yml not found"
         echo "See ADR 0005: OpenShift Appliance Builder"
         exit 1
     fi
@@ -405,7 +405,7 @@ build_appliance = BashOperator(
             -e "$EXTRA_VARS" -v
     fi
 
-    echo "✅ Appliance build complete"
+    echo "[OK] Appliance build complete"
     """,
     execution_timeout=timedelta(hours=2),
     dag=dag,
@@ -418,17 +418,17 @@ deployment_summary = BashOperator(
     task_id="deployment_summary",
     bash_command="""
     echo ""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "📋 DEPLOYMENT SUMMARY"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
+    echo "[CHECK] DEPLOYMENT SUMMARY"
+    echo "===================================================================="
     echo ""
     echo "OCP Version:    {{ params.ocp_version | default('4.20.0') }}"
     echo "Registry Type:  {{ params.registry_type | default('harbor') }}"
     echo "Clean Mirror:   {{ params.clean_mirror | default('false') }}"
     echo ""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     echo "📁 Generated Artifacts"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
 
     MIRROR_PATH="{{ params.mirror_path | default('/opt/openshift-mirror') }}"
 
@@ -451,9 +451,9 @@ deployment_summary = BashOperator(
     fi
 
     echo ""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     echo "📖 Next Steps"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     echo ""
     echo "1. Transfer appliance image to disconnected environment"
     echo "2. Boot target nodes from appliance"
@@ -465,9 +465,9 @@ deployment_summary = BashOperator(
     echo "  - ADR 0007: 3-Node Compact Cluster"
     echo "  - docs/manual-execution.md"
     echo ""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "✅ OCP Initial Deployment DAG completed successfully!"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
+    echo "[OK] OCP Initial Deployment DAG completed successfully!"
+    echo "===================================================================="
     """,
     trigger_rule=TriggerRule.ALL_SUCCESS,
     dag=dag,

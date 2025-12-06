@@ -1,0 +1,75 @@
+# VM Operations Guide
+
+Apply this rule when working with VM-related files or kcli operations.
+
+## kcli Commands
+
+```bash
+# List VMs
+kcli list vm
+
+# Get VM info
+kcli info vm <vm-name>
+
+# Create VM
+kcli create vm <name> -i <image> -P memory=<MB> -P cpus=<N> -P disks=['{"size": <GB>}']
+
+# Delete VM
+kcli delete vm <name> -y
+
+# List available images
+kcli list images
+
+# List networks
+kcli list network
+```
+
+## Custom Operators
+
+Located in `airflow/plugins/qubinode/operators.py`:
+
+```python
+from qubinode.operators import KcliVMCreateOperator, KcliVMDeleteOperator, KcliVMListOperator
+
+# Create VM
+create_task = KcliVMCreateOperator(
+    task_id='create_vm',
+    vm_name='my-vm',
+    image='centos-stream-10',
+    memory=4096,
+    cpus=2,
+    disk_size='20G',
+)
+
+# Delete VM
+delete_task = KcliVMDeleteOperator(
+    task_id='delete_vm',
+    vm_name='my-vm',
+    force=True,
+)
+
+# List VMs
+list_task = KcliVMListOperator(
+    task_id='list_vms',
+)
+```
+
+## Preflight Checks
+
+Before creating VMs, verify:
+
+1. Sufficient memory: `free -h`
+1. Disk space: `df -h /var/lib/libvirt`
+1. Libvirt running: `systemctl is-active libvirtd`
+1. Network available: `virsh net-list`
+
+## SSH Execution Pattern (ADR-0046)
+
+For DAGs that need to run commands on the host:
+
+```python
+bash_command="""
+ssh -o StrictHostKeyChecking=no root@localhost \
+    "cd /opt/kcli-pipelines && ./deploy.sh"
+"""
+```

@@ -76,9 +76,9 @@ validate_step_ca = BashOperator(
     bash_command="""
     set -euo pipefail
 
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "🔐 Validating Step-CA Server"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
+    echo "[INFO] Validating Step-CA Server"
+    echo "===================================================================="
     echo ""
 
     STEP_CA_HOST="step-ca-server.example.com"
@@ -88,15 +88,15 @@ validate_step_ca = BashOperator(
     echo "Checking Step-CA at $STEP_CA_HOST:$STEP_CA_PORT..."
 
     if curl -sk --connect-timeout 10 "https://${STEP_CA_HOST}:${STEP_CA_PORT}/health" 2>/dev/null | grep -q "ok"; then
-        echo "  ✅ Step-CA is healthy"
+        echo "  [OK] Step-CA is healthy"
     else
         # Try alternative check
         HTTP_CODE=$(curl -sk --connect-timeout 10 -o /dev/null -w "%{http_code}" "https://${STEP_CA_HOST}:${STEP_CA_PORT}/root.crt" 2>/dev/null || echo "000")
 
         if [ "$HTTP_CODE" = "200" ]; then
-            echo "  ✅ Step-CA is responding (root cert available)"
+            echo "  [OK] Step-CA is responding (root cert available)"
         else
-            echo "  ❌ Step-CA is not responding"
+            echo "  [ERROR] Step-CA is not responding"
             echo ""
             echo "============================================"
             echo "VALIDATION ERROR"
@@ -117,7 +117,7 @@ validate_step_ca = BashOperator(
     fi
 
     echo ""
-    echo "✅ Step-CA validation passed"
+    echo "[OK] Step-CA validation passed"
     """,
     dag=dag,
 )
@@ -130,9 +130,9 @@ validate_registry = BashOperator(
     bash_command="""
     set -euo pipefail
 
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "📦 Validating Registry"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
+    echo "[PACK] Validating Registry"
+    echo "===================================================================="
     echo ""
 
     REGISTRY_TYPE="{{ params.registry_type }}"
@@ -166,9 +166,9 @@ validate_registry = BashOperator(
     HTTP_CODE=$(curl -sk --connect-timeout 10 --max-time 30 -o /dev/null -w "%{http_code}" "https://${REGISTRY}/v2/" 2>/dev/null || echo "000")
 
     if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "401" ]; then
-        echo "  ✅ API responding (HTTP $HTTP_CODE)"
+        echo "  [OK] API responding (HTTP $HTTP_CODE)"
     else
-        echo "  ❌ API not responding (HTTP $HTTP_CODE)"
+        echo "  [ERROR] API not responding (HTTP $HTTP_CODE)"
         echo ""
         echo "============================================"
         echo "VALIDATION ERROR"
@@ -193,7 +193,7 @@ validate_registry = BashOperator(
     CERT_INFO=$(echo | openssl s_client -connect "$REGISTRY" -servername "$REGISTRY_HOST" 2>/dev/null | openssl x509 -noout -dates 2>/dev/null || echo "FAILED")
 
     if [ "$CERT_INFO" = "FAILED" ]; then
-        echo "  ⚠️  Could not retrieve certificate (may be self-signed)"
+        echo "  [WARN]  Could not retrieve certificate (may be self-signed)"
     else
         EXPIRY=$(echo "$CERT_INFO" | grep "notAfter" | cut -d= -f2)
         EXPIRY_EPOCH=$(date -d "$EXPIRY" +%s 2>/dev/null || echo "0")
@@ -218,12 +218,12 @@ validate_registry = BashOperator(
             echo "============================================"
             exit 1
         else
-            echo "  ✅ Certificate valid for $DAYS_LEFT days"
+            echo "  [OK] Certificate valid for $DAYS_LEFT days"
         fi
     fi
 
     echo ""
-    echo "✅ Registry validation passed"
+    echo "[OK] Registry validation passed"
     """,
     dag=dag,
 )
@@ -236,9 +236,9 @@ validate_images = BashOperator(
     bash_command="""
     set -euo pipefail
 
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     echo "🖼️  Validating OCP Images in Registry"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     echo ""
 
     REGISTRY_TYPE="{{ params.registry_type }}"
@@ -290,7 +290,7 @@ validate_images = BashOperator(
     OCP_REPOS=$(echo "$CATALOG" | jq -r '.repositories[]' 2>/dev/null | grep -E "(openshift-release-dev|ocp4|openshift4)" | head -5 || echo "")
 
     if [ -z "$OCP_REPOS" ]; then
-        echo "  ❌ No OpenShift release images found"
+        echo "  [ERROR] No OpenShift release images found"
         echo ""
         echo "============================================"
         echo "VALIDATION ERROR"
@@ -308,14 +308,14 @@ validate_images = BashOperator(
         echo "============================================"
         exit 1
     else
-        echo "  ✅ OpenShift images found:"
+        echo "  [OK] OpenShift images found:"
         echo "$OCP_REPOS" | while read repo; do
             echo "    - $repo"
         done
     fi
 
     echo ""
-    echo "✅ Image validation passed"
+    echo "[OK] Image validation passed"
     """,
     dag=dag,
 )
@@ -328,9 +328,9 @@ validate_dns = BashOperator(
     bash_command="""
     set -euo pipefail
 
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     echo "🌐 Validating DNS Resolution"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     echo ""
 
     EXAMPLE_CONFIG="{{ params.example_config }}"
@@ -341,7 +341,7 @@ validate_dns = BashOperator(
         CLUSTER_NAME=$(grep "^cluster_name:" "$CONFIG_PATH/cluster.yml" 2>/dev/null | awk '{print $2}' | tr -d '"' || echo "")
         BASE_DOMAIN=$(grep "^base_domain:" "$CONFIG_PATH/cluster.yml" 2>/dev/null | awk '{print $2}' | tr -d '"' || echo "")
     else
-        echo "  ⚠️  cluster.yml not found, using defaults"
+        echo "  [WARN]  cluster.yml not found, using defaults"
         CLUSTER_NAME="sno-disconnected"
         BASE_DOMAIN="example.com"
     fi
@@ -356,10 +356,10 @@ validate_dns = BashOperator(
     API_IP=$(dig +short api.$CLUSTER_NAME.$BASE_DOMAIN 2>/dev/null | head -1 || echo "")
 
     if [ -z "$API_IP" ]; then
-        echo "  ❌ DNS record not found"
+        echo "  [ERROR] DNS record not found"
         ERRORS=$((ERRORS + 1))
     else
-        echo "  ✅ Resolves to $API_IP"
+        echo "  [OK] Resolves to $API_IP"
     fi
 
     # Check api-int.<cluster>.<domain>
@@ -368,10 +368,10 @@ validate_dns = BashOperator(
     API_INT_IP=$(dig +short api-int.$CLUSTER_NAME.$BASE_DOMAIN 2>/dev/null | head -1 || echo "")
 
     if [ -z "$API_INT_IP" ]; then
-        echo "  ❌ DNS record not found"
+        echo "  [ERROR] DNS record not found"
         ERRORS=$((ERRORS + 1))
     else
-        echo "  ✅ Resolves to $API_INT_IP"
+        echo "  [OK] Resolves to $API_INT_IP"
     fi
 
     # Check *.apps.<cluster>.<domain>
@@ -380,10 +380,10 @@ validate_dns = BashOperator(
     APPS_IP=$(dig +short test.apps.$CLUSTER_NAME.$BASE_DOMAIN 2>/dev/null | head -1 || echo "")
 
     if [ -z "$APPS_IP" ]; then
-        echo "  ❌ Wildcard DNS not found"
+        echo "  [ERROR] Wildcard DNS not found"
         ERRORS=$((ERRORS + 1))
     else
-        echo "  ✅ Resolves to $APPS_IP"
+        echo "  [OK] Resolves to $APPS_IP"
     fi
 
     if [ $ERRORS -gt 0 ]; then
@@ -406,7 +406,7 @@ validate_dns = BashOperator(
     fi
 
     echo ""
-    echo "✅ DNS validation passed"
+    echo "[OK] DNS validation passed"
     """,
     dag=dag,
 )
@@ -419,9 +419,9 @@ validate_config = BashOperator(
     bash_command="""
     set -euo pipefail
 
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     echo "📄 Validating Configuration Files"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     echo ""
 
     EXAMPLE_CONFIG="{{ params.example_config }}"
@@ -454,16 +454,16 @@ validate_config = BashOperator(
     CLUSTER_YML="$CONFIG_PATH/cluster.yml"
 
     if [ ! -f "$CLUSTER_YML" ]; then
-        echo "  ❌ File not found: $CLUSTER_YML"
+        echo "  [ERROR] File not found: $CLUSTER_YML"
         ERRORS=$((ERRORS + 1))
     else
-        echo "  ✅ File exists"
+        echo "  [OK] File exists"
 
         # Validate YAML syntax
         if python3 -c "import yaml; yaml.safe_load(open('$CLUSTER_YML'))" 2>/dev/null; then
-            echo "  ✅ YAML syntax valid"
+            echo "  [OK] YAML syntax valid"
         else
-            echo "  ❌ YAML syntax error"
+            echo "  [ERROR] YAML syntax error"
             echo ""
             echo "  Run to see error details:"
             echo "    python3 -c \"import yaml; yaml.safe_load(open('$CLUSTER_YML'))\""
@@ -474,9 +474,9 @@ validate_config = BashOperator(
         for field in cluster_name base_domain; do
             if grep -q "^$field:" "$CLUSTER_YML" 2>/dev/null; then
                 VALUE=$(grep "^$field:" "$CLUSTER_YML" | head -1 | cut -d: -f2- | xargs)
-                echo "  ✅ $field: $VALUE"
+                echo "  [OK] $field: $VALUE"
             else
-                echo "  ❌ Missing required field: $field"
+                echo "  [ERROR] Missing required field: $field"
                 ERRORS=$((ERRORS + 1))
             fi
         done
@@ -488,16 +488,16 @@ validate_config = BashOperator(
     NODES_YML="$CONFIG_PATH/nodes.yml"
 
     if [ ! -f "$NODES_YML" ]; then
-        echo "  ❌ File not found: $NODES_YML"
+        echo "  [ERROR] File not found: $NODES_YML"
         ERRORS=$((ERRORS + 1))
     else
-        echo "  ✅ File exists"
+        echo "  [OK] File exists"
 
         # Validate YAML syntax
         if python3 -c "import yaml; yaml.safe_load(open('$NODES_YML'))" 2>/dev/null; then
-            echo "  ✅ YAML syntax valid"
+            echo "  [OK] YAML syntax valid"
         else
-            echo "  ❌ YAML syntax error"
+            echo "  [ERROR] YAML syntax error"
             ERRORS=$((ERRORS + 1))
         fi
 
@@ -506,7 +506,7 @@ validate_config = BashOperator(
         echo "  Nodes defined: $NODE_COUNT"
 
         if [ "$NODE_COUNT" -eq 0 ]; then
-            echo "  ❌ No nodes defined"
+            echo "  [ERROR] No nodes defined"
             ERRORS=$((ERRORS + 1))
         fi
     fi
@@ -515,9 +515,9 @@ validate_config = BashOperator(
     echo ""
     echo "Checking trust bundle..."
     if grep -q "additional_trust_bundle" "$CLUSTER_YML" 2>/dev/null; then
-        echo "  ✅ Trust bundle configured"
+        echo "  [OK] Trust bundle configured"
     else
-        echo "  ⚠️  No trust bundle configured (may be needed for disconnected)"
+        echo "  [WARN]  No trust bundle configured (may be needed for disconnected)"
     fi
 
     if [ $ERRORS -gt 0 ]; then
@@ -539,7 +539,7 @@ validate_config = BashOperator(
     fi
 
     echo ""
-    echo "✅ Configuration validation passed"
+    echo "[OK] Configuration validation passed"
     """,
     dag=dag,
 )
@@ -552,9 +552,9 @@ validate_pull_secret = BashOperator(
     bash_command="""
     set -euo pipefail
 
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     echo "🔑 Validating Pull Secret"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     echo ""
 
     PULL_SECRET="/root/pull-secret.json"
@@ -594,9 +594,9 @@ validate_pull_secret = BashOperator(
     # Validate JSON syntax
     echo "Checking JSON syntax..."
     if jq -e '.' "$PULL_SECRET" > /dev/null 2>&1; then
-        echo "  ✅ Valid JSON"
+        echo "  [OK] Valid JSON"
     else
-        echo "  ❌ Invalid JSON"
+        echo "  [ERROR] Invalid JSON"
         echo ""
         echo "============================================"
         echo "VALIDATION ERROR"
@@ -624,14 +624,14 @@ validate_pull_secret = BashOperator(
     echo ""
     echo "Checking for $REGISTRY..."
     if echo "$REGISTRIES" | grep -q "$REGISTRY"; then
-        echo "  ✅ Target registry credentials found"
+        echo "  [OK] Target registry credentials found"
     else
-        echo "  ⚠️  Target registry not in pull secret"
+        echo "  [WARN]  Target registry not in pull secret"
         echo "     Will be added by ocp_registry_sync DAG"
     fi
 
     echo ""
-    echo "✅ Pull secret validation passed"
+    echo "[OK] Pull secret validation passed"
     """,
     dag=dag,
 )
@@ -644,9 +644,9 @@ validate_disk_space = BashOperator(
     bash_command="""
     set -euo pipefail
 
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     echo "💾 Validating Disk Space"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     echo ""
 
     # Check /var/lib/libvirt/images (VM storage)
@@ -656,12 +656,12 @@ validate_disk_space = BashOperator(
         echo "  Available: ${AVAIL}GB"
 
         if [ "$AVAIL" -lt 100 ]; then
-            echo "  ⚠️  Low space for VM deployment (recommend 100GB+)"
+            echo "  [WARN]  Low space for VM deployment (recommend 100GB+)"
         else
-            echo "  ✅ Sufficient space"
+            echo "  [OK] Sufficient space"
         fi
     else
-        echo "  ⚠️  Directory not found"
+        echo "  [WARN]  Directory not found"
     fi
 
     # Check /opt/images (mirror storage)
@@ -682,7 +682,7 @@ validate_disk_space = BashOperator(
     fi
 
     echo ""
-    echo "✅ Disk space validation passed"
+    echo "[OK] Disk space validation passed"
     """,
     dag=dag,
 )
@@ -694,9 +694,9 @@ validation_report = BashOperator(
     task_id="validation_report",
     bash_command="""
     echo ""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "📋 Pre-Deployment Validation Report"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
+    echo "[CHECK] Pre-Deployment Validation Report"
+    echo "===================================================================="
     echo ""
     echo "Timestamp: $(date -Iseconds)"
     echo "Configuration: {{ params.example_config }}"
@@ -704,17 +704,17 @@ validation_report = BashOperator(
     echo "OCP Version: {{ params.ocp_version }}"
     echo ""
     echo "Validation Results:"
-    echo "  ✅ Step-CA: Healthy"
-    echo "  ✅ Registry: Healthy, certificate valid"
-    echo "  ✅ Images: Available in registry"
-    echo "  ✅ DNS: All records resolve"
-    echo "  ✅ Config: Valid YAML, required fields present"
-    echo "  ✅ Pull Secret: Valid JSON"
-    echo "  ✅ Disk Space: Sufficient"
+    echo "  [OK] Step-CA: Healthy"
+    echo "  [OK] Registry: Healthy, certificate valid"
+    echo "  [OK] Images: Available in registry"
+    echo "  [OK] DNS: All records resolve"
+    echo "  [OK] Config: Valid YAML, required fields present"
+    echo "  [OK] Pull Secret: Valid JSON"
+    echo "  [OK] Disk Space: Sufficient"
     echo ""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "✅ ALL VALIDATIONS PASSED"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
+    echo "[OK] ALL VALIDATIONS PASSED"
+    echo "===================================================================="
     echo ""
     echo "Ready to deploy! Run:"
     echo "  airflow dags trigger ocp_agent_deployment --conf '{"
@@ -734,9 +734,9 @@ failure_summary = BashOperator(
     task_id="failure_summary",
     bash_command="""
     echo ""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "❌ PRE-DEPLOYMENT VALIDATION FAILED"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
+    echo "[ERROR] PRE-DEPLOYMENT VALIDATION FAILED"
+    echo "===================================================================="
     echo ""
     echo "One or more validation checks failed."
     echo "Review the failed task logs above for specific error details."
@@ -748,7 +748,7 @@ failure_summary = BashOperator(
     echo ""
     echo "After fixing, retrigger this DAG to validate again."
     echo ""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     """,
     trigger_rule=TriggerRule.ONE_FAILED,
     dag=dag,

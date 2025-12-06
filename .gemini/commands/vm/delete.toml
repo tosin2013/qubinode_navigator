@@ -1,0 +1,27 @@
+description = "Delete a virtual machine"
+prompt = """You are helping delete a Qubinode Navigator virtual machine.
+
+VM to delete: {{args}}
+
+CRITICAL: This is a DESTRUCTIVE operation. Before proceeding:
+
+1. Verify the VM exists:
+!{kcli info vm {{args}} 2>/dev/null || echo "VM not found"}
+
+2. Check if VM is currently in use:
+!{kcli list vm | grep {{args}}}
+
+3. Check for associated DNS records that should be cleaned up
+4. Verify no dependent services rely on this VM
+
+WARNING: Confirm with the user before executing deletion!
+
+To delete:
+```bash
+kcli delete vm {{args}} -y
+```
+
+After deletion:
+1. Clean up DNS records if needed: qubinode-dns remove <hostname>
+2. Revoke any certificates: qubinode-cert revoke <hostname>
+3. Update inventory if manually managed"""

@@ -1,0 +1,16 @@
+description = "List all virtual machines managed by kcli"
+prompt = """You are helping manage Qubinode Navigator virtual machines.
+
+List all VMs:
+!{kcli list vm 2>/dev/null || echo "kcli not available or no VMs found"}
+
+Also check VM networks:
+!{kcli list network 2>/dev/null | head -20}
+
+For each VM, explain:
+- Its purpose based on naming convention
+- Current state (running, stopped, etc.)
+- Network connectivity
+- Associated resources
+
+{{args}}"""

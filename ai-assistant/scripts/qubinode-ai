@@ -19,7 +19,7 @@ class QubinodeAICLI:
 
     def __init__(self, base_url: str = "http://localhost:8080"):
         self.base_url = base_url
-        self.client = httpx.AsyncClient(timeout=30.0)
+        self.client = httpx.AsyncClient(timeout=120.0)  # 2 minute timeout for AI responses
 
     async def chat(self, message: str, context: dict = None) -> dict:
         """Send a chat message to the AI assistant."""

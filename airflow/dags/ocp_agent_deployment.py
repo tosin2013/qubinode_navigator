@@ -242,45 +242,45 @@ validate_config = BashOperator(
 
     # Validate example exists
     if [ ! -d "$CONFIG_PATH" ]; then
-        echo "❌ Example configuration not found: $CONFIG_PATH"
+        echo "[ERROR] Example configuration not found: $CONFIG_PATH"
         echo "Available examples:"
         ls -1 "$EXAMPLES_DIR/"
         exit 1
     fi
-    echo "✅ Example configuration found: $CONFIG_PATH"
+    echo "[OK] Example configuration found: $CONFIG_PATH"
 
     # Check for required files
     if [ -f "$CONFIG_PATH/cluster.yml" ]; then
-        echo "✅ cluster.yml found"
+        echo "[OK] cluster.yml found"
     else
-        echo "❌ cluster.yml not found in $CONFIG_PATH"
+        echo "[ERROR] cluster.yml not found in $CONFIG_PATH"
         exit 1
     fi
 
     if [ -f "$CONFIG_PATH/nodes.yml" ]; then
-        echo "✅ nodes.yml found"
+        echo "[OK] nodes.yml found"
     else
-        echo "❌ nodes.yml not found in $CONFIG_PATH"
+        echo "[ERROR] nodes.yml not found in $CONFIG_PATH"
         exit 1
     fi
 
     # Check for openshift-install
     if ! command -v openshift-install &> /dev/null; then
-        echo "❌ openshift-install not found in PATH"
+        echo "[ERROR] openshift-install not found in PATH"
         exit 1
     fi
-    echo "✅ openshift-install: $(openshift-install version 2>/dev/null | head -1)"
+    echo "[OK] openshift-install: $(openshift-install version 2>/dev/null | head -1)"
 
     # Check for pull secret
     PULL_SECRET_PATH="${HOME}/pull-secret.json"
     if [ ! -f "$PULL_SECRET_PATH" ]; then
-        echo "❌ Pull secret not found at $PULL_SECRET_PATH"
+        echo "[ERROR] Pull secret not found at $PULL_SECRET_PATH"
         exit 1
     fi
-    echo "✅ Pull secret found"
+    echo "[OK] Pull secret found"
 
     echo ""
-    echo "✅ Configuration validation complete"
+    echo "[OK] Configuration validation complete"
     """,
     dag=dag,
 )
@@ -338,14 +338,14 @@ setup_registry_trust = BashOperator(
 
         # Check if cluster.yml has additional_trust_bundle
         if grep -q "additional_trust_bundle:" "$CONFIG_PATH/cluster.yml"; then
-            echo "✅ Trust bundle already configured in cluster.yml"
+            echo "[OK] Trust bundle already configured in cluster.yml"
         else
-            echo "⚠️  No trust bundle configured - may need manual setup"
+            echo "[WARN]  No trust bundle configured - may need manual setup"
         fi
     fi
 
     echo ""
-    echo "✅ Registry trust setup complete"
+    echo "[OK] Registry trust setup complete"
     """,
     dag=dag,
 )
@@ -400,9 +400,9 @@ create_agent_iso = BashOperator(
     if [ -f "$GENERATED_ASSETS/agent.x86_64.iso" ]; then
         SIZE=$(du -h "$GENERATED_ASSETS/agent.x86_64.iso" | cut -f1)
         echo ""
-        echo "✅ Agent ISO created: $GENERATED_ASSETS/agent.x86_64.iso ($SIZE)"
+        echo "[OK] Agent ISO created: $GENERATED_ASSETS/agent.x86_64.iso ($SIZE)"
     else
-        echo "❌ Agent ISO not found at expected location"
+        echo "[ERROR] Agent ISO not found at expected location"
         echo "Checking for ISO files..."
         find "$GENERATED_ASSETS" -name "*.iso" -ls
         exit 1
@@ -458,12 +458,12 @@ deploy_on_kvm = BashOperator(
     if [ -f "deploy-on-kvm.sh" ]; then
         ./deploy-on-kvm.sh
     else
-        echo "❌ deploy-on-kvm.sh not found"
+        echo "[ERROR] deploy-on-kvm.sh not found"
         exit 1
     fi
 
     echo ""
-    echo "✅ KVM deployment initiated"
+    echo "[OK] KVM deployment initiated"
     echo "   Monitor with: watch 'virsh list --all'"
     """,
     dag=dag,
@@ -508,13 +508,13 @@ wait_bootstrap = BashOperator(
     timeout 3600 openshift-install agent wait-for bootstrap-complete \
         --dir "$GENERATED_ASSETS" \
         --log-level info || {
-        echo "⚠️  Bootstrap wait timed out or failed"
+        echo "[WARN]  Bootstrap wait timed out or failed"
         echo "Check logs in $GENERATED_ASSETS/.openshift_install.log"
         exit 1
     }
 
     echo ""
-    echo "✅ Bootstrap complete"
+    echo "[OK] Bootstrap complete"
     """,
     trigger_rule="none_failed_min_one_success",
     dag=dag,
@@ -550,13 +550,13 @@ wait_install = BashOperator(
     timeout 7200 openshift-install agent wait-for install-complete \
         --dir "$GENERATED_ASSETS" \
         --log-level info || {
-        echo "⚠️  Install wait timed out or failed"
+        echo "[WARN]  Install wait timed out or failed"
         echo "Check logs in $GENERATED_ASSETS/.openshift_install.log"
         exit 1
     }
 
     echo ""
-    echo "✅ Installation complete"
+    echo "[OK] Installation complete"
 
     # Show kubeconfig location
     if [ -f "$GENERATED_ASSETS/auth/kubeconfig" ]; then
@@ -595,7 +595,7 @@ post_install_validation = BashOperator(
     export KUBECONFIG="$GENERATED_ASSETS/auth/kubeconfig"
 
     if [ ! -f "$KUBECONFIG" ]; then
-        echo "⚠️  Kubeconfig not found - skipping validation"
+        echo "[WARN]  Kubeconfig not found - skipping validation"
         exit 0
     fi
 
@@ -611,7 +611,7 @@ post_install_validation = BashOperator(
     oc get clusterversion || echo "Failed to get cluster version"
 
     echo ""
-    echo "✅ Post-install validation complete"
+    echo "[OK] Post-install validation complete"
     """,
     trigger_rule="none_failed_min_one_success",
     dag=dag,
@@ -641,7 +641,7 @@ cleanup_temp = BashOperator(
     # Clean up any orphaned ISO build directories
     find /tmp -maxdepth 1 -name "agent-*" -type d -mmin +60 -exec rm -rf {} \\; 2>/dev/null || true
 
-    echo "✅ Cleanup complete"
+    echo "[OK] Cleanup complete"
     """,
     trigger_rule="all_done",  # Run regardless of upstream task status
     dag=dag,

@@ -1,0 +1,107 @@
+# Diagnostics and Troubleshooting
+
+Use this rule when debugging issues with Qubinode Navigator.
+
+## Quick Diagnostic Commands
+
+### System Overview
+
+```bash
+echo "=== System ===" && uname -a && free -h && df -h /
+echo "=== Containers ===" && cd ${QUBINODE_HOME:-$HOME/qubinode_navigator}/airflow && podman-compose ps
+echo "=== Services ===" && systemctl is-active libvirtd postgresql
+```
+
+### Service Health
+
+```bash
+curl -s http://localhost:8888/health  # Airflow
+curl -s http://localhost:8889/health  # MCP
+curl -s http://localhost:8080/health  # AI Assistant
+curl -s http://localhost:5001/api/v1/namespaces  # Marquez
+```
+
+## Common Issues
+
+### DAG Not Appearing
+
+1. Check import errors:
+   ```bash
+   podman-compose exec -T airflow-scheduler airflow dags list-import-errors
+   ```
+1. Clear cache:
+   ```bash
+   cd ${QUBINODE_HOME:-$HOME/qubinode_navigator}/airflow && make clear-dag-cache
+   ```
+1. Check file permissions and syntax
+
+### DAG Validation Failing
+
+1. Run validation:
+   ```bash
+   ./airflow/scripts/validate-dag.sh
+   ```
+1. Check ADR-0045 compliance:
+   - Using `"""` not `'''`?
+   - snake_case DAG ID?
+   - ASCII markers only?
+
+### Airflow Not Responding
+
+1. Check containers:
+   ```bash
+   podman-compose ps
+   podman-compose logs airflow-webserver
+   ```
+1. Check PostgreSQL:
+   ```bash
+   pg_isready -h localhost
+   ```
+1. Restart:
+   ```bash
+   podman-compose restart
+   ```
+
+### VM Issues
+
+1. Check libvirt:
+   ```bash
+   systemctl status libvirtd
+   virsh list --all
+   ```
+1. Check resources:
+   ```bash
+   free -h
+   df -h /var/lib/libvirt
+   ```
+
+### MCP Server Issues
+
+```bash
+# Check if running
+curl http://localhost:8889/health
+
+# View logs
+podman-compose logs airflow-mcp-server
+
+# Check API key
+grep MCP_API_KEY ${QUBINODE_HOME:-$HOME/qubinode_navigator}/airflow/.env
+```
+
+## Query Knowledge Base for Help
+
+```bash
+curl -s -X POST http://localhost:8080/api/query \
+  -H "Content-Type: application/json" \
+  -d '{"query": "troubleshoot <your issue>"}'
+```
+
+## Recent Errors
+
+```bash
+# System journal
+journalctl -p err --since "1 hour ago" --no-pager | tail -30
+
+# Airflow scheduler logs
+tail -100 ${QUBINODE_HOME:-$HOME/qubinode_navigator}/airflow/logs/scheduler/latest/*.log | grep -i error
+```

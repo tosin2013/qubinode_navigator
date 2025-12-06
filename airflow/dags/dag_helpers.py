@@ -331,9 +331,9 @@ def get_registry_validation_command(registry_host: str, registry_port: str = "84
     API_RESPONSE=$(curl -sk "https://$REGISTRY/v2/" 2>&1 || echo "FAILED")
 
     if [ "$API_RESPONSE" == "true" ] || [ "$API_RESPONSE" == "{{}}" ]; then
-        echo "  ✅ API responding"
+        echo "  [OK] API responding"
     else
-        echo "  ❌ API not responding: $API_RESPONSE"
+        echo "  [ERROR] API not responding: $API_RESPONSE"
         ERRORS=$((ERRORS + 1))
     fi
 
@@ -344,7 +344,7 @@ def get_registry_validation_command(registry_host: str, registry_port: str = "84
     CERT_INFO=$(echo | openssl s_client -connect "$REGISTRY" -servername "{registry_host}" 2>/dev/null | openssl x509 -noout -dates 2>/dev/null || echo "FAILED")
 
     if [ "$CERT_INFO" == "FAILED" ]; then
-        echo "  ❌ Could not retrieve certificate"
+        echo "  [ERROR] Could not retrieve certificate"
         ERRORS=$((ERRORS + 1))
     else
         # Extract expiry date
@@ -357,13 +357,13 @@ def get_registry_validation_command(registry_host: str, registry_port: str = "84
         echo "  Days remaining: $DAYS_LEFT"
 
         if [ $DAYS_LEFT -lt $MIN_CERT_DAYS ]; then
-            echo "  ❌ Certificate expires in less than $MIN_CERT_DAYS days!"
+            echo "  [ERROR] Certificate expires in less than $MIN_CERT_DAYS days!"
             echo ""
             echo "  To renew certificate, run:"
             echo "    airflow dags trigger step_ca_operations --conf '{{\\"action\\": \\"renew-cert\\", \\"target\\": \\"{registry_host}\\"}}'"
             ERRORS=$((ERRORS + 1))
         else
-            echo "  ✅ Certificate valid for $DAYS_LEFT days"
+            echo "  [OK] Certificate valid for $DAYS_LEFT days"
         fi
     fi
 
@@ -401,15 +401,15 @@ def get_dns_validation_command(cluster_name: str, base_domain: str, expected_ip:
     API_IP=$(dig +short api.$CLUSTER.$DOMAIN 2>/dev/null | head -1)
 
     if [ -z "$API_IP" ]; then
-        echo "  ❌ DNS record not found: api.$CLUSTER.$DOMAIN"
+        echo "  [ERROR] DNS record not found: api.$CLUSTER.$DOMAIN"
         echo ""
         echo "  To fix, run:"
         echo "    airflow dags trigger freeipa_dns_management --conf '{{\\"action\\": \\"add\\", \\"hostname\\": \\"api.$CLUSTER\\", \\"ip\\": \\"<IP>\\"}}'"
         ERRORS=$((ERRORS + 1))
     else
-        echo "  ✅ api.$CLUSTER.$DOMAIN -> $API_IP"
+        echo "  [OK] api.$CLUSTER.$DOMAIN -> $API_IP"
         if [ -n "$EXPECTED_IP" ] && [ "$API_IP" != "$EXPECTED_IP" ]; then
-            echo "  ⚠️  Warning: Expected $EXPECTED_IP"
+            echo "  [WARN]  Warning: Expected $EXPECTED_IP"
         fi
     fi
 
@@ -419,10 +419,10 @@ def get_dns_validation_command(cluster_name: str, base_domain: str, expected_ip:
     API_INT_IP=$(dig +short api-int.$CLUSTER.$DOMAIN 2>/dev/null | head -1)
 
     if [ -z "$API_INT_IP" ]; then
-        echo "  ❌ DNS record not found: api-int.$CLUSTER.$DOMAIN"
+        echo "  [ERROR] DNS record not found: api-int.$CLUSTER.$DOMAIN"
         ERRORS=$((ERRORS + 1))
     else
-        echo "  ✅ api-int.$CLUSTER.$DOMAIN -> $API_INT_IP"
+        echo "  [OK] api-int.$CLUSTER.$DOMAIN -> $API_INT_IP"
     fi
 
     # Check *.apps.<cluster>.<domain> (wildcard)
@@ -431,12 +431,12 @@ def get_dns_validation_command(cluster_name: str, base_domain: str, expected_ip:
     APPS_IP=$(dig +short test.apps.$CLUSTER.$DOMAIN 2>/dev/null | head -1)
 
     if [ -z "$APPS_IP" ]; then
-        echo "  ❌ Wildcard DNS not found: *.apps.$CLUSTER.$DOMAIN"
+        echo "  [ERROR] Wildcard DNS not found: *.apps.$CLUSTER.$DOMAIN"
         echo ""
         echo "  To fix, add wildcard record in FreeIPA"
         ERRORS=$((ERRORS + 1))
     else
-        echo "  ✅ *.apps.$CLUSTER.$DOMAIN -> $APPS_IP"
+        echo "  [OK] *.apps.$CLUSTER.$DOMAIN -> $APPS_IP"
     fi
 
     # Summary
@@ -472,26 +472,26 @@ def get_config_validation_command(cluster_yml_path: str, nodes_yml_path: str) ->
     echo ""
     echo "Checking cluster.yml..."
     if [ ! -f "$CLUSTER_YML" ]; then
-        echo "  ❌ File not found: $CLUSTER_YML"
+        echo "  [ERROR] File not found: $CLUSTER_YML"
         ERRORS=$((ERRORS + 1))
     else
-        echo "  ✅ File exists: $CLUSTER_YML"
+        echo "  [OK] File exists: $CLUSTER_YML"
 
         # Validate YAML syntax
         if command -v yq &> /dev/null; then
             if yq e '.' "$CLUSTER_YML" > /dev/null 2>&1; then
-                echo "  ✅ YAML syntax valid"
+                echo "  [OK] YAML syntax valid"
             else
-                echo "  ❌ YAML syntax error in $CLUSTER_YML"
+                echo "  [ERROR] YAML syntax error in $CLUSTER_YML"
                 echo ""
                 yq e '.' "$CLUSTER_YML" 2>&1 | head -5
                 ERRORS=$((ERRORS + 1))
             fi
         elif command -v python3 &> /dev/null; then
             if python3 -c "import yaml; yaml.safe_load(open('$CLUSTER_YML'))" 2>/dev/null; then
-                echo "  ✅ YAML syntax valid"
+                echo "  [OK] YAML syntax valid"
             else
-                echo "  ❌ YAML syntax error in $CLUSTER_YML"
+                echo "  [ERROR] YAML syntax error in $CLUSTER_YML"
                 ERRORS=$((ERRORS + 1))
             fi
         fi
@@ -502,9 +502,9 @@ def get_config_validation_command(cluster_yml_path: str, nodes_yml_path: str) ->
         for field in cluster_name base_domain; do
             if grep -q "^$field:" "$CLUSTER_YML" 2>/dev/null; then
                 VALUE=$(grep "^$field:" "$CLUSTER_YML" | head -1 | cut -d: -f2- | xargs)
-                echo "    ✅ $field: $VALUE"
+                echo "    [OK] $field: $VALUE"
             else
-                echo "    ❌ Missing required field: $field"
+                echo "    [ERROR] Missing required field: $field"
                 ERRORS=$((ERRORS + 1))
             fi
         done
@@ -514,17 +514,17 @@ def get_config_validation_command(cluster_yml_path: str, nodes_yml_path: str) ->
     echo ""
     echo "Checking nodes.yml..."
     if [ ! -f "$NODES_YML" ]; then
-        echo "  ❌ File not found: $NODES_YML"
+        echo "  [ERROR] File not found: $NODES_YML"
         ERRORS=$((ERRORS + 1))
     else
-        echo "  ✅ File exists: $NODES_YML"
+        echo "  [OK] File exists: $NODES_YML"
 
         # Validate YAML syntax
         if command -v yq &> /dev/null; then
             if yq e '.' "$NODES_YML" > /dev/null 2>&1; then
-                echo "  ✅ YAML syntax valid"
+                echo "  [OK] YAML syntax valid"
             else
-                echo "  ❌ YAML syntax error in $NODES_YML"
+                echo "  [ERROR] YAML syntax error in $NODES_YML"
                 ERRORS=$((ERRORS + 1))
             fi
         fi
@@ -534,7 +534,7 @@ def get_config_validation_command(cluster_yml_path: str, nodes_yml_path: str) ->
         echo "  Nodes defined: $NODE_COUNT"
 
         if [ "$NODE_COUNT" -eq 0 ]; then
-            echo "  ❌ No nodes defined in $NODES_YML"
+            echo "  [ERROR] No nodes defined in $NODES_YML"
             ERRORS=$((ERRORS + 1))
         fi
     fi
@@ -585,7 +585,7 @@ def get_image_validation_command(registry_host: str, registry_port: str = "8443"
 
     if [ "$REPO_COUNT" -eq 0 ]; then
         echo ""
-        echo "❌ Registry is empty - no images found"
+        echo "[ERROR] Registry is empty - no images found"
         echo ""
         echo "To sync images, run:"
         echo "  airflow dags trigger ocp_registry_sync --conf '{{\\"ocp_version\\": \\"$OCP_VERSION\\"}}'"
@@ -596,7 +596,7 @@ def get_image_validation_command(registry_host: str, registry_port: str = "8443"
 
         # Check for openshift-release-dev or ocp4 repositories
         if echo "$CATALOG" | jq -r '.repositories[]' | grep -qE "(openshift-release-dev|ocp4|openshift4)"; then
-            echo "  ✅ OpenShift release images found"
+            echo "  [OK] OpenShift release images found"
 
             # List matching repos
             echo ""
@@ -605,7 +605,7 @@ def get_image_validation_command(registry_host: str, registry_port: str = "8443"
                 echo "    - $repo"
             done
         else
-            echo "  ❌ OpenShift release images not found"
+            echo "  [ERROR] OpenShift release images not found"
             echo ""
             echo "  Expected repositories like:"
             echo "    - openshift-release-dev/ocp-release"
@@ -714,13 +714,14 @@ def ssh_to_host_script(script: str, host: str = "localhost", user: str = "root")
         SSH command with heredoc for script execution
 
     Example:
-        >>> script = '''
-        ... kcli list vm
-        ... virsh list --all
-        ... '''
-        >>> ssh_to_host_script(script)
+        script = '''
+        kcli list vm
+        virsh list --all
+        '''
+        result = ssh_to_host_script(script)
 
-    Usage in DAG:
+    Usage in DAG::
+
         from dag_helpers import ssh_to_host_script
 
         script = '''

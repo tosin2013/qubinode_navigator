@@ -24,10 +24,10 @@ class DAGLoggingMixin:
 
         # Log task context
         logger.info("=" * 80)
-        logger.info(f"🚀 Starting Task: {task_id}")
+        logger.info(f"[START] Starting Task: {task_id}")
         logger.info(f"⏰ Execution Date: {kwargs.get('execution_date', 'N/A')}")
-        logger.info(f"🔄 Try Number: {kwargs.get('try_number', 1)}")
-        logger.info(f"📋 DAG ID: {kwargs.get('dag', {}).get('dag_id', 'N/A')}")
+        logger.info(f"[SYNC] Try Number: {kwargs.get('try_number', 1)}")
+        logger.info(f"[CHECK] DAG ID: {kwargs.get('dag', {}).get('dag_id', 'N/A')}")
         logger.info("=" * 80)
 
         return logger
@@ -35,7 +35,7 @@ class DAGLoggingMixin:
     @staticmethod
     def log_parameters(logger: logging.Logger, params: Dict[str, Any]):
         """Log task parameters"""
-        logger.info("📝 Task Parameters:")
+        logger.info("[NOTE] Task Parameters:")
         for key, value in params.items():
             logger.info(f"   • {key}: {value}")
 
@@ -43,7 +43,7 @@ class DAGLoggingMixin:
     def log_result(logger: logging.Logger, result: Any, task_id: str):
         """Log task result"""
         logger.info("=" * 80)
-        logger.info(f"✅ Task {task_id} Completed Successfully")
+        logger.info(f"[OK] Task {task_id} Completed Successfully")
         logger.info(f"📊 Result: {result}")
         logger.info(f"⏱️  Completed At: {datetime.now().isoformat()}")
         logger.info("=" * 80)
@@ -52,7 +52,7 @@ class DAGLoggingMixin:
     def log_error(logger: logging.Logger, error: Exception, task_id: str):
         """Log task error with context"""
         logger.error("=" * 80)
-        logger.error(f"❌ Task {task_id} Failed")
+        logger.error(f"[ERROR] Task {task_id} Failed")
         logger.error(f"🔴 Error Type: {type(error).__name__}")
         logger.error(f"💥 Error Message: {str(error)}")
         logger.error(f"⏱️  Failed At: {datetime.now().isoformat()}")
@@ -78,7 +78,7 @@ def create_logging_callback(**kwargs):
     task_instance = kwargs.get("task_instance")
     logger = logging.getLogger(f"airflow.task.{task_instance.task_id}")
 
-    logger.info("📋 Task Context:")
+    logger.info("[CHECK] Task Context:")
     logger.info(f"   • DAG: {task_instance.dag_id}")
     logger.info(f"   • Task: {task_instance.task_id}")
     logger.info(f"   • Execution Date: {task_instance.execution_date}")

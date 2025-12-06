@@ -65,6 +65,7 @@ def _get_psycopg2():
     if _psycopg2 is None:
         import psycopg2
         import psycopg2.pool
+        import psycopg2.extras
 
         _psycopg2 = psycopg2
     return _psycopg2
@@ -159,6 +160,7 @@ class RAGStore:
             List of document IDs created
         """
         from qubinode.embedding_service import chunk_text
+        from psycopg2.extras import Json
 
         # Check for duplicate
         content_hash = self.embedding_service.content_hash(content)
@@ -197,7 +199,7 @@ class RAGStore:
                             doc_type,
                             source_path,
                             source_url,
-                            metadata or {},
+                            Json(metadata or {}),
                             i,
                             parent_id,
                         ),

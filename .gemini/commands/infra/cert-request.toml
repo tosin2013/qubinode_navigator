@@ -1,0 +1,30 @@
+description = "Request a TLS certificate for a hostname"
+prompt = """You are helping request a TLS certificate in Qubinode Navigator.
+
+Hostname: {{args}}
+
+Check available certificate authorities:
+!{which step-ca >/dev/null 2>&1 && echo "Step-CA available" || echo "Step-CA not found"}
+!{vault status 2>/dev/null && echo "Vault available" || echo "Vault not available"}
+
+Request certificate using qubinode-cert:
+!{${QUBINODE_HOME:-$HOME/qubinode_navigator}/scripts/qubinode-cert request {{args}} 2>/dev/null || echo "qubinode-cert not found - showing manual steps"}
+
+The qubinode-cert tool auto-selects the best CA (Step-CA > Vault > Let's Encrypt).
+
+After certificate is issued:
+1. Verify certificate details
+2. Install to appropriate service (nginx, haproxy, etc.)
+3. Configure automatic renewal
+
+Manual alternative if script unavailable:
+```bash
+# Step-CA
+step ca certificate {{args}} {{args}}.crt {{args}}.key
+
+# Vault PKI
+vault write pki/issue/qubinode common_name={{args}}
+
+# Let's Encrypt (certbot)
+certbot certonly --standalone -d {{args}}
+```"""

@@ -1,0 +1,109 @@
+# Qubinode Navigator Development Rules
+# Auto-generated from AGENTS.md and ADR documentation
+# Last updated: 2025-12-02
+
+## Project Overview
+Qubinode Navigator is an infrastructure automation platform combining:
+- Airflow workflow orchestration (DAGs)
+- AI Assistant (llama.cpp + IBM Granite)
+- MCP Servers for LLM tool integration
+- Plugin architecture for extensible deployments
+
+## Code Style
+
+### Python
+- Follow PEP 8
+- Use type hints
+- DAGs: Follow ADR-0045 standards strictly
+- Prefer f-strings over string concatenation
+
+### Bash
+- Use shellcheck compliance
+- Prefer `[[` over `[` for conditionals
+- Use `set -e` or `set -euo pipefail` for scripts
+- Never use Unicode/emoji in bash commands
+
+### DAG Development (ADR-0045 Critical Rules)
+1. Use `"""` (triple double quotes) for bash_command, NEVER `'''`
+2. NO string concatenation in bash_command
+3. Use ASCII-only characters: `[OK]`, `[ERROR]`, `[WARN]`, `[INFO]`, `[SKIP]`
+4. Use hardcoded paths or environment variables
+5. DAG IDs must be snake_case matching filename
+6. Always include `export PATH="/home/airflow/.local/bin:$PATH"` for kcli/ansible
+
+### Log Prefixes (Required)
+| Prefix | Meaning |
+|--------|---------|
+| [OK] | Success |
+| [ERROR] | Error/Failure |
+| [WARN] | Warning |
+| [INFO] | Informational |
+| [SKIP] | Skipped step |
+
+## SSH Execution Pattern (ADR-0046)
+For Ansible or host commands from Airflow containers, use SSH:
+```python
+bash_command="""
+ssh -o StrictHostKeyChecking=no root@localhost \
+    "cd /opt/kcli-pipelines && ./deploy.sh"
+"""
+```
+
+## Testing Requirements
+- Test kcli commands with airflow/scripts/test-*.sh first
+- Validate DAG syntax: `python3 -c "import ast; ast.parse(open('dag.py').read())"`
+- Use pre-flight checks before VM operations
+- Validate Airflow imports before committing
+
+## Commit Convention
+- Prefix: feat|fix|docs|refactor|test|chore
+- Reference ADRs when applicable
+- Include test outputs with [OK]/[ERROR] prefixes
+- Example: `feat(dag): Add keycloak deployment DAG (ADR-0047)`
+
+## MCP Integration
+- Always use preflight_vm_creation() before create_vm()
+- Check DAG status with list_dags() before triggering
+- Use search_similar_errors() for debugging
+
+## Key Paths
+| Purpose | Path |
+|---------|------|
+| DAGs | airflow/dags/ |
+| Operators | airflow/plugins/qubinode/ |
+| MCP Server | airflow/scripts/mcp_server_fastmcp.py |
+| Scripts | airflow/scripts/, scripts/development/ |
+| Config | config/, .env |
+| ADRs | docs/adrs/ |
+
+## Sensitive Files (Never Commit)
+- `.env` - Contains credentials
+- `config/vault.yml` - Vault tokens
+- `*.pem`, `*.key` - Certificates/keys
+- `pull-secret.json` - OpenShift pull secrets
+
+## Container Runtime
+- Use Podman as primary (Red Hat/CentOS/Fedora systems)
+- Fall back to Docker if Podman unavailable
+
+## Important ADRs
+| ADR | Topic |
+|-----|-------|
+| ADR-0001 | Core architecture decisions |
+| ADR-0036 | Airflow integration architecture |
+| ADR-0045 | DAG development standards (CRITICAL) |
+| ADR-0046 | Validation pipeline & host execution |
+| ADR-0047 | kcli-pipelines integration |
+| ADR-0055 | Zero-friction infrastructure services |
+
+## Pre-commit Checklist for DAGs
+- [ ] DAG file uses snake_case naming
+- [ ] DAG ID matches filename
+- [ ] Uses `"""` (double quotes) for bash_command
+- [ ] No Unicode/emoji characters in bash commands
+- [ ] No string concatenation in bash_command
+- [ ] All paths are hardcoded or use environment variables
+- [ ] Error handling uses simple exit codes
+- [ ] Required volume mounts are documented
+- [ ] Python syntax check passes
+- [ ] Airflow import check passes

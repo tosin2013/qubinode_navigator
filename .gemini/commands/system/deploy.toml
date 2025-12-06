@@ -1,0 +1,29 @@
+description = "Deploy or redeploy Qubinode Navigator stack"
+prompt = """You are helping deploy the Qubinode Navigator stack.
+
+Deployment request: {{args}}
+
+Review current deployment status:
+!{cd ${QUBINODE_HOME:-$HOME/qubinode_navigator}/airflow && (podman-compose ps 2>/dev/null || docker-compose ps 2>/dev/null)}
+
+Check prerequisites:
+!{${QUBINODE_HOME:-$HOME/qubinode_navigator}/scripts/preflight-check.sh 2>/dev/null | tail -20 || echo "Preflight check script not found"}
+
+For full deployment:
+!{echo "Full deployment command:" && echo "./deploy-qubinode-with-airflow.sh"}
+
+For Airflow-only:
+!{echo "Airflow deployment:" && echo "cd ${QUBINODE_HOME:-$HOME/qubinode_navigator}/airflow && make install"}
+
+Deployment options:
+1. **Full Stack**: ./deploy-qubinode-with-airflow.sh
+2. **Airflow Only**: cd airflow && make up
+3. **With Vault**: cd airflow && make up-vault
+4. **With Lineage**: Services start by default with Marquez
+
+Before deploying, verify:
+- Prerequisites cloned (/opt/qubinode-pipelines)
+- Sufficient system resources
+- No conflicting services on ports (8888, 5432, 8889, 5001, 3000)
+
+IMPORTANT: Deployment may take several minutes. Monitor progress in logs."""

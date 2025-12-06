@@ -1,0 +1,24 @@
+description = "Check DNS resolution for a hostname"
+prompt = """You are helping verify DNS resolution in Qubinode Navigator.
+
+Hostname to check: {{args}}
+
+Run DNS checks:
+!{${QUBINODE_HOME:-$HOME/qubinode_navigator}/scripts/qubinode-dns check {{args}} 2>/dev/null || echo "Running manual checks..."}
+
+Manual DNS verification:
+!{echo "=== Forward lookup ===" && dig +short {{args}} A 2>/dev/null || nslookup {{args}} 2>/dev/null}
+!{echo "=== Reverse lookup ===" && dig +short -x $(dig +short {{args}} 2>/dev/null | head -1) 2>/dev/null}
+!{echo "=== All records ===" && dig {{args}} ANY +noall +answer 2>/dev/null | head -10}
+
+Check from different nameservers:
+!{echo "=== Local resolver ===" && dig @localhost {{args}} +short 2>/dev/null}
+!{echo "=== Google DNS ===" && dig @8.8.8.8 {{args}} +short 2>/dev/null}
+
+Report:
+1. Whether hostname resolves
+2. IP address(es) returned
+3. Reverse DNS status
+4. TTL values
+5. Any DNS propagation issues
+6. Recommendations if resolution fails"""

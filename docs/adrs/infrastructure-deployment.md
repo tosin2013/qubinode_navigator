@@ -8,13 +8,19 @@ This section contains ADRs related to infrastructure setup, deployment strategie
 
 ## ADRs in this Category
 
+### Active ADRs
+
 - **[ADR-0001](adr-0001-container-first-execution-model-with-ansible-navigator.md)**: Container-First Execution Model with Ansible Navigator
 - **[ADR-0002](adr-0002-multi-cloud-inventory-strategy.md)**: Multi-Cloud Inventory Strategy with Environment-Specific Configurations
 - **[ADR-0005](adr-0005-kvm-libvirt-virtualization-platform.md)**: KVM/Libvirt Virtualization Platform Choice
-- **[ADR-0008](adr-0008-os-specific-deployment-script-strategy.md)**: OS-Specific Deployment Script Strategy
 - **[ADR-0009](adr-0009-cloud-provider-specific-configuration.md)**: Cloud Provider-Specific Configuration Management
 - **[ADR-0026](adr-0026-rhel-10-centos-10-platform-support-strategy.md)**: RHEL 10/CentOS 10 Platform Support Strategy
-- **[ADR-0031](adr-0031-setup-script-modernization-strategy.md)**: Setup Script Modernization Strategy
+- **[ADR-0033](adr-0033-terminal-based-one-shot-deployment-architecture.md)**: Terminal-Based One-Shot Deployment Architecture ⭐ *Primary Entry Point*
+
+### Deprecated ADRs
+
+- **[ADR-0008](adr-0008-os-specific-deployment-script-strategy.md)**: ~~OS-Specific Deployment Script Strategy~~ ❌ *Superseded by ADR-0033*
+- **[ADR-0031](adr-0031-setup-script-modernization-strategy.md)**: ~~Setup Script Modernization Strategy~~ ❌ *Superseded by ADR-0033*
 
 ## Key Themes
 

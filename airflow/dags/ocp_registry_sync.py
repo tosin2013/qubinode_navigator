@@ -30,6 +30,9 @@ from airflow.operators.bash import BashOperator
 from airflow.utils.trigger_rule import TriggerRule
 from airflow.models.param import Param
 
+# Note: Using inline SSH heredoc pattern for host execution (ADR-0046)
+# This ensures Jinja variables are expanded before SSH session
+
 # =============================================================================
 # Configuration
 # =============================================================================
@@ -42,21 +45,21 @@ DEFAULT_CONFIG = {
     # Registry configuration - uses FQDNs
     "registries": {
         "quay": {
-            "server": "mirror-registry.example.com",
+            "server": "mirror-registry.qubinode.lab",
             "port": 8443,
             "health_endpoint": "/v2/",
             "username_var": "quay_username",
             "password_var": "quay_password",
         },
         "harbor": {
-            "server": "harbor.example.com",
+            "server": "harbor.qubinode.lab",
             "port": 443,
             "health_endpoint": "/api/v2.0/health",
             "username_var": "harbor_username",
             "password_var": "harbor_password",
         },
         "jfrog": {
-            "server": "jfrog.example.com",
+            "server": "jfrog.qubinode.lab",
             "port": 8082,
             "health_endpoint": "/artifactory/api/system/ping",
             "username_var": "jfrog_username",
@@ -122,9 +125,9 @@ setup_credentials = BashOperator(
     bash_command="""
     set -euo pipefail
 
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "🔐 Setting Up Registry Credentials from Airflow Variables"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "========================================================================"
+    echo "[INFO] Setting Up Registry Credentials from Airflow Variables"
+    echo "========================================================================"
     echo ""
 
     TARGET_REGISTRY="{{ params.target_registry }}"
@@ -168,7 +171,7 @@ setup_credentials = BashOperator(
         REG_PASS=$(airflow variables get "$PASSWORD_VAR" 2>/dev/null || echo "")
 
         if [ -z "$REG_USER" ] || [ -z "$REG_PASS" ]; then
-            echo "  ⚠️  Credentials not found in Airflow Variables"
+            echo "  [WARN] Credentials not found in Airflow Variables"
             echo "     Missing: $USERNAME_VAR and/or $PASSWORD_VAR"
             echo ""
             echo "  To fix, set the variables:"
@@ -186,14 +189,14 @@ setup_credentials = BashOperator(
            '.auths[$registry] = {"auth": $auth}' \
            "$MERGED_SECRET" > "${MERGED_SECRET}.tmp" && mv "${MERGED_SECRET}.tmp" "$MERGED_SECRET"
 
-        echo "  ✅ Added $REGISTRY_NAME ($REGISTRY)"
+        echo "  [OK] Added $REGISTRY_NAME ($REGISTRY)"
 
         # Login to registry
         echo "  Logging in to $REGISTRY..."
         if podman login "$REGISTRY" -u "$REG_USER" -p "$REG_PASS" --tls-verify=false 2>/dev/null; then
-            echo "  ✅ Login successful"
+            echo "  [OK] Login successful"
         else
-            echo "  ⚠️  Login failed (may still work with auth file)"
+            echo "  [WARN]  Login failed (may still work with auth file)"
         fi
 
         return 0
@@ -203,15 +206,15 @@ setup_credentials = BashOperator(
     ERRORS=0
 
     if [ "$TARGET_REGISTRY" = "all" ] || [ "$TARGET_REGISTRY" = "quay" ]; then
-        add_registry_creds "quay" "mirror-registry.example.com" "8443" "quay_username" "quay_password" || ERRORS=$((ERRORS + 1))
+        add_registry_creds "quay" "mirror-registry.qubinode.lab" "8443" "quay_username" "quay_password" || ERRORS=$((ERRORS + 1))
     fi
 
     if [ "$TARGET_REGISTRY" = "all" ] || [ "$TARGET_REGISTRY" = "harbor" ]; then
-        add_registry_creds "harbor" "harbor.example.com" "443" "harbor_username" "harbor_password" || ERRORS=$((ERRORS + 1))
+        add_registry_creds "harbor" "harbor.qubinode.lab" "443" "harbor_username" "harbor_password" || ERRORS=$((ERRORS + 1))
     fi
 
     if [ "$TARGET_REGISTRY" = "all" ] || [ "$TARGET_REGISTRY" = "jfrog" ]; then
-        add_registry_creds "jfrog" "jfrog.example.com" "8082" "jfrog_username" "jfrog_password" || ERRORS=$((ERRORS + 1))
+        add_registry_creds "jfrog" "jfrog.qubinode.lab" "8082" "jfrog_username" "jfrog_password" || ERRORS=$((ERRORS + 1))
     fi
 
     echo ""
@@ -220,80 +223,85 @@ setup_credentials = BashOperator(
 
     if [ $ERRORS -gt 0 ] && [ "$TARGET_REGISTRY" != "all" ]; then
         echo ""
-        echo "❌ Failed to setup credentials for $TARGET_REGISTRY"
+        echo "[ERROR] Failed to setup credentials for $TARGET_REGISTRY"
         exit 1
     fi
 
     echo ""
-    echo "✅ Credentials setup complete"
+    echo "[OK] Credentials setup complete"
     echo "   Merged pull secret: $MERGED_SECRET"
     """,
     dag=dag,
 )
 
 # =============================================================================
-# Task 2: Pre-flight Checks
+# Task 2: Pre-flight Checks (Runs on HOST via SSH - ADR-0046)
 # =============================================================================
 preflight_checks = BashOperator(
     task_id="preflight_checks",
     bash_command="""
-    set -euo pipefail
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR root@localhost << 'REMOTE_SCRIPT'
+set -euo pipefail
 
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "🚀 OCP Registry Sync - Pre-flight Checks"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo ""
-    echo "Target OCP Version: {{ params.ocp_version }}"
-    echo "Target Registry: {{ params.target_registry }}"
-    echo "Timestamp: $(date -Iseconds)"
-    echo ""
+OCP_VERSION="{{ params.ocp_version }}"
+TARGET_REGISTRY="{{ params.target_registry }}"
 
-    ERRORS=0
+echo "===================================================================="
+echo "[START] OCP Registry Sync - Pre-flight Checks (via SSH to host)"
+echo "===================================================================="
+echo ""
+echo "Target OCP Version: $OCP_VERSION"
+echo "Target Registry: $TARGET_REGISTRY"
+echo "Timestamp: $(date -Iseconds)"
+echo ""
 
-    # Check required binaries
-    echo "📋 Checking required binaries..."
-    for cmd in oc oc-mirror curl jq podman; do
-        if command -v $cmd &> /dev/null; then
-            echo "  ✅ $cmd: $(which $cmd)"
-        else
-            echo "  ❌ $cmd NOT FOUND"
-            echo ""
-            echo "  To install:"
-            echo "    dnf install -y $cmd"
-            ERRORS=$((ERRORS + 1))
-        fi
-    done
+ERRORS=0
 
-    # Check disk space
-    echo ""
-    echo "📋 Checking disk space..."
-    MIRROR_PATH="/opt/images"
-    mkdir -p "$MIRROR_PATH" 2>/dev/null || true
-    AVAIL=$(df -BG "$MIRROR_PATH" 2>/dev/null | tail -1 | awk '{print $4}' | tr -d 'G')
-    if [ "$AVAIL" -gt 50 ]; then
-        echo "  ✅ Available space: ${AVAIL}GB"
+# Check required binaries
+echo "[CHECK] Checking required binaries..."
+for cmd in oc oc-mirror curl jq podman; do
+    if command -v $cmd &> /dev/null; then
+        echo "  [OK] $cmd: $(which $cmd)"
     else
-        echo "  ⚠️  Low disk space: ${AVAIL}GB (50GB+ recommended for full sync)"
+        echo "  [ERROR] $cmd NOT FOUND"
+        echo ""
+        echo "  To install:"
+        echo "    dnf install -y $cmd"
+        ERRORS=$((ERRORS + 1))
     fi
+done
 
-    # Check for existing tar files
-    echo ""
-    echo "📋 Checking for existing mirror content..."
-    if ls "$MIRROR_PATH"/*.tar 1>/dev/null 2>&1; then
-        TAR_COUNT=$(ls "$MIRROR_PATH"/*.tar 2>/dev/null | wc -l)
-        TAR_SIZE=$(du -sh "$MIRROR_PATH"/*.tar 2>/dev/null | tail -1 | cut -f1)
-        echo "  ✅ Found $TAR_COUNT TAR file(s), latest: $TAR_SIZE"
-    else
-        echo "  ℹ️  No existing TAR files found (will download fresh)"
-    fi
+# Check disk space
+echo ""
+echo "[CHECK] Checking disk space..."
+MIRROR_PATH="/opt/images"
+mkdir -p "$MIRROR_PATH" 2>/dev/null || true
+AVAIL=$(df -BG "$MIRROR_PATH" 2>/dev/null | tail -1 | awk '{print $4}' | tr -d 'G')
+if [ "$AVAIL" -gt 50 ]; then
+    echo "  [OK] Available space: ${AVAIL}GB"
+else
+    echo "  [WARN]  Low disk space: ${AVAIL}GB (50GB+ recommended for full sync)"
+fi
 
-    echo ""
-    if [ $ERRORS -gt 0 ]; then
-        echo "❌ Pre-flight checks FAILED with $ERRORS error(s)"
-        exit 1
-    else
-        echo "✅ Pre-flight checks PASSED"
-    fi
+# Check for existing tar files
+echo ""
+echo "[CHECK] Checking for existing mirror content..."
+if ls "$MIRROR_PATH"/*.tar 1>/dev/null 2>&1; then
+    TAR_COUNT=$(ls "$MIRROR_PATH"/*.tar 2>/dev/null | wc -l)
+    TAR_SIZE=$(du -sh "$MIRROR_PATH"/*.tar 2>/dev/null | tail -1 | cut -f1)
+    echo "  [OK] Found $TAR_COUNT TAR file(s), latest: $TAR_SIZE"
+else
+    echo "  [INFO]  No existing TAR files found (will download fresh)"
+fi
+
+echo ""
+if [ $ERRORS -gt 0 ]; then
+    echo "[ERROR] Pre-flight checks FAILED with $ERRORS error(s)"
+    exit 1
+else
+    echo "[OK] Pre-flight checks PASSED"
+fi
+REMOTE_SCRIPT
     """,
     dag=dag,
 )
@@ -306,9 +314,9 @@ health_check_registry = BashOperator(
     bash_command="""
     set -euo pipefail
 
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     echo "🏥 Registry Health Check"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     echo ""
 
     TARGET_REGISTRY="{{ params.target_registry }}"
@@ -327,7 +335,7 @@ health_check_registry = BashOperator(
         HTTP_CODE=$(curl -sk --connect-timeout 10 --max-time 30 -o /dev/null -w "%{http_code}" "https://${REGISTRY}/v2/" 2>/dev/null || echo "000")
 
         if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "401" ]; then
-            echo "  ✅ API responding (HTTP $HTTP_CODE)"
+            echo "  [OK] API responding (HTTP $HTTP_CODE)"
 
             # Check certificate validity
             CERT_EXPIRY=$(echo | openssl s_client -connect "$REGISTRY" -servername "$HOST" 2>/dev/null | openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2 || echo "")
@@ -338,19 +346,19 @@ health_check_registry = BashOperator(
                 DAYS_LEFT=$(( (EXPIRY_EPOCH - NOW_EPOCH) / 86400 ))
 
                 if [ $DAYS_LEFT -lt 7 ]; then
-                    echo "  ⚠️  Certificate expires in $DAYS_LEFT days!"
+                    echo "  [WARN]  Certificate expires in $DAYS_LEFT days!"
                     echo ""
                     echo "  To renew, run:"
                     echo "    airflow dags trigger step_ca_operations --conf '{\"action\": \"renew-cert\", \"target\": \"$HOST\"}'"
                 else
-                    echo "  ✅ Certificate valid for $DAYS_LEFT days"
+                    echo "  [OK] Certificate valid for $DAYS_LEFT days"
                 fi
             fi
 
             HEALTHY_REGISTRIES="${HEALTHY_REGISTRIES}${NAME},"
             return 0
         else
-            echo "  ❌ API not responding (HTTP $HTTP_CODE)"
+            echo "  [ERROR] API not responding (HTTP $HTTP_CODE)"
             echo ""
             echo "  Possible fixes:"
             echo "    1. Check if registry VM is running: virsh list --all | grep $NAME"
@@ -361,15 +369,15 @@ health_check_registry = BashOperator(
 
     # Check based on target
     if [ "$TARGET_REGISTRY" = "all" ] || [ "$TARGET_REGISTRY" = "quay" ]; then
-        check_registry "quay" "mirror-registry.example.com" "8443" || ERRORS=$((ERRORS + 1))
+        check_registry "quay" "mirror-registry.qubinode.lab" "8443" || ERRORS=$((ERRORS + 1))
     fi
 
     if [ "$TARGET_REGISTRY" = "all" ] || [ "$TARGET_REGISTRY" = "harbor" ]; then
-        check_registry "harbor" "harbor.example.com" "443" || ERRORS=$((ERRORS + 1))
+        check_registry "harbor" "harbor.qubinode.lab" "443" || ERRORS=$((ERRORS + 1))
     fi
 
     if [ "$TARGET_REGISTRY" = "all" ] || [ "$TARGET_REGISTRY" = "jfrog" ]; then
-        check_registry "jfrog" "jfrog.example.com" "8082" || ERRORS=$((ERRORS + 1))
+        check_registry "jfrog" "jfrog.qubinode.lab" "8082" || ERRORS=$((ERRORS + 1))
     fi
 
     # Save status for downstream tasks
@@ -377,13 +385,13 @@ health_check_registry = BashOperator(
 
     echo ""
     if [ $ERRORS -gt 0 ] && [ "$TARGET_REGISTRY" != "all" ]; then
-        echo "❌ Target registry is not healthy"
+        echo "[ERROR] Target registry is not healthy"
         exit 1
     elif [ -z "$HEALTHY_REGISTRIES" ]; then
-        echo "❌ No healthy registries found"
+        echo "[ERROR] No healthy registries found"
         exit 1
     else
-        echo "✅ Health checks passed"
+        echo "[OK] Health checks passed"
         echo "   Healthy: $HEALTHY_REGISTRIES"
     fi
     """,
@@ -391,53 +399,53 @@ health_check_registry = BashOperator(
 )
 
 # =============================================================================
-# Task 4: Download Images (Skip if skip_download=true)
+# Task 4: Download Images (Runs on HOST via SSH - ADR-0046)
 # =============================================================================
 download_images = BashOperator(
     task_id="download_images",
     bash_command="""
-    set -euo pipefail
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR root@localhost << 'REMOTE_SCRIPT'
+set -euo pipefail
 
-    SKIP_DOWNLOAD="{{ params.skip_download }}"
+OCP_VERSION="{{ params.ocp_version }}"
+SKIP_DOWNLOAD="{{ params.skip_download }}"
 
-    if [ "$SKIP_DOWNLOAD" = "True" ] || [ "$SKIP_DOWNLOAD" = "true" ]; then
-        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        echo "⏭️  Skipping Download (skip_download=true)"
-        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+if [ "$SKIP_DOWNLOAD" = "True" ] || [ "$SKIP_DOWNLOAD" = "true" ]; then
+    echo "===================================================================="
+    echo "⏭️  Skipping Download (skip_download=true)"
+    echo "===================================================================="
 
-        # Check for existing tar
-        MIRROR_PATH="/opt/images"
-        if ls "$MIRROR_PATH"/*.tar 1>/dev/null 2>&1; then
-            echo "Using existing TAR files:"
-            ls -lh "$MIRROR_PATH"/*.tar
-        else
-            echo "❌ No TAR files found at $MIRROR_PATH"
-            echo "   Set skip_download=false to download images"
-            exit 1
-        fi
-        exit 0
-    fi
-
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "⬇️  Downloading OCP {{ params.ocp_version }} Images"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo ""
-
-    OCP_VERSION="{{ params.ocp_version }}"
     MIRROR_PATH="/opt/images"
-    PULL_SECRET="/root/pull-secret.json"
+    if ls "$MIRROR_PATH"/*.tar 1>/dev/null 2>&1; then
+        echo "Using existing TAR files:"
+        ls -lh "$MIRROR_PATH"/*.tar
+    else
+        echo "[ERROR] No TAR files found at $MIRROR_PATH"
+        echo "   Set skip_download=false to download images"
+        exit 1
+    fi
+    exit 0
+fi
 
-    echo "OCP Version: $OCP_VERSION"
-    echo "Mirror Path: $MIRROR_PATH"
-    echo ""
+echo "===================================================================="
+echo "⬇️  Downloading OCP $OCP_VERSION Images (via SSH to host)"
+echo "===================================================================="
+echo ""
 
-    mkdir -p "$MIRROR_PATH"
-    cd "$MIRROR_PATH"
+MIRROR_PATH="/opt/images"
+PULL_SECRET="/root/pull-secret.json"
 
-    # Create imageSetConfig if not exists
-    if [ ! -f "$MIRROR_PATH/imageSetConfig.yml" ]; then
-        echo "Creating imageSetConfig.yml..."
-        cat > "$MIRROR_PATH/imageSetConfig.yml" << EOF
+echo "OCP Version: $OCP_VERSION"
+echo "Mirror Path: $MIRROR_PATH"
+echo ""
+
+mkdir -p "$MIRROR_PATH"
+cd "$MIRROR_PATH"
+
+# Create imageSetConfig if not exists
+if [ ! -f "$MIRROR_PATH/imageSetConfig.yml" ]; then
+    echo "Creating imageSetConfig.yml..."
+    cat > "$MIRROR_PATH/imageSetConfig.yml" << EOF
 kind: ImageSetConfiguration
 apiVersion: mirror.openshift.io/v1alpha2
 storageConfig:
@@ -453,107 +461,110 @@ mirror:
   additionalImages: []
   helm: {}
 EOF
-    fi
+fi
 
-    echo "Running oc-mirror..."
-    oc-mirror --config "$MIRROR_PATH/imageSetConfig.yml" \
-        file://$MIRROR_PATH \
-        --dest-skip-tls \
-        -a "$PULL_SECRET" \
-        --continue-on-error 2>&1 | tee "$MIRROR_PATH/oc-mirror-download.log" || {
-        echo ""
-        echo "⚠️  oc-mirror completed with warnings/errors"
-        echo "Check log: $MIRROR_PATH/oc-mirror-download.log"
-    }
-
+echo "Running oc-mirror (using --v2 flag)..."
+oc-mirror --v2 --config "$MIRROR_PATH/imageSetConfig.yml" \
+    file://$MIRROR_PATH \
+    --dest-tls-verify=false \
+    -a "$PULL_SECRET" \
+    --continue-on-error 2>&1 | tee "$MIRROR_PATH/oc-mirror-download.log" || {
     echo ""
-    echo "Generated TAR files:"
-    ls -lh "$MIRROR_PATH"/*.tar 2>/dev/null || echo "  No TAR files found"
+    echo "[WARN]  oc-mirror completed with warnings/errors"
+    echo "Check log: $MIRROR_PATH/oc-mirror-download.log"
+}
 
-    echo ""
-    echo "✅ Download complete"
+echo ""
+echo "Generated TAR files:"
+ls -lh "$MIRROR_PATH"/*.tar 2>/dev/null || echo "  No TAR files found"
+
+echo ""
+echo "[OK] Download complete"
+REMOTE_SCRIPT
     """,
     execution_timeout=timedelta(hours=4),
     dag=dag,
 )
 
 # =============================================================================
-# Task 5: Push to Registry
+# Task 5: Push to Registry (Runs on HOST via SSH - ADR-0046)
 # =============================================================================
 push_to_registry = BashOperator(
     task_id="push_to_registry",
     bash_command="""
-    set -euo pipefail
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR root@localhost << 'REMOTE_SCRIPT'
+set -euo pipefail
 
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "⬆️  Pushing Images to Registry"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo ""
+TARGET_REGISTRY="{{ params.target_registry }}"
 
-    TARGET_REGISTRY="{{ params.target_registry }}"
-    MIRROR_PATH="/opt/images"
-    MERGED_SECRET="/tmp/merged-pull-secret.json"
+echo "===================================================================="
+echo "⬆️  Pushing Images to Registry (via SSH to host)"
+echo "===================================================================="
+echo ""
 
-    # Determine registry URL
-    case "$TARGET_REGISTRY" in
-        quay)
-            REGISTRY_URL="docker://mirror-registry.example.com:8443"
-            ;;
-        harbor)
-            REGISTRY_URL="docker://harbor.example.com"
-            ;;
-        jfrog)
-            REGISTRY_URL="docker://jfrog.example.com:8082"
-            ;;
-        all)
-            # For 'all', we'll push to quay as primary
-            REGISTRY_URL="docker://mirror-registry.example.com:8443"
-            ;;
-        *)
-            echo "❌ Unknown registry: $TARGET_REGISTRY"
-            exit 1
-            ;;
-    esac
+MIRROR_PATH="/opt/images"
+MERGED_SECRET="/tmp/merged-pull-secret.json"
 
-    echo "Target: $REGISTRY_URL"
-    echo "Mirror Path: $MIRROR_PATH"
-    echo ""
-
-    # Find the latest TAR file
-    LATEST_TAR=$(ls -t "$MIRROR_PATH"/*.tar 2>/dev/null | head -1)
-
-    if [ -z "$LATEST_TAR" ]; then
-        echo "============================================"
-        echo "CONFIGURATION ERROR"
-        echo "============================================"
-        echo "Directory: $MIRROR_PATH"
-        echo "Error: No TAR files found"
-        echo ""
-        echo "To fix:"
-        echo "  1. Run this DAG with skip_download=false"
-        echo "  2. Or manually run: oc-mirror --config imageSetConfig.yml file://$MIRROR_PATH"
-        echo "============================================"
+# Determine registry URL
+case "$TARGET_REGISTRY" in
+    quay)
+        REGISTRY_URL="docker://mirror-registry.qubinode.lab:8443"
+        ;;
+    harbor)
+        REGISTRY_URL="docker://harbor.qubinode.lab"
+        ;;
+    jfrog)
+        REGISTRY_URL="docker://jfrog.qubinode.lab:8082"
+        ;;
+    all)
+        REGISTRY_URL="docker://mirror-registry.qubinode.lab:8443"
+        ;;
+    *)
+        echo "[ERROR] Unknown registry: $TARGET_REGISTRY"
         exit 1
-    fi
+        ;;
+esac
 
-    echo "Using TAR: $LATEST_TAR"
-    TAR_SIZE=$(du -h "$LATEST_TAR" | cut -f1)
-    echo "Size: $TAR_SIZE"
+echo "Target: $REGISTRY_URL"
+echo "Mirror Path: $MIRROR_PATH"
+echo ""
+
+# Find the latest TAR file
+LATEST_TAR=$(ls -t "$MIRROR_PATH"/*.tar 2>/dev/null | head -1)
+
+if [ -z "$LATEST_TAR" ]; then
+    echo "============================================"
+    echo "CONFIGURATION ERROR"
+    echo "============================================"
+    echo "Directory: $MIRROR_PATH"
+    echo "Error: No TAR files found"
     echo ""
+    echo "To fix:"
+    echo "  1. Run this DAG with skip_download=false"
+    echo "  2. Or manually run: oc-mirror --config imageSetConfig.yml file://$MIRROR_PATH"
+    echo "============================================"
+    exit 1
+fi
 
-    echo "Running oc-mirror to push..."
-    oc-mirror --from="$LATEST_TAR" \
-        "$REGISTRY_URL" \
-        --dest-skip-tls \
-        -a "$MERGED_SECRET" \
-        --continue-on-error 2>&1 | tee "$MIRROR_PATH/oc-mirror-push.log" || {
-        echo ""
-        echo "⚠️  oc-mirror push completed with warnings/errors"
-        echo "Check log: $MIRROR_PATH/oc-mirror-push.log"
-    }
+echo "Using TAR: $LATEST_TAR"
+TAR_SIZE=$(du -h "$LATEST_TAR" | cut -f1)
+echo "Size: $TAR_SIZE"
+echo ""
 
+echo "Running oc-mirror to push (using --v2 flag)..."
+oc-mirror --v2 --from="$LATEST_TAR" \
+    "$REGISTRY_URL" \
+    --dest-tls-verify=false \
+    -a "$MERGED_SECRET" \
+    --continue-on-error 2>&1 | tee "$MIRROR_PATH/oc-mirror-push.log" || {
     echo ""
-    echo "✅ Push complete"
+    echo "[WARN]  oc-mirror push completed with warnings/errors"
+    echo "Check log: $MIRROR_PATH/oc-mirror-push.log"
+}
+
+echo ""
+echo "[OK] Push complete"
+REMOTE_SCRIPT
     """,
     execution_timeout=timedelta(hours=2),
     dag=dag,
@@ -568,9 +579,9 @@ sync_report = BashOperator(
     set -euo pipefail
 
     echo ""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "📋 Registry Sync Report"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
+    echo "[CHECK] Registry Sync Report"
+    echo "===================================================================="
     echo ""
     echo "Sync Completed: $(date -Iseconds)"
     echo "OCP Version:    {{ params.ocp_version }}"
@@ -582,16 +593,16 @@ sync_report = BashOperator(
     # Determine registry URL for verification
     case "$TARGET_REGISTRY" in
         quay)
-            REGISTRY="mirror-registry.example.com:8443"
+            REGISTRY="mirror-registry.qubinode.lab:8443"
             ;;
         harbor)
-            REGISTRY="harbor.example.com"
+            REGISTRY="harbor.qubinode.lab"
             ;;
         jfrog)
-            REGISTRY="jfrog.example.com:8082"
+            REGISTRY="jfrog.qubinode.lab:8082"
             ;;
         *)
-            REGISTRY="mirror-registry.example.com:8443"
+            REGISTRY="mirror-registry.qubinode.lab:8443"
             ;;
     esac
 
@@ -627,12 +638,12 @@ sync_report = BashOperator(
     fi
 
     echo ""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     echo "Next Steps:"
     echo "  1. Verify images: skopeo list-tags docker://$REGISTRY/<repo>"
     echo "  2. Deploy cluster: airflow dags trigger ocp_agent_deployment"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "✅ OCP Registry Sync completed successfully!"
+    echo "===================================================================="
+    echo "[OK] OCP Registry Sync completed successfully!"
     """,
     trigger_rule=TriggerRule.ALL_SUCCESS,
     dag=dag,
@@ -646,9 +657,9 @@ cleanup_on_failure = BashOperator(
     bash_command="""
     set +e  # Don't exit on error during cleanup
 
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     echo "🧹 Cleanup After Failure"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     echo ""
 
     # Clean up temporary files
@@ -664,9 +675,9 @@ cleanup_on_failure = BashOperator(
 
     echo "Cleanup complete"
     echo ""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     echo "SYNC FAILED - Review errors above"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "===================================================================="
     echo ""
     echo "Common fixes:"
     echo "  1. Missing credentials: Set Airflow Variables (quay_username, quay_password, etc.)"
@@ -683,13 +694,7 @@ cleanup_on_failure = BashOperator(
 # =============================================================================
 # Task Dependencies
 # =============================================================================
-(setup_credentials >> preflight_checks >> health_check_registry >> download_images >> push_to_registry >> sync_report)
+setup_credentials >> preflight_checks >> health_check_registry >> download_images >> push_to_registry >> sync_report
 
 # Cleanup runs on any failure
-[
-    setup_credentials,
-    preflight_checks,
-    health_check_registry,
-    download_images,
-    push_to_registry,
-] >> cleanup_on_failure
+[setup_credentials, preflight_checks, health_check_registry, download_images, push_to_registry] >> cleanup_on_failure
