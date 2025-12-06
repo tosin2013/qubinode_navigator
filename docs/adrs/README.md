@@ -22,99 +22,89 @@ ADRs document the key architectural decisions made during the development and ev
 
 ## ADR Index
 
-| ADR                                                                                                             | Title                                                                                   | Status   | Date       | Impact   |
-| --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | -------- | ---------- | -------- |
-| [ADR-0001](adr-0001-container-first-execution-model-with-ansible-navigator.md)                                  | Container-First Execution Model with Ansible Navigator                                  | Accepted | 2025-01-09 | High     |
-| [ADR-0002](adr-0002-multi-cloud-inventory-strategy.md)                                                          | Multi-Cloud Inventory Strategy with Environment-Specific Configurations                 | Accepted | 2025-01-09 | High     |
-| [ADR-0003](adr-0003-dynamic-configuration-management.md)                                                        | Dynamic Configuration Management with Python                                            | Accepted | 2025-01-09 | High     |
-| [ADR-0004](adr-0004-security-architecture-ansible-vault.md)                                                     | Security Architecture with Ansible Vault and AnsibleSafe                                | Accepted | 2025-01-09 | Critical |
-| [ADR-0005](adr-0005-kvm-libvirt-virtualization-platform.md)                                                     | KVM/Libvirt Virtualization Platform Choice                                              | Accepted | 2025-01-09 | High     |
-| [ADR-0006](adr-0006-modular-dependency-management.md)                                                           | Modular Dependency Management Strategy                                                  | Accepted | 2025-01-09 | Medium   |
-| [ADR-0007](adr-0007-bash-first-orchestration-python-configuration.md)                                           | Bash-First Orchestration with Python Configuration                                      | Accepted | 2025-01-09 | Medium   |
-| [ADR-0008](adr-0008-os-specific-deployment-script-strategy.md)                                                  | OS-Specific Deployment Script Strategy                                                  | Accepted | 2025-01-09 | High     |
-| [ADR-0009](adr-0009-cloud-provider-specific-configuration.md)                                                   | Cloud Provider-Specific Configuration Management                                        | Accepted | 2025-01-09 | High     |
-| [ADR-0010](adr-0010-progressive-ssh-security-model.md)                                                          | Progressive SSH Security Model                                                          | Accepted | 2025-01-09 | Critical |
-| [ADR-0011](adr-0011-comprehensive-platform-validation.md)                                                       | Comprehensive Platform Validation Through Research Analysis                             | Accepted | 2025-01-09 | High     |
-| [ADR-0023](adr-0023-enhanced-configuration-management-with-template-support-and-hashicorp-vault-integration.md) | Enhanced Configuration Management with Template Support and HashiCorp Vault Integration | Accepted | 2025-07-09 | High     |
-| [ADR-0024](adr-0024-vault-integrated-setup-script-security-enhancement.md)                                      | Vault-Integrated Setup Script Security Enhancement                                      | Accepted | 2025-07-10 | Critical |
-| [ADR-0025](adr-0025-ansible-tooling-modernization-security-strategy.md)                                         | Ansible Tooling Modernization and Security Strategy                                     | Proposed | 2025-07-10 | Critical |
-| [ADR-0026](adr-0026-rhel-10-centos-10-platform-support-strategy.md)                                             | RHEL 10/CentOS 10 Platform Support Strategy                                             | Proposed | 2025-11-07 | High     |
-| [ADR-0027](adr-0027-cpu-based-ai-deployment-assistant-architecture.md)                                          | CPU-Based AI Deployment Assistant Architecture                                          | Proposed | 2025-11-07 | High     |
-| [ADR-0028](adr-0028-modular-plugin-framework-for-extensibility.md)                                              | Modular Plugin Framework for Extensibility                                              | Proposed | 2025-11-07 | High     |
-| [ADR-0029](adr-0029-documentation-strategy-and-website-modernization.md)                                        | Documentation Strategy and Website Modernization                                        | Proposed | 2025-11-07 | High     |
-| [ADR-0030](adr-0030-software-and-os-update-strategy.md)                                                         | Software and OS Update Strategy                                                         | Proposed | 2025-11-07 | High     |
-| [ADR-0031](adr-0031-setup-script-modernization-strategy.md)                                                     | Setup Script Modernization Strategy                                                     | Proposed | 2025-11-07 | High     |
+**See [ADR-INDEX.md](ADR-INDEX.md) for the complete index with relationships and Mermaid diagrams.**
+
+| ADR                                                                                                             | Title                            | Status          | Impact    |
+| --------------------------------------------------------------------------------------------------------------- | -------------------------------- | --------------- | --------- |
+| [ADR-0001](adr-0001-container-first-execution-model-with-ansible-navigator.md)                                  | Container-First Execution Model  | Accepted        | High      |
+| [ADR-0002](adr-0002-multi-cloud-inventory-strategy.md)                                                          | Multi-Cloud Inventory Strategy   | Accepted        | High      |
+| [ADR-0003](adr-0003-dynamic-configuration-management.md)                                                        | Dynamic Configuration Management | Accepted        | High      |
+| [ADR-0004](adr-0004-security-architecture-ansible-vault.md)                                                     | Security Architecture            | Accepted        | Critical  |
+| [ADR-0005](adr-0005-kvm-libvirt-virtualization-platform.md)                                                     | KVM/Libvirt Platform             | Accepted        | High      |
+| [ADR-0006](adr-0006-modular-dependency-management.md)                                                           | Modular Dependency Management    | Accepted        | Medium    |
+| [ADR-0007](adr-0007-bash-first-orchestration-python-configuration.md)                                           | Bash-First Orchestration         | Accepted        | Medium    |
+| [ADR-0008](adr-0008-os-specific-deployment-script-strategy.md)                                                  | OS-Specific Deployment           | **Deprecated**  | -         |
+| [ADR-0009](adr-0009-cloud-provider-specific-configuration.md)                                                   | Cloud Provider Configuration     | Accepted        | High      |
+| [ADR-0010](adr-0010-progressive-ssh-security-model.md)                                                          | Progressive SSH Security         | Accepted        | Critical  |
+| [ADR-0011](adr-0011-comprehensive-platform-validation.md)                                                       | Platform Validation              | Accepted        | High      |
+| ADR-0012 to ADR-0022                                                                                            | *Reserved*                       | -               | -         |
+| [ADR-0023](adr-0023-enhanced-configuration-management-with-template-support-and-hashicorp-vault-integration.md) | Enhanced Configuration + Vault   | Accepted        | High      |
+| [ADR-0024](adr-0024-vault-integrated-setup-script-security-enhancement.md)                                      | Vault-Integrated Setup           | Accepted        | Critical  |
+| [ADR-0025](adr-0025-ansible-tooling-modernization-security-strategy.md)                                         | Ansible Security Modernization   | Accepted        | Critical  |
+| [ADR-0026](adr-0026-rhel-10-centos-10-platform-support-strategy.md)                                             | RHEL 10/CentOS 10 Support        | Accepted        | High      |
+| [ADR-0027](adr-0027-cpu-based-ai-deployment-assistant-architecture.md)                                          | AI Deployment Assistant          | Accepted        | High      |
+| [ADR-0028](adr-0028-modular-plugin-framework-for-extensibility.md)                                              | Plugin Framework                 | Accepted        | High      |
+| [ADR-0029](adr-0029-documentation-strategy-and-website-modernization.md)                                        | Documentation Strategy           | Proposed        | High      |
+| [ADR-0030](adr-0030-software-and-os-update-strategy.md)                                                         | Software Update Strategy         | Proposed        | High      |
+| [ADR-0031](adr-0031-setup-script-modernization-strategy.md)                                                     | Setup Script Modernization       | **Deprecated**  | -         |
+| [ADR-0032](adr-0032-ai-assistant-community-distribution-strategy.md)                                            | AI Assistant Distribution        | Accepted        | High      |
+| [ADR-0033](adr-0033-terminal-based-one-shot-deployment-architecture.md)                                         | **One-Shot Deployment**          | Accepted        | High      |
+| [ADR-0034](adr-0034-ai-assistant-terminal-integration-strategy.md)                                              | AI Terminal Integration          | Accepted        | High      |
+| [ADR-0035](adr-0035-terminal-centric-documentation-strategy.md)                                                 | Terminal Documentation           | Proposed        | Medium    |
+| [ADR-0036](adr-0036-apache-airflow-workflow-orchestration-integration.md)                                       | Airflow Integration              | Accepted        | High      |
+| [ADR-0037](adr-0037-git-based-dag-repository-management.md)                                                     | Git-Based DAG Management         | Accepted        | Medium    |
+| [ADR-0038](adr-0038-fastmcp-framework-migration.md)                                                             | FastMCP Migration                | **Implemented** | High      |
+| [ADR-0039](adr-0039-freeipa-vyos-airflow-dag-integration.md)                                                    | FreeIPA/VyOS DAGs                | Proposed        | High      |
+| [ADR-0040](adr-0040-dag-distribution-from-kcli-pipelines.md)                                                    | DAG Distribution                 | Proposed        | Medium    |
+| [ADR-0041](adr-0041-vyos-version-upgrade-strategy.md)                                                           | VyOS Version Strategy            | Proposed        | Medium    |
+| [ADR-0042](adr-0042-freeipa-base-os-upgrade-rhel9.md)                                                           | FreeIPA RHEL 9 Upgrade           | Proposed        | High      |
+| [ADR-0043](adr-0043-airflow-container-host-network-access.md)                                                   | Airflow Host Network             | Accepted        | Critical  |
+| [ADR-0044](adr-0044-user-configurable-airflow-volume-mounts.md)                                                 | Airflow Volume Mounts            | Accepted        | Medium    |
+| [ADR-0045](adr-0045-airflow-dag-development-standards.md)                                                       | **DAG Development Standards**    | Accepted        | Critical  |
+| [ADR-0046](adr-0046-dag-validation-pipeline-and-host-execution.md)                                              | DAG Validation Pipeline          | Accepted        | High      |
+| [ADR-0047](adr-0047-kcli-pipelines-dag-integration-pattern.md)                                                  | kcli-pipelines Integration       | Accepted        | High      |
+| [ADR-0048](adr-0048-step-ca-integration-for-disconnected-deployments.md)                                        | Step-CA Integration              | Accepted        | High      |
+| [ADR-0049](adr-0049-multi-agent-llm-memory-architecture.md)                                                     | **Multi-Agent LLM Architecture** | **Implemented** | Strategic |
+| [ADR-0050](adr-0050-hybrid-host-container-architecture.md)                                                      | Hybrid Host-Container            | **Implemented** | High      |
+| [ADR-0051](adr-0051-hashicorp-vault-secrets-management.md)                                                      | HashiCorp Vault Secrets          | Accepted        | Critical  |
+| [ADR-0052](adr-0052-vault-audit-logging.md)                                                                     | Vault Audit Logging              | Accepted        | High      |
+| [ADR-0053](adr-0053-vault-dynamic-secrets-airflow.md)                                                           | Dynamic Secrets for Airflow      | Accepted        | High      |
+| [ADR-0054](adr-0054-unified-certificate-management.md)                                                          | Unified Certificate Mgmt         | Accepted        | High      |
+| [ADR-0055](adr-0055-zero-friction-infrastructure-services.md)                                                   | Zero-Friction Infrastructure     | Accepted        | High      |
 
 ## ADRs by Category
 
-### Infrastructure & Deployment
+For detailed categorization with relationships, see **[ADR-INDEX.md](ADR-INDEX.md)**.
 
-- **ADR-0001**: Container-First Execution Model with Ansible Navigator
-- **ADR-0002**: Multi-Cloud Inventory Strategy with Environment-Specific Configurations
-- **ADR-0005**: KVM/Libvirt Virtualization Platform Choice
-- **ADR-0008**: OS-Specific Deployment Script Strategy
-- **ADR-0009**: Cloud Provider-Specific Configuration Management
-- **ADR-0026**: RHEL 10/CentOS 10 Platform Support Strategy
-- **ADR-0031**: Setup Script Modernization Strategy
+### Core Architecture
 
-### Configuration & Automation
+- ADR-0001, ADR-0033, ADR-0028
 
-- **ADR-0003**: Dynamic Configuration Management with Python
-- **ADR-0007**: Bash-First Orchestration with Python Configuration
-- **ADR-0023**: Enhanced Configuration Management with Template Support and HashiCorp Vault Integration
-- **ADR-0025**: Ansible Tooling Modernization and Security Strategy
-- **ADR-0030**: Software and OS Update Strategy
+### AI & RAG
 
-### Security & Operations
+- ADR-0027, ADR-0038, ADR-0049, ADR-0050
 
-- **ADR-0004**: Security Architecture with Ansible Vault and AnsibleSafe
-- **ADR-0010**: Progressive SSH Security Model
-- **ADR-0024**: Vault-Integrated Setup Script Security Enhancement
+### Workflow Orchestration (Airflow)
 
-### Architecture & Design
+- ADR-0036, ADR-0043, ADR-0045, ADR-0046, ADR-0047
 
-- **ADR-0006**: Modular Dependency Management Strategy
-- **ADR-0027**: CPU-Based AI Deployment Assistant Architecture
-- **ADR-0028**: Modular Plugin Framework for Extensibility
+### Security & Secrets
 
-### Validation & Research
+- ADR-0004, ADR-0051, ADR-0052, ADR-0053, ADR-0054
 
-- **ADR-0011**: Comprehensive Platform Validation Through Research Analysis
+### Infrastructure Services
 
-### Documentation & User Experience
+- ADR-0048, ADR-0055
 
-- **ADR-0029**: Documentation Strategy and Website Modernization
+### AI Assistant Testing
 
-## ADRs by Impact Level
+- ADR-0056, ADR-0057, ADR-0058, ADR-0059, ADR-0060
 
-### Critical Impact
+### Deprecated
 
-- **ADR-0004**: Security Architecture with Ansible Vault and AnsibleSafe
-- **ADR-0010**: Progressive SSH Security Model
-- **ADR-0024**: Vault-Integrated Setup Script Security Enhancement
-- **ADR-0025**: Ansible Tooling Modernization and Security Strategy
-
-### High Impact
-
-- **ADR-0001**: Container-First Execution Model with Ansible Navigator
-- **ADR-0002**: Multi-Cloud Inventory Strategy with Environment-Specific Configurations
-- **ADR-0003**: Dynamic Configuration Management with Python
-- **ADR-0005**: KVM/Libvirt Virtualization Platform Choice
-- **ADR-0008**: OS-Specific Deployment Script Strategy
-- **ADR-0009**: Cloud Provider-Specific Configuration Management
-- **ADR-0011**: Comprehensive Platform Validation Through Research Analysis
-- **ADR-0023**: Enhanced Configuration Management with Template Support and HashiCorp Vault Integration
-- **ADR-0026**: RHEL 10/CentOS 10 Platform Support Strategy
-- **ADR-0027**: CPU-Based AI Deployment Assistant Architecture
-- **ADR-0028**: Modular Plugin Framework for Extensibility
-- **ADR-0029**: Documentation Strategy and Website Modernization
-- **ADR-0030**: Software and OS Update Strategy
-- **ADR-0031**: Setup Script Modernization Strategy
-
-### Medium Impact
-
-- **ADR-0006**: Modular Dependency Management Strategy
-- **ADR-0007**: Bash-First Orchestration with Python Configuration
+- ADR-0008 (fully superseded by ADR-0033)
+- ADR-0031 (fully superseded by ADR-0033)
+- ADR-0027 RAG component only (partially superseded by ADR-0049 - core architecture remains active)
 
 ## Key Architectural Themes
 
@@ -186,19 +176,28 @@ graph TD
 
 ## Future ADR Candidates
 
-### Potential High-Priority ADRs
+### High-Priority (Recommended)
 
-- **Testing Strategy**: Automated testing approach and frameworks
-- **Monitoring & Observability**: System monitoring and alerting strategy
-- **Disaster Recovery**: Backup and recovery procedures
-- **Performance Optimization**: System performance tuning decisions
+- **Monitoring & Observability**: System monitoring and alerting strategy for AI Assistant and Airflow
+- **Disaster Recovery**: Backup and recovery procedures for RAG data and configurations
+- **Performance Optimization**: System performance tuning decisions for llama.cpp and embedding
 
-### Potential Medium-Priority ADRs
+### Medium-Priority (Planned)
 
-- **Documentation Strategy**: Documentation tooling and maintenance approach
-- **CI/CD Pipeline**: Continuous integration and deployment strategy
+- **CI/CD Pipeline Enhancement**: Expand ADR-0046 DAG validation to full CI/CD
 - **Compliance Framework**: Regulatory compliance and audit procedures
-- **User Interface**: Management interface and user experience decisions
+- **User Interface**: Management dashboard for AI Assistant and workflow monitoring
+
+### Already Implemented
+
+The following previously proposed ADRs have been implemented:
+
+| Topic                  | Implemented In               |
+| ---------------------- | ---------------------------- |
+| Testing Strategy       | ADR-0056 through ADR-0060    |
+| Documentation Strategy | ADR-0029, ADR-0035           |
+| Secrets Management     | ADR-0051, ADR-0052, ADR-0053 |
+| Certificate Management | ADR-0054                     |
 
 ## ADR Process
 

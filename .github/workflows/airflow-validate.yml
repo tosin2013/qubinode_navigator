@@ -4,10 +4,15 @@
 # Validates Airflow configuration, DAG syntax, and container builds
 # Note: Full VM testing requires self-hosted runner with KVM access
 #
+# Architecture (ADR-0047):
+# - qubinode_navigator: Platform DAGs (dag_factory, rag_*, smoke_test)
+# - qubinode-pipelines: Deployment DAGs (infrastructure, OCP, etc.)
+# - Both are validated together to match production layout
+#
 # Jobs (all run on GitHub-hosted runners):
 #
 # 1. validate-dags:
-#    - DAG Python syntax
+#    - DAG Python syntax (both repos)
 #    - DAG linting (ADR-0045/ADR-0046 compliance)
 #    - Airflow DAG imports
 #
@@ -21,13 +26,19 @@
 #    - Executes smoke_test_dag with OpenLineage
 #    - Validates lineage data captured in Marquez
 #    - Tests failure handling path
-#    - Validates infrastructure DAG structures
+#    - Validates infrastructure DAG structures (from qubinode-pipelines)
 #    - Tests MCP server startup
 #
 # What requires self-hosted runner with KVM:
 # - VM provisioning (kcli, libvirt)
 # - Full infrastructure DAG execution
 # - Ansible playbook execution
+#
+# Cross-Repository Testing:
+# - This workflow clones Qubinode/qubinode-pipelines to /opt/qubinode-pipelines
+# - qubinode-pipelines has its own CI (dag-validation.yml) for standalone testing
+# - Future: Release process will coordinate versions between both repos
+# =============================================================================
 
 name: Airflow Validation
 
@@ -42,6 +53,12 @@ on:
     paths:
       - 'airflow/**'
   workflow_dispatch:
+    inputs:
+      pipelines_ref:
+        description: 'qubinode-pipelines branch/tag/SHA to test against'
+        required: false
+        default: 'main'
+        type: string
 
 jobs:
   # ==========================================================================
@@ -54,6 +71,22 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Checkout qubinode-pipelines
+        uses: actions/checkout@v4
+        with:
+          repository: Qubinode/qubinode-pipelines
+          ref: ${{ inputs.pipelines_ref || 'main' }}
+          path: qubinode-pipelines
+
+      - name: Setup qubinode-pipelines (production layout)
+        run: |
+          # Create /opt directory structure matching production
+          sudo mkdir -p /opt
+          sudo ln -s ${{ github.workspace }}/qubinode-pipelines /opt/qubinode-pipelines
+          echo "[OK] qubinode-pipelines mounted at /opt/qubinode-pipelines"
+          echo "[INFO] Using ref: ${{ inputs.pipelines_ref || 'main' }}"
+          ls -la /opt/qubinode-pipelines/dags/ || echo "[WARN] No dags directory found"
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -88,23 +121,53 @@ jobs:
 
       - name: Validate DAG syntax
         run: |
-          echo "Validating DAG Python syntax..."
+          echo "========================================"
+          echo "Validating DAG Python syntax"
+          echo "========================================"
+
+          echo ""
+          echo "--- Platform DAGs (qubinode_navigator) ---"
           for dag in airflow/dags/*.py; do
             echo "Checking $dag..."
             python3 -c "import ast; ast.parse(open('$dag').read())" || exit 1
           done
-          echo "[OK] All DAGs have valid Python syntax"
+          echo "[OK] Platform DAGs have valid Python syntax"
+
+          echo ""
+          echo "--- Deployment DAGs (qubinode-pipelines) ---"
+          for category in infrastructure ocp networking storage security; do
+            if [ -d "/opt/qubinode-pipelines/dags/$category" ]; then
+              for dag in /opt/qubinode-pipelines/dags/$category/*.py; do
+                if [ -f "$dag" ]; then
+                  echo "Checking $dag..."
+                  python3 -c "import ast; ast.parse(open('$dag').read())" || exit 1
+                fi
+              done
+            fi
+          done
+          echo "[OK] Deployment DAGs have valid Python syntax"
 
       - name: Lint DAGs (ADR-0045/ADR-0046)
         run: |
           chmod +x airflow/scripts/lint-dags.sh
+
+          echo "--- Linting Platform DAGs ---"
           ./airflow/scripts/lint-dags.sh airflow/dags/
+
+          echo ""
+          echo "--- Linting Deployment DAGs ---"
+          # Lint qubinode-pipelines DAGs (each category)
+          for category in infrastructure ocp networking storage security; do
+            if [ -d "/opt/qubinode-pipelines/dags/$category" ]; then
+              echo "Linting /opt/qubinode-pipelines/dags/$category/"
+              ./airflow/scripts/lint-dags.sh /opt/qubinode-pipelines/dags/$category/ || true
+            fi
+          done
 
       - name: Check Airflow DAG imports
         run: |
           cd airflow
           export AIRFLOW_HOME=$(pwd)
-          export AIRFLOW__CORE__DAGS_FOLDER=$(pwd)/dags
           export AIRFLOW__CORE__LOAD_EXAMPLES=false
           # Use absolute path for SQLite database
           export AIRFLOW__DATABASE__SQL_ALCHEMY_CONN="sqlite:////tmp/airflow.db"
@@ -118,25 +181,55 @@ jobs:
 
           # Use Python DagBag API for reliable import error checking
           # This is the recommended approach per Airflow best practices
+          # Test both platform DAGs and deployment DAGs
           python3 << 'PYTHON_SCRIPT'
           import sys
+          import os
+          from pathlib import Path
           from airflow.models import DagBag
 
           print("=== Loading DAGs with DagBag ===")
-          dagbag = DagBag(include_examples=False)
+          print("")
 
-          # Report loaded DAGs
-          print(f"\nLoaded {len(dagbag.dags)} DAGs:")
-          for dag_id in sorted(dagbag.dags.keys()):
+          all_dags = {}
+          all_errors = {}
+
+          # Load platform DAGs (qubinode_navigator)
+          print("--- Platform DAGs (qubinode_navigator/airflow/dags) ---")
+          dagbag_platform = DagBag(dag_folder='dags', include_examples=False)
+          print(f"Loaded {len(dagbag_platform.dags)} platform DAGs")
+          all_dags.update(dagbag_platform.dags)
+          all_errors.update(dagbag_platform.import_errors)
+
+          # Load deployment DAGs (qubinode-pipelines)
+          print("")
+          print("--- Deployment DAGs (qubinode-pipelines) ---")
+          pipelines_dags_path = '/opt/qubinode-pipelines/dags'
+          if os.path.exists(pipelines_dags_path):
+              for category in ['infrastructure', 'ocp', 'networking', 'storage', 'security']:
+                  category_path = os.path.join(pipelines_dags_path, category)
+                  if os.path.exists(category_path) and os.listdir(category_path):
+                      py_files = [f for f in os.listdir(category_path) if f.endswith('.py') and not f.startswith('__')]
+                      if py_files:
+                          print(f"  Loading {category}/ ({len(py_files)} files)...")
+                          dagbag_cat = DagBag(dag_folder=category_path, include_examples=False)
+                          all_dags.update(dagbag_cat.dags)
+                          all_errors.update(dagbag_cat.import_errors)
+          else:
+              print(f"  [WARN] {pipelines_dags_path} not found")
+
+          # Report all loaded DAGs
+          print(f"\n=== Total Loaded: {len(all_dags)} DAGs ===")
+          for dag_id in sorted(all_dags.keys()):
               print(f"  [OK] {dag_id}")
 
           # Check for import errors
-          if dagbag.import_errors:
-              print(f"\n=== Import Errors ({len(dagbag.import_errors)}) ===")
+          if all_errors:
+              print(f"\n=== Import Errors ({len(all_errors)}) ===")
               non_duplicate_errors = []
               duplicate_warnings = []
 
-              for filepath, error in dagbag.import_errors.items():
+              for filepath, error in all_errors.items():
                   error_str = str(error)
                   if "DuplicatedIdException" in error_str:
                       duplicate_warnings.append((filepath, error_str))
@@ -243,6 +336,22 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Checkout qubinode-pipelines
+        uses: actions/checkout@v4
+        with:
+          repository: Qubinode/qubinode-pipelines
+          ref: ${{ inputs.pipelines_ref || 'main' }}
+          path: qubinode-pipelines
+
+      - name: Setup qubinode-pipelines (production layout)
+        run: |
+          # Create /opt directory structure matching production
+          sudo mkdir -p /opt
+          sudo ln -s ${{ github.workspace }}/qubinode-pipelines /opt/qubinode-pipelines
+          echo "[OK] qubinode-pipelines mounted at /opt/qubinode-pipelines"
+          echo "[INFO] Using ref: ${{ inputs.pipelines_ref || 'main' }}"
+          ls -la /opt/qubinode-pipelines/dags/ || echo "[WARN] No dags directory found"
 
       - name: Set up Python
         uses: actions/setup-python@v5

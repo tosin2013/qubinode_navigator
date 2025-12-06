@@ -6,7 +6,11 @@ ______________________________________________________________________
 
 ## Status
 
-Accepted - Implemented (2025-11-11)
+Accepted - Implemented (2025-11-11, Updated 2025-12-05)
+
+**Model Update (2025-12-05):** IBM Granite-4.0-Micro is now available on [HuggingFace](https://huggingface.co/ibm-granite/granite-4.0-micro-GGUF) and is configured as the default model. The Q4_K_M quantization provides optimal CPU performance with 3B parameters and 8K context length.
+
+**Note:** The RAG vector storage component of this ADR has been superseded by ADR-0049 (Multi-Agent LLM Memory Architecture), which specifies PgVector as the unified vector database. The current implementation uses Qdrant as an interim solution.
 
 AI Assistant has been fully implemented with containerized deployment, RAG system integration, and seamless terminal-based interaction through deploy-qubinode.sh.
 
@@ -111,7 +115,10 @@ Implement a CPU-based AI deployment assistant using the following architecture:
 ### Phase 2: Knowledge Integration (Weeks 5-8)
 
 - Structure existing documentation for RAG embedding
-- Implement vector database (ChromaDB) for knowledge retrieval
+- Implement vector database for knowledge retrieval
+  - *Original plan: ChromaDB*
+  - *Actual implementation: Qdrant (interim solution)*
+  - *Target: PgVector (see ADR-0049)*
 - Create tool-calling framework for system diagnostics
 - Test knowledge accuracy and retrieval performance
 
@@ -140,9 +147,53 @@ Implement a CPU-based AI deployment assistant using the following architecture:
 ### Software Dependencies
 
 - **Container Runtime**: Podman (existing requirement)
-- **Python Libraries**: langchain, chromadb, fastapi
+- **Python Libraries**: langchain, fastapi, qdrant-client (interim), fastembed
 - **Model Format**: GGUF-quantized Granite-4.0-Micro
-- **Vector Database**: ChromaDB for document embeddings
+- **Vector Database**: Qdrant (interim) → PgVector (target per ADR-0049)
+
+### RAG System Bootstrap
+
+The RAG (Retrieval-Augmented Generation) system requires a one-time bootstrap to index project documentation:
+
+```bash
+# Bootstrap RAG knowledge base (run once after installation)
+cd ai-assistant && python scripts/prepare-rag-docs.py
+
+# Custom directories (optional)
+python scripts/prepare-rag-docs.py --input /my/docs --output /my/rag-data
+
+# Show help
+python scripts/prepare-rag-docs.py --help
+```
+
+This script:
+
+1. Scans input directory for documentation (ADRs, configs, READMEs)
+1. Chunks documents by markdown headers into semantic segments
+1. Outputs `document_chunks.json` to output directory
+1. On first query, `QdrantRAGService` auto-builds the vector index
+
+**Supported file types**: `.md`, `.yml`, `.yaml`, `.rst`, `.txt`
+
+**Environment variables**:
+
+- `QUBINODE_ROOT` - Default input directory
+- `RAG_DATA_DIR` - Parent of default output directory
+
+**Embedding Model**: BAAI/bge-small-en-v1.5 (384 dimensions)
+
+- MTEB score: 62.17% (vs 56% for MiniLM)
+- Optimized for retrieval tasks
+- Deterministic embeddings for reproducibility
+- CPU inference: ~30ms per embedding
+
+**Data Directories**:
+
+| Path                   | Purpose                |
+| ---------------------- | ---------------------- |
+| `/app/data/rag-docs/`  | Document chunks (JSON) |
+| `/app/data/qdrant-db/` | Qdrant vector index    |
+| `/app/models/`         | LLM model files (GGUF) |
 
 ## Related ADRs
 
@@ -150,6 +201,10 @@ Implement a CPU-based AI deployment assistant using the following architecture:
 - ADR-0004: Security Architecture (local processing, no external APIs)
 - ADR-0007: Bash-First Orchestration (CLI integration points)
 - ADR-0011: Comprehensive Platform Validation (enhanced with AI analysis)
+- ADR-0036: Apache Airflow Workflow Orchestration (RAG integration with workflows)
+- ADR-0038: FastMCP Framework Migration (MCP server implementation)
+- **ADR-0049: Multi-Agent LLM Memory Architecture** (supersedes RAG storage decisions)
+- ADR-0050: Hybrid Host-Container Architecture (resource optimization)
 
 ## Date
 

@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted (Amended 2025-12-05)
 
 ## Date
 
@@ -80,108 +80,144 @@ ssh -o StrictHostKeyChecking=no root@localhost \
 
 ### Solution 2: DAG Validation Pipeline
 
-Create a validation script and pre-commit hook for DAG validation.
+Implement a multi-tier validation approach with Python DagBag API as the primary validation method.
 
-#### Validation Script: `airflow/scripts/validate-dag.sh`
+#### Validation Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                      DAG Validation Pipeline                             │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  Developer Workstation              GitHub Actions CI                    │
+│  ─────────────────────              ──────────────────                   │
+│                                                                          │
+│  ┌──────────────────────┐          ┌────────────────────────────────┐   │
+│  │ validate-dag.sh      │          │ airflow-validate.yml           │   │
+│  │ (Quick feedback)     │          │ (Comprehensive validation)     │   │
+│  │                      │          │                                │   │
+│  │ 1. Python syntax     │          │ 1. Python syntax               │   │
+│  │ 2. DagBag import     │          │ 2. DagBag import (full)        │   │
+│  │ 3. lint-dags.sh      │          │ 3. lint-dags.sh                │   │
+│  │                      │          │ 4. Smoke test (DAG execution)  │   │
+│  │                      │          │ 5. OpenLineage integration     │   │
+│  │                      │          │ 6. Infrastructure validation   │   │
+│  └──────────────────────┘          └────────────────────────────────┘   │
+│           │                                     │                        │
+│           ▼                                     ▼                        │
+│  ┌──────────────────────┐          ┌────────────────────────────────┐   │
+│  │ lint-dags.sh         │          │ Python DagBag API              │   │
+│  │ (ADR compliance)     │          │ (Airflow recommended)          │   │
+│  │                      │          │                                │   │
+│  │ - Escape sequences   │          │ dagbag = DagBag(...)           │   │
+│  │ - SSH patterns       │          │ if dagbag.import_errors:       │   │
+│  │ - DAG ID naming      │          │     # Distinguish real errors  │   │
+│  │ - Non-ASCII chars    │          │     # from duplicate warnings  │   │
+│  └──────────────────────┘          └────────────────────────────────┘   │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Primary Validation: Python DagBag API (Airflow Recommended)
+
+The Airflow DagBag API is the authoritative method for DAG validation:
+
+```python
+# CI Validation Pattern (airflow-validate.yml)
+from airflow.models import DagBag
+
+dagbag = DagBag(include_examples=False)
+
+# Report loaded DAGs
+print(f"Loaded {len(dagbag.dags)} DAGs:")
+for dag_id in sorted(dagbag.dags.keys()):
+    print(f"  [OK] {dag_id}")
+
+# Check for import errors with proper classification
+if dagbag.import_errors:
+    non_duplicate_errors = []
+    duplicate_warnings = []
+
+    for filepath, error in dagbag.import_errors.items():
+        error_str = str(error)
+        if "DuplicatedIdException" in error_str:
+            # Known issue - DAG IDs may appear in multiple files
+            duplicate_warnings.append((filepath, error_str))
+        else:
+            # Real import errors that must be fixed
+            non_duplicate_errors.append((filepath, error_str))
+
+    # Report duplicate warnings (don't fail)
+    if duplicate_warnings:
+        print(f"[WARN] {len(duplicate_warnings)} duplicate DAG ID warnings")
+
+    # Fail on real errors
+    if non_duplicate_errors:
+        print(f"[ERROR] {len(non_duplicate_errors)} DAG import errors")
+        sys.exit(1)
+
+print("[OK] All DAGs validated successfully")
+```
+
+**Why DagBag API?**
+
+- Official Airflow validation method
+- Catches import errors, dependency issues, and configuration problems
+- Properly loads DAGs with all providers and plugins
+- Distinguishes between warnings and errors
+
+#### Secondary Validation: lint-dags.sh (ADR Compliance)
+
+The `lint-dags.sh` script enforces project-specific standards:
+
+```bash
+# airflow/scripts/lint-dags.sh
+# Checks ADR-0045 and ADR-0046 compliance:
+
+# 1. Python syntax validation
+# 2. Complex escape sequences in SSH commands
+# 3. Non-SSH kcli/virsh commands (ADR-0046)
+# 4. DAG ID matches filename (ADR-0045)
+# 5. Non-ASCII characters in bash commands
+# 6. pylint-airflow checks (if available)
+# 7. airflint best practices (if available)
+```
+
+#### Local Developer Script: validate-dag.sh
+
+Quick feedback script for developers before commit:
 
 ```bash
 #!/bin/bash
-# DAG Validation Script
-# Usage: ./validate-dag.sh <dag_file.py>
-
-set -e
+# airflow/scripts/validate-dag.sh
+# Quick local validation - delegates to DagBag API and lint-dags.sh
 
 DAG_FILE="$1"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-if [ -z "$DAG_FILE" ]; then
-    echo "Usage: $0 <dag_file.py>"
-    exit 1
-fi
+# 1. Python syntax check (fast)
+python3 -c "import ast; ast.parse(open('$DAG_FILE').read())"
 
-echo "========================================"
-echo "DAG Validation: $DAG_FILE"
-echo "========================================"
-
-ERRORS=0
-
-# 1. Python Syntax Check
-echo -n "[1/6] Python syntax... "
-if python3 -c "import ast; ast.parse(open('$DAG_FILE').read())" 2>/dev/null; then
-    echo "OK"
-else
-    echo "FAILED"
-    python3 -c "import ast; ast.parse(open('$DAG_FILE').read())"
-    ERRORS=$((ERRORS + 1))
-fi
-
-# 2. Airflow Import Check
-echo -n "[2/6] Airflow imports... "
-if python3 -c "
+# 2. DagBag import check (comprehensive)
+python3 << PYTHON_SCRIPT
 from airflow.models import DagBag
 import os
-os.chdir('$(dirname $DAG_FILE)')
-db = DagBag('.', include_examples=False)
-if db.import_errors:
-    for dag, error in db.import_errors.items():
-        print(f'Error in {dag}: {error}')
-    exit(1)
-" 2>/dev/null; then
-    echo "OK"
-else
-    echo "FAILED"
-    ERRORS=$((ERRORS + 1))
-fi
+import sys
 
-# 3. Unicode Character Check
-echo -n "[3/6] Unicode characters... "
-if grep -P '[^\x00-\x7F]' "$DAG_FILE" > /dev/null 2>&1; then
-    echo "WARNING - Non-ASCII characters found:"
-    grep -n -P '[^\x00-\x7F]' "$DAG_FILE" | head -5
-    # Warning only, not an error
-else
-    echo "OK"
-fi
+dag_dir = os.path.dirname('$DAG_FILE') or '.'
+dagbag = DagBag(dag_dir, include_examples=False)
 
-# 4. String Concatenation in bash_command Check
-echo -n "[4/6] Bash command concatenation... "
-if grep -E "bash_command=.*'''\s*\+" "$DAG_FILE" > /dev/null 2>&1; then
-    echo "FAILED - String concatenation in bash_command:"
-    grep -n -E "bash_command=.*'''\s*\+" "$DAG_FILE"
-    ERRORS=$((ERRORS + 1))
-else
-    echo "OK"
-fi
+if dagbag.import_errors:
+    for filepath, error in dagbag.import_errors.items():
+        if "DuplicatedIdException" not in str(error):
+            print(f"[ERROR] {filepath}: {error}")
+            sys.exit(1)
 
-# 5. Deprecated Parameters Check
-echo -n "[5/6] Deprecated parameters... "
-if grep -E "schedule_interval\s*=" "$DAG_FILE" > /dev/null 2>&1; then
-    echo "WARNING - Deprecated 'schedule_interval' found (use 'schedule'):"
-    grep -n "schedule_interval" "$DAG_FILE"
-else
-    echo "OK"
-fi
+print("[OK] DagBag validation passed")
+PYTHON_SCRIPT
 
-# 6. PATH Export Check (for container execution)
-echo -n "[6/6] PATH configuration... "
-if grep -q "kcli\|ansible-playbook" "$DAG_FILE"; then
-    if grep -q 'export PATH=' "$DAG_FILE"; then
-        echo "OK"
-    else
-        echo "WARNING - Uses kcli/ansible but no PATH export found"
-    fi
-else
-    echo "OK (no kcli/ansible usage)"
-fi
-
-echo ""
-echo "========================================"
-if [ $ERRORS -eq 0 ]; then
-    echo "Validation PASSED"
-    exit 0
-else
-    echo "Validation FAILED ($ERRORS errors)"
-    exit 1
-fi
+# 3. ADR compliance checks
+"$SCRIPT_DIR/lint-dags.sh" "$DAG_FILE"
 ```
 
 #### Pre-commit Hook: `.pre-commit-config.yaml`
@@ -198,63 +234,89 @@ repos:
         pass_filenames: true
 ```
 
-#### GitHub Actions Workflow: `.github/workflows/dag-validation.yml`
+#### GitHub Actions Workflow
+
+The comprehensive CI workflow (`.github/workflows/airflow-validate.yml`) performs:
+
+1. **validate-dags job:**
+
+   - Python syntax validation
+   - lint-dags.sh (ADR compliance)
+   - DagBag API import check with proper error classification
+
+1. **validate-containers job:**
+
+   - docker-compose.yml syntax
+   - Container image builds
+   - Required files verification
+
+1. **smoke-test job (Full Integration):**
+
+   - PostgreSQL + Marquez service containers
+   - Actual DAG execution with OpenLineage
+   - Lineage data validation in Marquez
+   - Failure path testing
+   - Infrastructure DAG structure validation
+   - MCP server startup test
 
 ```yaml
-name: DAG Validation
+# Key validation step from airflow-validate.yml
+- name: Check Airflow DAG imports
+  run: |
+    # Use Python DagBag API for reliable import error checking
+    # This is the recommended approach per Airflow best practices
+    python3 << 'PYTHON_SCRIPT'
+    import sys
+    from airflow.models import DagBag
 
-on:
-  pull_request:
-    paths:
-      - 'airflow/dags/**/*.py'
-      - 'kcli-pipelines/dags/**/*.py'
+    dagbag = DagBag(include_examples=False)
 
-jobs:
-  validate:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+    # Properly classify errors vs warnings
+    if dagbag.import_errors:
+        non_duplicate_errors = []
+        for filepath, error in dagbag.import_errors.items():
+            if "DuplicatedIdException" not in str(error):
+                non_duplicate_errors.append((filepath, error))
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
+        if non_duplicate_errors:
+            print(f"[ERROR] {len(non_duplicate_errors)} DAG import errors")
+            sys.exit(1)
 
-      - name: Install dependencies
-        run: |
-          pip install apache-airflow==2.10.4
-          pip install kcli
-
-      - name: Validate DAGs
-        run: |
-          for dag in airflow/dags/*.py; do
-            echo "Validating $dag..."
-            ./airflow/scripts/validate-dag.sh "$dag"
-          done
+    print("[OK] All DAGs validated successfully")
+    PYTHON_SCRIPT
 ```
 
 ______________________________________________________________________
 
 ## Implementation Plan
 
-### Phase 1: SSH-Based Execution (Immediate)
+### Phase 1: SSH-Based Execution (Completed)
 
-1. Add SSH client to Airflow container Dockerfile
-1. Configure SSH key sharing between container and host
-1. Update DAGs to use SSH for Ansible execution
-1. Document the SSH execution pattern
+1. ~~Add SSH client to Airflow container Dockerfile~~
+1. ~~Configure SSH key sharing between container and host~~
+1. ~~Update DAGs to use SSH for Ansible execution~~
+1. ~~Document the SSH execution pattern~~
 
-### Phase 2: Validation Script (Short-term)
+### Phase 2: Validation Scripts (Completed)
 
-1. Create `airflow/scripts/validate-dag.sh`
-1. Add to repository with executable permissions
-1. Document usage in ADR-0045
+1. ~~Create `airflow/scripts/validate-dag.sh` - Quick local validation~~
+1. ~~Create `airflow/scripts/lint-dags.sh` - ADR compliance checking~~
+1. ~~Add to repository with executable permissions~~
+1. ~~Document usage in ADR-0045~~
 
-### Phase 3: CI/CD Integration (Medium-term)
+### Phase 3: CI/CD Integration (Completed)
 
-1. Add pre-commit hook configuration
-1. Create GitHub Actions workflow
-1. Add validation to PR template checklist
+1. ~~Add pre-commit hook configuration~~
+1. ~~Create GitHub Actions workflow (`airflow-validate.yml`)~~
+1. ~~Implement Python DagBag API validation~~
+1. ~~Add smoke test with DAG execution~~
+1. ~~Add OpenLineage/Marquez integration testing~~
+
+### Phase 4: Validation Refinement (Current)
+
+1. Align local `validate-dag.sh` with CI workflow patterns
+1. Ensure consistent error classification (DuplicatedIdException handling)
+1. Consolidate redundant checks between scripts
 
 ______________________________________________________________________
 
@@ -313,13 +375,29 @@ ______________________________________________________________________
 
 ### Before Submitting a DAG PR
 
+**Quick Local Validation:**
+
 - [ ] Run `./airflow/scripts/validate-dag.sh <dag_file.py>`
-- [ ] All validation checks pass
-- [ ] No Unicode characters in bash commands
-- [ ] No string concatenation in bash_command
+- [ ] All validation checks pass (syntax, DagBag, lint)
+
+**ADR Compliance (checked by lint-dags.sh):**
+
+- [ ] No Unicode characters in bash commands (ADR-0045)
+- [ ] No string concatenation in bash_command (ADR-0045)
+- [ ] DAG ID matches filename (ADR-0045)
+- [ ] SSH execution pattern used for kcli/Ansible (ADR-0046)
 - [ ] PATH export included for kcli/ansible usage
-- [ ] SSH execution pattern used for Ansible playbooks
-- [ ] Tested locally with `airflow dags test`
+
+**Local Testing:**
+
+- [ ] Tested locally with `airflow dags test <dag_id> <date>`
+
+**CI Will Verify:**
+
+- Python DagBag import validation (with proper error classification)
+- Full smoke test with DAG execution
+- OpenLineage/Marquez integration
+- Infrastructure DAG structure validation
 
 ______________________________________________________________________
 

@@ -4,7 +4,7 @@ ______________________________________________________________________
 
 # ADR-0038: FastMCP Framework Migration for MCP Server Implementation
 
-**Status:** Proposed
+**Status:** Accepted - Implemented (2025-12-05)
 **Date:** 2025-11-21
 **Decision Makers:** Platform Team, AI Integration Team
 **Related ADRs:** ADR-0027 (AI Assistant), ADR-0036 (Airflow Integration)
@@ -108,5 +108,26 @@ async def query_documents(query: str) -> str:
 
 ______________________________________________________________________
 
-**Implementation:** mcp_server_fastmcp.py
-**Status:** PoC Testing
+## Implementation Status
+
+**Implementation Complete (2025-12-05):**
+
+- ✅ Phase 1 (PoC): Completed - FastMCP installed and tested
+- ✅ Phase 2 (Full Migration): Completed - All tools migrated
+
+**Production Deployments:**
+
+| Server                  | Location                                | Tools    | Status     |
+| ----------------------- | --------------------------------------- | -------- | ---------- |
+| Airflow MCP             | `airflow/scripts/mcp_server_fastmcp.py` | 24 tools | Production |
+| AI Assistant MCP (HTTP) | `ai-assistant/mcp_server_fastmcp.py`    | 2 tools  | PoC        |
+| AI Assistant MCP (CLI)  | `ai-assistant/mcp_server_cli.py`        | 2 tools  | Production |
+
+**Tool Categories Implemented:**
+
+- RAG Query Tools (4): query_rag, ingest_to_rag, manage_rag_documents, get_rag_stats
+- Troubleshooting Tools (4): get_troubleshooting_history, log_troubleshooting_attempt, search_similar_errors, diagnose_issue
+- DAG Management (3): list_dags, get_dag_info, trigger_dag
+- VM Operations (5): list_vms, get_vm_info, create_vm, delete_vm, preflight_vm_creation
+- Lineage & Analytics (4): get_dag_lineage, get_failure_blast_radius, get_dataset_lineage, get_lineage_stats
+- Agent Orchestration (4): check_provider_exists, compute_confidence_score, get_workflow_guide, get_airflow_status
