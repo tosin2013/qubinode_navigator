@@ -16,7 +16,7 @@ test_path_calculation() {
     local test_name="$1"
     local expected="$2"
     local actual="$3"
-    
+
     if [[ "$expected" == "$actual" ]]; then
         echo -e "${GREEN}✓${NC} $test_name: $actual"
         TESTS_PASSED=$((TESTS_PASSED + 1))

@@ -483,7 +483,7 @@ deploy_airflow_services() {
         log_warning "Airflow directory not found at $airflow_dir, skipping Airflow deployment"
         return 1
     fi
-    
+
     cd "$airflow_dir" || {
         log_warning "Failed to change to airflow directory, skipping Airflow deployment"
         return 1
