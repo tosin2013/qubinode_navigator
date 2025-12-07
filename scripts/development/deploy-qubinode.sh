@@ -19,9 +19,21 @@
 set -euo pipefail
 
 # Script metadata
-SCRIPT_VERSION="1.0.0"
+SCRIPT_VERSION="1.1.0"
 SCRIPT_NAME="Qubinode Navigator One-Shot Deployment"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Calculate repository root - the script is at scripts/development/deploy-qubinode.sh
+# so we go up two levels to get to the repository root
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+# Validate we're in the right repository
+if [[ ! -f "$REPO_ROOT/setup.sh" ]] || [[ ! -d "$REPO_ROOT/airflow" ]]; then
+    echo "ERROR: Cannot find qubinode_navigator repository root"
+    echo "Expected to find setup.sh and airflow/ directory at: $REPO_ROOT"
+    echo "Please run this script from within the qubinode_navigator repository"
+    exit 1
+fi
 
 # Colors for output
 RED='\033[0;31m'
@@ -110,12 +122,12 @@ DEPLOYMENT_LOG="/tmp/qubinode-deployment-$(date +%Y%m%d-%H%M%S).log"
 AI_ASSISTANT_CONTAINER=""
 DEPLOYMENT_FAILED=false
 
-# Set working directory - use the parent directory of where the script is located
-# This ensures the script works correctly whether run directly or via sudo
-# If the script is at /path/to/qubinode_navigator/scripts/development/deploy-qubinode.sh,
-# SCRIPT_DIR is /path/to/qubinode_navigator/scripts/development
-# MY_DIR should be /path/to (three levels of dirname: scripts -> qubinode_navigator -> parent)
-MY_DIR="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
+# Set working directory - use repository root calculated earlier
+# MY_DIR is the parent of the repository (where qubinode_navigator folder lives)
+MY_DIR="$(dirname "$REPO_ROOT")"
+
+# Export REPO_ROOT for use in functions
+export REPO_ROOT
 
 # =============================================================================
 # UTILITY FUNCTIONS
@@ -1195,6 +1207,7 @@ configure_navigator() {
 }
 
 # Vault Configuration - From setup.sh
+# IDEMPOTENT: Only configures vault if not already set up
 configure_vault() {
     local target_dir="$1"
     log_step "Configuring ansible vault..."
@@ -1222,20 +1235,41 @@ configure_vault() {
             sudo mv ansiblesafe-linux-amd64 /usr/local/bin/ansiblesafe
         fi
 
-        # Configure Ansible Vault
-        log_info "Configuring Ansible Vault password file..."
+        # Download ansible_vault_setup.sh if not present
         if [[ ! -f ~/qubinode_navigator/ansible_vault_setup.sh ]]; then
             curl -OL https://gist.githubusercontent.com/tosin2013/022841d90216df8617244ab6d6aceaf8/raw/92400b9e459351d204feb67b985c08df6477d7fa/ansible_vault_setup.sh
             chmod +x ansible_vault_setup.sh
         fi
 
-        rm -f ~/.vault_password
-        sudo rm -rf /root/.vault_password
+        # IDEMPOTENT CHECK: Skip if vault password file already exists and is valid
+        if [[ -f "$HOME/.vault_password" ]] && [[ -s "$HOME/.vault_password" ]]; then
+            log_info "Vault password file already exists at $HOME/.vault_password"
+
+            # Ensure root also has it
+            if [[ ! -f "/root/.vault_password" ]] && [[ "$EUID" -ne 0 ]]; then
+                sudo cp "$HOME/.vault_password" /root/.vault_password
+                sudo chmod 600 /root/.vault_password
+            fi
+
+            log_success "Using existing vault password file (idempotent)"
+            return 0
+        fi
+
+        # Configure Ansible Vault only if not already configured
+        log_info "Configuring Ansible Vault password file..."
 
         if [[ "$USE_HASHICORP_VAULT" == "true" ]]; then
-            echo "$SSH_PASSWORD" > ~/.vault_password
-            sudo cp ~/.vault_password /root/.vault_password
-            bash ./ansible_vault_setup.sh
+            # Use SSH_PASSWORD from HashiCorp Vault or environment
+            if [[ -n "${SSH_PASSWORD:-}" ]]; then
+                echo "$SSH_PASSWORD" > ~/.vault_password
+                chmod 600 ~/.vault_password
+                sudo cp ~/.vault_password /root/.vault_password
+                sudo chmod 600 /root/.vault_password
+                log_success "Vault password set from SSH_PASSWORD"
+            else
+                log_warning "USE_HASHICORP_VAULT=true but SSH_PASSWORD not set"
+                bash ./ansible_vault_setup.sh
+            fi
         elif [[ "$QUBINODE_DEPLOYMENT_MODE" == "development" ]]; then
             log_info "Setting up vault password file for development mode..."
             # For development mode, create a default vault password file
@@ -1244,6 +1278,14 @@ configure_vault() {
             sudo cp ~/.vault_password /root/.vault_password
             sudo chmod 600 /root/.vault_password
             log_success "Development vault password file created"
+        elif [[ "$CICD_PIPELINE" == "true" ]] && [[ -n "${SSH_PASSWORD:-}" ]]; then
+            # CI/CD mode with password provided
+            log_info "Setting up vault password for CI/CD pipeline..."
+            echo "$SSH_PASSWORD" > ~/.vault_password
+            chmod 600 ~/.vault_password
+            sudo cp ~/.vault_password /root/.vault_password
+            sudo chmod 600 /root/.vault_password
+            log_success "Vault password set from CI/CD environment"
         else
             log_info "Setting up vault interactively..."
             bash ./ansible_vault_setup.sh
@@ -1378,14 +1420,15 @@ deploy_kvmhost() {
         return 1
     }
 
-    cd "$HOME/qubinode_navigator" || {
-        log_error "Failed to change to qubinode_navigator directory"
+    # Use REPO_ROOT instead of hardcoded paths
+    cd "$REPO_ROOT" || {
+        log_error "Failed to change to qubinode_navigator directory at $REPO_ROOT"
         return 1
     }
 
     # Install required Ansible collections and roles when running without execution environment
     log_info "Installing required Ansible collections..."
-    ansible-galaxy collection install -r "$HOME/qubinode_navigator/ansible-builder/requirements.yml" --force || {
+    ansible-galaxy collection install -r "$REPO_ROOT/ansible-builder/requirements.yml" --force || {
         log_warning "Failed to install some Ansible collections, continuing anyway..."
     }
 
@@ -1401,7 +1444,7 @@ deploy_kvmhost() {
         ansible_navigator_cmd="ansible-navigator"
     fi
 
-    $ansible_navigator_cmd run "$HOME/qubinode_navigator/ansible-navigator/setup_kvmhost.yml" \
+    $ansible_navigator_cmd run "$REPO_ROOT/ansible-navigator/setup_kvmhost.yml" \
         --vault-password-file "$HOME/.vault_password" \
         --execution-environment false \
         -m stdout || {
@@ -1418,12 +1461,11 @@ deploy_kvmhost() {
 configure_bash_aliases() {
     log_step "Configuring bash aliases..."
 
-    if [[ "$(pwd)" != "/root/qubinode_navigator" ]]; then
-        cd /root/qubinode_navigator || {
-            log_error "Failed to change to /root/qubinode_navigator"
-            return 1
-        }
-    fi
+    # Use REPO_ROOT instead of hardcoded paths
+    cd "$REPO_ROOT" || {
+        log_error "Failed to change to $REPO_ROOT"
+        return 1
+    }
 
     # Source the function and alias definitions
     source bash-aliases/functions.sh || {
@@ -1452,12 +1494,11 @@ configure_bash_aliases() {
 setup_kcli_base() {
     log_step "Setting up kcli base..."
 
-    if [[ "$(pwd)" != "/root/qubinode_navigator" ]]; then
-        cd /root/qubinode_navigator || {
-            log_error "Failed to change to /root/qubinode_navigator"
-            return 1
-        }
-    fi
+    # Use REPO_ROOT instead of hardcoded paths
+    cd "$REPO_ROOT" || {
+        log_error "Failed to change to $REPO_ROOT"
+        return 1
+    }
 
     # Source bash aliases to get kcli functions
     source ~/.bash_aliases || {
@@ -1571,7 +1612,8 @@ EOF
 fix_dns_configuration() {
     log_step "Fixing DNS configuration in inventory files..."
 
-    local inventory_dir="$SCRIPT_DIR/inventories/$INVENTORY"
+    # Use REPO_ROOT instead of SCRIPT_DIR
+    local inventory_dir="$REPO_ROOT/inventories/$INVENTORY"
     local all_vars_file="$inventory_dir/group_vars/all.yml"
     local kvm_host_file="$inventory_dir/group_vars/control/kvm_host.yml"
 
@@ -1639,6 +1681,58 @@ fix_dns_configuration() {
     fi
 
     log_success "DNS configuration fix completed"
+    return 0
+}
+
+# =============================================================================
+# CREDENTIAL SYNC TO AIRFLOW
+# =============================================================================
+# Syncs credentials from Ansible Vault/HashiCorp Vault to Airflow Variables
+# This makes credentials easily accessible to DAGs
+
+sync_credentials_to_airflow() {
+    if [[ "$QUBINODE_ENABLE_AIRFLOW" != "true" ]]; then
+        log_info "Airflow not enabled, skipping credential sync..."
+        return 0
+    fi
+
+    log_step "Syncing credentials to Airflow Variables..."
+
+    local sync_script="$REPO_ROOT/airflow/scripts/sync-credentials-to-airflow.sh"
+
+    if [[ ! -f "$sync_script" ]]; then
+        log_warning "Credential sync script not found: $sync_script"
+        return 0
+    fi
+
+    # Wait for Airflow to be ready
+    log_info "Waiting for Airflow API to be ready..."
+    local max_retries=30
+    local retry=0
+    while [[ $retry -lt $max_retries ]]; do
+        if curl -s -u "admin:admin" "http://localhost:${AIRFLOW_PORT}/api/v1/health" | grep -q "healthy"; then
+            break
+        fi
+        ((retry++))
+        sleep 2
+    done
+
+    if [[ $retry -ge $max_retries ]]; then
+        log_warning "Airflow API not ready, skipping credential sync"
+        return 0
+    fi
+
+    # Run the sync script
+    export AIRFLOW_URL="http://localhost:${AIRFLOW_PORT}"
+    export INVENTORY="$INVENTORY"
+    export VAULT_PASSWORD_FILE="$HOME/.vault_password"
+
+    if bash "$sync_script" all; then
+        log_success "Credentials synced to Airflow Variables"
+    else
+        log_warning "Some credentials may not have been synced (non-critical)"
+    fi
+
     return 0
 }
 
@@ -1823,6 +1917,7 @@ main() {
     # configure_environment || exit 1  # Commented out - users should configure .env manually to avoid overwriting
     deploy_qubinode_infrastructure "$MY_DIR" || exit 1
     setup_nginx_reverse_proxy  # Non-blocking, only active if Airflow is enabled
+    sync_credentials_to_airflow  # Sync credentials to Airflow Variables
     verify_deployment || exit 1
 
     # Show completion summary
