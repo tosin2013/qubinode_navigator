@@ -160,13 +160,13 @@ jobs:
           echo "[OK] Services ready"
 
       # =========================================================================
-      # Phase 3: Deploy FreeIPA VM
+      # Phase 3: Deploy FreeIPA VM via PydanticAI Smart Pipeline (ADR-0066)
       # =========================================================================
-      - name: Deploy FreeIPA VM
+      - name: Deploy FreeIPA via AI Assistant Orchestrator
         if: ${{ github.event.inputs.deploy_freeipa == 'true' || github.event_name == 'schedule' }}
         run: |
           echo "========================================"
-          echo "Deploying FreeIPA VM"
+          echo "Deploying FreeIPA via PydanticAI Smart Pipeline"
           echo "========================================"
 
           # Check if FreeIPA already exists
@@ -176,22 +176,48 @@ jobs:
             exit 0
           fi
 
-          # Trigger FreeIPA deployment via Airflow DAG
-          echo "[INFO] Triggering FreeIPA deployment DAG..."
+          # Trigger FreeIPA deployment via AI Assistant Orchestrator (ADR-0066)
+          # This uses the PydanticAI agents to:
+          # 1. Analyze the intent
+          # 2. Find/validate the appropriate DAG
+          # 3. Execute via Airflow
+          # 4. Monitor for shadow errors
+          echo "[INFO] Sending request to AI Assistant Orchestrator..."
 
-          # Use Airflow CLI to trigger the DAG
-          airflow dags trigger freeipa_deployment \
-            --conf '{"action": "create", "vm_name": "freeipa"}' \
-            2>/dev/null || {
-              echo "[WARN] Could not trigger via Airflow CLI, using kcli directly..."
-              cd /opt/kcli-pipelines
-              export VM_PROFILE=freeipa
-              export ACTION=create
-              export CICD_PIPELINE=true
-              ./deploy-vm.sh
-            }
+          RESPONSE=$(curl -s -X POST http://localhost:8080/orchestrator/execute \
+            -H "Content-Type: application/json" \
+            -d '{
+              "user_intent": "Deploy FreeIPA server for E2E testing",
+              "params": {
+                "vm_name": "freeipa",
+                "action": "create"
+              },
+              "auto_approve": true,
+              "auto_execute": true
+            }')
 
-          echo "[INFO] FreeIPA deployment initiated"
+          echo "Orchestrator Response:"
+          echo "$RESPONSE" | jq . 2>/dev/null || echo "$RESPONSE"
+
+          # Extract flow_id for monitoring
+          FLOW_ID=$(echo "$RESPONSE" | jq -r '.flow_id // empty')
+          if [ -n "$FLOW_ID" ]; then
+            echo ""
+            echo "[INFO] Flow ID: $FLOW_ID"
+            echo "[INFO] Status endpoint: /orchestrator/flows/$FLOW_ID/status"
+          fi
+
+          # Check if execution started
+          STATUS=$(echo "$RESPONSE" | jq -r '.status // empty')
+          if [ "$STATUS" = "executing" ] || [ "$STATUS" = "in_progress" ]; then
+            echo "[OK] FreeIPA deployment initiated via Smart Pipeline"
+          elif [ "$STATUS" = "failed" ]; then
+            echo "[ERROR] Orchestrator returned failure:"
+            echo "$RESPONSE" | jq '.error_message, .user_actions' 2>/dev/null
+            exit 1
+          else
+            echo "[INFO] Orchestrator status: $STATUS"
+          fi
 
       - name: Wait for FreeIPA to be ready
         if: ${{ github.event.inputs.deploy_freeipa == 'true' || github.event_name == 'schedule' }}
