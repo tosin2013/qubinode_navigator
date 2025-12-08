@@ -250,56 +250,124 @@ jobs:
             exit 0
           fi
 
-          # Trigger FreeIPA deployment via AI Assistant Orchestrator (ADR-0066)
-          # Using /orchestrator/intent endpoint for intent-based execution:
-          # 1. Analyze the intent with PydanticAI Manager Agent
-          # 2. Find/validate the appropriate DAG (freeipa_deployment)
-          # 3. Execute via Airflow
-          # 4. Monitor for shadow errors
-          echo "[INFO] Sending request to AI Assistant Orchestrator..."
-          echo "[INFO] Using /orchestrator/intent endpoint (intent-based execution)"
+          # Function to trigger DAG directly via Airflow API (fallback)
+          trigger_airflow_dag() {
+            echo "[INFO] Triggering freeipa_deployment DAG via Airflow API..."
+            local airflow_response
+            airflow_response=$(curl -s -X POST \
+              -u "admin:admin" \
+              -H "Content-Type: application/json" \
+              "http://localhost:8888/api/v1/dags/freeipa_deployment/dagRuns" \
+              -d '{"conf": {"vm_name": "freeipa", "action": "create"}}')
 
-          # Use the /orchestrator/intent endpoint with correct schema:
-          # - intent: natural language description (required)
-          # - params: additional parameters (optional)
-          # - auto_approve: skip approval step (default: false)
-          # - auto_execute: execute immediately (default: true)
-          RESPONSE=$(curl -s -X POST http://localhost:8080/orchestrator/intent \
-            -H "Content-Type: application/json" \
-            -d '{
-              "intent": "Deploy FreeIPA server for E2E testing",
-              "params": {
-                "vm_name": "freeipa",
-                "action": "create"
-              },
-              "auto_approve": true,
-              "auto_execute": true
-            }')
+            echo "Airflow Response:"
+            echo "$airflow_response" | jq . 2>/dev/null || echo "$airflow_response"
 
-          echo "Orchestrator Response:"
-          echo "$RESPONSE" | jq . 2>/dev/null || echo "$RESPONSE"
+            if echo "$airflow_response" | jq -e '.dag_run_id' &>/dev/null; then
+              local dag_run_id
+              dag_run_id=$(echo "$airflow_response" | jq -r '.dag_run_id')
+              echo "[OK] DAG triggered successfully"
+              echo "[INFO] DAG Run ID: $dag_run_id"
+              echo "[INFO] Monitor at: http://localhost:8888/dags/freeipa_deployment/grid"
+              return 0
+            else
+              echo "[ERROR] Failed to trigger DAG via Airflow"
+              echo "$airflow_response" | jq '.detail // .' 2>/dev/null
+              return 1
+            fi
+          }
 
-          # Extract flow_id for monitoring
-          FLOW_ID=$(echo "$RESPONSE" | jq -r '.flow_id // empty')
-          if [ -n "$FLOW_ID" ]; then
-            echo ""
-            echo "[INFO] Flow ID: $FLOW_ID"
-            echo "[INFO] Status endpoint: /orchestrator/flows/$FLOW_ID/status"
-          fi
+          # First, check if AI Assistant orchestrator is available
+          echo "[INFO] Checking AI Assistant Orchestrator status..."
+          ORCHESTRATOR_STATUS=$(curl -s http://localhost:8080/orchestrator/status 2>/dev/null)
 
-          # Check if execution started
-          STATUS=$(echo "$RESPONSE" | jq -r '.status // empty')
-          if [ "$STATUS" = "executing" ] || [ "$STATUS" = "in_progress" ]; then
-            echo "[OK] FreeIPA deployment initiated via Smart Pipeline"
-          elif [ "$STATUS" = "completed" ]; then
-            echo "[OK] FreeIPA deployment completed"
-          elif [ "$STATUS" = "failed" ]; then
-            echo "[ERROR] Orchestrator returned failure:"
-            echo "$RESPONSE" | jq '.error_message, .user_actions' 2>/dev/null
-            # Don't exit 1 - let the validation step handle it
-            echo "[INFO] Will check FreeIPA status in validation step"
+          if echo "$ORCHESTRATOR_STATUS" | jq -e '.available == true' &>/dev/null; then
+            echo "[OK] Orchestrator is available"
+
+            # Check if API keys are configured (required for intent-based execution)
+            API_KEYS_OK=$(echo "$ORCHESTRATOR_STATUS" | jq -r '.api_keys_configured | to_entries | map(select(.value == true)) | length')
+            if [ "$API_KEYS_OK" = "0" ]; then
+              echo "[WARN] No AI API keys configured - falling back to direct Airflow trigger"
+              trigger_airflow_dag
+              exit $?
+            fi
+
+            # Trigger FreeIPA deployment via AI Assistant Orchestrator (ADR-0066)
+            # Using /orchestrator/intent endpoint for intent-based execution:
+            # 1. Analyze the intent with PydanticAI Manager Agent
+            # 2. Find/validate the appropriate DAG (freeipa_deployment)
+            # 3. Execute via Airflow
+            # 4. Monitor for shadow errors
+            echo "[INFO] Sending request to AI Assistant Orchestrator..."
+            echo "[INFO] Using /orchestrator/intent endpoint (intent-based execution)"
+
+            RESPONSE=$(curl -s -X POST http://localhost:8080/orchestrator/intent \
+              -H "Content-Type: application/json" \
+              -d '{
+                "intent": "Deploy FreeIPA server for E2E testing",
+                "params": {
+                  "vm_name": "freeipa",
+                  "action": "create"
+                },
+                "auto_approve": true,
+                "auto_execute": true
+              }')
+
+            echo "Orchestrator Response:"
+            echo "$RESPONSE" | jq . 2>/dev/null || echo "$RESPONSE"
+
+            # Check for "Not Found" error (endpoint doesn't exist)
+            if echo "$RESPONSE" | jq -e '.detail == "Not Found"' &>/dev/null; then
+              echo "[WARN] /orchestrator/intent endpoint not available"
+              echo "[INFO] Falling back to direct Airflow DAG trigger..."
+              trigger_airflow_dag
+              exit $?
+            fi
+
+            # Check for validation errors (missing fields, etc)
+            if echo "$RESPONSE" | jq -e '.detail[0].type' &>/dev/null; then
+              echo "[ERROR] Orchestrator validation error:"
+              echo "$RESPONSE" | jq '.detail' 2>/dev/null
+              echo "[INFO] Falling back to direct Airflow DAG trigger..."
+              trigger_airflow_dag
+              exit $?
+            fi
+
+            # Extract flow_id for monitoring
+            FLOW_ID=$(echo "$RESPONSE" | jq -r '.flow_id // empty')
+            if [ -n "$FLOW_ID" ]; then
+              echo ""
+              echo "[INFO] Flow ID: $FLOW_ID"
+              echo "[INFO] Status endpoint: /orchestrator/flows/$FLOW_ID/status"
+            fi
+
+            # Check execution status
+            STATUS=$(echo "$RESPONSE" | jq -r '.status // empty')
+            if [ "$STATUS" = "executing" ] || [ "$STATUS" = "in_progress" ]; then
+              echo "[OK] FreeIPA deployment initiated via Smart Pipeline"
+            elif [ "$STATUS" = "completed" ]; then
+              echo "[OK] FreeIPA deployment completed"
+            elif [ "$STATUS" = "failed" ]; then
+              echo "[WARN] Orchestrator returned failure:"
+              echo "$RESPONSE" | jq '.error_message, .user_actions' 2>/dev/null
+              echo "[INFO] Attempting fallback to direct Airflow DAG trigger..."
+              trigger_airflow_dag
+              exit $?
+            else
+              echo "[INFO] Orchestrator status: $STATUS"
+              # If status is empty or unknown, the response might not be what we expected
+              if [ -z "$STATUS" ]; then
+                echo "[WARN] Unexpected response format - falling back to Airflow"
+                trigger_airflow_dag
+                exit $?
+              fi
+            fi
           else
-            echo "[INFO] Orchestrator status: $STATUS"
+            # Orchestrator not available - fall back to direct Airflow trigger
+            echo "[WARN] AI Assistant Orchestrator not available"
+            echo "[INFO] Response: $ORCHESTRATOR_STATUS"
+            trigger_airflow_dag
+            exit $?
           fi
 
       - name: Wait for FreeIPA to be ready
