@@ -1815,6 +1815,51 @@ sync_credentials_to_airflow() {
     return 0
 }
 
+# =============================================================================
+# RAG BOOTSTRAP
+# =============================================================================
+# Bootstrap the RAG knowledge base with ADRs, DAG examples, and documentation
+# This makes the AI Assistant fully operational with project context
+
+bootstrap_rag_knowledge_base() {
+    if [[ "$QUBINODE_ENABLE_AIRFLOW" != "true" ]]; then
+        log_info "Airflow not enabled, skipping RAG bootstrap..."
+        return 0
+    fi
+
+    log_step "Bootstrapping RAG knowledge base..."
+
+    # Check if Airflow API is accessible
+    if ! curl -s -u "admin:admin" "http://localhost:${AIRFLOW_PORT}/api/v1/health" | grep -q "healthy"; then
+        log_warning "Airflow API not ready, skipping RAG bootstrap"
+        return 0
+    fi
+
+    # Trigger the rag_bootstrap DAG
+    log_info "Triggering RAG bootstrap DAG to ingest ADRs, DAG examples, and documentation..."
+
+    local response
+    response=$(curl -s -X POST \
+        -u "admin:admin" \
+        -H "Content-Type: application/json" \
+        "http://localhost:${AIRFLOW_PORT}/api/v1/dags/rag_bootstrap/dagRuns" \
+        -d '{"conf": {}}' 2>&1)
+
+    if echo "$response" | grep -q "dag_run_id\|queued"; then
+        log_success "RAG bootstrap DAG triggered successfully"
+        log_info "The knowledge base will be populated in the background"
+        log_info "Monitor progress: http://localhost:${AIRFLOW_PORT}/dags/rag_bootstrap/grid"
+    elif echo "$response" | grep -q "already running\|is paused"; then
+        log_warning "RAG bootstrap DAG is paused or already running"
+        log_info "Unpause and trigger manually: airflow dags unpause rag_bootstrap && airflow dags trigger rag_bootstrap"
+    else
+        log_warning "Could not trigger RAG bootstrap DAG (non-critical)"
+        log_info "Trigger manually after deployment: airflow dags trigger rag_bootstrap"
+    fi
+
+    return 0
+}
+
 verify_deployment() {
     log_step "Verifying deployment..."
 
@@ -2011,6 +2056,7 @@ main() {
     deploy_qubinode_infrastructure "$MY_DIR" || exit 1
     setup_nginx_reverse_proxy  # Non-blocking, only active if Airflow is enabled
     sync_credentials_to_airflow  # Sync credentials to Airflow Variables
+    bootstrap_rag_knowledge_base  # Bootstrap RAG with ADRs, DAGs, and docs
     verify_deployment || exit 1
 
     # Show completion summary
