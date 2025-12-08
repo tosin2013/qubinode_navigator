@@ -102,6 +102,9 @@ export QUBINODE_ENABLE_AI_ASSISTANT="${QUBINODE_ENABLE_AI_ASSISTANT:-true}"
 # AI Assistant Configuration
 export AI_ASSISTANT_PORT="${AI_ASSISTANT_PORT:-8080}"
 export AI_ASSISTANT_VERSION="${AI_ASSISTANT_VERSION:-latest}"
+# Build AI Assistant from source (includes PydanticAI + Smart Pipeline)
+# Set to true for E2E testing or when using latest development features
+export BUILD_AI_ASSISTANT_FROM_SOURCE="${BUILD_AI_ASSISTANT_FROM_SOURCE:-false}"
 
 # Airflow Orchestration Configuration (Optional Feature)
 export QUBINODE_ENABLE_AIRFLOW="${QUBINODE_ENABLE_AIRFLOW:-false}"
@@ -374,32 +377,95 @@ start_ai_assistant() {
         fi
     fi
 
-    # Pull and start AI Assistant container
-    log_info "Pulling AI Assistant container..."
-    if podman pull quay.io/takinosh/qubinode-ai-assistant:${AI_ASSISTANT_VERSION}; then
-        log_info "Starting AI Assistant container..."
-        AI_ASSISTANT_CONTAINER=$(podman run -d \
-            --name qubinode-ai-assistant \
-            -p ${AI_ASSISTANT_PORT}:8080 \
-            -e DEPLOYMENT_MODE=${QUBINODE_DEPLOYMENT_MODE} \
-            -e LOG_LEVEL=INFO \
-            quay.io/takinosh/qubinode-ai-assistant:${AI_ASSISTANT_VERSION})
+    # Determine image source: build from source or pull from registry
+    local ai_image=""
 
-        # Wait for AI Assistant to be ready
-        log_info "Waiting for AI Assistant to be ready..."
-        for i in {1..30}; do
-            if curl -s http://localhost:${AI_ASSISTANT_PORT}/health &> /dev/null; then
-                log_success "AI Assistant is ready at http://localhost:${AI_ASSISTANT_PORT}"
-                log_ai "You can ask me for help if you encounter any issues during deployment!"
-                return 0
-            fi
-            sleep 2
-        done
+    if [[ "$BUILD_AI_ASSISTANT_FROM_SOURCE" == "true" ]]; then
+        log_info "Building AI Assistant from source (includes PydanticAI + Smart Pipeline)..."
+        build_ai_assistant_from_source || {
+            log_warning "Failed to build from source, falling back to registry image"
+            BUILD_AI_ASSISTANT_FROM_SOURCE="false"
+        }
+        ai_image="localhost/qubinode-ai-assistant:latest"
+    fi
 
-        log_warning "AI Assistant started but health check failed"
+    if [[ "$BUILD_AI_ASSISTANT_FROM_SOURCE" != "true" ]]; then
+        # Pull from registry
+        log_info "Pulling AI Assistant container from registry..."
+        if podman pull quay.io/takinosh/qubinode-ai-assistant:${AI_ASSISTANT_VERSION}; then
+            ai_image="quay.io/takinosh/qubinode-ai-assistant:${AI_ASSISTANT_VERSION}"
+        else
+            log_warning "Failed to pull AI Assistant container, continuing without AI support"
+            return 1
+        fi
+    fi
+
+    # Start the container
+    log_info "Starting AI Assistant container..."
+    AI_ASSISTANT_CONTAINER=$(podman run -d \
+        --name qubinode-ai-assistant \
+        -p ${AI_ASSISTANT_PORT}:8080 \
+        -e DEPLOYMENT_MODE=${QUBINODE_DEPLOYMENT_MODE} \
+        -e LOG_LEVEL=INFO \
+        -e MARQUEZ_API_URL=http://host.containers.internal:5001 \
+        -e AIRFLOW_API_URL=http://host.containers.internal:8888 \
+        ${OPENROUTER_API_KEY:+-e OPENROUTER_API_KEY="${OPENROUTER_API_KEY}"} \
+        ${MANAGER_MODEL:+-e MANAGER_MODEL="${MANAGER_MODEL}"} \
+        ${DEVELOPER_MODEL:+-e DEVELOPER_MODEL="${DEVELOPER_MODEL}"} \
+        ${PYDANTICAI_MODEL:+-e PYDANTICAI_MODEL="${PYDANTICAI_MODEL}"} \
+        -v "${REPO_ROOT}/ai-assistant/data:/app/data:z" \
+        "$ai_image")
+
+    # Wait for AI Assistant to be ready
+    log_info "Waiting for AI Assistant to be ready..."
+    for i in {1..30}; do
+        if curl -s http://localhost:${AI_ASSISTANT_PORT}/health &> /dev/null; then
+            log_success "AI Assistant is ready at http://localhost:${AI_ASSISTANT_PORT}"
+            log_ai "You can ask me for help if you encounter any issues during deployment!"
+            return 0
+        fi
+        sleep 2
+    done
+
+    log_warning "AI Assistant started but health check failed"
+    return 1
+}
+
+# Build AI Assistant container from source with all dependencies
+# This includes PydanticAI, Smart Pipeline, OpenLineage integration
+build_ai_assistant_from_source() {
+    log_step "Building AI Assistant from source..."
+
+    local ai_assistant_dir="$REPO_ROOT/ai-assistant"
+
+    if [[ ! -d "$ai_assistant_dir" ]]; then
+        log_error "AI Assistant directory not found: $ai_assistant_dir"
         return 1
+    fi
+
+    cd "$ai_assistant_dir" || return 1
+
+    # Ensure build script exists
+    if [[ ! -f "scripts/build.sh" ]]; then
+        log_error "Build script not found: scripts/build.sh"
+        return 1
+    fi
+
+    # Run the build script
+    log_info "Running AI Assistant build script..."
+    if bash scripts/build.sh --no-test; then
+        log_success "AI Assistant container built successfully"
+
+        # Verify image exists
+        if podman images localhost/qubinode-ai-assistant:latest --format "{{.Repository}}" | grep -q "qubinode-ai-assistant"; then
+            log_success "AI Assistant image verified: localhost/qubinode-ai-assistant:latest"
+            return 0
+        else
+            log_error "AI Assistant image not found after build"
+            return 1
+        fi
     else
-        log_warning "Failed to pull AI Assistant container, continuing without AI support"
+        log_error "AI Assistant build failed"
         return 1
     fi
 }
@@ -1937,6 +2003,8 @@ case "${1:-}" in
         echo "  QUBINODE_CLUSTER_NAME        - Cluster name (required)"
         echo "  QUBINODE_DEPLOYMENT_MODE     - Deployment mode (default: production)"
         echo "  QUBINODE_ENABLE_AI_ASSISTANT - Enable AI Assistant (default: true)"
+        echo "  BUILD_AI_ASSISTANT_FROM_SOURCE - Build AI Assistant from source (default: false)"
+        echo "                                   Set to true for E2E testing with PydanticAI + Smart Pipeline"
         echo "  QUBINODE_ENABLE_AIRFLOW      - Enable Airflow orchestration (default: false)"
         echo "  QUBINODE_ENABLE_AI_SERVICES  - Enable host AI services (default: false, ADR-0050)"
         echo "  QUBINODE_ENABLE_NGINX_PROXY  - Enable nginx reverse proxy (auto-enabled with Airflow)"
@@ -1969,6 +2037,16 @@ case "${1:-}" in
         echo "  export QUBINODE_CLUSTER_NAME=mycluster"
         echo "  export QUBINODE_ENABLE_AIRFLOW=true"
         echo "  export QUBINODE_ENABLE_AI_SERVICES=true"
+        echo "  ./deploy-qubinode.sh"
+        echo ""
+        echo "  # E2E Testing with PydanticAI + Smart Pipeline (ADR-0066, ADR-0067)"
+        echo "  # Builds AI Assistant from source with all latest features"
+        echo "  export QUBINODE_DOMAIN=e2e.qubinode.local"
+        echo "  export QUBINODE_ADMIN_USER=admin"
+        echo "  export QUBINODE_CLUSTER_NAME=e2e-test"
+        echo "  export QUBINODE_ENABLE_AIRFLOW=true"
+        echo "  export BUILD_AI_ASSISTANT_FROM_SOURCE=true"
+        echo "  export CICD_PIPELINE=true"
         echo "  ./deploy-qubinode.sh"
         echo ""
         echo "  # Using .env file"

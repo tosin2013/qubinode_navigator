@@ -18,7 +18,10 @@ This document provides a comprehensive index of all Architecture Decision Record
 
 ### 🤖 AI Assistant Integration
 
-- **[ADR-0027](adr-0027-cpu-based-ai-deployment-assistant-architecture.md)**: CPU-Based AI Deployment Assistant Architecture ✅ *Implemented*
+- **[ADR-0027](adr-0027-cpu-based-ai-deployment-assistant-architecture.md)**: CPU-Based AI Deployment Assistant Architecture ⚠️ *Partially Superseded*
+  - Agent framework → ADR-0063 (PydanticAI)
+  - RAG storage → ADR-0049 (PgVector)
+  - Core inference (llama.cpp + Granite) still active
 - **[ADR-0032](adr-0032-ai-assistant-community-distribution-strategy.md)**: AI Assistant Community Distribution Strategy
 - **[ADR-0034](adr-0034-ai-assistant-terminal-integration-strategy.md)**: AI Assistant Terminal Integration Strategy
 - **[ADR-0038](adr-0038-fastmcp-framework-migration.md)**: FastMCP Framework Migration for MCP Servers ✅ *Implemented*
@@ -54,14 +57,14 @@ This document provides a comprehensive index of all Architecture Decision Record
 - **[ADR-0036](adr-0036-apache-airflow-workflow-orchestration-integration.md)**: Apache Airflow Workflow Orchestration Integration
 - **[ADR-0037](adr-0037-git-based-dag-repository-management.md)**: Git-Based DAG Repository Management
 - **[ADR-0039](adr-0039-freeipa-vyos-airflow-dag-integration.md)**: FreeIPA and VyOS Airflow DAG Integration ⭐ *New*
-- **[ADR-0040](adr-0040-dag-distribution-from-kcli-pipelines.md)**: DAG Distribution from kcli-pipelines ⭐ *New*
+- **[ADR-0040](adr-0040-dag-distribution-from-qubinode-pipelines.md)**: DAG Distribution from qubinode-pipelines ⭐ *New*
 - **[ADR-0041](adr-0041-vyos-version-upgrade-strategy.md)**: VyOS Version Pinning and Upgrade Strategy ⭐ *New*
 - **[ADR-0042](adr-0042-freeipa-base-os-upgrade-rhel9.md)**: FreeIPA Base OS Upgrade to RHEL 9 ⭐ *New*
 - **[ADR-0043](adr-0043-airflow-container-host-network-access.md)**: Airflow Container Host Network Access ⭐ *New* 🔥 *Critical*
 - **[ADR-0044](adr-0044-user-configurable-airflow-volume-mounts.md)**: User-Configurable Airflow Volume Mounts ⭐ *New*
 - **[ADR-0045](adr-0045-airflow-dag-development-standards.md)**: Airflow DAG Development Standards ⭐ *New* 📋 *Guidelines*
 - **[ADR-0046](adr-0046-dag-validation-pipeline-and-host-execution.md)**: DAG Validation Pipeline and Host-Based Execution ⭐ *New*
-- **[ADR-0047](adr-0047-kcli-pipelines-dag-integration-pattern.md)**: kcli-pipelines as DAG Source Repository ⭐ *New* 🔥 *Architecture*
+- **[ADR-0047](adr-0047-qubinode-pipelines-dag-integration-pattern.md)**: qubinode-pipelines as DAG Source Repository ⭐ *New* 🔥 *Architecture*
 - **[ADR-0048](adr-0048-step-ca-integration-for-disconnected-deployments.md)**: Step-CA Integration for Disconnected Deployments ⭐ *New* 🔐 *Security*
 
 ### 📚 Documentation
@@ -74,6 +77,13 @@ This document provides a comprehensive index of all Architecture Decision Record
 - **[ADR-0049](adr-0049-multi-agent-llm-memory-architecture.md)**: Multi-Agent LLM Memory Architecture with PgVector ✅ *Implemented*
 - **[ADR-0049-implementation-plan](adr-0049-implementation-plan.md)**: ADR-0049 Implementation Plan ✅ *Complete*
 - **[ADR-0050](adr-0050-hybrid-host-container-architecture.md)**: Hybrid Host-Container Architecture for Resource Optimization
+- **[ADR-0063](adr-0063-pydanticai-core-agent-orchestrator.md)**: PydanticAI Core Agent Orchestrator ⭐ *New* 🔥 *Strategic*
+- **[ADR-0063-implementation-plan](adr-0063-implementation-plan.md)**: ADR-0063 Implementation Plan ⭐ *New*
+
+### 📦 Multi-Repository Architecture
+
+- **[ADR-0061](adr-0061-multi-repository-architecture.md)**: Multi-Repository Architecture and qubinode-pipelines
+- **[ADR-0062](adr-0062-external-project-integration-guide.md)**: External Project Integration Guide
 
 ### 🔐 HashiCorp Vault Integration
 
@@ -94,6 +104,11 @@ This document provides a comprehensive index of all Architecture Decision Record
 - **[ADR-0059](adr-0059-ai-assistant-e2e-testing-strategy.md)**: AI Assistant End-to-End Testing Strategy ⭐ *New*
 - **[ADR-0060](adr-0060-ai-assistant-test-strategy-diagrams.md)**: AI Assistant Test Strategy Diagrams ⭐ *New*
 
+### 🚀 Smart Pipeline & CI/CD
+
+- **[ADR-0066](adr-0066-developer-agent-dag-validation-smart-pipelines.md)**: Developer Agent DAG Validation and Smart Pipelines ⭐ *New* 🔥 *Strategic*
+- **[ADR-0067](adr-0067-self-hosted-runner-e2e-testing.md)**: Self-Hosted Runner E2E Testing with One-Shot Deployment ⭐ *New*
+
 ## Deprecated ADRs
 
 ### ❌ Fully Superseded
@@ -105,15 +120,29 @@ This document provides a comprehensive index of all Architecture Decision Record
 
 ### ⚠️ Partially Superseded
 
-| ADR                                                                    | Title                  | Active Components                                             | Superseded Components                                   |
-| ---------------------------------------------------------------------- | ---------------------- | ------------------------------------------------------------- | ------------------------------------------------------- |
-| [ADR-0027](adr-0027-cpu-based-ai-deployment-assistant-architecture.md) | CPU-Based AI Assistant | llama.cpp, Granite model, CLI interface, container deployment | RAG storage (ChromaDB → Qdrant → PgVector per ADR-0049) |
+| ADR                                                                    | Title                  | Active Components                                             | Superseded Components                                  |
+| ---------------------------------------------------------------------- | ---------------------- | ------------------------------------------------------------- | ------------------------------------------------------ |
+| [ADR-0027](adr-0027-cpu-based-ai-deployment-assistant-architecture.md) | CPU-Based AI Assistant | llama.cpp, Granite model, CLI interface, container deployment | Agent framework (→ ADR-0063), RAG storage (→ ADR-0049) |
 
-**Note:** ADR-0027 core architecture remains active. Only the vector database component is superseded:
+**Note:** ADR-0027 has been significantly evolved by subsequent ADRs:
+
+**Vector Database Evolution:**
 
 - *Original plan: ChromaDB*
-- *Current implementation: Qdrant (interim)*
-- *Target: PgVector (ADR-0049)*
+- *Interim: Qdrant*
+- *Target: **PgVector (ADR-0049)***
+
+**Agent Framework Evolution:**
+
+- *Original: LangChain/LlamaIndex*
+- *Target: **PydanticAI (ADR-0063)***
+
+**Code Generation Strategy:**
+
+- *Original: Local Granite for all tasks*
+- *Target: **Granite for orchestration only; Aider + LiteLLM for code (ADR-0063)***
+
+**Known RAG Inconsistency:** The current qubinode-ai chat may exhibit inconsistent behavior due to the Qdrant → PgVector migration in progress. Run `rag_bootstrap` DAG after completing ADR-0049 Phase 1.
 
 ## Architecture Relationships
 
@@ -128,17 +157,18 @@ flowchart TB
     end
 
     subgraph AI["🤖 AI & RAG"]
-        ADR0027[ADR-0027<br/>AI Assistant]
+        ADR0027[ADR-0027<br/>AI Assistant<br/>⚠️ Partial]
         ADR0038[ADR-0038<br/>FastMCP]
         ADR0049[ADR-0049<br/>Multi-Agent LLM]
         ADR0050[ADR-0050<br/>Hybrid Architecture]
+        ADR0063[ADR-0063<br/>PydanticAI<br/>🔥 Strategic]
     end
 
     subgraph Airflow["🔄 Workflow Orchestration"]
         ADR0036[ADR-0036<br/>Airflow Integration]
         ADR0045[ADR-0045<br/>DAG Standards]
         ADR0046[ADR-0046<br/>DAG Validation]
-        ADR0047[ADR-0047<br/>kcli-pipelines]
+        ADR0047[ADR-0047<br/>qubinode-pipelines]
     end
 
     subgraph Security["🔐 Security & Secrets"]
@@ -170,6 +200,9 @@ flowchart TB
     ADR0027 --> ADR0001
     ADR0038 --> ADR0027
     ADR0049 -->|supersedes RAG| ADR0027
+    ADR0063 -->|supersedes agents| ADR0027
+    ADR0063 --> ADR0049
+    ADR0063 --> ADR0038
     ADR0050 --> ADR0049
     ADR0049 --> ADR0036
 
@@ -290,7 +323,7 @@ ADR-0036 (Airflow Integration) - Foundation
 ├── validation → ADR-0046 (DAG Validation Pipeline)
 ├── execution → ADR-0043 (Host Network Access)
 ├── distribution → ADR-0040 (DAG Distribution)
-└── source → ADR-0047 (kcli-pipelines Integration)
+└── source → ADR-0047 (qubinode-pipelines Integration)
 ```
 
 ## Implementation Status Summary
@@ -349,7 +382,7 @@ ADR-0036 (Airflow Integration) - Foundation
 1. **ADR-0045** (DAG Development Standards) 📋 - **MUST READ** for DAG authors
 1. **ADR-0036** (Airflow Integration) - foundational Airflow architecture
 1. **ADR-0046** (DAG Validation Pipeline) - CI/CD for DAGs
-1. **ADR-0047** (kcli-pipelines Integration) - DAG source repository
+1. **ADR-0047** (qubinode-pipelines Integration) - DAG source repository
 
 ### For Security/Operations
 
@@ -380,15 +413,15 @@ ADR-0036 (Airflow Integration) - Foundation
 
 ### Tool Relationships
 
-| Tool                    | Purpose                | Related ADRs       |
-| ----------------------- | ---------------------- | ------------------ |
-| `rag-cli.py`            | Direct RAG operations  | ADR-0027, ADR-0049 |
-| `qubinode-ai`           | AI chat interface      | ADR-0027, ADR-0034 |
-| `mcp_server_fastmcp.py` | MCP tool exposure      | ADR-0038           |
-| `qubinode-cert`         | Certificate management | ADR-0054           |
-| `qubinode-dns`          | DNS management         | ADR-0055           |
+| Tool                  | Purpose                | Related ADRs       |
+| --------------------- | ---------------------- | ------------------ |
+| `rag-cli.py`          | Direct RAG operations  | ADR-0027, ADR-0049 |
+| `qubinode-ai`         | AI chat interface      | ADR-0027, ADR-0034 |
+| `mcp_cemcp/server.py` | CE-MCP tool exposure   | ADR-0038, ADR-0064 |
+| `qubinode-cert`       | Certificate management | ADR-0054           |
+| `qubinode-dns`        | DNS management         | ADR-0055           |
 
 ______________________________________________________________________
 
-*Last Updated: 2025-12-05*
+*Last Updated: 2025-12-08*
 *This index is maintained manually. Please update when adding new ADRs.*
