@@ -660,9 +660,21 @@ restart_ai_assistant_with_credentials() {
     # Wait for AI Assistant to be ready (health + orchestrator endpoints)
     log_info "Waiting for AI Assistant to be ready..."
     local port=${AI_ASSISTANT_PORT:-8080}
+    local startup_logged=false
+
+    # Give the container a moment to start and log its startup
+    sleep 3
+
     for i in {1..60}; do
-        if curl -s "http://localhost:${port}/health" &> /dev/null; then
-            # Health is up, now check orchestrator endpoint
+        # Check the health endpoint response
+        local health_response
+        local health_code
+        health_response=$(curl -s -w "\n%{http_code}" "http://localhost:${port}/health" 2>/dev/null)
+        health_code=$(echo "$health_response" | tail -1)
+
+        if [[ "$health_code" == "200" ]]; then
+            # Health returned 200 - service is truly ready
+            # Now check orchestrator endpoint
             local orch_status
             orch_status=$(curl -s "http://localhost:${port}/orchestrator/status" 2>/dev/null)
             if echo "$orch_status" | grep -q '"available"'; then
@@ -670,19 +682,34 @@ restart_ai_assistant_with_credentials() {
                 log_info "Orchestrator status: $(echo "$orch_status" | jq -c '.available, .api_keys_configured' 2>/dev/null || echo 'OK')"
                 return 0
             else
-                # Health works but orchestrator doesn't - log and keep waiting
-                if [[ $i -eq 30 ]]; then
-                    log_warning "Health endpoint OK but orchestrator not ready yet..."
-                    log_info "Container logs:"
-                    podman logs qubinode-ai-assistant 2>&1 | tail -20 || true
+                # Health works but orchestrator doesn't - show startup logs once
+                if [[ "$startup_logged" == "false" ]] && [[ $i -ge 15 ]]; then
+                    startup_logged=true
+                    log_warning "Health returns 200 but orchestrator not available"
+                    log_info "Checking for startup errors..."
+                    log_info "=== FULL CONTAINER STARTUP LOGS ==="
+                    podman logs qubinode-ai-assistant 2>&1 | grep -v "GET /health\|GET /orchestrator" | head -100 || true
+                    log_info "=== END STARTUP LOGS ==="
                 fi
+            fi
+        elif [[ "$health_code" == "503" ]]; then
+            # 503 means uvicorn is running but lifespan startup failed
+            if [[ "$startup_logged" == "false" ]] && [[ $i -ge 10 ]]; then
+                startup_logged=true
+                log_warning "Health returns 503 - service startup may have failed"
+                log_info "Checking for Python import/startup errors..."
+                log_info "=== FULL CONTAINER STARTUP LOGS ==="
+                podman logs qubinode-ai-assistant 2>&1 | grep -v "GET /health\|GET /orchestrator" | head -100 || true
+                log_info "=== END STARTUP LOGS ==="
             fi
         fi
         sleep 2
     done
 
-    log_warning "AI Assistant restart may not have completed - checking logs..."
-    podman logs qubinode-ai-assistant 2>&1 | tail -50 || true
+    log_error "AI Assistant failed to start properly after 2 minutes"
+    log_info "=== FINAL CONTAINER LOGS (filtered for errors) ==="
+    podman logs qubinode-ai-assistant 2>&1 | grep -iE "(error|exception|traceback|import|failed|cannot)" | head -50 || true
+    log_info "=== END ERROR LOGS ==="
     return 1
 }
 
