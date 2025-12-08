@@ -293,7 +293,46 @@ jobs:
           echo "[OK] All services ready"
 
       # =========================================================================
-      # Phase 3: Deploy FreeIPA VM via PydanticAI Smart Pipeline (ADR-0066)
+      # Phase 3: Validate Services (before FreeIPA deployment)
+      # =========================================================================
+      - name: Validate AI Assistant
+        run: |
+          echo "========================================"
+          echo "Validating AI Assistant"
+          echo "========================================"
+
+          # Health check
+          echo "[INFO] Health check..."
+          curl -s http://localhost:8080/health | jq . || curl -s http://localhost:8080/health
+
+          # Check models configured
+          echo ""
+          echo "[INFO] Model configuration..."
+          curl -s http://localhost:8080/models 2>/dev/null | jq . || echo "Models endpoint not available"
+
+          echo ""
+          echo "[OK] AI Assistant validation complete"
+
+      - name: Validate Airflow DAGs
+        run: |
+          echo "========================================"
+          echo "Validating Airflow DAGs"
+          echo "========================================"
+
+          # List DAGs
+          echo "[INFO] Available DAGs:"
+          airflow dags list 2>/dev/null || curl -s http://localhost:8888/api/v1/dags | jq '.dags[].dag_id' 2>/dev/null
+
+          # Check for import errors
+          echo ""
+          echo "[INFO] DAG import errors:"
+          airflow dags list-import-errors 2>/dev/null || echo "No import errors endpoint"
+
+          echo ""
+          echo "[OK] Airflow validation complete"
+
+      # =========================================================================
+      # Phase 4: Deploy FreeIPA VM via PydanticAI Smart Pipeline (ADR-0066)
       # =========================================================================
       - name: Deploy FreeIPA via AI Assistant Orchestrator
         if: ${{ github.event.inputs.deploy_freeipa == 'true' || github.event_name == 'schedule' }}
@@ -461,44 +500,8 @@ jobs:
           kcli info vm freeipa 2>/dev/null || true
 
       # =========================================================================
-      # Phase 4: Validate Deployment
+      # Phase 5: Validate FreeIPA Deployment
       # =========================================================================
-      - name: Validate AI Assistant
-        run: |
-          echo "========================================"
-          echo "Validating AI Assistant"
-          echo "========================================"
-
-          # Health check
-          echo "[INFO] Health check..."
-          curl -s http://localhost:8080/health | jq . || curl -s http://localhost:8080/health
-
-          # Check models configured
-          echo ""
-          echo "[INFO] Model configuration..."
-          curl -s http://localhost:8080/models 2>/dev/null | jq . || echo "Models endpoint not available"
-
-          echo ""
-          echo "[OK] AI Assistant validation complete"
-
-      - name: Validate Airflow DAGs
-        run: |
-          echo "========================================"
-          echo "Validating Airflow DAGs"
-          echo "========================================"
-
-          # List DAGs
-          echo "[INFO] Available DAGs:"
-          airflow dags list 2>/dev/null || curl -s http://localhost:8888/api/v1/dags | jq '.dags[].dag_id' 2>/dev/null
-
-          # Check for import errors
-          echo ""
-          echo "[INFO] DAG import errors:"
-          airflow dags list-import-errors 2>/dev/null || echo "No import errors endpoint"
-
-          echo ""
-          echo "[OK] Airflow validation complete"
-
       - name: Validate FreeIPA VM
         if: ${{ github.event.inputs.deploy_freeipa == 'true' || github.event_name == 'schedule' }}
         run: |
@@ -537,7 +540,7 @@ jobs:
           echo "[OK] FreeIPA validation complete"
 
       # =========================================================================
-      # Phase 5: Smart Pipeline Validation (ADR-0066)
+      # Phase 6: Smart Pipeline Validation (ADR-0066)
       # =========================================================================
       - name: Check Shadow Errors
         continue-on-error: true
@@ -581,7 +584,7 @@ jobs:
           fi
 
       # =========================================================================
-      # Phase 6: Summary
+      # Phase 7: Summary
       # =========================================================================
       - name: Generate Test Summary
         run: |
@@ -612,7 +615,7 @@ jobs:
           echo "========================================"
 
       # =========================================================================
-      # Phase 7: Cleanup (optional)
+      # Phase 8: Cleanup (optional)
       # =========================================================================
       - name: Cleanup test resources
         if: ${{ always() && github.event.inputs.skip_cleanup != 'true' && github.event_name == 'schedule' }}
