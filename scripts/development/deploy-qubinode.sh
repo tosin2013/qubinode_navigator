@@ -657,17 +657,32 @@ restart_ai_assistant_with_credentials() {
         -v "${REPO_ROOT}/docs/adrs:/app/docs/adrs:ro,z" \
         "$ai_image")
 
-    # Wait for AI Assistant to be ready
+    # Wait for AI Assistant to be ready (health + orchestrator endpoints)
     log_info "Waiting for AI Assistant to be ready..."
+    local port=${AI_ASSISTANT_PORT:-8080}
     for i in {1..60}; do
-        if curl -s http://localhost:${AI_ASSISTANT_PORT:-8080}/health &> /dev/null; then
-            log_success "AI Assistant restarted with orchestrator credentials"
-            return 0
+        if curl -s "http://localhost:${port}/health" &> /dev/null; then
+            # Health is up, now check orchestrator endpoint
+            local orch_status
+            orch_status=$(curl -s "http://localhost:${port}/orchestrator/status" 2>/dev/null)
+            if echo "$orch_status" | grep -q '"available"'; then
+                log_success "AI Assistant restarted with orchestrator credentials"
+                log_info "Orchestrator status: $(echo "$orch_status" | jq -c '.available, .api_keys_configured' 2>/dev/null || echo 'OK')"
+                return 0
+            else
+                # Health works but orchestrator doesn't - log and keep waiting
+                if [[ $i -eq 30 ]]; then
+                    log_warning "Health endpoint OK but orchestrator not ready yet..."
+                    log_info "Container logs:"
+                    podman logs qubinode-ai-assistant 2>&1 | tail -20 || true
+                fi
+            fi
         fi
         sleep 2
     done
 
-    log_warning "AI Assistant restart may not have completed - check logs"
+    log_warning "AI Assistant restart may not have completed - checking logs..."
+    podman logs qubinode-ai-assistant 2>&1 | tail -50 || true
     return 1
 }
 

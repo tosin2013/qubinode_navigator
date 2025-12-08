@@ -198,12 +198,12 @@ jobs:
           MAX_ATTEMPTS=30
           ATTEMPT=0
 
-          # Wait for AI Assistant
-          echo "[INFO] Waiting for AI Assistant..."
+          # Wait for AI Assistant health endpoint
+          echo "[INFO] Waiting for AI Assistant health..."
           while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
             ATTEMPT=$((ATTEMPT + 1))
             if curl -s http://localhost:8080/health | grep -q "ok\|healthy"; then
-              echo "[OK] AI Assistant is ready"
+              echo "[OK] AI Assistant health check passed"
               break
             fi
             echo "  Attempt $ATTEMPT/$MAX_ATTEMPTS..."
@@ -211,7 +211,33 @@ jobs:
           done
 
           if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
-            echo "[WARN] AI Assistant may not be fully ready"
+            echo "[WARN] AI Assistant health check timed out"
+          fi
+
+          # Wait for orchestrator endpoint (critical for ADR-0066)
+          ATTEMPT=0
+          echo "[INFO] Waiting for PydanticAI Orchestrator..."
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            ATTEMPT=$((ATTEMPT + 1))
+            ORCH_STATUS=$(curl -s http://localhost:8080/orchestrator/status 2>/dev/null || echo '{}')
+            if echo "$ORCH_STATUS" | grep -q '"available"'; then
+              echo "[OK] Orchestrator is available"
+              echo "$ORCH_STATUS" | jq -c '{available, api_keys: .api_keys_configured}' 2>/dev/null || true
+              break
+            fi
+            if [ $ATTEMPT -eq 15 ]; then
+              echo "[WARN] Orchestrator not ready after 15 attempts, checking container logs..."
+              sudo podman logs qubinode-ai-assistant 2>&1 | tail -30 || true
+            fi
+            echo "  Attempt $ATTEMPT/$MAX_ATTEMPTS..."
+            sleep 10
+          done
+
+          if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
+            echo "[ERROR] Orchestrator endpoint not available after $MAX_ATTEMPTS attempts"
+            echo "Container logs:"
+            sudo podman logs qubinode-ai-assistant 2>&1 | tail -50 || true
+            exit 1
           fi
 
           # Wait for Airflow
@@ -231,7 +257,7 @@ jobs:
             echo "[WARN] Airflow may not be fully ready"
           fi
 
-          echo "[OK] Services ready"
+          echo "[OK] All services ready"
 
       # =========================================================================
       # Phase 3: Deploy FreeIPA VM via PydanticAI Smart Pipeline (ADR-0066)
