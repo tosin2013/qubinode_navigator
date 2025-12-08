@@ -195,111 +195,98 @@ jobs:
           echo "Waiting for services to be ready"
           echo "========================================"
 
-          MAX_ATTEMPTS=30
-          ATTEMPT=0
-          STARTUP_LOGGED=false
+          # AI Assistant model download can take 2-5 minutes
+          # Use podman health status instead of just curl
+          MAX_WAIT=360  # 6 minutes
+          CHECK_INTERVAL=5
+          ELAPSED=0
 
-          # Wait for AI Assistant health endpoint (checking HTTP status code properly)
-          echo "[INFO] Waiting for AI Assistant health..."
-          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
-            ATTEMPT=$((ATTEMPT + 1))
+          echo "[INFO] Waiting for AI Assistant (model download may take 2-5 minutes)..."
 
-            # Get both response body and HTTP status code
-            HEALTH_RESPONSE=$(curl -s -w "\n%{http_code}" http://localhost:8080/health 2>/dev/null)
-            HEALTH_CODE=$(echo "$HEALTH_RESPONSE" | tail -1)
-
-            if [ "$HEALTH_CODE" = "200" ]; then
-              echo "[OK] AI Assistant health check passed (HTTP 200)"
-              break
-            elif [ "$HEALTH_CODE" = "503" ]; then
-              # 503 means uvicorn is running but lifespan startup failed
-              if [ "$STARTUP_LOGGED" = "false" ] && [ $ATTEMPT -ge 10 ]; then
-                STARTUP_LOGGED=true
-                echo "[WARN] Health returns 503 - service startup may have failed"
-                echo "[INFO] Checking for Python import/startup errors..."
-                echo ""
-                echo "=== FULL CONTAINER STARTUP LOGS (filtered) ==="
-                sudo podman logs qubinode-ai-assistant 2>&1 | grep -v "GET /health\|GET /orchestrator" | head -100 || true
-                echo "=== END STARTUP LOGS ==="
-                echo ""
-              fi
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            # Check if container is still running
+            if ! sudo podman ps --format "{{.Names}}" 2>/dev/null | grep -q "^qubinode-ai-assistant$"; then
+              echo "[ERROR] Container stopped running"
+              sudo podman logs qubinode-ai-assistant 2>&1 | tail -50 || true
+              exit 1
             fi
 
-            echo "  Attempt $ATTEMPT/$MAX_ATTEMPTS (HTTP: ${HEALTH_CODE:-no response})..."
-            sleep 10
+            # Get container health status via podman inspect
+            HEALTH_STATUS=$(sudo podman inspect --format='{{.State.Health.Status}}' qubinode-ai-assistant 2>/dev/null || echo "unknown")
+
+            case "$HEALTH_STATUS" in
+              "healthy")
+                echo "[OK] Container health check passed after ${ELAPSED}s"
+                # Verify orchestrator endpoint
+                ORCH_STATUS=$(curl -s http://localhost:8080/orchestrator/status 2>/dev/null || echo '{}')
+                if echo "$ORCH_STATUS" | grep -q '"available"'; then
+                  echo "[OK] Orchestrator is available"
+                  echo "$ORCH_STATUS" | jq -c '{available, api_keys: .api_keys_configured}' 2>/dev/null || true
+                  break 2  # Exit both case and while
+                else
+                  echo "[WARN] Health OK but orchestrator not available - checking logs..."
+                  sudo podman logs qubinode-ai-assistant 2>&1 | grep -v "GET /\|POST /" | tail -20 || true
+                fi
+                ;;
+              "starting")
+                # Show progress every 30 seconds
+                if [ $((ELAPSED % 30)) -eq 0 ] && [ $ELAPSED -gt 0 ]; then
+                  echo "[INFO] Container starting... (${ELAPSED}s elapsed)"
+                  sudo podman logs qubinode-ai-assistant 2>&1 | grep -i "download progress\|downloading" | tail -1 || true
+                fi
+                ;;
+              "unhealthy")
+                echo "[ERROR] Container health check failed"
+                sudo podman logs qubinode-ai-assistant 2>&1 | tail -100 || true
+                exit 1
+                ;;
+              *)
+                # No health status yet - try endpoint directly
+                HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/health 2>/dev/null || echo "000")
+                if [ "$HTTP_CODE" = "200" ]; then
+                  echo "[OK] Health endpoint responding (HTTP 200)"
+                  ORCH_STATUS=$(curl -s http://localhost:8080/orchestrator/status 2>/dev/null || echo '{}')
+                  if echo "$ORCH_STATUS" | grep -q '"available"'; then
+                    echo "[OK] Orchestrator ready"
+                    break 2
+                  fi
+                fi
+                ;;
+            esac
+
+            sleep $CHECK_INTERVAL
+            ELAPSED=$((ELAPSED + CHECK_INTERVAL))
           done
 
-          if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
+          # Check if we exited the loop due to timeout
+          if [ $ELAPSED -ge $MAX_WAIT ]; then
             echo ""
-            echo "[ERROR] AI Assistant health check timed out"
-            echo "=== FINAL CONTAINER LOGS (errors only) ==="
-            sudo podman logs qubinode-ai-assistant 2>&1 | grep -iE "(error|exception|traceback|import|failed|cannot)" | head -50 || true
-            echo "=== END ERROR LOGS ==="
-            exit 1
-          fi
-
-          # Wait for orchestrator endpoint (critical for ADR-0066)
-          ATTEMPT=0
-          STARTUP_LOGGED=false
-          echo "[INFO] Waiting for PydanticAI Orchestrator..."
-          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
-            ATTEMPT=$((ATTEMPT + 1))
-            ORCH_STATUS=$(curl -s http://localhost:8080/orchestrator/status 2>/dev/null || echo '{}')
-            if echo "$ORCH_STATUS" | grep -q '"available"'; then
-              echo "[OK] Orchestrator is available"
-              echo "$ORCH_STATUS" | jq -c '{available, api_keys: .api_keys_configured}' 2>/dev/null || true
-              break
-            fi
-            if [ "$STARTUP_LOGGED" = "false" ] && [ $ATTEMPT -ge 15 ]; then
-              STARTUP_LOGGED=true
-              echo "[WARN] Health OK but orchestrator returns 404 - checking for import errors..."
-              echo ""
-              echo "=== CONTAINER STARTUP LOGS (non-HTTP) ==="
-              sudo podman logs qubinode-ai-assistant 2>&1 | grep -v "GET /health\|GET /orchestrator\|POST /" | head -80 || true
-              echo "=== END STARTUP LOGS ==="
-              echo ""
-            fi
-            echo "  Attempt $ATTEMPT/$MAX_ATTEMPTS..."
-            sleep 10
-          done
-
-          if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
+            echo "[ERROR] AI Assistant failed to start after ${MAX_WAIT}s"
             echo ""
-            echo "[ERROR] Orchestrator endpoint not available after $MAX_ATTEMPTS attempts"
+            echo "=== CONTAINER STATUS ==="
+            sudo podman inspect --format='Status: {{.State.Status}}, Health: {{.State.Health.Status}}' qubinode-ai-assistant 2>/dev/null || true
             echo ""
-            echo "=== FINAL DIAGNOSTICS ==="
-            echo "Container status:"
-            sudo podman ps -a --filter name=qubinode-ai-assistant
+            echo "=== ERROR LOGS ==="
+            sudo podman logs qubinode-ai-assistant 2>&1 | grep -iE "(error|exception|traceback|failed|cannot)" | head -30 || true
             echo ""
-            echo "Listening ports:"
-            sudo ss -tlnp | grep 8080 || echo "Port 8080 not listening"
-            echo ""
-            echo "=== ERROR-FOCUSED LOGS ==="
-            sudo podman logs qubinode-ai-assistant 2>&1 | grep -iE "(error|exception|traceback|failed|cannot|no module|attribute)" | head -50 || echo "No obvious errors found"
-            echo ""
-            echo "=== FULL STARTUP LOGS (first 150 lines, excluding HTTP) ==="
-            sudo podman logs qubinode-ai-assistant 2>&1 | grep -v "GET /\|POST /\|PUT /\|DELETE /" | head -150 || true
-            echo "=== END LOGS ==="
+            echo "=== FULL STARTUP LOGS ==="
+            sudo podman logs qubinode-ai-assistant 2>&1 | grep -v "GET /\|POST /" | head -100 || true
             exit 1
           fi
 
           # Wait for Airflow
-          ATTEMPT=0
+          echo ""
           echo "[INFO] Waiting for Airflow..."
-          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
-            ATTEMPT=$((ATTEMPT + 1))
+          for i in {1..30}; do
             if curl -s http://localhost:8888/health | grep -q "healthy"; then
               echo "[OK] Airflow is ready"
               break
             fi
-            echo "  Attempt $ATTEMPT/$MAX_ATTEMPTS..."
+            echo "  Attempt $i/30..."
             sleep 10
           done
 
-          if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
-            echo "[WARN] Airflow may not be fully ready"
-          fi
-
+          echo ""
           echo "[OK] All services ready"
 
       # =========================================================================

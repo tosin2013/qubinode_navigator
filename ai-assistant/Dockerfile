@@ -62,9 +62,10 @@ USER 1001
 # Expose API port
 EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
+# Health check - increased start-period for model download (can take 2-5 minutes)
+# Uses /health endpoint which returns 503 during startup, 200 when ready
+HEALTHCHECK --interval=30s --timeout=30s --start-period=300s --retries=5 \
+    CMD curl -sf --max-time 30 http://localhost:8080/health || exit 1
 
 # Default command using virtual environment
 CMD ["/app/venv/bin/python", "src/main.py"]
