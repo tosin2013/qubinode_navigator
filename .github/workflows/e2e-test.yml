@@ -313,6 +313,32 @@ jobs:
           echo ""
           echo "[OK] AI Assistant validation complete"
 
+      - name: Wait for Airflow Scheduler
+        run: |
+          echo "========================================"
+          echo "Waiting for Airflow Scheduler to be ready"
+          echo "========================================"
+
+          MAX_ATTEMPTS=30
+          ATTEMPT=0
+
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            ATTEMPT=$((ATTEMPT + 1))
+
+            # Check if scheduler container is running and healthy
+            if sudo podman exec airflow-scheduler airflow dags list &>/dev/null; then
+              echo "[OK] Airflow scheduler is ready (attempt $ATTEMPT/$MAX_ATTEMPTS)"
+              break
+            fi
+
+            echo "[INFO] Waiting for scheduler... (attempt $ATTEMPT/$MAX_ATTEMPTS)"
+            sleep 10
+          done
+
+          if [ $ATTEMPT -ge $MAX_ATTEMPTS ]; then
+            echo "[WARN] Scheduler may not be fully ready, continuing anyway..."
+          fi
+
       - name: Validate Airflow DAGs
         run: |
           echo "========================================"
@@ -330,7 +356,7 @@ jobs:
           # Check for import errors via podman exec
           echo ""
           echo "[INFO] DAG import errors:"
-          sudo podman exec airflow-scheduler airflow dags list-import-errors 2>/dev/null || echo "[INFO] Import errors check skipped (scheduler not ready)"
+          sudo podman exec airflow-scheduler airflow dags list-import-errors 2>/dev/null || echo "[INFO] Import errors check skipped"
 
           echo ""
           echo "[OK] Airflow validation complete"
