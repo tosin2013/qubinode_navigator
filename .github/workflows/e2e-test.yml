@@ -120,6 +120,20 @@ jobs:
             echo "[WARN] Red Hat registry credentials not configured, will use fallback image"
           fi
 
+      - name: Setup Ansible vault password
+        env:
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+        run: |
+          # Create vault password file for Ansible (referenced in ansible.cfg)
+          VAULT_PASS="${SSH_PASSWORD:-defaultpassword}"
+          echo "$VAULT_PASS" > "${{ github.workspace }}/.vault_password"
+          chmod 600 "${{ github.workspace }}/.vault_password"
+          # Also create in home directories for scripts that look there
+          echo "$VAULT_PASS" > "$HOME/.vault_password"
+          chmod 600 "$HOME/.vault_password"
+          sudo sh -c "echo '$VAULT_PASS' > /root/.vault_password && chmod 600 /root/.vault_password"
+          echo "[OK] Vault password files created"
+
       - name: Deploy Qubinode Stack
         env:
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
