@@ -171,13 +171,20 @@ class ChatResponse(BaseModel):
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint."""
+    """Health check endpoint.
+
+    Returns:
+        - 200: healthy or degraded (warnings but operational)
+        - 503: unhealthy or error (service not functional)
+    """
     if not health_monitor:
         raise HTTPException(status_code=503, detail="Service not ready")
 
     health_status = await health_monitor.get_health_status()
 
-    if health_status["status"] == "healthy":
+    # Return 200 for healthy or degraded (warnings but operational)
+    # Return 503 only for unhealthy or error states
+    if health_status["status"] in ("healthy", "degraded"):
         return health_status
     else:
         raise HTTPException(status_code=503, detail=health_status)
