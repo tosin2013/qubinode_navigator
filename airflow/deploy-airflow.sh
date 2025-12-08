@@ -39,12 +39,17 @@ deploy_airflow() {
         return 1
     fi
 
+    # Ensure /usr/local/bin is in PATH (pip installs binaries there)
+    export PATH="/usr/local/bin:$PATH"
+
     if ! command -v podman-compose &> /dev/null; then
         log_info "Installing podman-compose..."
         pip3 install podman-compose || {
             log_error "Failed to install podman-compose"
             return 1
         }
+        # Rehash to find newly installed command
+        hash -r 2>/dev/null || true
     fi
 
     # Change to airflow directory
