@@ -280,10 +280,15 @@ detect_deployment_target() {
 check_prerequisites() {
     log_step "Checking prerequisites..."
 
-    # Check if running as root
+    # Check if running as root (skip in CI/CD pipeline environments)
     if [[ $EUID -ne 0 ]]; then
-        log_error "This script must be run as root"
-        return 1
+        if [[ "${CICD_PIPELINE:-false}" == "true" ]]; then
+            log_warning "Running as non-root user in CI/CD pipeline mode"
+        else
+            log_error "This script must be run as root"
+            log_info "Tip: Set CICD_PIPELINE=true to run in CI/CD mode without root"
+            return 1
+        fi
     fi
 
     # Check system resources
