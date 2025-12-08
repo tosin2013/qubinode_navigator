@@ -110,3 +110,4 @@ airflow/airflow.db
 airflow/airflow-webserver.pid
 airflow/dag_list.txt
 airflow/logs/
+.credentials/

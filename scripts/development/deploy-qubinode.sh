@@ -411,6 +411,7 @@ start_ai_assistant() {
     # - /app/data: RAG data, embeddings, cache
     # - /app/airflow/dags: DAG discovery for PydanticAI orchestrator (ADR-0066)
     # - /app/docs/adrs: ADR files for context
+    # Note: AIRFLOW_USER/AIRFLOW_PASSWORD will be updated after orchestrator user is created
     AI_ASSISTANT_CONTAINER=$(podman run -d \
         --name qubinode-ai-assistant \
         -p ${AI_ASSISTANT_PORT}:8080 \
@@ -420,6 +421,8 @@ start_ai_assistant() {
         -e AIRFLOW_API_URL=http://host.containers.internal:8888 \
         -e AIRFLOW_DAGS_PATH=/app/airflow/dags \
         -e PROJECT_ROOT=/app \
+        ${AIRFLOW_USER:+-e AIRFLOW_USER="${AIRFLOW_USER}"} \
+        ${AIRFLOW_PASSWORD:+-e AIRFLOW_PASSWORD="${AIRFLOW_PASSWORD}"} \
         ${OPENROUTER_API_KEY:+-e OPENROUTER_API_KEY="${OPENROUTER_API_KEY}"} \
         ${GEMINI_API_KEY:+-e GEMINI_API_KEY="${GEMINI_API_KEY}"} \
         ${ANTHROPIC_API_KEY:+-e ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY}"} \
@@ -550,6 +553,124 @@ EOF
 # AIRFLOW ORCHESTRATION INTEGRATION
 # =============================================================================
 
+# Create orchestrator service account for AI Assistant PydanticAI integration
+# This dedicated user has 'Op' role (can trigger DAGs but not admin access)
+create_orchestrator_user() {
+    log_info "Creating Airflow orchestrator service account..."
+
+    # Generate a random password
+    local orchestrator_password
+    orchestrator_password=$(openssl rand -base64 24 | tr -dc 'a-zA-Z0-9' | head -c 32)
+
+    # Check if user already exists
+    if podman exec airflow_airflow-webserver_1 airflow users list 2>/dev/null | grep -q orchestrator; then
+        log_info "Orchestrator user already exists, updating password..."
+        podman exec airflow_airflow-webserver_1 airflow users reset-password \
+            --username orchestrator \
+            --password "$orchestrator_password" 2>/dev/null || {
+            log_warning "Could not update orchestrator password"
+            return 1
+        }
+    else
+        # Create new user with Op role
+        podman exec airflow_airflow-webserver_1 airflow users create \
+            --username orchestrator \
+            --password "$orchestrator_password" \
+            --firstname PydanticAI \
+            --lastname Orchestrator \
+            --email orchestrator@qubinode.local \
+            --role Op 2>/dev/null || {
+            log_warning "Could not create orchestrator user"
+            return 1
+        }
+    fi
+
+    # Store credentials securely
+    local creds_dir="$REPO_ROOT/.credentials"
+    mkdir -p "$creds_dir"
+    chmod 700 "$creds_dir"
+
+    local creds_file="$creds_dir/airflow-orchestrator.env"
+    cat > "$creds_file" << EOF
+# Airflow Orchestrator Service Account
+# Generated: $(date -Iseconds)
+# Used by: AI Assistant PydanticAI Orchestrator
+AIRFLOW_USER=orchestrator
+AIRFLOW_PASSWORD=$orchestrator_password
+EOF
+    chmod 600 "$creds_file"
+
+    # Export for current session (used by AI Assistant startup)
+    export AIRFLOW_USER=orchestrator
+    export AIRFLOW_PASSWORD="$orchestrator_password"
+
+    # Update .env if it exists
+    if [[ -f "$REPO_ROOT/.env" ]]; then
+        sed -i '/^AIRFLOW_USER=/d' "$REPO_ROOT/.env"
+        sed -i '/^AIRFLOW_PASSWORD=/d' "$REPO_ROOT/.env"
+        echo "" >> "$REPO_ROOT/.env"
+        echo "# Airflow Orchestrator Credentials (auto-generated)" >> "$REPO_ROOT/.env"
+        echo "AIRFLOW_USER=orchestrator" >> "$REPO_ROOT/.env"
+        echo "AIRFLOW_PASSWORD=$orchestrator_password" >> "$REPO_ROOT/.env"
+    fi
+
+    log_success "Orchestrator service account created (credentials: $creds_file)"
+    return 0
+}
+
+# Restart AI Assistant container with orchestrator credentials
+# Called after Airflow orchestrator user is created
+restart_ai_assistant_with_credentials() {
+    log_info "Stopping AI Assistant to update credentials..."
+    podman stop qubinode-ai-assistant &>/dev/null || true
+    podman rm qubinode-ai-assistant &>/dev/null || true
+
+    # Determine image to use
+    local ai_image
+    if podman images localhost/qubinode-ai-assistant:latest --format "{{.Repository}}" 2>/dev/null | grep -q "qubinode-ai-assistant"; then
+        ai_image="localhost/qubinode-ai-assistant:latest"
+    else
+        ai_image="quay.io/takinosh/qubinode-ai-assistant:${AI_ASSISTANT_VERSION:-latest}"
+    fi
+
+    log_info "Starting AI Assistant with orchestrator credentials..."
+    AI_ASSISTANT_CONTAINER=$(podman run -d \
+        --name qubinode-ai-assistant \
+        --network host \
+        -e DEPLOYMENT_MODE=${QUBINODE_DEPLOYMENT_MODE:-production} \
+        -e LOG_LEVEL=INFO \
+        -e MARQUEZ_API_URL=http://localhost:5001 \
+        -e AIRFLOW_API_URL=http://localhost:8888/api/v1 \
+        -e AIRFLOW_DAGS_PATH=/app/airflow/dags \
+        -e PROJECT_ROOT=/app \
+        -e AIRFLOW_USER="${AIRFLOW_USER}" \
+        -e AIRFLOW_PASSWORD="${AIRFLOW_PASSWORD}" \
+        ${OPENROUTER_API_KEY:+-e OPENROUTER_API_KEY="${OPENROUTER_API_KEY}"} \
+        ${GEMINI_API_KEY:+-e GEMINI_API_KEY="${GEMINI_API_KEY}"} \
+        ${ANTHROPIC_API_KEY:+-e ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY}"} \
+        ${OPENAI_API_KEY:+-e OPENAI_API_KEY="${OPENAI_API_KEY}"} \
+        ${MANAGER_MODEL:+-e MANAGER_MODEL="${MANAGER_MODEL}"} \
+        ${DEVELOPER_MODEL:+-e DEVELOPER_MODEL="${DEVELOPER_MODEL}"} \
+        ${PYDANTICAI_MODEL:+-e PYDANTICAI_MODEL="${PYDANTICAI_MODEL}"} \
+        -v "${REPO_ROOT}/ai-assistant/data:/app/data:z" \
+        -v "${REPO_ROOT}/airflow/dags:/app/airflow/dags:ro,z" \
+        -v "${REPO_ROOT}/docs/adrs:/app/docs/adrs:ro,z" \
+        "$ai_image")
+
+    # Wait for AI Assistant to be ready
+    log_info "Waiting for AI Assistant to be ready..."
+    for i in {1..60}; do
+        if curl -s http://localhost:${AI_ASSISTANT_PORT:-8080}/health &> /dev/null; then
+            log_success "AI Assistant restarted with orchestrator credentials"
+            return 0
+        fi
+        sleep 2
+    done
+
+    log_warning "AI Assistant restart may not have completed - check logs"
+    return 1
+}
+
 deploy_airflow_services() {
     if [[ "$QUBINODE_ENABLE_AIRFLOW" != "true" ]]; then
         log_info "Airflow deployment disabled, skipping..."
@@ -604,17 +725,16 @@ deploy_airflow_services() {
             if curl -s http://localhost:${AIRFLOW_PORT}/health &> /dev/null; then
                 log_success "Airflow webserver is ready at http://localhost:${AIRFLOW_PORT}"
 
-                # Attempt to connect AI Assistant to Airflow network if it's running
+                # Create orchestrator service account for AI Assistant (ADR-0066)
+                create_orchestrator_user
+
+                # Restart AI Assistant with orchestrator credentials if running
                 if [[ "$QUBINODE_ENABLE_AI_ASSISTANT" == "true" ]]; then
                     if podman ps --format "{{.Names}}" | grep -q "^qubinode-ai-assistant$"; then
-                        log_info "Connecting AI Assistant to Airflow network..."
-                        if podman network connect ${AIRFLOW_NETWORK} qubinode-ai-assistant 2>/dev/null; then
-                            log_success "AI Assistant connected to Airflow network"
-                        else
-                            log_warning "AI Assistant already connected or connection failed (non-critical)"
-                        fi
+                        log_info "Restarting AI Assistant with orchestrator credentials..."
+                        restart_ai_assistant_with_credentials
                     else
-                        log_warning "AI Assistant not running - restart it after Airflow for full integration"
+                        log_warning "AI Assistant not running - start it with orchestrator credentials"
                     fi
                 fi
 

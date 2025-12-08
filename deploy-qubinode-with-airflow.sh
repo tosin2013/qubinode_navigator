@@ -161,12 +161,12 @@ if [[ -f "$HOME/.vault_password" ]]; then
     if [[ -d "/root/freeipa-workshop-deployer" ]]; then
         ln -sf "$HOME/.vault_password" /root/freeipa-workshop-deployer/.vault_password 2>/dev/null || true
     fi
-    # kcli-pipelines (root and component directories)
-    if [[ -d "/root/kcli-pipelines" ]]; then
-        ln -sf "$HOME/.vault_password" /root/kcli-pipelines/.vault_password 2>/dev/null || true
+    # qubinode-pipelines (root and component directories)
+    if [[ -d "/root/qubinode-pipelines" ]]; then
+        ln -sf "$HOME/.vault_password" /root/qubinode-pipelines/.vault_password 2>/dev/null || true
         # VyOS router ansible playbooks
-        if [[ -d "/root/kcli-pipelines/vyos-router" ]]; then
-            ln -sf "$HOME/.vault_password" /root/kcli-pipelines/vyos-router/.vault_password 2>/dev/null || true
+        if [[ -d "/root/qubinode-pipelines/vyos-router" ]]; then
+            ln -sf "$HOME/.vault_password" /root/qubinode-pipelines/vyos-router/.vault_password 2>/dev/null || true
         fi
     fi
     echo -e "${GREEN}  Vault password symlinks created${NC}"
@@ -184,8 +184,78 @@ else
     exit 1
 fi
 
+# Step 2.5: Create Airflow orchestrator service account
+echo -e "${BLUE}[2.5/5] Creating Airflow orchestrator service account...${NC}"
+
+# Generate a random password for the orchestrator
+ORCHESTRATOR_PASSWORD=$(openssl rand -base64 24 | tr -dc 'a-zA-Z0-9' | head -c 32)
+
+# Wait for Airflow to be ready
+echo -e "${CYAN}  Waiting for Airflow to be ready...${NC}"
+MAX_WAIT=60
+WAIT_COUNT=0
+while ! curl -s http://localhost:8888/health >/dev/null 2>&1; do
+    sleep 2
+    WAIT_COUNT=$((WAIT_COUNT + 2))
+    if [[ $WAIT_COUNT -ge $MAX_WAIT ]]; then
+        echo -e "${YELLOW}  Warning: Airflow health check timed out, proceeding anyway...${NC}"
+        break
+    fi
+done
+
+# Create the orchestrator user with Op role (can trigger DAGs but not admin)
+echo -e "${CYAN}  Creating orchestrator service account...${NC}"
+if podman exec airflow_airflow-webserver_1 airflow users list 2>/dev/null | grep -q orchestrator; then
+    echo -e "${GREEN}  Orchestrator user already exists${NC}"
+    # Update password if user exists
+    podman exec airflow_airflow-webserver_1 airflow users reset-password \
+        --username orchestrator \
+        --password "$ORCHESTRATOR_PASSWORD" 2>/dev/null || true
+else
+    podman exec airflow_airflow-webserver_1 airflow users create \
+        --username orchestrator \
+        --password "$ORCHESTRATOR_PASSWORD" \
+        --firstname PydanticAI \
+        --lastname Orchestrator \
+        --email orchestrator@qubinode.local \
+        --role Op 2>/dev/null || {
+            echo -e "${YELLOW}  Warning: Could not create orchestrator user${NC}"
+        }
+fi
+
+# Store credentials securely
+CREDS_DIR="$SCRIPT_DIR/.credentials"
+mkdir -p "$CREDS_DIR"
+chmod 700 "$CREDS_DIR"
+
+ORCHESTRATOR_CREDS_FILE="$CREDS_DIR/airflow-orchestrator.env"
+cat > "$ORCHESTRATOR_CREDS_FILE" << CREDS_EOF
+# Airflow Orchestrator Service Account
+# Generated: $(date -Iseconds)
+# Used by: AI Assistant PydanticAI Orchestrator
+AIRFLOW_USER=orchestrator
+AIRFLOW_PASSWORD=$ORCHESTRATOR_PASSWORD
+CREDS_EOF
+chmod 600 "$ORCHESTRATOR_CREDS_FILE"
+
+echo -e "${GREEN}  ✓ Orchestrator service account created${NC}"
+echo -e "${CYAN}  Credentials saved to: $ORCHESTRATOR_CREDS_FILE${NC}"
+
+# Also update .env if it exists (for local development)
+if [[ -f "$SCRIPT_DIR/.env" ]]; then
+    # Remove old AIRFLOW_USER/PASSWORD if present
+    sed -i '/^AIRFLOW_USER=/d' "$SCRIPT_DIR/.env"
+    sed -i '/^AIRFLOW_PASSWORD=/d' "$SCRIPT_DIR/.env"
+    # Add new credentials
+    echo "" >> "$SCRIPT_DIR/.env"
+    echo "# Airflow Orchestrator Credentials (auto-generated)" >> "$SCRIPT_DIR/.env"
+    echo "AIRFLOW_USER=orchestrator" >> "$SCRIPT_DIR/.env"
+    echo "AIRFLOW_PASSWORD=$ORCHESTRATOR_PASSWORD" >> "$SCRIPT_DIR/.env"
+    echo -e "${GREEN}  ✓ Updated .env with orchestrator credentials${NC}"
+fi
+
 # Step 3: Deploy Nginx Reverse Proxy
-echo -e "${BLUE}[3/4] Setting up Nginx reverse proxy for secure access...${NC}"
+echo -e "${BLUE}[3/5] Setting up Nginx reverse proxy for secure access...${NC}"
 
 # Install nginx if not present
 if ! command -v nginx &> /dev/null; then
@@ -298,7 +368,7 @@ else
 fi
 
 # Step 4: Final verification
-echo -e "${BLUE}[4/4] Verifying deployment...${NC}"
+echo -e "${BLUE}[4/5] Verifying deployment...${NC}"
 "$SCRIPT_DIR/airflow/deploy-airflow.sh" status
 
 echo ""
@@ -311,9 +381,13 @@ echo -e "${GREEN}   • Airflow UI (via nginx): http://${SERVER_IP}/${NC}"
 echo -e "   • AI Assistant API:         http://${SERVER_IP}/ai/"
 echo -e "   • Health Check:             http://${SERVER_IP}/health"
 echo -e ""
-echo -e "${CYAN}🔐 Credentials:${NC}"
+echo -e "${CYAN}🔐 Airflow Admin Credentials:${NC}"
 echo -e "   Username: admin"
 echo -e "   Password: admin"
+echo -e ""
+echo -e "${CYAN}🤖 Orchestrator Service Account:${NC}"
+echo -e "   Username: orchestrator"
+echo -e "   Credentials: $CREDS_DIR/airflow-orchestrator.env"
 echo -e ""
 echo -e "${YELLOW}🔒 Security:${NC}"
 echo -e "   ✓ Direct ports 8888/8080 closed (public)"
