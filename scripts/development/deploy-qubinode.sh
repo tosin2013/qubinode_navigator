@@ -468,8 +468,14 @@ build_ai_assistant_from_source() {
     fi
 
     # Run the build script
+    # Use --no-cache in CI/CD to ensure fresh source files are used
     log_info "Running AI Assistant build script..."
-    if bash scripts/build.sh --no-test; then
+    local build_args="--no-test"
+    if [[ "$CICD_PIPELINE" == "true" ]]; then
+        log_info "CI/CD mode detected - building without cache"
+        build_args="--no-test --no-cache"
+    fi
+    if bash scripts/build.sh $build_args; then
         log_success "AI Assistant container built successfully"
 
         # Verify image exists

@@ -83,9 +83,17 @@ build_container() {
         tags+=("--tag" "${REGISTRY}/${CONTAINER_NAME}:$(date +%Y%m%d)")
     fi
 
+    # Build options
+    local build_opts=()
+    if [[ "${NO_CACHE:-false}" == "true" ]]; then
+        log_info "Building with --no-cache (fresh build)"
+        build_opts+=("--no-cache")
+    fi
+
     # Build with podman
     if podman build \
         "${tags[@]}" \
+        "${build_opts[@]}" \
         --label "version=$CONTAINER_VERSION" \
         --label "build-version=$BUILD_VERSION" \
         --label "build-date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
@@ -159,22 +167,37 @@ main() {
 }
 
 # Handle script arguments
-case "${1:-}" in
-    --help|-h)
-        echo "Usage: $0 [OPTIONS]"
-        echo ""
-        echo "Build the Qubinode AI Assistant container"
-        echo ""
-        echo "Options:"
-        echo "  --help, -h     Show this help message"
-        echo "  --no-test      Skip container testing"
-        echo ""
-        exit 0
-        ;;
-    --no-test)
-        NO_TEST=true
-        ;;
-esac
+NO_TEST=false
+NO_CACHE=false
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --help|-h)
+            echo "Usage: $0 [OPTIONS]"
+            echo ""
+            echo "Build the Qubinode AI Assistant container"
+            echo ""
+            echo "Options:"
+            echo "  --help, -h     Show this help message"
+            echo "  --no-test      Skip container testing"
+            echo "  --no-cache     Build without using cache (fresh build)"
+            echo ""
+            exit 0
+            ;;
+        --no-test)
+            NO_TEST=true
+            shift
+            ;;
+        --no-cache)
+            NO_CACHE=true
+            shift
+            ;;
+        *)
+            log_warning "Unknown option: $1"
+            shift
+            ;;
+    esac
+done
 
 # Run main function
 main
