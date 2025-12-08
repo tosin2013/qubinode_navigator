@@ -103,7 +103,8 @@ jobs:
         run: |
           echo "[INFO] Logging into registry.redhat.io..."
           if [ -n "$REDHAT_USERNAME" ] && [ -n "$REDHAT_PASSWORD" ]; then
-            podman login registry.redhat.io -u "$REDHAT_USERNAME" -p "$REDHAT_PASSWORD"
+            # Login as root for privileged container builds
+            sudo podman login registry.redhat.io -u "$REDHAT_USERNAME" -p "$REDHAT_PASSWORD"
             echo "[OK] Logged into Red Hat registry"
           else
             echo "[WARN] Red Hat registry credentials not configured, will use fallback image"
@@ -116,18 +117,28 @@ jobs:
           MANAGER_MODEL: ${{ secrets.MANAGER_MODEL }}
           DEVELOPER_MODEL: ${{ secrets.DEVELOPER_MODEL }}
           PYDANTICAI_MODEL: ${{ secrets.PYDANTICAI_MODEL }}
+          QUBINODE_DOMAIN: ${{ env.QUBINODE_DOMAIN }}
+          QUBINODE_ADMIN_USER: ${{ env.QUBINODE_ADMIN_USER }}
+          QUBINODE_CLUSTER_NAME: ${{ env.QUBINODE_CLUSTER_NAME }}
+          QUBINODE_DEPLOYMENT_MODE: ${{ env.QUBINODE_DEPLOYMENT_MODE }}
+          QUBINODE_ENABLE_AI_ASSISTANT: ${{ env.QUBINODE_ENABLE_AI_ASSISTANT }}
+          QUBINODE_ENABLE_AIRFLOW: ${{ env.QUBINODE_ENABLE_AIRFLOW }}
+          BUILD_AI_ASSISTANT_FROM_SOURCE: ${{ env.BUILD_AI_ASSISTANT_FROM_SOURCE }}
+          CICD_PIPELINE: ${{ env.CICD_PIPELINE }}
+          INVENTORY: ${{ env.INVENTORY }}
         run: |
           echo "========================================"
           echo "Deploying Qubinode Stack"
           echo "========================================"
 
           # Create required directories
-          mkdir -p ai-assistant/data
+          sudo mkdir -p ai-assistant/data
+          sudo chown -R $(id -u):$(id -g) ai-assistant/data
 
-          # Run the one-shot deployment script
+          # Run the one-shot deployment script as root with environment preserved
           cd ${{ github.workspace }}
           chmod +x scripts/development/deploy-qubinode.sh
-          ./scripts/development/deploy-qubinode.sh
+          sudo -E ./scripts/development/deploy-qubinode.sh
 
           echo "[OK] Qubinode stack deployed"
 
