@@ -28,9 +28,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # Validate we're in the right repository
-if [[ ! -f "$REPO_ROOT/setup.sh" ]] || [[ ! -d "$REPO_ROOT/airflow" ]]; then
+if [[ ! -d "$REPO_ROOT/airflow" ]] || [[ ! -d "$REPO_ROOT/ai-assistant" ]]; then
     echo "ERROR: Cannot find qubinode_navigator repository root"
-    echo "Expected to find setup.sh and airflow/ directory at: $REPO_ROOT"
+    echo "Expected to find airflow/ and ai-assistant/ directories at: $REPO_ROOT"
     echo "Please run this script from within the qubinode_navigator repository"
     exit 1
 fi
