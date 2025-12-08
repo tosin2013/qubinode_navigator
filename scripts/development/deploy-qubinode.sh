@@ -407,6 +407,10 @@ start_ai_assistant() {
 
     # Start the container
     log_info "Starting AI Assistant container..."
+    # Mount directories for:
+    # - /app/data: RAG data, embeddings, cache
+    # - /app/airflow/dags: DAG discovery for PydanticAI orchestrator (ADR-0066)
+    # - /app/docs/adrs: ADR files for context
     AI_ASSISTANT_CONTAINER=$(podman run -d \
         --name qubinode-ai-assistant \
         -p ${AI_ASSISTANT_PORT}:8080 \
@@ -414,11 +418,18 @@ start_ai_assistant() {
         -e LOG_LEVEL=INFO \
         -e MARQUEZ_API_URL=http://host.containers.internal:5001 \
         -e AIRFLOW_API_URL=http://host.containers.internal:8888 \
+        -e AIRFLOW_DAGS_PATH=/app/airflow/dags \
+        -e PROJECT_ROOT=/app \
         ${OPENROUTER_API_KEY:+-e OPENROUTER_API_KEY="${OPENROUTER_API_KEY}"} \
+        ${GEMINI_API_KEY:+-e GEMINI_API_KEY="${GEMINI_API_KEY}"} \
+        ${ANTHROPIC_API_KEY:+-e ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY}"} \
+        ${OPENAI_API_KEY:+-e OPENAI_API_KEY="${OPENAI_API_KEY}"} \
         ${MANAGER_MODEL:+-e MANAGER_MODEL="${MANAGER_MODEL}"} \
         ${DEVELOPER_MODEL:+-e DEVELOPER_MODEL="${DEVELOPER_MODEL}"} \
         ${PYDANTICAI_MODEL:+-e PYDANTICAI_MODEL="${PYDANTICAI_MODEL}"} \
         -v "${REPO_ROOT}/ai-assistant/data:/app/data:z" \
+        -v "${REPO_ROOT}/airflow/dags:/app/airflow/dags:ro,z" \
+        -v "${REPO_ROOT}/docs/adrs:/app/docs/adrs:ro,z" \
         "$ai_image")
 
     # Wait for AI Assistant to be ready
