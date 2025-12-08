@@ -251,17 +251,23 @@ jobs:
           fi
 
           # Trigger FreeIPA deployment via AI Assistant Orchestrator (ADR-0066)
-          # This uses the PydanticAI agents to:
-          # 1. Analyze the intent
-          # 2. Find/validate the appropriate DAG
+          # Using /orchestrator/intent endpoint for intent-based execution:
+          # 1. Analyze the intent with PydanticAI Manager Agent
+          # 2. Find/validate the appropriate DAG (freeipa_deployment)
           # 3. Execute via Airflow
           # 4. Monitor for shadow errors
           echo "[INFO] Sending request to AI Assistant Orchestrator..."
+          echo "[INFO] Using /orchestrator/intent endpoint (intent-based execution)"
 
-          RESPONSE=$(curl -s -X POST http://localhost:8080/orchestrator/execute \
+          # Use the /orchestrator/intent endpoint with correct schema:
+          # - intent: natural language description (required)
+          # - params: additional parameters (optional)
+          # - auto_approve: skip approval step (default: false)
+          # - auto_execute: execute immediately (default: true)
+          RESPONSE=$(curl -s -X POST http://localhost:8080/orchestrator/intent \
             -H "Content-Type: application/json" \
             -d '{
-              "user_intent": "Deploy FreeIPA server for E2E testing",
+              "intent": "Deploy FreeIPA server for E2E testing",
               "params": {
                 "vm_name": "freeipa",
                 "action": "create"
@@ -285,10 +291,13 @@ jobs:
           STATUS=$(echo "$RESPONSE" | jq -r '.status // empty')
           if [ "$STATUS" = "executing" ] || [ "$STATUS" = "in_progress" ]; then
             echo "[OK] FreeIPA deployment initiated via Smart Pipeline"
+          elif [ "$STATUS" = "completed" ]; then
+            echo "[OK] FreeIPA deployment completed"
           elif [ "$STATUS" = "failed" ]; then
             echo "[ERROR] Orchestrator returned failure:"
             echo "$RESPONSE" | jq '.error_message, .user_actions' 2>/dev/null
-            exit 1
+            # Don't exit 1 - let the validation step handle it
+            echo "[INFO] Will check FreeIPA status in validation step"
           else
             echo "[INFO] Orchestrator status: $STATUS"
           fi
