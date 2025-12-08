@@ -100,6 +100,8 @@ paths = [
     '''tests/.*''',
     '''.*_test\.py$''',
     '''test_.*\.py$''',
+    # Runtime logs (contain SHA256 hashes that look like secrets)
+    '''airflow/logs/.*''',
     # Scripts with example patterns
     '''scripts/setup-security-tools.sh''',
     '''scripts/security-scan.sh''',
@@ -154,6 +156,7 @@ regexes = [
     '''AIRFLOW_MCP_API_KEY.*b8c909cc21b988703db529ff2287cdbe0cc3ffca67678e9c97bd912790df6486''', # Full API key line in docker-compose
     '''65efb281f1ea9dc8498ec563f7bf42af4f8bf8a6b7bb542141902ce462cdb98a''', # MCP API key in deploy-fastmcp-production.sh (dev/test only)
     '''AKIA1234567890ABCDEF''', # Example AWS key format in documentation/templates
+    '''admin:admin''', # Default test credentials in health check scripts
 ]
 
 # Specific commit allowlist (for historical commits with known issues)
