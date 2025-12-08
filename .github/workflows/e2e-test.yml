@@ -131,14 +131,24 @@ jobs:
           echo "Deploying Qubinode Stack"
           echo "========================================"
 
-          # Create required directories
+          # Create required directories with proper permissions
           sudo mkdir -p ai-assistant/data
-          sudo chown -R $(id -u):$(id -g) ai-assistant/data
+          sudo chmod 777 ai-assistant/data
 
           # Run the one-shot deployment script as root with environment preserved
           cd ${{ github.workspace }}
           chmod +x scripts/development/deploy-qubinode.sh
-          sudo -E ./scripts/development/deploy-qubinode.sh
+          sudo -E ./scripts/development/deploy-qubinode.sh || {
+            echo ""
+            echo "========================================"
+            echo "Deployment failed - checking container status"
+            echo "========================================"
+            sudo podman ps -a
+            echo ""
+            echo "Container logs:"
+            sudo podman logs qubinode-ai-assistant 2>&1 | tail -100 || true
+            exit 1
+          }
 
           echo "[OK] Qubinode stack deployed"
 
