@@ -319,14 +319,18 @@ jobs:
           echo "Validating Airflow DAGs"
           echo "========================================"
 
-          # List DAGs
+          # List DAGs via podman exec (airflow CLI is inside the container)
           echo "[INFO] Available DAGs:"
-          airflow dags list 2>/dev/null || curl -s http://localhost:8888/api/v1/dags | jq '.dags[].dag_id' 2>/dev/null
+          sudo podman exec airflow-scheduler airflow dags list 2>/dev/null || {
+            # Fallback: Use the AI Assistant's orchestrator which has DAG discovery
+            echo "[INFO] Using AI Assistant orchestrator for DAG list..."
+            curl -s http://localhost:8080/orchestrator/dags | jq -r '.dags[].dag_id // .dags[]' 2>/dev/null || echo "Could not list DAGs"
+          }
 
-          # Check for import errors
+          # Check for import errors via podman exec
           echo ""
           echo "[INFO] DAG import errors:"
-          airflow dags list-import-errors 2>/dev/null || echo "No import errors endpoint"
+          sudo podman exec airflow-scheduler airflow dags list-import-errors 2>/dev/null || echo "[INFO] Import errors check skipped (scheduler not ready)"
 
           echo ""
           echo "[OK] Airflow validation complete"
