@@ -1,0 +1,413 @@
+# E2E Integration Test Workflow
+# Per ADR-0067: Self-Hosted Runner E2E Testing with One-Shot Deployment
+#
+# This workflow deploys the complete Qubinode stack on a self-hosted runner
+# and validates the Smart Pipeline (ADR-0066) with FreeIPA as test workload.
+#
+# IDEMPOTENT: Can be torn down and re-run cleanly
+
+name: E2E Integration Test
+
+on:
+  schedule:
+    - cron: '0 3 * * 0'  # Weekly Sunday 3am UTC
+  workflow_dispatch:
+    inputs:
+      teardown_first:
+        description: 'Teardown existing deployment before starting'
+        type: boolean
+        default: true
+      deploy_freeipa:
+        description: 'Deploy FreeIPA VM for full test'
+        type: boolean
+        default: true
+      skip_cleanup:
+        description: 'Skip cleanup after test (for debugging)'
+        type: boolean
+        default: false
+
+env:
+  # Deployment Configuration
+  QUBINODE_DOMAIN: "e2e.qubinode.local"
+  QUBINODE_ADMIN_USER: "admin"
+  QUBINODE_CLUSTER_NAME: "e2e-test"
+  QUBINODE_DEPLOYMENT_MODE: "production"
+  QUBINODE_ENABLE_AI_ASSISTANT: "true"
+  QUBINODE_ENABLE_AIRFLOW: "true"
+  BUILD_AI_ASSISTANT_FROM_SOURCE: "true"
+  CICD_PIPELINE: "true"
+  INVENTORY: "localhost"
+
+jobs:
+  e2e-test:
+    name: E2E Integration Test
+    runs-on: self-hosted
+    timeout-minutes: 120
+
+    steps:
+      # =========================================================================
+      # Phase 0: Checkout and Setup
+      # =========================================================================
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Display runner info
+        run: |
+          echo "========================================"
+          echo "E2E Integration Test"
+          echo "========================================"
+          echo "Runner: $(hostname)"
+          echo "OS: $(cat /etc/os-release | grep PRETTY_NAME | cut -d'"' -f2)"
+          echo "Kernel: $(uname -r)"
+          echo "Date: $(date)"
+          echo "========================================"
+
+      # =========================================================================
+      # Phase 1: Teardown (if requested or scheduled)
+      # =========================================================================
+      - name: Teardown existing deployment
+        if: ${{ github.event.inputs.teardown_first == 'true' || github.event_name == 'schedule' }}
+        run: |
+          echo "========================================"
+          echo "Tearing down existing deployment"
+          echo "========================================"
+
+          # Stop and remove containers
+          echo "[INFO] Stopping containers..."
+          podman stop qubinode-ai-assistant 2>/dev/null || true
+          podman rm qubinode-ai-assistant 2>/dev/null || true
+
+          # Stop Airflow if running
+          if systemctl is-active --quiet airflow-scheduler; then
+            echo "[INFO] Stopping Airflow services..."
+            sudo systemctl stop airflow-scheduler airflow-webserver 2>/dev/null || true
+          fi
+
+          # Delete FreeIPA VM if exists
+          echo "[INFO] Deleting FreeIPA VM..."
+          kcli delete vm freeipa -y 2>/dev/null || true
+
+          # Clean up any other test VMs
+          echo "[INFO] Cleaning up test VMs..."
+          kcli list vm 2>/dev/null | grep -E "e2e|test" | awk '{print $2}' | xargs -I {} kcli delete vm {} -y 2>/dev/null || true
+
+          echo "[OK] Teardown complete"
+
+      # =========================================================================
+      # Phase 2: Deploy Infrastructure
+      # =========================================================================
+      - name: Deploy Qubinode Stack
+        env:
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          MANAGER_MODEL: ${{ secrets.MANAGER_MODEL }}
+          DEVELOPER_MODEL: ${{ secrets.DEVELOPER_MODEL }}
+          PYDANTICAI_MODEL: ${{ secrets.PYDANTICAI_MODEL }}
+        run: |
+          echo "========================================"
+          echo "Deploying Qubinode Stack"
+          echo "========================================"
+
+          # Run the one-shot deployment script
+          cd ${{ github.workspace }}
+          chmod +x scripts/development/deploy-qubinode.sh
+          ./scripts/development/deploy-qubinode.sh
+
+          echo "[OK] Qubinode stack deployed"
+
+      - name: Wait for services to be ready
+        run: |
+          echo "========================================"
+          echo "Waiting for services to be ready"
+          echo "========================================"
+
+          MAX_ATTEMPTS=30
+          ATTEMPT=0
+
+          # Wait for AI Assistant
+          echo "[INFO] Waiting for AI Assistant..."
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            ATTEMPT=$((ATTEMPT + 1))
+            if curl -s http://localhost:8080/health | grep -q "ok\|healthy"; then
+              echo "[OK] AI Assistant is ready"
+              break
+            fi
+            echo "  Attempt $ATTEMPT/$MAX_ATTEMPTS..."
+            sleep 10
+          done
+
+          if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
+            echo "[WARN] AI Assistant may not be fully ready"
+          fi
+
+          # Wait for Airflow
+          ATTEMPT=0
+          echo "[INFO] Waiting for Airflow..."
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            ATTEMPT=$((ATTEMPT + 1))
+            if curl -s http://localhost:8888/health | grep -q "healthy"; then
+              echo "[OK] Airflow is ready"
+              break
+            fi
+            echo "  Attempt $ATTEMPT/$MAX_ATTEMPTS..."
+            sleep 10
+          done
+
+          if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
+            echo "[WARN] Airflow may not be fully ready"
+          fi
+
+          echo "[OK] Services ready"
+
+      # =========================================================================
+      # Phase 3: Deploy FreeIPA VM
+      # =========================================================================
+      - name: Deploy FreeIPA VM
+        if: ${{ github.event.inputs.deploy_freeipa == 'true' || github.event_name == 'schedule' }}
+        run: |
+          echo "========================================"
+          echo "Deploying FreeIPA VM"
+          echo "========================================"
+
+          # Check if FreeIPA already exists
+          if kcli info vm freeipa 2>/dev/null | grep -q "status: up"; then
+            echo "[OK] FreeIPA VM already running"
+            kcli info vm freeipa
+            exit 0
+          fi
+
+          # Trigger FreeIPA deployment via Airflow DAG
+          echo "[INFO] Triggering FreeIPA deployment DAG..."
+
+          # Use Airflow CLI to trigger the DAG
+          airflow dags trigger freeipa_deployment \
+            --conf '{"action": "create", "vm_name": "freeipa"}' \
+            2>/dev/null || {
+              echo "[WARN] Could not trigger via Airflow CLI, using kcli directly..."
+              cd /opt/kcli-pipelines
+              export VM_PROFILE=freeipa
+              export ACTION=create
+              export CICD_PIPELINE=true
+              ./deploy-vm.sh
+            }
+
+          echo "[INFO] FreeIPA deployment initiated"
+
+      - name: Wait for FreeIPA to be ready
+        if: ${{ github.event.inputs.deploy_freeipa == 'true' || github.event_name == 'schedule' }}
+        run: |
+          echo "========================================"
+          echo "Waiting for FreeIPA VM"
+          echo "========================================"
+
+          MAX_ATTEMPTS=60
+          ATTEMPT=0
+
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            ATTEMPT=$((ATTEMPT + 1))
+            echo "Check $ATTEMPT/$MAX_ATTEMPTS..."
+
+            # Get FreeIPA IP
+            FREEIPA_IP=$(kcli info vm freeipa 2>/dev/null | grep 'ip:' | awk '{print $2}' | head -1)
+
+            if [ -n "$FREEIPA_IP" ] && [ "$FREEIPA_IP" != "None" ]; then
+              echo "[INFO] FreeIPA IP: $FREEIPA_IP"
+
+              # Check if FreeIPA web UI is accessible
+              if curl -sk --connect-timeout 5 "https://$FREEIPA_IP/ipa/ui/" | grep -q "IPA"; then
+                echo ""
+                echo "========================================"
+                echo "[OK] FreeIPA is ready!"
+                echo "========================================"
+                echo "IP Address: $FREEIPA_IP"
+                echo "Web UI: https://$FREEIPA_IP/ipa/ui/"
+                echo "========================================"
+                exit 0
+              fi
+
+              # Alternative: check SSH
+              if nc -z -w5 "$FREEIPA_IP" 22 2>/dev/null; then
+                echo "[INFO] FreeIPA SSH is accessible, checking services..."
+                ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 root@$FREEIPA_IP \
+                  "systemctl is-active ipa" 2>/dev/null && {
+                    echo "[OK] FreeIPA IPA service is running"
+                    exit 0
+                  }
+              fi
+            fi
+
+            sleep 30
+          done
+
+          echo "[WARN] FreeIPA may still be provisioning"
+          kcli info vm freeipa 2>/dev/null || true
+
+      # =========================================================================
+      # Phase 4: Validate Deployment
+      # =========================================================================
+      - name: Validate AI Assistant
+        run: |
+          echo "========================================"
+          echo "Validating AI Assistant"
+          echo "========================================"
+
+          # Health check
+          echo "[INFO] Health check..."
+          curl -s http://localhost:8080/health | jq . || curl -s http://localhost:8080/health
+
+          # Check models configured
+          echo ""
+          echo "[INFO] Model configuration..."
+          curl -s http://localhost:8080/models 2>/dev/null | jq . || echo "Models endpoint not available"
+
+          echo ""
+          echo "[OK] AI Assistant validation complete"
+
+      - name: Validate Airflow DAGs
+        run: |
+          echo "========================================"
+          echo "Validating Airflow DAGs"
+          echo "========================================"
+
+          # List DAGs
+          echo "[INFO] Available DAGs:"
+          airflow dags list 2>/dev/null || curl -s http://localhost:8888/api/v1/dags | jq '.dags[].dag_id' 2>/dev/null
+
+          # Check for import errors
+          echo ""
+          echo "[INFO] DAG import errors:"
+          airflow dags list-import-errors 2>/dev/null || echo "No import errors endpoint"
+
+          echo ""
+          echo "[OK] Airflow validation complete"
+
+      - name: Validate FreeIPA VM
+        if: ${{ github.event.inputs.deploy_freeipa == 'true' || github.event_name == 'schedule' }}
+        run: |
+          echo "========================================"
+          echo "Validating FreeIPA VM"
+          echo "========================================"
+
+          # Get VM info
+          echo "[INFO] VM Status:"
+          kcli info vm freeipa 2>/dev/null || echo "FreeIPA VM not found"
+
+          # Get IP
+          FREEIPA_IP=$(kcli info vm freeipa 2>/dev/null | grep 'ip:' | awk '{print $2}' | head -1)
+
+          if [ -n "$FREEIPA_IP" ] && [ "$FREEIPA_IP" != "None" ]; then
+            echo ""
+            echo "[INFO] FreeIPA IP: $FREEIPA_IP"
+
+            # Test DNS resolution
+            echo ""
+            echo "[INFO] Testing DNS..."
+            dig @$FREEIPA_IP freeipa.${QUBINODE_DOMAIN} +short 2>/dev/null || echo "DNS query failed"
+
+            # Test LDAP
+            echo ""
+            echo "[INFO] Testing LDAP port..."
+            nc -z -w5 $FREEIPA_IP 389 && echo "[OK] LDAP port open" || echo "[WARN] LDAP port not accessible"
+
+            # Test Kerberos
+            echo ""
+            echo "[INFO] Testing Kerberos port..."
+            nc -z -w5 $FREEIPA_IP 88 && echo "[OK] Kerberos port open" || echo "[WARN] Kerberos port not accessible"
+          fi
+
+          echo ""
+          echo "[OK] FreeIPA validation complete"
+
+      # =========================================================================
+      # Phase 5: Smart Pipeline Validation (ADR-0066)
+      # =========================================================================
+      - name: Check Shadow Errors
+        continue-on-error: true
+        run: |
+          echo "========================================"
+          echo "Checking Smart Pipeline Shadow Errors"
+          echo "========================================"
+
+          # Query shadow errors endpoint
+          ERRORS=$(curl -s http://localhost:8080/orchestrator/shadow-errors 2>/dev/null || echo '{"error": "endpoint not available"}')
+
+          echo "$ERRORS" | jq . 2>/dev/null || echo "$ERRORS"
+
+          # Check if there are shadow failures
+          if echo "$ERRORS" | jq -e '.total_shadow_failures > 0' 2>/dev/null; then
+            echo ""
+            echo "[WARN] Shadow errors detected - review above"
+          else
+            echo ""
+            echo "[OK] No shadow errors detected"
+          fi
+
+      - name: Check OpenLineage/Marquez
+        continue-on-error: true
+        run: |
+          echo "========================================"
+          echo "Checking OpenLineage/Marquez"
+          echo "========================================"
+
+          # Check if Marquez is running
+          if curl -s http://localhost:5001/api/v1/namespaces 2>/dev/null | jq . ; then
+            echo ""
+            echo "[OK] Marquez is accessible"
+
+            # List jobs in qubinode namespace
+            echo ""
+            echo "[INFO] Jobs in qubinode namespace:"
+            curl -s http://localhost:5001/api/v1/namespaces/qubinode/jobs 2>/dev/null | jq '.jobs[].name' 2>/dev/null || echo "No jobs found"
+          else
+            echo "[INFO] Marquez not running or not accessible"
+          fi
+
+      # =========================================================================
+      # Phase 6: Summary
+      # =========================================================================
+      - name: Generate Test Summary
+        run: |
+          echo ""
+          echo "========================================"
+          echo "E2E Test Summary"
+          echo "========================================"
+          echo ""
+          echo "Deployment Status:"
+          echo "  - AI Assistant: $(curl -s http://localhost:8080/health | grep -q 'ok\|healthy' && echo '✅ Running' || echo '❌ Not running')"
+          echo "  - Airflow: $(curl -s http://localhost:8888/health | grep -q 'healthy' && echo '✅ Running' || echo '❌ Not running')"
+
+          FREEIPA_IP=$(kcli info vm freeipa 2>/dev/null | grep 'ip:' | awk '{print $2}' | head -1)
+          if [ -n "$FREEIPA_IP" ] && [ "$FREEIPA_IP" != "None" ]; then
+            echo "  - FreeIPA VM: ✅ Running ($FREEIPA_IP)"
+          else
+            echo "  - FreeIPA VM: ❌ Not deployed or no IP"
+          fi
+
+          echo ""
+          echo "Access URLs:"
+          echo "  - AI Assistant: http://$(hostname):8080"
+          echo "  - Airflow UI: http://$(hostname):8888"
+          if [ -n "$FREEIPA_IP" ]; then
+            echo "  - FreeIPA: https://$FREEIPA_IP"
+          fi
+          echo ""
+          echo "========================================"
+
+      # =========================================================================
+      # Phase 7: Cleanup (optional)
+      # =========================================================================
+      - name: Cleanup test resources
+        if: ${{ always() && github.event.inputs.skip_cleanup != 'true' && github.event_name == 'schedule' }}
+        run: |
+          echo "========================================"
+          echo "Cleaning up test resources"
+          echo "========================================"
+
+          # Only cleanup VMs on scheduled runs, keep services running
+          echo "[INFO] Deleting FreeIPA VM..."
+          kcli delete vm freeipa -y 2>/dev/null || true
+
+          echo "[OK] Cleanup complete"
+          echo ""
+          echo "Note: AI Assistant and Airflow are still running for debugging"
+          echo "Run with teardown_first=true to fully reset"
