@@ -96,6 +96,19 @@ jobs:
       # =========================================================================
       # Phase 2: Deploy Infrastructure
       # =========================================================================
+      - name: Login to Red Hat Registry
+        env:
+          REDHAT_USERNAME: ${{ secrets.REDHAT_USERNAME }}
+          REDHAT_PASSWORD: ${{ secrets.REDHAT_PASSWORD }}
+        run: |
+          echo "[INFO] Logging into registry.redhat.io..."
+          if [ -n "$REDHAT_USERNAME" ] && [ -n "$REDHAT_PASSWORD" ]; then
+            podman login registry.redhat.io -u "$REDHAT_USERNAME" -p "$REDHAT_PASSWORD"
+            echo "[OK] Logged into Red Hat registry"
+          else
+            echo "[WARN] Red Hat registry credentials not configured, will use fallback image"
+          fi
+
       - name: Deploy Qubinode Stack
         env:
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
@@ -107,6 +120,9 @@ jobs:
           echo "========================================"
           echo "Deploying Qubinode Stack"
           echo "========================================"
+
+          # Create required directories
+          mkdir -p ai-assistant/data
 
           # Run the one-shot deployment script
           cd ${{ github.workspace }}
