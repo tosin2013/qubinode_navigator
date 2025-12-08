@@ -48,6 +48,16 @@ jobs:
       # =========================================================================
       # Phase 0: Checkout and Setup
       # =========================================================================
+      - name: Clean workspace (fix root-owned files from previous run)
+        run: |
+          # Previous runs with sudo -E create root-owned files that the runner can't clean
+          # This must run BEFORE checkout to avoid permission errors
+          if [ -d "${{ github.workspace }}" ]; then
+            echo "[INFO] Cleaning workspace from previous run..."
+            sudo rm -rf "${{ github.workspace }}"/* "${{ github.workspace }}"/.[!.]* 2>/dev/null || true
+            echo "[OK] Workspace cleaned"
+          fi
+
       - name: Checkout code
         uses: actions/checkout@v4
 
