@@ -1818,15 +1818,29 @@ sync_credentials_to_airflow() {
 verify_deployment() {
     log_step "Verifying deployment..."
 
-    # Check libvirt
-    if ! virsh list &> /dev/null; then
-        log_error "libvirt verification failed"
-        return 1
+    # Check libvirt (skip in CI/CD mode where libvirt may not be available)
+    if [[ "$CICD_PIPELINE" == "true" ]]; then
+        # In CI/CD mode, only check libvirt if the socket exists
+        if [[ -S /var/run/libvirt/libvirt-sock ]]; then
+            if virsh list &> /dev/null; then
+                local vm_count=$(virsh list --all | grep -c "running\|shut off" || echo "0")
+                log_info "Virtual machines found: $vm_count"
+            else
+                log_warning "libvirt not accessible (may not be configured in CI/CD)"
+            fi
+        else
+            log_info "Skipping libvirt verification (not available in CI/CD environment)"
+        fi
+    else
+        # In normal mode, libvirt is required
+        if ! virsh list &> /dev/null; then
+            log_error "libvirt verification failed"
+            return 1
+        fi
+        # Check for running VMs (if any were created)
+        local vm_count=$(virsh list --all | grep -c "running\|shut off" || echo "0")
+        log_info "Virtual machines found: $vm_count"
     fi
-
-    # Check for running VMs (if any were created)
-    local vm_count=$(virsh list --all | grep -c "running\|shut off" || echo "0")
-    log_info "Virtual machines found: $vm_count"
 
     # Check AI Assistant if enabled
     if [[ "$QUBINODE_ENABLE_AI_ASSISTANT" == "true" ]] && [[ -n "$AI_ASSISTANT_CONTAINER" ]]; then

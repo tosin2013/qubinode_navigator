@@ -73,33 +73,46 @@ jobs:
           echo "========================================"
 
       # =========================================================================
-      # Phase 1: Teardown (if requested or scheduled)
+      # Phase 1: Teardown previous deployment (always runs for clean state)
       # =========================================================================
       - name: Teardown existing deployment
-        if: ${{ github.event.inputs.teardown_first == 'true' || github.event_name == 'schedule' }}
         run: |
           echo "========================================"
           echo "Tearing down existing deployment"
           echo "========================================"
 
-          # Stop and remove containers
-          echo "[INFO] Stopping containers..."
-          podman stop qubinode-ai-assistant 2>/dev/null || true
-          podman rm qubinode-ai-assistant 2>/dev/null || true
+          # Stop and remove ALL podman containers (both user and root)
+          echo "[INFO] Stopping all podman containers..."
+          podman stop -a 2>/dev/null || true
+          podman rm -a -f 2>/dev/null || true
+          sudo podman stop -a 2>/dev/null || true
+          sudo podman rm -a -f 2>/dev/null || true
 
-          # Stop Airflow if running
-          if systemctl is-active --quiet airflow-scheduler; then
+          # Clean up podman networks
+          echo "[INFO] Cleaning up podman networks..."
+          podman network prune -f 2>/dev/null || true
+          sudo podman network prune -f 2>/dev/null || true
+
+          # Stop Airflow systemd services if running
+          if systemctl is-active --quiet airflow-scheduler 2>/dev/null; then
             echo "[INFO] Stopping Airflow services..."
             sudo systemctl stop airflow-scheduler airflow-webserver 2>/dev/null || true
           fi
 
-          # Delete FreeIPA VM if exists
-          echo "[INFO] Deleting FreeIPA VM..."
-          kcli delete vm freeipa -y 2>/dev/null || true
+          # Stop podman-compose services in airflow directory
+          echo "[INFO] Stopping podman-compose services..."
+          cd ${{ github.workspace }}/airflow 2>/dev/null && sudo podman-compose down 2>/dev/null || true
 
-          # Clean up any other test VMs
-          echo "[INFO] Cleaning up test VMs..."
-          kcli list vm 2>/dev/null | grep -E "e2e|test" | awk '{print $2}' | xargs -I {} kcli delete vm {} -y 2>/dev/null || true
+          # Delete FreeIPA VM if exists (only if kcli/libvirt available)
+          if command -v kcli &>/dev/null && [ -S /var/run/libvirt/libvirt-sock ]; then
+            echo "[INFO] Deleting FreeIPA VM..."
+            kcli delete vm freeipa -y 2>/dev/null || true
+            # Clean up any other test VMs
+            echo "[INFO] Cleaning up test VMs..."
+            kcli list vm 2>/dev/null | grep -E "e2e|test" | awk '{print $2}' | xargs -I {} kcli delete vm {} -y 2>/dev/null || true
+          else
+            echo "[INFO] Skipping VM cleanup (libvirt not available)"
+          fi
 
           echo "[OK] Teardown complete"
 
