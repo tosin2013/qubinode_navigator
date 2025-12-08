@@ -2,6 +2,12 @@
 """
 Enhanced AI Service with LiteLLM support
 Supports both local models (llama.cpp) and API models (OpenAI, Anthropic, etc.)
+
+DEPRECATION NOTICE (ADR-0063):
+This module uses LangChain LLM base class and is pending migration to PydanticAI.
+The new agent architecture is in src/agents/ (base.py, manager.py, developer.py).
+Migration plan: Replace LangChain inheritance with PydanticAI Agent pattern.
+Target: Q1 2025 as per ADR-0063 implementation timeline.
 """
 
 import asyncio
@@ -12,8 +18,8 @@ import time
 from typing import Dict, List, Optional, Any
 
 import httpx
-from langchain.llms.base import LLM
-from langchain.callbacks.manager import CallbackManagerForLLMRun
+from langchain_core.language_models.llms import LLM
+from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 
 # Import LiteLLM with error handling
 try:
@@ -82,6 +88,7 @@ class EnhancedAIService:
         # Initialize RAG service
         logger.info("Initializing RAG service...")
         self.rag_service = create_rag_service("/app/data")
+        await self.rag_service.initialize()  # Explicitly initialize the RAG service
 
         # Initialize Marquez context service for lineage awareness
         if MARQUEZ_AVAILABLE:
