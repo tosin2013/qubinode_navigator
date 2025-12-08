@@ -1259,6 +1259,14 @@ configure_navigator() {
                 return 1
             }
         else
+            # Set defaults from QUBINODE_* environment variables for CI/CD mode
+            export ENV_USERNAME="${ENV_USERNAME:-${QUBINODE_ADMIN_USER:-admin}}"
+            export DOMAIN="${DOMAIN:-${QUBINODE_DOMAIN:-example.com}}"
+            export FORWARDER="${FORWARDER:-8.8.8.8}"
+            export ACTIVE_BRIDGE="${ACTIVE_BRIDGE:-false}"
+            export INTERFACE="${INTERFACE:-$(ip route | grep default | awk '{print $5}' | head -1)}"
+            export DISK="${DISK:-skip}"
+
             if [[ -z "$ENV_USERNAME" || -z "$DOMAIN" || -z "$FORWARDER" || -z "$ACTIVE_BRIDGE" || -z "$INTERFACE" || -z "$DISK" ]]; then
                 log_error "Required environment variables not set for CI/CD mode"
                 return 1
