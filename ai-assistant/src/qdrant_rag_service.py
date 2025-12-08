@@ -33,6 +33,14 @@ class RetrievalResult:
     metadata: Dict[str, Any]
 
 
+@dataclass
+class RetrievalContext:
+    """Context retrieved from RAG for AI augmentation"""
+
+    contexts: List[str]
+    sources: List[str]
+
+
 class QdrantRAGService:
     """Modern Qdrant+FastEmbed RAG service for 2024/2025"""
 
@@ -305,6 +313,29 @@ class QdrantRAGService:
 
         context = "# Relevant Documentation Context\n\n" + "".join(context_parts)
         return context, list(set(sources))  # Remove duplicate sources
+
+    async def retrieve_relevant_context(
+        self,
+        query: str,
+        top_k: int = 5,
+    ) -> "RetrievalContext":
+        """
+        Retrieve relevant context for a query.
+        Returns a RetrievalContext object with contexts and sources.
+
+        This method is used by EnhancedAIService for RAG-augmented responses.
+        """
+        results = await self.search_documents(query, n_results=top_k)
+
+        contexts = []
+        sources = []
+
+        for result in results:
+            contexts.append(result.content)
+            if result.source_file and result.source_file not in sources:
+                sources.append(result.source_file)
+
+        return RetrievalContext(contexts=contexts, sources=sources)
 
     async def get_health_status(self) -> Dict[str, Any]:
         """Get health status of Qdrant RAG service"""
