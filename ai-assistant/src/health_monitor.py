@@ -17,11 +17,13 @@ logger = logging.getLogger(__name__)
 class HealthMonitor:
     """Monitors health of AI assistant components."""
 
-    def __init__(self, ai_service=None):
+    def __init__(self, ai_service=None, use_local_model: bool = False):
         self.start_time = time.time()
         self.last_health_check = None
         self.health_status = "starting"
         self.ai_service = ai_service
+        # When USE_LOCAL_MODEL=false, skip llama.cpp health checks
+        self.use_local_model = use_local_model
 
     async def get_health_status(self) -> Dict[str, Any]:
         """Get comprehensive health status."""
@@ -123,26 +125,47 @@ class HealthMonitor:
     async def _check_ai_service_health(self) -> Dict[str, Any]:
         """Check AI service health."""
         try:
-            # Check if llama.cpp server is responding
-            llama_healthy = await self._check_llama_server()
-
-            # Check model availability
-            model_healthy = await self._check_model_availability()
-
-            # Check API responsiveness
+            # Check API responsiveness (always required)
             api_healthy = await self._check_api_responsiveness()
 
-            # Check RAG service status
+            # Check RAG service status (always required)
             rag_status = await self._check_rag_service()
 
-            healthy = llama_healthy and model_healthy and api_healthy
             warnings = []
 
-            if not llama_healthy:
-                warnings.append("llama.cpp server not responding")
+            # Only check llama.cpp components if USE_LOCAL_MODEL=true
+            if self.use_local_model:
+                # Check if llama.cpp server is responding
+                llama_healthy = await self._check_llama_server()
 
-            if not model_healthy:
-                warnings.append("AI model not available")
+                # Check model availability
+                model_healthy = await self._check_model_availability()
+
+                healthy = llama_healthy and model_healthy and api_healthy
+
+                if not llama_healthy:
+                    warnings.append("llama.cpp server not responding")
+
+                if not model_healthy:
+                    warnings.append("AI model not available")
+
+                components = {
+                    "llama_server": llama_healthy,
+                    "model": model_healthy,
+                    "api": api_healthy,
+                    "rag_service": rag_status,
+                    "mode": "local",
+                }
+            else:
+                # Cloud-only mode: llama.cpp not required
+                healthy = api_healthy
+                components = {
+                    "llama_server": "skipped (cloud-only mode)",
+                    "model": "skipped (cloud-only mode)",
+                    "api": api_healthy,
+                    "rag_service": rag_status,
+                    "mode": "cloud",
+                }
 
             if not api_healthy:
                 warnings.append("API not responsive")
@@ -155,12 +178,7 @@ class HealthMonitor:
             return {
                 "healthy": healthy,
                 "warnings": warnings,
-                "components": {
-                    "llama_server": llama_healthy,
-                    "model": model_healthy,
-                    "api": api_healthy,
-                    "rag_service": rag_status,
-                },
+                "components": components,
             }
 
         except Exception as e:

@@ -37,6 +37,9 @@ env:
   BUILD_AI_ASSISTANT_FROM_SOURCE: "true"
   CICD_PIPELINE: "true"
   INVENTORY: "localhost"
+  # Skip local model (llama.cpp + Granite) - use cloud APIs via PydanticAI orchestrator
+  # This speeds up CI by avoiding 2-5 min model download
+  USE_LOCAL_MODEL: "false"
 
 jobs:
   e2e-test:

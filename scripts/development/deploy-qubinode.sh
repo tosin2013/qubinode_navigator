@@ -634,11 +634,16 @@ restart_ai_assistant_with_credentials() {
     fi
 
     log_info "Starting AI Assistant with orchestrator credentials..."
+    # USE_LOCAL_MODEL controls whether to start llama.cpp + Granite model
+    # Default: false (cloud-only mode for faster CI startup)
+    local use_local_model="${USE_LOCAL_MODEL:-false}"
+    log_info "USE_LOCAL_MODEL=${use_local_model}"
     AI_ASSISTANT_CONTAINER=$(podman run -d \
         --name qubinode-ai-assistant \
         --network host \
         -e DEPLOYMENT_MODE=${QUBINODE_DEPLOYMENT_MODE:-production} \
         -e LOG_LEVEL=INFO \
+        -e USE_LOCAL_MODEL="${use_local_model}" \
         -e MARQUEZ_API_URL=http://localhost:5001 \
         -e AIRFLOW_API_URL=http://localhost:8888/api/v1 \
         -e AIRFLOW_DAGS_PATH=/app/airflow/dags \
@@ -658,8 +663,13 @@ restart_ai_assistant_with_credentials() {
         "$ai_image")
 
     # Wait for AI Assistant to be ready using podman health check + endpoint verification
-    # The container has a 300s start-period for model download, so we wait up to 6 minutes
-    log_info "Waiting for AI Assistant to be ready (model download may take 2-5 minutes)..."
+    # With USE_LOCAL_MODEL=false, startup is fast (no model download)
+    # With USE_LOCAL_MODEL=true, may take 2-5 minutes for model download
+    if [[ "$use_local_model" == "true" ]]; then
+        log_info "Waiting for AI Assistant to be ready (model download may take 2-5 minutes)..."
+    else
+        log_info "Waiting for AI Assistant to be ready (cloud-only mode, should be fast)..."
+    fi
     local port=${AI_ASSISTANT_PORT:-8080}
     local max_wait=360  # 6 minutes
     local check_interval=5

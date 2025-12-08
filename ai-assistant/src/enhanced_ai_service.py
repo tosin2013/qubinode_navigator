@@ -57,6 +57,10 @@ class EnhancedAIService:
         self.llama_process = None
         self.marquez_service = None  # Lineage context service
 
+        # Check if local model is enabled (USE_LOCAL_MODEL env var, defaults to false)
+        ai_config = config.get("ai", {})
+        self.use_local_model = ai_config.get("use_local_model", False)
+
         # Determine model type
         model_info = self.model_manager.get_model_info()
         self.is_api_model = model_info.get("preset_info", {}).get("provider") == "litellm"
@@ -64,25 +68,36 @@ class EnhancedAIService:
         logger.info("Enhanced AI Service initialized")
         logger.info(f"Model type: {model_info['model_type']}")
         logger.info(f"API model: {self.is_api_model}")
+        logger.info(f"Local model enabled: {self.use_local_model}")
 
     async def initialize(self):
         """Initialize the AI service"""
         logger.info("Initializing Enhanced AI service...")
 
-        # Validate configuration
-        validation = self.model_manager.validate_configuration()
-        if not validation["valid"]:
-            for error in validation["errors"]:
-                logger.error(f"Configuration error: {error}")
-            raise ValueError("Invalid model configuration")
-
-        for warning in validation["warnings"]:
-            logger.warning(f"Configuration warning: {warning}")
-
-        # Initialize model based on type
-        if self.is_api_model:
+        # Initialize model based on configuration
+        if not self.use_local_model:
+            # Cloud-only mode: skip llama.cpp for faster startup
+            logger.info("USE_LOCAL_MODEL=false - skipping local model initialization")
+            logger.info("Service will use PydanticAI orchestrator with cloud APIs")
+        elif self.is_api_model:
+            # Validate configuration for API models
+            validation = self.model_manager.validate_configuration()
+            if not validation["valid"]:
+                for error in validation["errors"]:
+                    logger.error(f"Configuration error: {error}")
+                raise ValueError("Invalid model configuration")
+            for warning in validation["warnings"]:
+                logger.warning(f"Configuration warning: {warning}")
             await self._initialize_api_model()
         else:
+            # Validate configuration for local models
+            validation = self.model_manager.validate_configuration()
+            if not validation["valid"]:
+                for error in validation["errors"]:
+                    logger.error(f"Configuration error: {error}")
+                raise ValueError("Invalid model configuration")
+            for warning in validation["warnings"]:
+                logger.warning(f"Configuration warning: {warning}")
             await self._initialize_local_model()
 
         # Initialize RAG service

@@ -54,6 +54,8 @@ class ConfigManager:
 
     def _get_default_config(self) -> Dict[str, Any]:
         """Get default configuration."""
+        # USE_LOCAL_MODEL defaults to false - cloud-only mode for faster CI startup
+        use_local_model = os.getenv("USE_LOCAL_MODEL", "false").lower() in ("true", "1", "yes", "on")
         return {
             "ai": {
                 "model_name": "granite-4.0-micro",
@@ -62,6 +64,7 @@ class ConfigManager:
                 "temperature": 0.7,
                 "context_size": 2048,
                 "threads": os.cpu_count() or 4,
+                "use_local_model": use_local_model,  # Flag to enable/disable llama.cpp
             },
             "server": {
                 "host": "0.0.0.0",
@@ -86,7 +89,7 @@ class ConfigManager:
                 "models_dir": "/app/models",
                 "data_dir": "/app/data",
                 "logs_dir": "/app/logs",
-                "vector_db_path": "/app/data/chromadb",
+                "vector_db_path": "/app/data/qdrant",
             },
             "qubinode": {
                 "integration_enabled": True,
@@ -128,6 +131,7 @@ class ConfigManager:
             "AI_MAX_TOKENS": ("ai", "max_tokens"),
             "AI_TEMPERATURE": ("ai", "temperature"),
             "AI_THREADS": ("ai", "threads"),
+            "USE_LOCAL_MODEL": ("ai", "use_local_model"),
             "AI_ENABLE_AUTH": ("security", "enable_auth"),
             "AI_API_KEY": ("security", "api_key"),
             "AI_RATE_LIMIT": ("security", "rate_limit"),
@@ -153,6 +157,7 @@ class ConfigManager:
                     "integration_enabled",
                     "ansible_callback",
                     "setup_hooks",
+                    "use_local_model",
                 ]:
                     value = value.lower() in ("true", "1", "yes", "on")
 
@@ -234,3 +239,11 @@ class ConfigManager:
     def is_feature_enabled(self, feature: str) -> bool:
         """Check if a feature is enabled."""
         return self.config.get("features", {}).get(feature, False)
+
+    def is_local_model_enabled(self) -> bool:
+        """Check if local model (llama.cpp + Granite) should be used.
+
+        When USE_LOCAL_MODEL=false (default), skip llama.cpp startup for faster
+        CI/cloud deployments. The orchestrator will use cloud APIs instead.
+        """
+        return self.config.get("ai", {}).get("use_local_model", False)
