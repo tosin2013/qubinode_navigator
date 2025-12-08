@@ -334,8 +334,8 @@ validate_configuration() {
         fi
     done
 
-    # Validate domain format
-    if [[ ! $QUBINODE_DOMAIN =~ ^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.[a-zA-Z]{2,}$ ]]; then
+    # Validate domain format (supports subdomains like e2e.qubinode.local)
+    if [[ ! $QUBINODE_DOMAIN =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)+$ ]]; then
         log_error "Invalid domain format: $QUBINODE_DOMAIN"
         return 1
     fi
