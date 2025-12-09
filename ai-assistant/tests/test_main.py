@@ -11,6 +11,9 @@ from unittest.mock import patch, MagicMock, AsyncMock
 # Add src directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
+# Ensure TEST_MODE is set before any imports (conftest.py also sets this)
+os.environ["TEST_MODE"] = "true"
+
 # Mock langchain before importing (only if not already available)
 if "langchain" not in sys.modules:
     sys.modules["langchain"] = MagicMock()
@@ -25,11 +28,8 @@ if "langchain" not in sys.modules:
 if "litellm" not in sys.modules:
     sys.modules["litellm"] = MagicMock()
 
-# Mock RAG ingestion API (but NOT qdrant_rag_service - that must work for other tests)
-if "rag_ingestion_api" not in sys.modules:
-    mock_rag_ingestion = MagicMock()
-    sys.modules["rag_ingestion_api"] = mock_rag_ingestion
-    mock_rag_ingestion.router = MagicMock()
+# Note: Do NOT mock rag_ingestion_api here - it's handled via TEST_MODE env var
+# which prevents module-level service initialization
 
 from main import app, ChatRequest, ChatResponse
 

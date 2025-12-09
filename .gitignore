@@ -111,3 +111,4 @@ airflow/airflow-webserver.pid
 airflow/dag_list.txt
 airflow/logs/
 .credentials/
+coverage.json
