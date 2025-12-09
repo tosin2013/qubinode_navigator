@@ -158,19 +158,27 @@ jobs:
           echo "Configuring SSH for Airflow container"
           echo "========================================"
 
-          # Ensure SSH key exists for root
-          if [[ ! -f /root/.ssh/id_rsa ]]; then
+          # Ensure .ssh directory exists for root
+          sudo mkdir -p /root/.ssh
+          sudo chmod 700 /root/.ssh
+
+          # Ensure SSH key exists for root (use sudo for all /root checks)
+          if ! sudo test -f /root/.ssh/id_rsa; then
             echo "[INFO] Generating SSH key for root..."
             sudo ssh-keygen -t rsa -b 4096 -f /root/.ssh/id_rsa -N '' -q
           fi
           echo "[OK] SSH key exists: /root/.ssh/id_rsa"
 
+          # Ensure authorized_keys file exists
+          sudo touch /root/.ssh/authorized_keys
+          sudo chmod 600 /root/.ssh/authorized_keys
+
           # Add the key to authorized_keys for localhost access
           # This allows the Airflow container (running as root) to SSH to root@localhost
-          if ! sudo grep -q "$(sudo cat /root/.ssh/id_rsa.pub)" /root/.ssh/authorized_keys 2>/dev/null; then
+          ROOT_PUB_KEY=$(sudo cat /root/.ssh/id_rsa.pub)
+          if ! sudo grep -qF "$ROOT_PUB_KEY" /root/.ssh/authorized_keys 2>/dev/null; then
             echo "[INFO] Adding SSH key to authorized_keys for localhost access..."
-            sudo cat /root/.ssh/id_rsa.pub | sudo tee -a /root/.ssh/authorized_keys > /dev/null
-            sudo chmod 600 /root/.ssh/authorized_keys
+            echo "$ROOT_PUB_KEY" | sudo tee -a /root/.ssh/authorized_keys > /dev/null
             echo "[OK] SSH key added to authorized_keys"
           else
             echo "[OK] SSH key already in authorized_keys"
