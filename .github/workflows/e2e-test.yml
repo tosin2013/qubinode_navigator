@@ -419,6 +419,28 @@ jobs:
       # =========================================================================
       # Phase 4: Deploy FreeIPA VM via PydanticAI Smart Pipeline (ADR-0066)
       # =========================================================================
+      - name: Unpause FreeIPA DAG
+        if: ${{ github.event.inputs.deploy_freeipa == 'true' || github.event_name == 'schedule' }}
+        run: |
+          echo "========================================"
+          echo "Unpausing freeipa_deployment DAG"
+          echo "========================================"
+
+          # DAGs are paused by default (AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=true)
+          # We need to unpause before triggering
+          echo "[INFO] Current DAG status:"
+          sudo podman exec airflow-scheduler airflow dags list -o table 2>/dev/null | grep -E "dag_id|freeipa" || true
+
+          echo ""
+          echo "[INFO] Unpausing freeipa_deployment DAG..."
+          sudo podman exec airflow-scheduler airflow dags unpause freeipa_deployment 2>&1 || {
+            echo "[WARN] Could not unpause DAG - it may not exist yet"
+          }
+
+          echo ""
+          echo "[INFO] DAG status after unpause:"
+          sudo podman exec airflow-scheduler airflow dags list -o table 2>/dev/null | grep -E "dag_id|freeipa" || true
+
       - name: Deploy FreeIPA via AI Assistant Orchestrator
         if: ${{ github.event.inputs.deploy_freeipa == 'true' || github.event_name == 'schedule' }}
         run: |
