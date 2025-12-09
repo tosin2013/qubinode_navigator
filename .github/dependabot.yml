@@ -75,6 +75,38 @@ updates:
       - "python"
       - "bash-aliases"
 
+  # Python dependencies - AI Assistant (PydanticAI orchestrator)
+  - package-ecosystem: "pip"
+    directory: "/ai-assistant"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "10:30"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "tosin2013"
+    assignees:
+      - "tosin2013"
+    commit-message:
+      prefix: "deps(ai-assistant)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "python"
+      - "ai-assistant"
+      - "security"
+    allow:
+      - dependency-type: "all"
+    ignore:
+      # Ignore major version updates for core AI packages that need manual testing
+      - dependency-name: "pydantic-ai"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "langchain"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "langchain-core"
+        update-types: ["version-update:semver-major"]
+
   # GitHub Actions dependencies
   - package-ecosystem: "github-actions"
     directory: "/"
