@@ -540,5 +540,234 @@ class TestEnhancedAIServiceFactory:
         assert isinstance(service, EnhancedAIService)
 
 
+class TestEnhancedAIServiceInitialization:
+    """Test service initialization paths"""
+
+    @pytest.mark.asyncio
+    async def test_initialize_cloud_only_mode(self, mock_config):
+        """Test initialization in cloud-only mode"""
+        mock_config["ai"]["use_local_model"] = False
+        
+        with patch("enhanced_ai_service.ModelManager") as mock_mm:
+            mock_mm.return_value.get_model_info.return_value = {
+                "model_type": "gpt-4",
+                "preset_info": {},
+                "max_tokens": 512,
+                "temperature": 0.7
+            }
+            
+            service = EnhancedAIService(mock_config)
+            
+            with patch("enhanced_ai_service.create_rag_service") as mock_rag:
+                mock_rag_instance = AsyncMock()
+                mock_rag_instance.initialize = AsyncMock(return_value=True)
+                mock_rag.return_value = mock_rag_instance
+                
+                await service.initialize()
+            
+            # Should skip local model initialization
+            assert service.llama_process is None
+
+    @pytest.mark.asyncio
+    async def test_initialize_api_model_invalid_config(self, mock_config):
+        """Test initialization with invalid API model config"""
+        mock_config["ai"]["use_local_model"] = True
+        
+        with patch("enhanced_ai_service.ModelManager") as mock_mm:
+            mock_mm.return_value.get_model_info.return_value = {
+                "model_type": "gpt-4",
+                "preset_info": {"provider": "litellm"},
+            }
+            mock_mm.return_value.validate_configuration.return_value = {
+                "valid": False,
+                "errors": ["Missing API key"],
+                "warnings": []
+            }
+            
+            service = EnhancedAIService(mock_config)
+            
+            with pytest.raises(ValueError, match="Invalid model configuration"):
+                await service.initialize()
+
+    @pytest.mark.asyncio
+    async def test_initialize_local_model_invalid_config(self, mock_config):
+        """Test initialization with invalid local model config"""
+        mock_config["ai"]["use_local_model"] = True
+        
+        with patch("enhanced_ai_service.ModelManager") as mock_mm:
+            mock_mm.return_value.get_model_info.return_value = {
+                "model_type": "granite-4.0-micro",
+                "preset_info": {},
+            }
+            mock_mm.return_value.validate_configuration.return_value = {
+                "valid": False,
+                "errors": ["Model file not found"],
+                "warnings": []
+            }
+            
+            service = EnhancedAIService(mock_config)
+            
+            with pytest.raises(ValueError, match="Invalid model configuration"):
+                await service.initialize()
+
+    @pytest.mark.asyncio
+    async def test_initialize_with_warnings(self, mock_config):
+        """Test initialization with configuration warnings"""
+        mock_config["ai"]["use_local_model"] = False
+        
+        with patch("enhanced_ai_service.ModelManager") as mock_mm:
+            mock_mm.return_value.get_model_info.return_value = {
+                "model_type": "granite-4.0-micro",
+                "preset_info": {},
+            }
+            mock_mm.return_value.validate_configuration.return_value = {
+                "valid": True,
+                "errors": [],
+                "warnings": ["GPU not available, using CPU"]
+            }
+            
+            service = EnhancedAIService(mock_config)
+            
+            with patch("enhanced_ai_service.create_rag_service") as mock_rag:
+                mock_rag_instance = AsyncMock()
+                mock_rag_instance.initialize = AsyncMock(return_value=True)
+                mock_rag.return_value = mock_rag_instance
+                
+                # Should complete despite warnings
+                await service.initialize()
+
+
+class TestEnhancedAIServiceAPICredentials:
+    """Test API credentials configuration"""
+
+    def test_configure_openai_credentials(self, mock_config):
+        """Test OpenAI credentials check"""
+        with patch("enhanced_ai_service.ModelManager") as mock_mm:
+            mock_mm.return_value.get_model_info.return_value = {
+                "model_type": "gpt-4",
+                "preset_info": {},
+            }
+            
+            service = EnhancedAIService(mock_config)
+            
+            with patch.dict(os.environ, {}, clear=True):
+                # Should log warning but not raise
+                service._configure_api_credentials("gpt-4")
+
+    def test_configure_anthropic_credentials(self, mock_config):
+        """Test Anthropic credentials check"""
+        with patch("enhanced_ai_service.ModelManager") as mock_mm:
+            mock_mm.return_value.get_model_info.return_value = {
+                "model_type": "claude-3",
+                "preset_info": {},
+            }
+            
+            service = EnhancedAIService(mock_config)
+            
+            with patch.dict(os.environ, {}, clear=True):
+                service._configure_api_credentials("claude-3-opus")
+
+    def test_configure_azure_credentials(self, mock_config):
+        """Test Azure credentials check"""
+        with patch("enhanced_ai_service.ModelManager") as mock_mm:
+            mock_mm.return_value.get_model_info.return_value = {
+                "model_type": "azure-gpt-4",
+                "preset_info": {},
+            }
+            
+            service = EnhancedAIService(mock_config)
+            
+            with patch.dict(os.environ, {}, clear=True):
+                service._configure_api_credentials("azure-gpt-4")
+
+
+class TestEnhancedAIServiceChatErrors:
+    """Test chat error handling"""
+
+    @pytest.mark.asyncio
+    async def test_chat_rag_error(self, mock_config):
+        """Test chat with RAG retrieval error"""
+        with patch("enhanced_ai_service.ModelManager") as mock_mm:
+            mock_mm.return_value.get_model_info.return_value = {
+                "model_type": "granite-4.0-micro",
+                "preset_info": {},
+            }
+            mock_mm.return_value.model_type = "granite-4.0-micro"
+            
+            service = EnhancedAIService(mock_config)
+        
+        # Mock RAG service that raises error
+        mock_rag = AsyncMock()
+        mock_rag.retrieve_relevant_context = AsyncMock(side_effect=Exception("RAG error"))
+        service.rag_service = mock_rag
+        
+        mock_llm = MagicMock()
+        service.llm = mock_llm
+        service.is_api_model = False
+        
+        with patch.object(service, "_generate_local_response", return_value="Response despite RAG error"):
+            result = await service.chat("Test message")
+        
+        # Should handle error gracefully
+        assert "response" in result
+        assert result["response"] == "Response despite RAG error"
+
+    @pytest.mark.asyncio
+    async def test_chat_generation_error(self, mock_config):
+        """Test chat with generation error"""
+        with patch("enhanced_ai_service.ModelManager") as mock_mm:
+            mock_mm.return_value.get_model_info.return_value = {
+                "model_type": "granite-4.0-micro",
+                "preset_info": {},
+            }
+            mock_mm.return_value.model_type = "granite-4.0-micro"
+            
+            service = EnhancedAIService(mock_config)
+        
+        service.rag_service = None
+        mock_llm = MagicMock()
+        service.llm = mock_llm
+        service.is_api_model = False
+        
+        with patch.object(service, "_generate_local_response", side_effect=Exception("Generation failed")):
+            result = await service.chat("Test message")
+        
+        # Should return error response
+        assert "error" in result["metadata"]
+
+
+class TestEnhancedAIServiceMarquezIntegration:
+    """Test Marquez lineage integration"""
+
+    @pytest.mark.asyncio
+    async def test_marquez_not_available(self, mock_config):
+        """Test when Marquez is not available"""
+        with patch("enhanced_ai_service.ModelManager") as mock_mm:
+            mock_mm.return_value.get_model_info.return_value = {
+                "model_type": "granite-4.0-micro",
+                "preset_info": {},
+            }
+            mock_mm.return_value.model_type = "granite-4.0-micro"
+            
+            service = EnhancedAIService(mock_config)
+        
+        # Mock Marquez service that returns error
+        mock_marquez = AsyncMock()
+        mock_marquez.get_context_for_prompt = AsyncMock(side_effect=Exception("Marquez unavailable"))
+        service.marquez_service = mock_marquez
+        service.rag_service = None
+        
+        mock_llm = MagicMock()
+        service.llm = mock_llm
+        service.is_api_model = False
+        
+        with patch.object(service, "_generate_local_response", return_value="Response without lineage"):
+            result = await service.chat("Test message")
+        
+        # Should handle Marquez error gracefully
+        assert "response" in result
+        assert result["metadata"]["lineage_enabled"] is False
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
