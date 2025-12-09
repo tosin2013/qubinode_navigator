@@ -11,24 +11,25 @@ from unittest.mock import patch, MagicMock, AsyncMock
 # Add src directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-# Mock langchain before importing
-sys.modules["langchain"] = MagicMock()
-sys.modules["langchain.llms"] = MagicMock()
-sys.modules["langchain.llms.base"] = MagicMock()
-sys.modules["langchain.callbacks"] = MagicMock()
-sys.modules["langchain.callbacks.manager"] = MagicMock()
-sys.modules["litellm"] = MagicMock()
+# Mock langchain before importing (only if not already available)
+if "langchain" not in sys.modules:
+    sys.modules["langchain"] = MagicMock()
+    sys.modules["langchain.llms"] = MagicMock()
+    sys.modules["langchain.llms.base"] = MagicMock()
+    sys.modules["langchain.callbacks"] = MagicMock()
+    sys.modules["langchain.callbacks.manager"] = MagicMock()
+    # Create mock LLM base class
+    mock_llm_class = MagicMock()
+    sys.modules["langchain.llms.base"].LLM = mock_llm_class
 
-# Create mock LLM base class
-mock_llm_class = MagicMock()
-sys.modules["langchain.llms.base"].LLM = mock_llm_class
+if "litellm" not in sys.modules:
+    sys.modules["litellm"] = MagicMock()
 
-# Mock RAG services before importing main (they try to create /app/data directories)
-mock_qdrant_rag = MagicMock()
-mock_rag_ingestion = MagicMock()
-sys.modules["qdrant_rag_service"] = mock_qdrant_rag
-sys.modules["rag_ingestion_api"] = mock_rag_ingestion
-mock_rag_ingestion.router = MagicMock()
+# Mock RAG ingestion API (but NOT qdrant_rag_service - that must work for other tests)
+if "rag_ingestion_api" not in sys.modules:
+    mock_rag_ingestion = MagicMock()
+    sys.modules["rag_ingestion_api"] = mock_rag_ingestion
+    mock_rag_ingestion.router = MagicMock()
 
 from main import app, ChatRequest, ChatResponse
 

@@ -2,7 +2,7 @@
 Tests for Qdrant RAG Service (qdrant_rag_service.py)
 Tests document retrieval, embedding, and context generation
 
-Note: Tests may be skipped if Qdrant client is not available.
+Note: Tests run with real classes when Qdrant client is available.
 """
 
 import pytest
@@ -35,6 +35,7 @@ QDRANT_AVAILABLE = False
 QdrantRAGService = None
 MockRAGService = None
 create_rag_service = None
+RetrievalResult = None
 
 try:
     from qdrant_rag_service import (
@@ -77,9 +78,11 @@ class TestQdrantRAGServiceInit:
 
     def test_service_creation(self, tmp_path):
         """Test creating QdrantRAGService instance"""
+        from pathlib import Path
+
         service = QdrantRAGService(data_dir=str(tmp_path))
 
-        assert service.data_dir == tmp_path
+        assert service.data_dir == Path(tmp_path)
         assert service.client is None
         assert service.collection_name == "qubinode_docs"
         assert service.documents_loaded is False

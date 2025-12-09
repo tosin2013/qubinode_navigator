@@ -113,25 +113,31 @@ class TestConvenienceFunctions:
     """Test convenience search functions."""
 
     def test_search_airflow_docs_returns_string(self):
-        """Test search_airflow_docs returns string."""
-        from src.tools.web_search import search_airflow_docs
+        """Test search_airflow_docs returns string with availability info."""
+        from src.tools.web_search import search_airflow_docs, DUCKDUCKGO_AVAILABLE
 
         result = search_airflow_docs("operators")
         assert isinstance(result, str)
+        if DUCKDUCKGO_AVAILABLE:
+            assert "operators" in result.lower() or "available" in result.lower()
 
     def test_search_kubernetes_docs_returns_string(self):
-        """Test search_kubernetes_docs returns string."""
-        from src.tools.web_search import search_kubernetes_docs
+        """Test search_kubernetes_docs returns string with availability info."""
+        from src.tools.web_search import search_kubernetes_docs, DUCKDUCKGO_AVAILABLE
 
         result = search_kubernetes_docs("pods")
         assert isinstance(result, str)
+        if DUCKDUCKGO_AVAILABLE:
+            assert "pods" in result.lower() or "available" in result.lower()
 
     def test_search_openshift_docs_returns_string(self):
-        """Test search_openshift_docs returns string."""
-        from src.tools.web_search import search_openshift_docs
+        """Test search_openshift_docs returns string with availability info."""
+        from src.tools.web_search import search_openshift_docs, DUCKDUCKGO_AVAILABLE
 
         result = search_openshift_docs("routes")
         assert isinstance(result, str)
+        if DUCKDUCKGO_AVAILABLE:
+            assert "routes" in result.lower() or "available" in result.lower()
 
 
 class TestWebSearchServiceMocked:

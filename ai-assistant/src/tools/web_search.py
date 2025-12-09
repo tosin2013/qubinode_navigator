@@ -185,22 +185,21 @@ class WebSearchService:
 # Convenience functions for direct usage
 def quick_search(query: str) -> str:
     """
-    Quick web search returning text result.
+    Quick web search returning text result (synchronous wrapper).
+
+    For async code, use WebSearchService.search() instead.
 
     Args:
         query: Search query
 
     Returns:
-        Search results as text
+        Search results as text, or message if search unavailable
     """
     if not DUCKDUCKGO_AVAILABLE:
         return "Web search unavailable: pydantic-ai[duckduckgo] not installed"
 
-    try:
-        tool = duckduckgo_search_tool()
-        return str(tool.function(query))
-    except Exception as e:
-        return f"Search failed: {e}"
+    # Return informational message - actual search requires async context
+    return f"Web search available for query: '{query}'. " "Use WebSearchService.search() in async context for actual results."
 
 
 def search_airflow_docs(topic: str) -> str:
@@ -211,7 +210,7 @@ def search_airflow_docs(topic: str) -> str:
         topic: Topic to search in Airflow docs
 
     Returns:
-        Relevant documentation snippets
+        Informational message about search capability
     """
     return quick_search(f"apache airflow {topic} documentation")
 
@@ -224,7 +223,7 @@ def search_kubernetes_docs(topic: str) -> str:
         topic: Topic to search in K8s docs
 
     Returns:
-        Relevant documentation snippets
+        Informational message about search capability
     """
     return quick_search(f"kubernetes {topic} documentation official")
 
@@ -237,7 +236,7 @@ def search_openshift_docs(topic: str) -> str:
         topic: Topic to search in OpenShift docs
 
     Returns:
-        Relevant documentation snippets
+        Informational message about search capability
     """
     return quick_search(f"red hat openshift {topic} documentation")
 
