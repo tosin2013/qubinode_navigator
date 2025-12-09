@@ -40,7 +40,7 @@ hpack==4.1.0
 httpcore==1.0.9
 httptools==0.7.1
 httpx[http2]==0.28.1
-httpx-sse>=0.4.0
+httpx-sse==0.4.3
 huggingface-hub==1.2.1
 hyperframe==6.1.0
 idna==3.11
@@ -58,7 +58,7 @@ langchain-community==0.3.31
 langchain-core==0.3.80
 langchain-text-splitters==0.3.11
 langsmith==0.4.56
-litellm==1.80.8
+litellm==1.80.9
 markdown-it-py==4.0.0
 markupsafe==3.0.3
 marshmallow==3.26.1
@@ -84,7 +84,6 @@ py-key-value-aio[disk,memory]==0.3.0
 py-key-value-shared==0.3.0
 pycparser==2.23
 pydantic[email]==2.12.4
-pydantic-ai[openai]==0.3.7
 pydantic-core==2.41.5
 pydantic-settings==2.12.0
 pygments==2.19.2
