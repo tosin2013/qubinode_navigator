@@ -1255,11 +1255,17 @@ get_qubinode_navigator() {
             ask_ai_for_help "git_clone" "Failed to clone $GIT_REPO"
             return 1
         }
+    fi
 
-        # Create system-wide symlink
+    # Always ensure system-wide symlink exists (needed for Airflow DAGs)
+    # DAGs reference /opt/qubinode_navigator for vault.yml and inventory resources
+    if [[ ! -L /opt/qubinode_navigator ]] || [[ "$(readlink -f /opt/qubinode_navigator 2>/dev/null)" != "$(readlink -f "$target_dir/qubinode_navigator" 2>/dev/null)" ]]; then
+        log_info "Creating/updating system symlink: /opt/qubinode_navigator -> $target_dir/qubinode_navigator"
         sudo ln -sf "$target_dir/qubinode_navigator" /opt/qubinode_navigator || {
             log_warning "Failed to create system symlink"
         }
+    else
+        log_info "System symlink /opt/qubinode_navigator already correct"
     fi
 
     # Set proper permissions
