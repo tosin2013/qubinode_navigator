@@ -582,8 +582,20 @@ jobs:
 
               # Try Observer API first (provides shadow error detection)
               # Note: This is a POST endpoint that finds the latest run
+              OBSERVE_HTTP_CODE=""
               OBSERVE_RESPONSE=$(curl -s -X POST --max-time 15 \
+                -w "\n__HTTP_CODE__%{http_code}" \
                 "http://localhost:8080/orchestrator/observe?dag_id=freeipa_deployment" 2>/dev/null || echo "{}")
+
+              # Extract HTTP code from response
+              OBSERVE_HTTP_CODE=$(echo "$OBSERVE_RESPONSE" | grep "__HTTP_CODE__" | sed 's/__HTTP_CODE__//')
+              OBSERVE_RESPONSE=$(echo "$OBSERVE_RESPONSE" | grep -v "__HTTP_CODE__")
+
+              # Debug: Show raw response on first Observer call
+              if [ $ATTEMPT -eq 5 ]; then
+                echo "  [DEBUG] Observer HTTP code: $OBSERVE_HTTP_CODE"
+                echo "  [DEBUG] Observer response preview: $(echo "$OBSERVE_RESPONSE" | head -c 200)"
+              fi
 
               if echo "$OBSERVE_RESPONSE" | jq -e '.overall_status' > /dev/null 2>&1; then
                 DAG_STATUS=$(echo "$OBSERVE_RESPONSE" | jq -r '.overall_status // "unknown"')
@@ -621,7 +633,10 @@ jobs:
                 fi
               else
                 # Fallback to basic Airflow CLI check
-                echo "  (Observer not available, using Airflow CLI)"
+                echo "  (Observer returned HTTP $OBSERVE_HTTP_CODE, using Airflow CLI)"
+                if [ -n "$OBSERVE_RESPONSE" ] && [ "$OBSERVE_RESPONSE" != "{}" ]; then
+                  echo "  [DEBUG] Observer error: $(echo "$OBSERVE_RESPONSE" | jq -c '.detail // .' 2>/dev/null | head -c 150)"
+                fi
                 DAG_STATUS=$(sudo podman exec airflow-scheduler airflow dags list-runs -d freeipa_deployment --limit 1 -o json 2>/dev/null | jq -r '.[0].state // "unknown"' 2>/dev/null || echo "unknown")
                 echo "  DAG status: $DAG_STATUS"
 
