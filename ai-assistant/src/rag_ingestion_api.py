@@ -8,6 +8,7 @@ Based on AI Ecosystem Roadmap
 import json
 import logging
 import hashlib
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Optional
@@ -377,7 +378,12 @@ class RAGIngestionService:
 
 # FastAPI Router
 router = APIRouter(prefix="/rag", tags=["RAG Ingestion"])
-rag_service = RAGIngestionService()
+
+# Only initialize service if not in test mode
+if not os.getenv("TEST_MODE"):
+    rag_service = RAGIngestionService()
+else:
+    rag_service = None
 
 
 @router.post("/ingest", response_model=IngestionResponse)

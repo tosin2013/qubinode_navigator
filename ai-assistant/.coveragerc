@@ -7,12 +7,8 @@ omit =
     */site-packages/*
     */.venv/*
     src/ai_service.py
-    src/enhanced_ai_service.py
-    src/rag_ingestion_api.py
-    src/marquez_context_service.py
     src/faiss_rag_service.py
     src/rag_service.py
-    src/qdrant_rag_service.py
 
 [report]
 exclude_lines =
