@@ -9,7 +9,7 @@ import pytest
 import os
 import sys
 import json
-from unittest.mock import patch, MagicMock, AsyncMock
+from unittest.mock import patch, MagicMock
 from dataclasses import dataclass
 from typing import Dict, Any
 
@@ -318,11 +318,11 @@ class TestQdrantRAGServiceRetrieveContext:
     async def test_retrieve_relevant_context_empty(self, tmp_path):
         """Test retrieve_relevant_context with no results"""
         service = QdrantRAGService(data_dir=str(tmp_path))
-        
+
         result = await service.retrieve_relevant_context("test query", top_k=5)
-        
-        assert hasattr(result, 'contexts')
-        assert hasattr(result, 'sources')
+
+        assert hasattr(result, "contexts")
+        assert hasattr(result, "sources")
         assert isinstance(result.contexts, list)
         assert isinstance(result.sources, list)
 
@@ -331,11 +331,11 @@ class TestQdrantRAGServiceRetrieveContext:
         """Test retrieve_relevant_context with mock service"""
         service = MockRAGService(data_dir=str(tmp_path))
         await service.initialize()
-        
+
         # MockRAGService doesn't implement retrieve_relevant_context
         # Check that real QdrantRAGService has it
         real_service = QdrantRAGService(data_dir=str(tmp_path))
-        assert hasattr(real_service, 'retrieve_relevant_context')
+        assert hasattr(real_service, "retrieve_relevant_context")
 
 
 @pytest.mark.skipif(not QDRANT_AVAILABLE, reason="Qdrant client not available")
@@ -346,12 +346,12 @@ class TestQdrantRAGServiceBuildCollection:
     async def test_build_collection_with_valid_chunks(self, tmp_path):
         """Test building collection with valid chunks file"""
         service = QdrantRAGService(data_dir=str(tmp_path))
-        
+
         # Create rag-docs directory and chunks file
         rag_docs_dir = tmp_path / "rag-docs"
         rag_docs_dir.mkdir(parents=True)
         chunks_file = rag_docs_dir / "document_chunks.json"
-        
+
         # Create valid chunks
         chunks_data = [
             {
@@ -362,7 +362,7 @@ class TestQdrantRAGServiceBuildCollection:
                 "chunk_type": "markdown",
                 "word_count": 15,
                 "metadata": {"document_type": "guide"},
-                "created_at": "2024-01-01T00:00:00"
+                "created_at": "2024-01-01T00:00:00",
             },
             {
                 "id": "chunk_002",
@@ -372,12 +372,12 @@ class TestQdrantRAGServiceBuildCollection:
                 "chunk_type": "markdown",
                 "word_count": 12,
                 "metadata": {"document_type": "guide"},
-                "created_at": "2024-01-01T00:00:00"
-            }
+                "created_at": "2024-01-01T00:00:00",
+            },
         ]
-        
+
         chunks_file.write_text(json.dumps(chunks_data))
-        
+
         # Mock Qdrant client to avoid actual DB operations
         with patch("qdrant_rag_service.QdrantClient") as mock_client_class:
             mock_client = MagicMock()
@@ -385,11 +385,11 @@ class TestQdrantRAGServiceBuildCollection:
             mock_client.create_collection = MagicMock()
             mock_client.upload_collection = MagicMock()
             mock_client_class.return_value = mock_client
-            
+
             service.client = mock_client
-            
+
             await service._build_collection_from_documents()
-            
+
             # Should have called create_collection and upload_collection
             mock_client.create_collection.assert_called_once()
             assert mock_client.upload_collection.call_count > 0
@@ -404,36 +404,36 @@ class TestQdrantRAGServiceInitialize:
         """Test initialize when Qdrant not available"""
         with patch("qdrant_rag_service.QDRANT_AVAILABLE", False):
             service = QdrantRAGService(data_dir=str(tmp_path))
-            
+
             result = await service.initialize()
-            
+
             assert result is False
 
     @pytest.mark.asyncio
     async def test_initialize_with_existing_collection(self, tmp_path):
         """Test initialize with existing collection"""
         service = QdrantRAGService(data_dir=str(tmp_path))
-        
+
         # Mock Qdrant client
         with patch("qdrant_rag_service.QdrantClient") as mock_client_class:
             mock_client = MagicMock()
-            
+
             # Mock get_collections to return existing collection
             mock_collection = MagicMock()
             mock_collection.name = "qubinode_docs"
             mock_collections = MagicMock()
             mock_collections.collections = [mock_collection]
             mock_client.get_collections.return_value = mock_collections
-            
+
             # Mock get_collection
             mock_collection_info = MagicMock()
             mock_collection_info.points_count = 100
             mock_client.get_collection.return_value = mock_collection_info
-            
+
             mock_client_class.return_value = mock_client
-            
+
             result = await service.initialize()
-            
+
             assert result is True
             assert service.documents_loaded is True
 
@@ -441,13 +441,13 @@ class TestQdrantRAGServiceInitialize:
     async def test_initialize_error_handling(self, tmp_path):
         """Test initialize error handling"""
         service = QdrantRAGService(data_dir=str(tmp_path))
-        
+
         # Mock Qdrant client to raise error
         with patch("qdrant_rag_service.QdrantClient") as mock_client_class:
             mock_client_class.side_effect = Exception("Connection error")
-            
+
             result = await service.initialize()
-            
+
             assert result is False
 
 
@@ -460,7 +460,7 @@ class TestQdrantRAGServiceSearchWithFilters:
         """Test search with document type filtering"""
         service = QdrantRAGService(data_dir=str(tmp_path))
         service.documents_loaded = True
-        
+
         # Mock client
         mock_client = MagicMock()
         mock_point = MagicMock()
@@ -474,24 +474,24 @@ class TestQdrantRAGServiceSearchWithFilters:
             "document_type": "adr",
             "chunk_type": "markdown",
             "word_count": 100,
-            "created_at": "2024-01-01T00:00:00"
+            "created_at": "2024-01-01T00:00:00",
         }
-        
+
         mock_results = MagicMock()
         mock_results.points = [mock_point]
         mock_client.query_points.return_value = mock_results
-        
+
         service.client = mock_client
-        
+
         # Create chunks file for enrichment
         rag_docs_dir = tmp_path / "rag-docs"
         rag_docs_dir.mkdir(parents=True)
         chunks_file = rag_docs_dir / "document_chunks.json"
         chunks_data = [{"id": "chunk_001", "content": "Test content for ADR"}]
         chunks_file.write_text(json.dumps(chunks_data))
-        
-        results = await service.search_documents("test query", n_results=5, document_types=["adr"])
-        
+
+        await service.search_documents("test query", n_results=5, document_types=["adr"])
+
         # Should have applied filter
         assert mock_client.query_points.called
         call_args = mock_client.query_points.call_args
