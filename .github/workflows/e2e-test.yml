@@ -108,11 +108,37 @@ jobs:
 
           # Delete FreeIPA VM if exists (only if kcli/libvirt available)
           if command -v kcli &>/dev/null && [ -S /var/run/libvirt/libvirt-sock ]; then
-            echo "[INFO] Deleting FreeIPA VM..."
-            kcli delete vm freeipa -y 2>/dev/null || true
+            echo "[INFO] Checking for existing VMs..."
+            kcli list vm 2>/dev/null || true
+
+            # Explicitly check and delete FreeIPA VM
+            if kcli list vm 2>/dev/null | grep -q "freeipa"; then
+              echo "[INFO] Found existing FreeIPA VM - deleting..."
+              kcli delete vm freeipa -y 2>&1 || true
+              # Wait a moment for deletion to complete
+              sleep 5
+              # Verify deletion
+              if kcli list vm 2>/dev/null | grep -q "freeipa"; then
+                echo "[WARN] FreeIPA VM still exists after delete attempt"
+                kcli list vm 2>/dev/null | grep freeipa || true
+              else
+                echo "[OK] FreeIPA VM deleted successfully"
+              fi
+            else
+              echo "[OK] No existing FreeIPA VM found"
+            fi
+
             # Clean up any other test VMs
-            echo "[INFO] Cleaning up test VMs..."
-            kcli list vm 2>/dev/null | grep -E "e2e|test" | awk '{print $2}' | xargs -I {} kcli delete vm {} -y 2>/dev/null || true
+            echo "[INFO] Cleaning up other test VMs..."
+            kcli list vm 2>/dev/null | grep -iE "e2e|test" | awk '{print $2}' | while read vm; do
+              if [ -n "$vm" ]; then
+                echo "  Deleting: $vm"
+                kcli delete vm "$vm" -y 2>/dev/null || true
+              fi
+            done
+
+            echo "[INFO] Final VM list:"
+            kcli list vm 2>/dev/null || true
           else
             echo "[INFO] Skipping VM cleanup (libvirt not available)"
           fi
