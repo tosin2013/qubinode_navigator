@@ -15,21 +15,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 # Mock external dependencies that may not be available
 # These need to be mocked before any source imports
-if "langchain" not in sys.modules:
-    sys.modules["langchain"] = MagicMock()
-    sys.modules["langchain.llms"] = MagicMock()
-    sys.modules["langchain.llms.base"] = MagicMock()
-    sys.modules["langchain.callbacks"] = MagicMock()
-    sys.modules["langchain.callbacks.manager"] = MagicMock()
-    mock_llm_class = MagicMock()
-    sys.modules["langchain.llms.base"].LLM = mock_llm_class
-
 if "litellm" not in sys.modules:
     sys.modules["litellm"] = MagicMock()
 
-if "chromadb" not in sys.modules:
-    sys.modules["chromadb"] = MagicMock()
-    sys.modules["chromadb.config"] = MagicMock()
+if "qdrant_client" not in sys.modules:
+    sys.modules["qdrant_client"] = MagicMock()
 
 if "sentence_transformers" not in sys.modules:
     sys.modules["sentence_transformers"] = MagicMock()
@@ -73,7 +63,7 @@ def mock_config() -> Dict[str, Any]:
             "models_dir": "/tmp/test-models",
             "data_dir": "/tmp/test-data",
             "logs_dir": "/tmp/test-logs",
-            "vector_db_path": "/tmp/test-data/chromadb",
+            "vector_db_path": "/tmp/test-data/qdrant",
         },
         "qubinode": {
             "integration_enabled": True,
@@ -215,7 +205,7 @@ storage:
   models_dir: /tmp/test-models
   data_dir: /tmp/test-data
   logs_dir: /tmp/test-logs
-  vector_db_path: /tmp/test-data/chromadb
+  vector_db_path: /tmp/test-data/qdrant
 
 qubinode:
   integration_enabled: true
