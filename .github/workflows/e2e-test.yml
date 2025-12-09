@@ -576,23 +576,62 @@ jobs:
             echo ""
             echo "Check $ATTEMPT/$MAX_ATTEMPTS..."
 
-            # Every 5th attempt, check DAG status
+            # Every 5th attempt, use Observer Agent for comprehensive DAG status
             if [ $((ATTEMPT % 5)) -eq 0 ]; then
-              echo "[INFO] Checking DAG run status..."
-              DAG_STATUS=$(sudo podman exec airflow-scheduler airflow dags list-runs -d freeipa_deployment --limit 1 -o json 2>/dev/null | jq -r '.[0].state // "unknown"' 2>/dev/null || echo "unknown")
-              echo "  DAG status: $DAG_STATUS"
+              echo "[INFO] Using Observer Agent for comprehensive DAG status..."
 
-              if [ "$DAG_STATUS" = "failed" ]; then
+              # Try Observer API first (provides shadow error detection)
+              OBSERVE_RESPONSE=$(curl -s --max-time 15 \
+                "http://localhost:8080/orchestrator/observe?dag_id=freeipa_deployment" 2>/dev/null || echo "{}")
+
+              if echo "$OBSERVE_RESPONSE" | jq -e '.overall_status' > /dev/null 2>&1; then
+                DAG_STATUS=$(echo "$OBSERVE_RESPONSE" | jq -r '.overall_status // "unknown"')
+                PROGRESS=$(echo "$OBSERVE_RESPONSE" | jq -r '.progress_percent // 0')
+                HAS_ERRORS=$(echo "$OBSERVE_RESPONSE" | jq -r '.has_errors // false')
+                HAS_WARNINGS=$(echo "$OBSERVE_RESPONSE" | jq -r '.has_warnings // false')
+                SUMMARY=$(echo "$OBSERVE_RESPONSE" | jq -r '.summary // ""')
+
+                echo "  DAG Status: $DAG_STATUS"
+                echo "  Progress: ${PROGRESS}%"
+                echo "  Summary: $SUMMARY"
+
+                # Show any concerns (shadow errors, warnings)
+                if [ "$HAS_WARNINGS" = "true" ] || [ "$HAS_ERRORS" = "true" ]; then
+                  echo ""
+                  echo "  === Observer Concerns ==="
+                  echo "$OBSERVE_RESPONSE" | jq -r '.concerns[] | "  [\(.level)] \(.message)"' 2>/dev/null || true
+                fi
+
+                # Show recommendations
                 echo ""
-                echo "[ERROR] freeipa_deployment DAG failed!"
-                echo ""
-                echo "=== DAG Task Instance Logs ==="
-                # Get latest task logs
-                sudo podman exec airflow-scheduler airflow tasks list freeipa_deployment 2>/dev/null || true
-                echo ""
-                echo "=== Scheduler Logs (last 50 lines) ==="
-                sudo podman logs airflow-scheduler 2>&1 | grep -i "freeipa\|error\|failed" | tail -50 || true
-                exit 1
+                echo "  === Recommendations ==="
+                echo "$OBSERVE_RESPONSE" | jq -r '.recommendations[]' 2>/dev/null | head -3 || true
+
+                if [ "$DAG_STATUS" = "failed" ] || [ "$HAS_ERRORS" = "true" ]; then
+                  echo ""
+                  echo "[ERROR] freeipa_deployment DAG failed or has errors!"
+                  echo ""
+                  echo "=== Observer Detailed Report ==="
+                  echo "$OBSERVE_RESPONSE" | jq -r '.detailed_message // empty' 2>/dev/null || true
+                  echo ""
+                  echo "=== Failed Task Details ==="
+                  echo "$OBSERVE_RESPONSE" | jq '.failed_task_details' 2>/dev/null || true
+                  exit 1
+                fi
+              else
+                # Fallback to basic Airflow CLI check
+                echo "  (Observer not available, using Airflow CLI)"
+                DAG_STATUS=$(sudo podman exec airflow-scheduler airflow dags list-runs -d freeipa_deployment --limit 1 -o json 2>/dev/null | jq -r '.[0].state // "unknown"' 2>/dev/null || echo "unknown")
+                echo "  DAG status: $DAG_STATUS"
+
+                if [ "$DAG_STATUS" = "failed" ]; then
+                  echo ""
+                  echo "[ERROR] freeipa_deployment DAG failed!"
+                  echo ""
+                  echo "=== Scheduler Logs (last 50 lines) ==="
+                  sudo podman logs airflow-scheduler 2>&1 | grep -i "freeipa\|error\|failed" | tail -50 || true
+                  exit 1
+                fi
               fi
             fi
 

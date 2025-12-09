@@ -1911,6 +1911,123 @@ async def get_flow_status(flow_id: str):
     }
 
 
+# =============================================================================
+# Lineage Observer Endpoints (ADR-0066 - Comprehensive DAG Monitoring)
+# =============================================================================
+
+# Import Observer
+try:
+    from agents.observer import observe_dag_run  # noqa: F401
+
+    OBSERVER_AVAILABLE = True
+except ImportError:
+    OBSERVER_AVAILABLE = False
+    logger.warning("Observer module not available")
+
+
+@app.get("/orchestrator/observe/{dag_id}/{run_id}")
+async def observe_dag_execution(
+    dag_id: str,
+    run_id: str,
+    check_logs: bool = True,
+):
+    """
+    Observe a DAG run with comprehensive feedback.
+
+    The Observer Agent ALWAYS reports back with full status,
+    regardless of pass/fail. This includes:
+    - Overall status (running/success/failed)
+    - Task-level progress
+    - Shadow error detection (errors in logs even when task succeeds)
+    - Concerns and recommendations
+
+    This endpoint addresses the "shadow error" problem where DAG
+    failures weren't being detected in CI/CD pipelines.
+
+    Args:
+        dag_id: The DAG to observe
+        run_id: The specific run ID to observe
+        check_logs: Whether to fetch and analyze task logs (default: true)
+
+    Returns:
+        Complete observation report with concerns and recommendations
+    """
+    if not OBSERVER_AVAILABLE:
+        raise HTTPException(
+            status_code=503,
+            detail="Observer module not available",
+        )
+
+    report = await observe_dag_run(dag_id, run_id, check_logs)
+
+    return {
+        **report,
+        "endpoint": f"/orchestrator/observe/{dag_id}/{run_id}",
+        "timestamp": time.time(),
+    }
+
+
+@app.post("/orchestrator/observe")
+async def observe_dag_by_name(
+    dag_id: str,
+    check_logs: bool = True,
+):
+    """
+    Observe the latest run of a DAG.
+
+    Automatically finds the most recent run and observes it.
+    """
+    if not OBSERVER_AVAILABLE:
+        raise HTTPException(
+            status_code=503,
+            detail="Observer module not available",
+        )
+
+    # Get the latest run ID from Airflow
+    try:
+        import httpx
+
+        airflow_url = os.getenv("AIRFLOW_API_URL", "http://localhost:8888")
+        airflow_user = os.getenv("AIRFLOW_API_USER", "admin")
+        airflow_pass = os.getenv("AIRFLOW_API_PASSWORD", "admin")
+
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                f"{airflow_url}/api/v1/dags/{dag_id}/dagRuns",
+                params={"limit": 1, "order_by": "-execution_date"},
+                auth=(airflow_user, airflow_pass),
+            )
+            if response.status_code != 200:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Could not find runs for DAG: {dag_id}",
+                )
+
+            data = response.json()
+            runs = data.get("dag_runs", [])
+            if not runs:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"No runs found for DAG: {dag_id}",
+                )
+
+            run_id = runs[0].get("dag_run_id")
+
+    except httpx.RequestError as e:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Could not connect to Airflow: {e}",
+        )
+
+    report = await observe_dag_run(dag_id, run_id, check_logs)
+
+    return {
+        **report,
+        "endpoint": "/orchestrator/observe",
+        "timestamp": time.time(),
+    }
+
+
 def main():
     """Main entry point."""
     # Get configuration from environment
