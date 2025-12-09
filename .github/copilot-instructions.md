@@ -8,6 +8,49 @@
 - Configuration lives in `config/plugins.yml`: `global.plugin_directories` controls discovery, `plugins.enabled` defines runtime order, and each plugin section mirrors the Python class name.
 - Major plugin families: `plugins/os` (RHEL/Rocky/CentOS), `plugins/cloud` (Hetzner, Equinix), `plugins/services` (AI assistant, log analysis, vault integration), and `plugins/environments` (deployment contexts).
 
+## PydanticAI Orchestrator (ADR-0063, ADR-0066)
+
+The AI Assistant now includes a **PydanticAI-based orchestrator** for intent-based infrastructure deployment:
+
+- **Manager Agent**: Analyzes user intent, finds matching DAGs, creates execution plans
+- **Developer Agent**: Validates DAGs, checks prerequisites, handles execution
+- **Observer Agent**: Monitors DAG runs, detects shadow errors, provides status updates
+
+### Orchestrator Endpoints (port 8080)
+
+| Endpoint                      | Method | Purpose                                        |
+| ----------------------------- | ------ | ---------------------------------------------- |
+| `/orchestrator/status`        | GET    | Check orchestrator availability and API keys   |
+| `/orchestrator/dags`          | GET    | List discovered DAGs from airflow/dags/        |
+| `/orchestrator/intent`        | POST   | Natural language deployment (main entry point) |
+| `/orchestrator/observe`       | POST   | Monitor DAG run status with Observer Agent     |
+| `/orchestrator/shadow-errors` | GET    | Check for shadow failures in executions        |
+
+### Example: Intent-Based Deployment
+
+```bash
+# Deploy FreeIPA using natural language
+curl -X POST http://localhost:8080/orchestrator/intent \
+  -H "Content-Type: application/json" \
+  -d '{
+    "intent": "Deploy FreeIPA server for identity management",
+    "params": {"vm_name": "freeipa", "action": "create"},
+    "auto_approve": true,
+    "auto_execute": true
+  }'
+
+# Monitor with Observer Agent
+curl -X POST "http://localhost:8080/orchestrator/observe?dag_id=freeipa_deployment"
+```
+
+### Environment Variables for PydanticAI
+
+```bash
+OPENROUTER_API_KEY=sk-or-...     # Required: LLM provider for agents
+PYDANTICAI_MODEL=openai/gpt-4o   # Optional: Override default model
+USE_LOCAL_MODEL=false            # Skip local llama.cpp model download
+```
+
 ## Day-to-Day Workflows
 
 - **Environment bootstrap**: `./deploy-qubinode.sh` (or `./scripts/development/deploy-qubinode.sh`) is the modern one-shot deployment entry point; handles plugin orchestration, AI assistant setup, and post-deployment checks. Legacy `qubinode_navigator_legacy.sh` still available for vault-integrated advanced deployments.
@@ -28,11 +71,42 @@
 
 ## AI Assistant & MCP Services
 
-- `ai-assistant/` is a standalone FastAPI service using `llama.cpp` + IBM Granite 4B (see `ai-assistant/src/ai_service.py`, `main.py`); build via `ai-assistant/scripts/build.sh`, run with Podman (`podman run ... localhost/qubinode-ai-assistant:latest`).
-- `ai-assistant/mcp_server*.py` expose **4 MCP tools**: `query_documents`, `chat_with_context`, `get_project_status`, and **`ask_qubinode`** (new learning tool designed for LLMs); they expect the FastAPI service on port 8080 and share configs from `ai-assistant/config/*.yaml` and `.env` files.
-- The `ask_qubinode` tool is specifically designed for LLMs to learn about Qubinode: it combines documentation search with AI-powered guidance, supports topic/skill-level parameters, and provides comprehensive answers with practical examples.
+- `ai-assistant/` is a standalone FastAPI service with **dual architecture**:
+  - **Local LLM** (optional): llama.cpp + IBM Granite 4B for offline RAG queries
+  - **PydanticAI Orchestrator** (ADR-0063): Cloud LLM agents for intent-based deployment
+- Build via `ai-assistant/scripts/build.sh`, run with Podman (`sudo podman run ... localhost/qubinode-ai-assistant:latest`).
+- **Key endpoints**:
+  - `/health` - Service health check
+  - `/chat` - RAG-powered chat (local or cloud LLM)
+  - `/orchestrator/intent` - **PydanticAI intent-based deployment** (primary interface)
+  - `/orchestrator/observe` - DAG monitoring with Observer Agent
+  - `/orchestrator/dags` - DAG discovery from airflow/dags/
+- `ai-assistant/mcp_server*.py` expose MCP tools: `query_documents`, `chat_with_context`, `get_project_status`, and `ask_qubinode`.
 - The `AIAssistantPlugin` (`plugins/services/ai_assistant_plugin.py`) checks health at `ai_service_url`, can auto-start the container (`auto_start: true`), and surfaces log-analysis helpers to other plugins.
 - `qubinode_cli.py ask "question"` tunnels directly into the AI Assistant's `/chat`; scripts should reuse this HTTP API rather than shelling out to CLI helpers.
+
+### PydanticAI Agent Architecture
+
+```
+User Intent ("Deploy FreeIPA")
+        │
+        ▼
+┌───────────────────┐
+│  Manager Agent    │ → Analyzes intent, finds DAG, creates plan
+└─────────┬─────────┘
+          ▼
+┌───────────────────┐
+│ Developer Agent   │ → Validates DAG, checks prerequisites
+└─────────┬─────────┘
+          ▼
+┌───────────────────┐
+│  Airflow DAG      │ → Executes via airflow trigger
+└─────────┬─────────┘
+          ▼
+┌───────────────────┐
+│  Observer Agent   │ → Monitors status, detects shadow errors
+└───────────────────┘
+```
 
 ## Airflow Orchestration Layer
 

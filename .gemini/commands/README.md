@@ -145,19 +145,52 @@ All commands leverage Gemini CLI's powerful features:
 
 These commands integrate with:
 
-| Component    | Port | Purpose               |
-| ------------ | ---- | --------------------- |
-| Airflow UI   | 8888 | DAG management        |
-| MCP Server   | 8889 | Tool API              |
-| AI Assistant | 8080 | Chat and diagnostics  |
-| PostgreSQL   | 5432 | Metadata and vectors  |
-| Marquez      | 5001 | Lineage tracking      |
-| Marquez Web  | 3000 | Lineage visualization |
+| Component    | Port | Purpose                       |
+| ------------ | ---- | ----------------------------- |
+| AI Assistant | 8080 | PydanticAI orchestrator + RAG |
+| Airflow UI   | 8888 | DAG management                |
+| MCP Server   | 8889 | Tool API                      |
+| PostgreSQL   | 5432 | Metadata and vectors          |
+| Marquez      | 5001 | Lineage tracking              |
+| Marquez Web  | 3000 | Lineage visualization         |
+
+## PydanticAI Orchestrator (ADR-0063, ADR-0066)
+
+The AI Assistant includes a multi-agent system for **intent-based deployment**:
+
+### Orchestrator Endpoints
+
+| Endpoint                | Method | Purpose                                      |
+| ----------------------- | ------ | -------------------------------------------- |
+| `/orchestrator/status`  | GET    | Check orchestrator availability and API keys |
+| `/orchestrator/dags`    | GET    | List discovered DAGs                         |
+| `/orchestrator/intent`  | POST   | Natural language deployment (main entry)     |
+| `/orchestrator/observe` | POST   | Monitor DAG run with Observer Agent          |
+
+### Agent Architecture
+
+- **Manager Agent**: Analyzes intent, finds DAGs, creates execution plans
+- **Developer Agent**: Validates DAGs, checks prerequisites
+- **Observer Agent**: Monitors runs, detects shadow errors
+
+### Example Usage
+
+```bash
+# Deploy via natural language
+curl -X POST http://localhost:8080/orchestrator/intent \
+  -H "Content-Type: application/json" \
+  -d '{"intent": "Deploy FreeIPA", "auto_execute": true}'
+
+# Monitor deployment
+curl -X POST "http://localhost:8080/orchestrator/observe?dag_id=freeipa_deployment"
+```
 
 ## Related Documentation
 
 - [ADR-0045](../docs/adrs/adr-0045-dag-development-standards.md): DAG Development Standards
-- [ADR-0047](../docs/adrs/adr-0047-kcli-pipelines-integration.md): Pipeline Integration
+- [ADR-0047](../docs/adrs/adr-0047-qubinode-pipelines-integration.md): Pipeline Integration
+- [ADR-0063](../docs/adrs/adr-0063-pydanticai-core-agent-orchestrator.md): PydanticAI Orchestrator
+- [ADR-0066](../docs/adrs/adr-0066-developer-agent-dag-validation-smart-pipelines.md): Smart Pipelines
 - [Airflow README](../airflow/README.md): Airflow setup guide
 
 ## Extending Commands
