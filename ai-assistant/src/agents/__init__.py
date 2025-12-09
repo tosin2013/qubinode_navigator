@@ -4,6 +4,7 @@ PydanticAI Agents for Qubinode Infrastructure Management.
 This module provides the multi-agent architecture per ADR-0049 and ADR-0063:
 - Manager Agent: Session orchestration and planning
 - Developer Agent: Task execution and orchestration (NOT code generation)
+- Observer Agent: DAG execution monitoring and comprehensive feedback
 - Agent Context: Shared RAG and lineage services for all agents
 
 Code generation is delegated to:
@@ -24,6 +25,16 @@ from .developer import (
     DeveloperDependencies,
     create_developer_agent,
     execute_code_generation,
+)
+from .observer import (
+    LineageObserverAgent,
+    ObserverDependencies,
+    ObserverReport,
+    ExecutionStatus,
+    ConcernLevel,
+    create_observer_agent,
+    get_observer,
+    observe_dag_run,
 )
 from .context import (
     AgentContextManager,
@@ -49,6 +60,15 @@ __all__ = [
     "DeveloperDependencies",
     "create_developer_agent",
     "execute_code_generation",
+    # Observer
+    "LineageObserverAgent",
+    "ObserverDependencies",
+    "ObserverReport",
+    "ExecutionStatus",
+    "ConcernLevel",
+    "create_observer_agent",
+    "get_observer",
+    "observe_dag_run",
     # Context
     "AgentContextManager",
     "agent_context",

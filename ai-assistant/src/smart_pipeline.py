@@ -1465,6 +1465,142 @@ async def get_openlineage_emitter() -> OpenLineageEmitter:
     return OpenLineageEmitter()
 
 
+# =============================================================================
+# Observer Integration - Comprehensive Status Reporting
+# =============================================================================
+
+
+async def observe_execution(
+    dag_id: str,
+    run_id: str,
+    check_logs: bool = True,
+) -> Dict[str, Any]:
+    """
+    Use the Lineage Observer Agent to get comprehensive feedback about a DAG run.
+
+    This ALWAYS returns full status with concerns and recommendations,
+    regardless of pass/fail.
+
+    Args:
+        dag_id: The DAG ID
+        run_id: The run ID
+        check_logs: Whether to check task logs for shadow errors
+
+    Returns:
+        Complete observation report with:
+        - status (running/success/failed)
+        - task-level details
+        - concerns (even for successful runs)
+        - recommendations
+        - shadow error detection
+    """
+    try:
+        from agents.observer import get_observer
+
+        observer = await get_observer()
+        report = await observer.observe(dag_id, run_id, check_logs)
+
+        return {
+            "dag_id": report.dag_id,
+            "run_id": report.run_id,
+            "overall_status": report.overall_status.value,
+            "is_complete": report.is_complete,
+            "success": report.success,
+            "progress_percent": report.progress_percent,
+            "total_tasks": report.total_tasks,
+            "completed_tasks": report.completed_tasks,
+            "failed_tasks": report.failed_tasks,
+            "running_tasks": report.running_tasks,
+            "task_statuses": report.task_statuses,
+            "failed_task_details": report.failed_task_details,
+            "concerns": report.concerns,
+            "has_warnings": report.has_warnings,
+            "has_errors": report.has_errors,
+            "recommendations": report.recommendations,
+            "summary": report.summary,
+            "detailed_message": report.detailed_message,
+            "elapsed_seconds": report.elapsed_seconds,
+            "lineage_run_id": report.lineage_run_id,
+        }
+
+    except ImportError:
+        logger.warning("Observer module not available, using basic status check")
+        # Fallback to basic status
+        orchestrator = await get_smart_orchestrator()
+        return await orchestrator._get_dag_run_status(dag_id, run_id) or {
+            "dag_id": dag_id,
+            "run_id": run_id,
+            "overall_status": "unknown",
+            "summary": "Could not get status (observer not available)",
+        }
+
+
+async def observe_until_complete(
+    dag_id: str,
+    run_id: str,
+    poll_interval: int = 10,
+    max_wait: int = 3600,
+    progress_callback: Optional[callable] = None,
+) -> Dict[str, Any]:
+    """
+    Observe a DAG run until completion, providing periodic updates.
+
+    This is the recommended way to monitor long-running DAGs.
+    It provides comprehensive feedback at each check.
+
+    Args:
+        dag_id: The DAG ID
+        run_id: The run ID
+        poll_interval: Seconds between checks (default 10)
+        max_wait: Maximum seconds to wait (default 1 hour)
+        progress_callback: Optional callback called with each observation
+
+    Returns:
+        Final observation report when complete
+    """
+    try:
+        from agents.observer import get_observer
+
+        observer = await get_observer()
+        report = await observer.observe_until_complete(
+            dag_id=dag_id,
+            run_id=run_id,
+            poll_interval=poll_interval,
+            max_wait=max_wait,
+            callback=progress_callback,
+        )
+
+        return {
+            "dag_id": report.dag_id,
+            "run_id": report.run_id,
+            "overall_status": report.overall_status.value,
+            "is_complete": report.is_complete,
+            "success": report.success,
+            "progress_percent": report.progress_percent,
+            "total_tasks": report.total_tasks,
+            "completed_tasks": report.completed_tasks,
+            "failed_tasks": report.failed_tasks,
+            "task_statuses": report.task_statuses,
+            "failed_task_details": report.failed_task_details,
+            "concerns": report.concerns,
+            "has_warnings": report.has_warnings,
+            "has_errors": report.has_errors,
+            "recommendations": report.recommendations,
+            "summary": report.summary,
+            "detailed_message": report.detailed_message,
+            "elapsed_seconds": report.elapsed_seconds,
+        }
+
+    except ImportError:
+        logger.warning("Observer module not available")
+        return {
+            "dag_id": dag_id,
+            "run_id": run_id,
+            "overall_status": "unknown",
+            "summary": "Observer not available - check Airflow UI manually",
+        }
+
+
 # Export key classes and functions
 __all__ = [
     # Core classes
@@ -1485,4 +1621,7 @@ __all__ = [
     "execute_smart_pipeline",
     "query_shadow_errors_for_manager",
     "get_openlineage_emitter",
+    # Observer integration - comprehensive status reporting
+    "observe_execution",
+    "observe_until_complete",
 ]
