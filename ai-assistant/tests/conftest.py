@@ -10,6 +10,9 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 from typing import Dict, Any
 
+# Set TEST_MODE before any src imports to prevent module-level initialization issues
+os.environ["TEST_MODE"] = "true"
+
 # Add src directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 

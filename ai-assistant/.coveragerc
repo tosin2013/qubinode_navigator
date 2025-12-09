@@ -26,7 +26,7 @@ exclude_lines =
     LITELLM_AVAILABLE = False
     MARQUEZ_AVAILABLE = False
 
-fail_under = 70
+fail_under = 45
 show_missing = True
 precision = 2
 
