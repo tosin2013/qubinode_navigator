@@ -436,7 +436,20 @@ class SmartPipelineOrchestrator:
                     execution.user_actions = self._get_validation_failure_actions(validation_result)
                     return execution
 
-            # Phase 2: Trigger DAG
+            # Phase 2: Check and auto-unpause DAG if needed
+            was_unpaused, unpause_message = await self._check_and_unpause_dag(dag_id)
+            if was_unpaused:
+                # Add info about auto-unpause to validation checks
+                execution.validation_checks.append(
+                    {
+                        "name": "dag_auto_unpause",
+                        "status": "passed",
+                        "message": unpause_message,
+                    }
+                )
+                logger.info(unpause_message)
+
+            # Phase 3: Trigger DAG
             execution.status = ExecutionStatus.RUNNING
             execution.triggered_at = datetime.now()
 
@@ -450,7 +463,7 @@ class SmartPipelineOrchestrator:
 
             execution.run_id = trigger_result.get("run_id")
 
-            # Phase 3: Setup monitoring
+            # Phase 4: Setup monitoring
             airflow_base = self.airflow_api_url.replace("/api/v1", "")
             execution.monitoring = ExecutionMonitoring(
                 airflow_ui_url=f"{airflow_base}/dags/{dag_id}/grid?run_id={execution.run_id}",
@@ -678,6 +691,54 @@ class SmartPipelineOrchestrator:
         except Exception as e:
             logger.debug(f"Could not get DAG run status: {e}")
         return None
+
+    async def _check_and_unpause_dag(self, dag_id: str) -> Tuple[bool, str]:
+        """
+        Check if a DAG is paused and auto-unpause it if needed.
+
+        Returns:
+            Tuple of (was_unpaused, message)
+            - was_unpaused: True if we unpaused the DAG, False if it was already active
+            - message: Description of what happened
+        """
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                # Get DAG info
+                response = await client.get(
+                    f"{self.airflow_api_url}/dags/{dag_id}",
+                    auth=(self.airflow_user, self.airflow_pass),
+                )
+
+                if response.status_code != 200:
+                    logger.warning(f"Could not get DAG info: {response.status_code}")
+                    return False, f"Could not check DAG status (HTTP {response.status_code})"
+
+                data = response.json()
+                is_paused = data.get("is_paused", False)
+
+                if not is_paused:
+                    logger.info(f"DAG '{dag_id}' is already active")
+                    return False, f"DAG '{dag_id}' is already active"
+
+                # DAG is paused - unpause it
+                logger.info(f"DAG '{dag_id}' is paused, auto-unpausing...")
+
+                unpause_response = await client.patch(
+                    f"{self.airflow_api_url}/dags/{dag_id}",
+                    json={"is_paused": False},
+                    auth=(self.airflow_user, self.airflow_pass),
+                )
+
+                if unpause_response.status_code == 200:
+                    logger.info(f"Successfully unpaused DAG '{dag_id}'")
+                    return True, f"DAG '{dag_id}' was paused - automatically unpaused it"
+                else:
+                    logger.warning(f"Failed to unpause DAG: {unpause_response.status_code}")
+                    return False, f"DAG '{dag_id}' is paused and could not be auto-unpaused"
+
+        except Exception as e:
+            logger.debug(f"Could not check/unpause DAG: {e}")
+            return False, f"Could not verify DAG pause status: {e}"
 
     def _estimate_duration(self, dag_id: str) -> int:
         """Estimate execution duration in minutes based on DAG type."""
