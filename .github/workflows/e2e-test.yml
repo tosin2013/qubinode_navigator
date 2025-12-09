@@ -107,20 +107,21 @@ jobs:
           cd ${{ github.workspace }}/airflow 2>/dev/null && sudo podman-compose down 2>/dev/null || true
 
           # Delete FreeIPA VM if exists (only if kcli/libvirt available)
+          # NOTE: Must use sudo kcli to see VMs managed by root
           if command -v kcli &>/dev/null && [ -S /var/run/libvirt/libvirt-sock ]; then
             echo "[INFO] Checking for existing VMs..."
-            kcli list vm 2>/dev/null || true
+            sudo kcli list vm 2>/dev/null || true
 
             # Explicitly check and delete FreeIPA VM
-            if kcli list vm 2>/dev/null | grep -q "freeipa"; then
+            if sudo kcli list vm 2>/dev/null | grep -q "freeipa"; then
               echo "[INFO] Found existing FreeIPA VM - deleting..."
-              kcli delete vm freeipa -y 2>&1 || true
+              sudo kcli delete vm freeipa -y 2>&1 || true
               # Wait a moment for deletion to complete
               sleep 5
               # Verify deletion
-              if kcli list vm 2>/dev/null | grep -q "freeipa"; then
+              if sudo kcli list vm 2>/dev/null | grep -q "freeipa"; then
                 echo "[WARN] FreeIPA VM still exists after delete attempt"
-                kcli list vm 2>/dev/null | grep freeipa || true
+                sudo kcli list vm 2>/dev/null | grep freeipa || true
               else
                 echo "[OK] FreeIPA VM deleted successfully"
               fi
@@ -130,15 +131,15 @@ jobs:
 
             # Clean up any other test VMs
             echo "[INFO] Cleaning up other test VMs..."
-            kcli list vm 2>/dev/null | grep -iE "e2e|test" | awk '{print $2}' | while read vm; do
+            sudo kcli list vm 2>/dev/null | grep -iE "e2e|test" | awk '{print $2}' | while read vm; do
               if [ -n "$vm" ]; then
                 echo "  Deleting: $vm"
-                kcli delete vm "$vm" -y 2>/dev/null || true
+                sudo kcli delete vm "$vm" -y 2>/dev/null || true
               fi
             done
 
             echo "[INFO] Final VM list:"
-            kcli list vm 2>/dev/null || true
+            sudo kcli list vm 2>/dev/null || true
           else
             echo "[INFO] Skipping VM cleanup (libvirt not available)"
           fi
@@ -867,13 +868,14 @@ jobs:
 
           # Always cleanup VMs after E2E test to avoid leaving resources
           # Skip only if the user explicitly sets skip_cleanup=true (for debugging)
+          # NOTE: Must use sudo kcli to see/manage VMs created by root
           echo "[INFO] Deleting FreeIPA VM..."
-          kcli delete vm freeipa -y 2>/dev/null || true
+          sudo kcli delete vm freeipa -y 2>/dev/null || true
 
           # Clean up any other test VMs that might have been created
           echo "[INFO] Cleaning up any lingering test VMs..."
           if command -v kcli &>/dev/null && [ -S /var/run/libvirt/libvirt-sock ]; then
-            kcli list vm 2>/dev/null | grep -iE "e2e|test|freeipa" | awk '{print $2}' | xargs -I {} kcli delete vm {} -y 2>/dev/null || true
+            sudo kcli list vm 2>/dev/null | grep -iE "e2e|test|freeipa" | awk '{print $2}' | xargs -I {} sudo kcli delete vm {} -y 2>/dev/null || true
           fi
 
           echo "[OK] Cleanup complete"
