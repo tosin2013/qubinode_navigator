@@ -815,18 +815,25 @@ jobs:
           echo "========================================"
 
       # =========================================================================
-      # Phase 8: Cleanup (optional)
+      # Phase 8: Cleanup (always runs unless skipped)
       # =========================================================================
       - name: Cleanup test resources
-        if: ${{ always() && github.event.inputs.skip_cleanup != 'true' && github.event_name == 'schedule' }}
+        if: ${{ always() && github.event.inputs.skip_cleanup != 'true' }}
         run: |
           echo "========================================"
           echo "Cleaning up test resources"
           echo "========================================"
 
-          # Only cleanup VMs on scheduled runs, keep services running
+          # Always cleanup VMs after E2E test to avoid leaving resources
+          # Skip only if the user explicitly sets skip_cleanup=true (for debugging)
           echo "[INFO] Deleting FreeIPA VM..."
           kcli delete vm freeipa -y 2>/dev/null || true
+
+          # Clean up any other test VMs that might have been created
+          echo "[INFO] Cleaning up any lingering test VMs..."
+          if command -v kcli &>/dev/null && [ -S /var/run/libvirt/libvirt-sock ]; then
+            kcli list vm 2>/dev/null | grep -iE "e2e|test|freeipa" | awk '{print $2}' | xargs -I {} kcli delete vm {} -y 2>/dev/null || true
+          fi
 
           echo "[OK] Cleanup complete"
           echo ""
