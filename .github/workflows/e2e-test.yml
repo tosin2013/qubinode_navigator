@@ -476,9 +476,9 @@ jobs:
           echo "========================================"
 
           # Check if FreeIPA already exists
-          if kcli info vm freeipa 2>/dev/null | grep -q "status: up"; then
+          if sudo kcli info vm freeipa 2>/dev/null | grep -q "status: up"; then
             echo "[OK] FreeIPA VM already running"
-            kcli info vm freeipa
+            sudo kcli info vm freeipa
             exit 0
           fi
 
@@ -680,10 +680,10 @@ jobs:
 
             # List VMs to see what exists
             echo "[DEBUG] Current VMs:"
-            kcli list vm 2>/dev/null | head -5 || echo "  (no VMs or kcli error)"
+            sudo kcli list vm 2>/dev/null | head -5 || echo "  (no VMs or kcli error)"
 
             # Get FreeIPA IP
-            FREEIPA_IP=$(kcli info vm freeipa 2>/dev/null | grep 'ip:' | awk '{print $2}' | head -1)
+            FREEIPA_IP=$(sudo kcli info vm freeipa 2>/dev/null | grep 'ip:' | awk '{print $2}' | head -1)
 
             if [ -n "$FREEIPA_IP" ] && [ "$FREEIPA_IP" != "None" ]; then
               echo "[INFO] FreeIPA IP: $FREEIPA_IP"
@@ -733,7 +733,7 @@ jobs:
           echo "[WARN] FreeIPA VM not ready after $MAX_ATTEMPTS attempts"
           echo ""
           echo "=== Final VM Status ==="
-          kcli list vm 2>/dev/null || echo "kcli list failed"
+          sudo kcli list vm 2>/dev/null || echo "kcli list failed"
           echo ""
           echo "=== DAG Run Status ==="
           sudo podman exec airflow-scheduler airflow dags list-runs -d freeipa_deployment --limit 3 2>/dev/null || true
@@ -753,10 +753,10 @@ jobs:
 
           # Get VM info
           echo "[INFO] VM Status:"
-          kcli info vm freeipa 2>/dev/null || echo "FreeIPA VM not found"
+          sudo kcli info vm freeipa 2>/dev/null || echo "FreeIPA VM not found"
 
           # Get IP
-          FREEIPA_IP=$(kcli info vm freeipa 2>/dev/null | grep 'ip:' | awk '{print $2}' | head -1)
+          FREEIPA_IP=$(sudo kcli info vm freeipa 2>/dev/null | grep 'ip:' | awk '{print $2}' | head -1)
 
           if [ -n "$FREEIPA_IP" ] && [ "$FREEIPA_IP" != "None" ]; then
             echo ""
@@ -839,7 +839,7 @@ jobs:
           echo "  - AI Assistant: $(curl -s http://localhost:8080/health | grep -q 'ok\|healthy' && echo '✅ Running' || echo '❌ Not running')"
           echo "  - Airflow: $(curl -s http://localhost:8888/health | grep -q 'healthy' && echo '✅ Running' || echo '❌ Not running')"
 
-          FREEIPA_IP=$(kcli info vm freeipa 2>/dev/null | grep 'ip:' | awk '{print $2}' | head -1)
+          FREEIPA_IP=$(sudo kcli info vm freeipa 2>/dev/null | grep 'ip:' | awk '{print $2}' | head -1)
           if [ -n "$FREEIPA_IP" ] && [ "$FREEIPA_IP" != "None" ]; then
             echo "  - FreeIPA VM: ✅ Running ($FREEIPA_IP)"
           else
