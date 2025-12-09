@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 # Define RetrievalResult dataclass for testing without importing
 @dataclass
-class TestRetrievalResult:
+class MockRetrievalResult:
     """Result from document retrieval for testing"""
 
     chunk_id: str
@@ -54,7 +54,7 @@ class TestRetrievalResultDataclass:
 
     def test_retrieval_result_creation(self):
         """Test creating a RetrievalResult instance"""
-        result = TestRetrievalResult(
+        result = MockRetrievalResult(
             chunk_id="chunk_001",
             content="Test content for retrieval",
             title="Test Title",
