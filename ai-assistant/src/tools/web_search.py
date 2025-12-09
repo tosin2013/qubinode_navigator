@@ -1,15 +1,12 @@
 """
-Smolagents Web Search Integration for Qubinode AI Assistant.
+PydanticAI Web Search Integration for Qubinode AI Assistant.
 
-Provides web search capabilities using Smolagents' DuckDuckGoSearchTool
-or WebSearchTool for research and information retrieval tasks.
+Provides web search capabilities using PydanticAI's built-in DuckDuckGo search tool.
+This replaces the previous smolagents-based implementation.
 
-Per ADR-0063: Smolagents complements PydanticAI + Aider architecture
-by providing web search capabilities for:
-- Researching infrastructure documentation
-- Finding troubleshooting guides
-- Validating deployment procedures
-- Discovering provider-specific configurations
+Per ADR-0063: PydanticAI Core Agent Orchestrator
+- Agents can use web search to inform users with real-time data
+- Search results can be fed into RAG for persistent context
 """
 
 import logging
@@ -18,21 +15,16 @@ from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
-# Check Smolagents availability
-try:
-    from smolagents import (
-        CodeAgent,
-        ToolCallingAgent,  # noqa: F401
-        InferenceClientModel,
-        DuckDuckGoSearchTool,
-        WebSearchTool,
-        Tool,
-    )
+# Check PydanticAI DuckDuckGo availability
+DUCKDUCKGO_AVAILABLE = False
+duckduckgo_search_tool = None
 
-    SMOLAGENTS_AVAILABLE = True
+try:
+    from pydantic_ai.common_tools.duckduckgo import duckduckgo_search_tool
+
+    DUCKDUCKGO_AVAILABLE = True
 except ImportError:
-    SMOLAGENTS_AVAILABLE = False
-    logger.warning("Smolagents not installed. Web search features unavailable.")
+    logger.warning("PydanticAI DuckDuckGo search not available. " "Install with: pip install 'pydantic-ai-slim[duckduckgo]'")
 
 
 @dataclass
@@ -41,17 +33,54 @@ class SearchResult:
 
     query: str
     results: List[Dict[str, str]]
-    source: str  # 'duckduckgo' or 'web'
+    source: str  # 'duckduckgo'
     success: bool
     error: Optional[str] = None
 
 
+def get_search_tool():
+    """
+    Get the PydanticAI DuckDuckGo search tool for use in agents.
+
+    Returns the tool function that can be added to an agent's tools list.
+
+    Example:
+        >>> from pydantic_ai import Agent
+        >>> from src.tools.web_search import get_search_tool
+        >>>
+        >>> agent = Agent(
+        ...     'google-gla:gemini-2.5-flash',
+        ...     tools=[get_search_tool()],
+        ... )
+
+    Returns:
+        The duckduckgo_search_tool function, or None if not available.
+    """
+    if not DUCKDUCKGO_AVAILABLE:
+        logger.warning("DuckDuckGo search tool not available")
+        return None
+    return duckduckgo_search_tool()
+
+
+def create_search_enabled_agent_tools() -> List:
+    """
+    Get a list of search tools for adding to PydanticAI agents.
+
+    Returns:
+        List of tool functions to add to agent's tools parameter.
+    """
+    tools = []
+    if DUCKDUCKGO_AVAILABLE:
+        tools.append(duckduckgo_search_tool())
+    return tools
+
+
 class WebSearchService:
     """
-    Web search service using Smolagents.
+    Web search service using PydanticAI's DuckDuckGo integration.
 
-    Provides both simple search tool access and agent-based
-    multi-step research capabilities.
+    This service provides both standalone search functionality and
+    tools for integration with PydanticAI agents.
 
     Example:
         >>> service = WebSearchService()
@@ -59,41 +88,20 @@ class WebSearchService:
         >>> print(result.results)
     """
 
-    def __init__(
-        self,
-        model_id: str = "Qwen/Qwen2.5-Coder-32B-Instruct",
-        use_duckduckgo: bool = True,
-    ):
-        """
-        Initialize web search service.
-
-        Args:
-            model_id: HuggingFace model ID for agent-based search
-            use_duckduckgo: Use DuckDuckGo (True) or general WebSearch (False)
-        """
-        if not SMOLAGENTS_AVAILABLE:
-            raise ImportError("Smolagents is required for web search. " "Install with: pip install 'smolagents[toolkit]'")
-
-        self.model_id = model_id
-        self.use_duckduckgo = use_duckduckgo
-
-        # Initialize search tool
-        if use_duckduckgo:
-            self._search_tool = DuckDuckGoSearchTool()
-        else:
-            self._search_tool = WebSearchTool()
-
-        # Lazy-init agent (only when needed for complex queries)
-        self._agent: Optional[CodeAgent] = None
+    def __init__(self):
+        """Initialize web search service."""
+        if not DUCKDUCKGO_AVAILABLE:
+            raise ImportError("PydanticAI DuckDuckGo search is required. " "Install with: pip install 'pydantic-ai-slim[duckduckgo]'")
+        self._search_tool = duckduckgo_search_tool()
 
     @property
-    def search_tool(self) -> Tool:
-        """Get the underlying search tool."""
+    def search_tool(self):
+        """Get the underlying search tool for agent integration."""
         return self._search_tool
 
     def search(self, query: str) -> SearchResult:
         """
-        Perform a simple web search.
+        Perform a web search.
 
         Args:
             query: Search query string
@@ -102,15 +110,14 @@ class WebSearchService:
             SearchResult with search results
         """
         try:
-            raw_result = self._search_tool(query)
-
-            # Parse results (format depends on tool)
+            # The tool returns search results directly
+            raw_result = self._search_tool.function(query)
             results = self._parse_results(raw_result)
 
             return SearchResult(
                 query=query,
                 results=results,
-                source="duckduckgo" if self.use_duckduckgo else "web",
+                source="duckduckgo",
                 success=True,
             )
         except Exception as e:
@@ -118,7 +125,7 @@ class WebSearchService:
             return SearchResult(
                 query=query,
                 results=[],
-                source="duckduckgo" if self.use_duckduckgo else "web",
+                source="duckduckgo",
                 success=False,
                 error=str(e),
             )
@@ -126,7 +133,6 @@ class WebSearchService:
     def _parse_results(self, raw_result: Any) -> List[Dict[str, str]]:
         """Parse raw search results into structured format."""
         if isinstance(raw_result, str):
-            # Text result - split into items
             return [{"content": raw_result}]
         elif isinstance(raw_result, list):
             return [{"content": str(item)} if not isinstance(item, dict) else item for item in raw_result]
@@ -135,44 +141,9 @@ class WebSearchService:
         else:
             return [{"content": str(raw_result)}]
 
-    def _get_agent(self) -> CodeAgent:
-        """Get or create the search agent."""
-        if self._agent is None:
-            model = InferenceClientModel(model_id=self.model_id)
-            self._agent = CodeAgent(
-                tools=[self._search_tool],
-                model=model,
-                max_steps=5,
-            )
-        return self._agent
-
-    def research(self, question: str) -> str:
-        """
-        Perform multi-step research using agent.
-
-        This uses the CodeAgent to perform iterative searches
-        and synthesize information from multiple sources.
-
-        Args:
-            question: Research question
-
-        Returns:
-            Synthesized answer from research
-        """
-        try:
-            agent = self._get_agent()
-            result = agent.run(question)
-            return str(result)
-        except Exception as e:
-            logger.error(f"Research failed: {e}")
-            return f"Research failed: {e}"
-
     def search_infrastructure_docs(self, topic: str) -> SearchResult:
         """
         Search for infrastructure documentation.
-
-        Specialized search for Airflow, Kubernetes, OpenShift,
-        and other infrastructure topics.
 
         Args:
             topic: Infrastructure topic to search
@@ -180,7 +151,6 @@ class WebSearchService:
         Returns:
             SearchResult with relevant documentation
         """
-        # Add context for infrastructure searches
         query = f"{topic} documentation guide tutorial"
         return self.search(query)
 
@@ -223,12 +193,12 @@ def quick_search(query: str) -> str:
     Returns:
         Search results as text
     """
-    if not SMOLAGENTS_AVAILABLE:
-        return "Web search unavailable: smolagents not installed"
+    if not DUCKDUCKGO_AVAILABLE:
+        return "Web search unavailable: pydantic-ai[duckduckgo] not installed"
 
     try:
-        tool = DuckDuckGoSearchTool()
-        return str(tool(query))
+        tool = duckduckgo_search_tool()
+        return str(tool.function(query))
     except Exception as e:
         return f"Search failed: {e}"
 
@@ -270,3 +240,7 @@ def search_openshift_docs(topic: str) -> str:
         Relevant documentation snippets
     """
     return quick_search(f"red hat openshift {topic} documentation")
+
+
+# For backwards compatibility, expose DUCKDUCKGO_AVAILABLE as SMOLAGENTS_AVAILABLE
+SMOLAGENTS_AVAILABLE = DUCKDUCKGO_AVAILABLE

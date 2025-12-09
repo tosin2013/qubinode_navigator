@@ -13,16 +13,13 @@ from typing import Dict, Any
 # Add src directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-# Mock external dependencies that may not be available
-# These need to be mocked before any source imports
+# Note: We do NOT mock qdrant_client, sentence_transformers, or smolagents here.
+# Tests that require these dependencies use pytest.mark.skipif decorators.
+# Global mocking breaks the skipif checks and causes MagicMock await errors.
+
+# Only mock litellm if truly not available (it's usually installed)
 if "litellm" not in sys.modules:
     sys.modules["litellm"] = MagicMock()
-
-if "qdrant_client" not in sys.modules:
-    sys.modules["qdrant_client"] = MagicMock()
-
-if "sentence_transformers" not in sys.modules:
-    sys.modules["sentence_transformers"] = MagicMock()
 
 # Test data directory
 TEST_DATA_DIR = Path(__file__).parent / "test_data"
