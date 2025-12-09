@@ -581,7 +581,8 @@ jobs:
               echo "[INFO] Using Observer Agent for comprehensive DAG status..."
 
               # Try Observer API first (provides shadow error detection)
-              OBSERVE_RESPONSE=$(curl -s --max-time 15 \
+              # Note: This is a POST endpoint that finds the latest run
+              OBSERVE_RESPONSE=$(curl -s -X POST --max-time 15 \
                 "http://localhost:8080/orchestrator/observe?dag_id=freeipa_deployment" 2>/dev/null || echo "{}")
 
               if echo "$OBSERVE_RESPONSE" | jq -e '.overall_status' > /dev/null 2>&1; then
