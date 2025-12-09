@@ -21,9 +21,5 @@
   "tests/test_rag_ingestion_api.py::TestRAGIngestionServiceAddToDatabase::test_add_to_rag_database": true,
   "tests/test_rag_ingestion_api.py::TestRAGIngestionServiceIngest::test_ingest_document_high_quality": true,
   "tests/test_rag_ingestion_api.py::TestRAGIngestionServiceIngest::test_ingest_document_pending_review": true,
-  "tests/test_rag_ingestion_api.py::TestRAGIngestionServiceIngest::test_ingest_document_no_validation": true,
-  "tests/test_rag_services.py::TestQdrantRAGServiceRetrieveContext::test_retrieve_relevant_context_mock_service": true,
-  "tests/test_rag_services.py::TestQdrantRAGServiceBuildCollection::test_build_collection_with_valid_chunks": true,
-  "tests/test_rag_services.py::TestQdrantRAGServiceInitialize::test_initialize_with_existing_collection": true,
-  "tests/test_rag_services.py::TestQdrantRAGServiceSearchWithFilters::test_search_with_document_types_filter": true
+  "tests/test_rag_ingestion_api.py::TestRAGIngestionServiceIngest::test_ingest_document_no_validation": true
 }
