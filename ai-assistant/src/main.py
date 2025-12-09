@@ -2006,10 +2006,30 @@ async def observe_dag_by_name(
             data = response.json()
             runs = data.get("dag_runs", [])
             if not runs:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"No runs found for DAG: {dag_id}",
-                )
+                # No runs yet - return a "pending" status instead of 404
+                # This helps CI workflows that call observe right after triggering
+                return {
+                    "dag_id": dag_id,
+                    "run_id": None,
+                    "overall_status": "pending",
+                    "is_complete": False,
+                    "success": False,
+                    "progress_percent": 0.0,
+                    "total_tasks": 0,
+                    "completed_tasks": 0,
+                    "failed_tasks": 0,
+                    "running_tasks": 0,
+                    "task_statuses": {},
+                    "failed_task_details": [],
+                    "concerns": [],
+                    "has_warnings": False,
+                    "has_errors": False,
+                    "recommendations": [f"DAG '{dag_id}' has no runs yet - waiting for first run to start"],
+                    "summary": f"DAG '{dag_id}' is waiting to start (no runs yet)",
+                    "detailed_message": f"DAG '{dag_id}' has been triggered but no run has started yet. " "This is normal - the scheduler may take a few seconds to pick up the DAG.",
+                    "endpoint": "/orchestrator/observe",
+                    "timestamp": time.time(),
+                }
 
             run_id = runs[0].get("dag_run_id")
 
