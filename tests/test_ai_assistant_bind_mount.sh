@@ -97,7 +97,7 @@ echo ""
 
 # Test 8: Verify podman volume mount syntax in deploy script
 echo -e "${BLUE}Test: Podman volume mount with SELinux context${NC}"
-if grep -q '\-v.*ai-assistant/data:/app/data:z' "$REPO_ROOT/scripts/development/deploy-qubinode.sh"; then
+if grep -q -- '-v.*ai-assistant/data:/app/data:z' "$REPO_ROOT/scripts/development/deploy-qubinode.sh"; then
     echo -e "${GREEN}✓ PASS - Volume mount includes SELinux :z flag${NC}"
     TESTS_PASSED=$((TESTS_PASSED + 1))
 else
@@ -108,7 +108,7 @@ echo ""
 
 # Test 9: Check if directories are writable (if running as current user)
 echo -e "${BLUE}Test: Data directory is writable${NC}"
-TEST_FILE="$REPO_ROOT/ai-assistant/data/.test-write-$$"
+TEST_FILE="$REPO_ROOT/ai-assistant/data/.test-write-$(date +%s%N)"
 if touch "$TEST_FILE" 2>/dev/null && rm "$TEST_FILE" 2>/dev/null; then
     echo -e "${GREEN}✓ PASS - Data directory is writable${NC}"
     TESTS_PASSED=$((TESTS_PASSED + 1))

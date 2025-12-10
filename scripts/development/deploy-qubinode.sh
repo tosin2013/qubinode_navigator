@@ -392,7 +392,7 @@ start_ai_assistant() {
     # This ensures the container can read/write to mounted directories
     if command -v chown &> /dev/null; then
         chown -R 1001:0 "${REPO_ROOT}/ai-assistant/data" 2>/dev/null || {
-            log_warning "Could not set ownership on data directory, SELinux context will handle permissions"
+            log_warning "Could not set ownership on data directory, container will use SELinux context or existing permissions"
         }
     fi
     
