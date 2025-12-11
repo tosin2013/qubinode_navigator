@@ -52,6 +52,11 @@ docs/RESPONSE-TO-*.md
 ai-assistant/models/
 ai-assistant/data/rag-docs/
 ai-assistant/data/vector-db/
+ai-assistant/data/qdrant-db/
+ai-assistant/data/*.gguf
+ai-assistant/data/*.safetensors
+# Keep .gitkeep files to track directory structure
+!ai-assistant/data/.gitkeep
 
 # DocuMCP snapshots and generated files
 .documcp/

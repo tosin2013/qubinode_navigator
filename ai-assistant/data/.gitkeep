@@ -1,0 +1,7 @@
+# This directory is required for AI Assistant container bind mounts
+# It stores:
+# - RAG documents and vector embeddings
+# - Model cache
+# - Runtime data
+#
+# The directory itself is tracked in git, but contents are excluded via .gitignore
