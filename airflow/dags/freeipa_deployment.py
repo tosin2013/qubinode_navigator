@@ -17,6 +17,13 @@ from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator
 
+# Import user-configurable helpers for portable DAGs
+from dag_helpers import (
+    get_ssh_user,
+    get_ssh_key_path,
+    get_inventory_dir,
+)
+
 # Default arguments
 default_args = {
     "owner": "qubinode",
@@ -51,6 +58,11 @@ dag = DAG(
 FREEIPA_DEPLOYER = "/opt/freeipa-workshop-deployer"
 QUBINODE_NAV = "/opt/qubinode_navigator"
 
+# User-configurable paths (fix for hardcoded root user issue)
+SSH_USER = get_ssh_user()
+SSH_KEY_PATH = get_ssh_key_path()
+INVENTORY_BASE_DIR = get_inventory_dir()
+
 
 def decide_action(**context):
     """Branch based on action parameter (create or destroy)."""
@@ -74,7 +86,7 @@ decide_action_task = BranchPythonOperator(
 # Task: Validate environment
 validate_environment = BashOperator(
     task_id="validate_environment",
-    bash_command="""
+    bash_command=f"""
     echo "========================================"
     echo "Validating FreeIPA Deployment Environment"
     echo "========================================"
@@ -83,7 +95,7 @@ validate_environment = BashOperator(
     ssh -o StrictHostKeyChecking=no \
         -o UserKnownHostsFile=/dev/null \
         -o LogLevel=ERROR \
-        root@localhost \
+        {SSH_USER}@localhost \
         '
         COMMUNITY_VERSION="{{ params.community_version }}"
         OS_VERSION="{{ params.os_version }}"
@@ -135,7 +147,7 @@ validate_environment = BashOperator(
 # Task: Create FreeIPA VM
 create_freeipa_vm = BashOperator(
     task_id="create_freeipa_vm",
-    bash_command="""
+    bash_command=f"""
     echo "========================================"
     echo "Creating FreeIPA VM"
     echo "========================================"
@@ -144,7 +156,7 @@ create_freeipa_vm = BashOperator(
     ssh -o StrictHostKeyChecking=no \
         -o UserKnownHostsFile=/dev/null \
         -o LogLevel=ERROR \
-        root@localhost \
+        {SSH_USER}@localhost \
         '
         COMMUNITY_VERSION="{{ params.community_version }}"
         OS_VERSION="{{ params.os_version }}"
@@ -192,7 +204,7 @@ create_freeipa_vm = BashOperator(
 # Task: Wait for VM and get IP
 wait_for_vm = BashOperator(
     task_id="wait_for_vm",
-    bash_command="""
+    bash_command=f"""
     echo "========================================"
     echo "Waiting for FreeIPA VM to be Ready"
     echo "========================================"
@@ -201,7 +213,7 @@ wait_for_vm = BashOperator(
     ssh -o StrictHostKeyChecking=no \
         -o UserKnownHostsFile=/dev/null \
         -o LogLevel=ERROR \
-        root@localhost \
+        {SSH_USER}@localhost \
         '
         VM_NAME=freeipa
         MAX_ATTEMPTS=60
@@ -253,7 +265,7 @@ wait_for_vm = BashOperator(
 # ADR-0046: Run all host-dependent commands via SSH
 prepare_ansible = BashOperator(
     task_id="prepare_ansible",
-    bash_command="""
+    bash_command=f"""
     echo "========================================"
     echo "Preparing Ansible for FreeIPA Installation"
     echo "========================================"
@@ -262,16 +274,16 @@ prepare_ansible = BashOperator(
     ssh -o StrictHostKeyChecking=no \
         -o UserKnownHostsFile=/dev/null \
         -o LogLevel=ERROR \
-        root@localhost \
+        {SSH_USER}@localhost \
         '
-        DOMAIN="{{ params.domain }}"
-        IDM_HOSTNAME="{{ params.idm_hostname }}"
-        DNS_FORWARDER="{{ params.dns_forwarder }}"
-        COMMUNITY_VERSION="{{ params.community_version }}"
+        DOMAIN="{{{{ params.domain }}}}"
+        IDM_HOSTNAME="{{{{ params.idm_hostname }}}}"
+        DNS_FORWARDER="{{{{ params.dns_forwarder }}}}"
+        COMMUNITY_VERSION="{{{{ params.community_version }}}}"
 
         # Get IP via kcli on host
         VM_NAME="freeipa"
-        IP=$(kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{print \\$2}")
+        IP=$(kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{{print \\$2}}")
 
         if [ -z "$IP" ] || [ "$IP" == "None" ]; then
             echo "[ERROR] Could not get VM IP"
@@ -286,16 +298,16 @@ prepare_ansible = BashOperator(
         [ "$COMMUNITY_VERSION" == "true" ] && LOGIN_USER="cloud-user" || LOGIN_USER="cloud-user"
 
         # Create inventory directory
-        INVENTORY_DIR="/root/.generated/.${IDM_HOSTNAME}.${DOMAIN}"
+        INVENTORY_DIR="{INVENTORY_BASE_DIR}/.$${{IDM_HOSTNAME}}.$${{DOMAIN}}"
         mkdir -p "$INVENTORY_DIR"
 
         # Create Ansible inventory
         cat > "$INVENTORY_DIR/inventory" << INVENTORY_EOF
 [idm]
-${IDM_HOSTNAME}
+$${{IDM_HOSTNAME}}
 
 [all:vars]
-ansible_ssh_private_key_file=/root/.ssh/id_rsa
+ansible_ssh_private_key_file={SSH_KEY_PATH}
 ansible_ssh_user=${LOGIN_USER}
 ansible_ssh_common_args=-o StrictHostKeyChecking=no
 ansible_host=${IP}
@@ -338,12 +350,12 @@ INVENTORY_EOF
 # ADR-0046: Use SSH to run Ansible on host to avoid version conflicts
 install_freeipa = BashOperator(
     task_id="install_freeipa",
-    bash_command="""
+    bash_command=f"""
     echo "========================================"
     echo "Installing FreeIPA via Ansible"
     echo "========================================"
 
-    RUN_ANSIBLE="{{ params.run_ansible_install }}"
+    RUN_ANSIBLE="{{{{ params.run_ansible_install }}}}"
 
     if [ "$RUN_ANSIBLE" != "true" ]; then
         echo "[SKIP] Ansible installation skipped"
@@ -354,22 +366,22 @@ install_freeipa = BashOperator(
     ssh -o StrictHostKeyChecking=no \
         -o UserKnownHostsFile=/dev/null \
         -o LogLevel=ERROR \
-        root@localhost \
+        {SSH_USER}@localhost \
         '
         set -e
-        DOMAIN="{{ params.domain }}"
-        IDM_HOSTNAME="{{ params.idm_hostname }}"
-        DNS_FORWARDER="{{ params.dns_forwarder }}"
+        DOMAIN="{{{{ params.domain }}}}"
+        IDM_HOSTNAME="{{{{ params.idm_hostname }}}}"
+        DNS_FORWARDER="{{{{ params.dns_forwarder }}}}"
 
         VM_NAME="freeipa"
-        IP=$(kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{print \\$2}")
+        IP=$(kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{{print \\$2}}")
 
         if [ -z "$IP" ]; then
             echo "[ERROR] Could not get VM IP"
             exit 1
         fi
 
-        INVENTORY_DIR="/root/.generated/.${IDM_HOSTNAME}.${DOMAIN}"
+        INVENTORY_DIR="{INVENTORY_BASE_DIR}/.$${{IDM_HOSTNAME}}.$${{DOMAIN}}"
         PLAYBOOK_DIR="/opt/freeipa-workshop-deployer"
 
         echo "Running Ansible playbook..."
@@ -408,7 +420,7 @@ install_freeipa = BashOperator(
 # ADR-0046: Run kcli on host via SSH
 validate_freeipa = BashOperator(
     task_id="validate_freeipa",
-    bash_command="""
+    bash_command=f"""
     echo "========================================"
     echo "Validating FreeIPA Installation"
     echo "========================================"
@@ -417,11 +429,11 @@ validate_freeipa = BashOperator(
     ssh -o StrictHostKeyChecking=no \
         -o UserKnownHostsFile=/dev/null \
         -o LogLevel=ERROR \
-        root@localhost \
+        {SSH_USER}@localhost \
         '
-        DOMAIN="{{ params.domain }}"
-        IDM_HOSTNAME="{{ params.idm_hostname }}"
-        RUN_ANSIBLE="{{ params.run_ansible_install }}"
+        DOMAIN="{{{{ params.domain }}}}"
+        IDM_HOSTNAME="{{{{ params.idm_hostname }}}}"
+        RUN_ANSIBLE="{{{{ params.run_ansible_install }}}}"
 
         VM_NAME="freeipa"
         IP=$(kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{print \\$2}")
@@ -457,7 +469,7 @@ validate_freeipa = BashOperator(
 
 destroy_freeipa = BashOperator(
     task_id="destroy_freeipa",
-    bash_command="""
+    bash_command=f"""
     echo "========================================"
     echo "Destroying FreeIPA VM"
     echo "========================================"
@@ -466,7 +478,7 @@ destroy_freeipa = BashOperator(
     ssh -o StrictHostKeyChecking=no \
         -o UserKnownHostsFile=/dev/null \
         -o LogLevel=ERROR \
-        root@localhost \
+        {SSH_USER}@localhost \
         '
         VM_NAME=freeipa
 
@@ -478,9 +490,9 @@ destroy_freeipa = BashOperator(
             echo "[WARN] VM $VM_NAME does not exist"
         fi
 
-        DOMAIN="{{ params.domain }}"
-        IDM_HOSTNAME="{{ params.idm_hostname }}"
-        rm -rf $HOME/.generated/.${IDM_HOSTNAME}.${DOMAIN} 2>/dev/null || true
+        DOMAIN="{{{{ params.domain }}}}"
+        IDM_HOSTNAME="{{{{ params.idm_hostname }}}}"
+        rm -rf {INVENTORY_BASE_DIR}/.$${{IDM_HOSTNAME}}.$${{DOMAIN}} 2>/dev/null || true
 
         grep -v "${IDM_HOSTNAME}" /etc/hosts > /tmp/hosts.tmp 2>/dev/null || true
         cp /tmp/hosts.tmp /etc/hosts 2>/dev/null || true
