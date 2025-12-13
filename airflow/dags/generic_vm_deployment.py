@@ -18,6 +18,12 @@ from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator
 
+
+# User-configurable SSH user (fix for hardcoded root issue)
+SSH_USER = get_ssh_user()
+# Import user-configurable helpers for portable DAGs
+from dag_helpers import get_ssh_user
+
 # Configuration
 KCLI_PIPELINES_DIR = "/opt/kcli-pipelines"
 
@@ -114,7 +120,7 @@ validate_environment = BashOperator(
 
     # Check kcli via SSH to host
     echo "Checking kcli..."
-    if ! ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    if ! ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "which kcli" &>/dev/null; then
         echo "[ERROR] kcli not found on host"
         exit 1
@@ -123,7 +129,7 @@ validate_environment = BashOperator(
 
     # Check for RHEL images
     echo "Checking for VM images..."
-    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "ls /var/lib/libvirt/images/rhel* 2>/dev/null" | grep -q rhel; then
         echo "[OK] RHEL images found"
     else
@@ -133,7 +139,7 @@ validate_environment = BashOperator(
 
     # Check FreeIPA for DNS registration
     echo "Checking FreeIPA..."
-    FREEIPA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    FREEIPA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm freeipa 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     if [ -n "$FREEIPA_IP" ]; then
@@ -167,7 +173,7 @@ configure_profile = BashOperator(
     # Check if profile-specific configuration exists
     PROFILE_CONFIG="/opt/kcli-pipelines/${VM_PROFILE}/configure-kcli-profile.sh"
 
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "if [ -f '$PROFILE_CONFIG' ]; then
             echo 'Running profile configuration...'
             export VM_PROFILE=$VM_PROFILE
@@ -211,17 +217,17 @@ create_vm = BashOperator(
     echo "VM Name: $VM_NAME"
 
     # Check if VM already exists
-    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli list vm | grep -q $VM_NAME"; then
         echo "[OK] VM $VM_NAME already exists"
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "kcli info vm $VM_NAME"
         exit 0
     fi
 
     # Execute deploy-vm.sh on host via SSH (ADR-0047)
     echo "Calling kcli-pipelines/deploy-vm.sh..."
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "export VM_NAME=$VM_NAME && \
          export VM_PROFILE=$VM_PROFILE && \
          export ACTION=create && \
@@ -252,7 +258,7 @@ wait_for_vm = BashOperator(
 
     if [ -z "$VM_NAME" ]; then
         # Try to find the VM by profile
-        VM_NAME=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        VM_NAME=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "kcli list vm | grep $VM_PROFILE | tail -1 | awk '{print \\$2}'" 2>/dev/null)
     fi
 
@@ -271,14 +277,14 @@ wait_for_vm = BashOperator(
         echo "Check $ATTEMPT/$MAX_ATTEMPTS..."
 
         # Get VM IP
-        IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
         if [ -n "$IP" ] && [ "$IP" != "None" ]; then
             echo "VM IP: $IP"
 
             # Check SSH connectivity
-            if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+            if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
                 "nc -z -w5 $IP 22" 2>/dev/null; then
                 echo ""
                 echo "========================================"
@@ -312,7 +318,7 @@ validate_deployment = BashOperator(
     VM_NAME="{{ params.vm_name }}"
 
     if [ -z "$VM_NAME" ]; then
-        VM_NAME=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        VM_NAME=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "kcli list vm | grep $VM_PROFILE | tail -1 | awk '{print \\$2}'" 2>/dev/null)
     fi
 
@@ -323,10 +329,10 @@ validate_deployment = BashOperator(
 
     # Get VM info
     echo "VM Details:"
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm $VM_NAME"
 
-    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     echo ""
@@ -365,7 +371,7 @@ delete_vm = BashOperator(
     echo "Deleting VM: $VM_NAME"
 
     # Execute deploy-vm.sh with delete action
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "export VM_NAME=$VM_NAME && \
          export VM_PROFILE=$VM_PROFILE && \
          export ACTION=delete && \
@@ -393,11 +399,11 @@ check_status = BashOperator(
     VM_PROFILE="{{ params.vm_profile }}"
 
     if [ -n "$VM_NAME" ]; then
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "kcli info vm $VM_NAME" 2>/dev/null || echo "VM not found: $VM_NAME"
     else
         echo "All VMs matching profile $VM_PROFILE:"
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "kcli list vm | grep -E '$VM_PROFILE|Name'" 2>/dev/null
     fi
     """,

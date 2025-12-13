@@ -28,6 +28,7 @@ Usage:
     )
 """
 
+import os
 import re
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
@@ -36,6 +37,9 @@ from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator
 from airflow.utils.trigger_rule import TriggerRule
+
+# Import user-configurable helpers for portable DAGs
+from dag_helpers import get_ssh_user
 
 try:
     import yaml
@@ -76,7 +80,10 @@ REQUIRED_FIELDS = ["component", "description", "script_path", "tags", "category"
 
 # Default registry path
 DEFAULT_REGISTRY_PATH = "/opt/kcli-pipelines/dags/registry.yaml"
-ALT_REGISTRY_PATH = "/root/qubinode_navigator/airflow/dags/registry.yaml"
+ALT_REGISTRY_PATH = os.path.expanduser("~/qubinode_navigator/airflow/dags/registry.yaml")
+
+# User-configurable SSH user
+SSH_USER = get_ssh_user()
 
 
 # =============================================================================
@@ -301,7 +308,7 @@ def create_deployment_dag(
         echo "========================================"
 
         # Attempt cleanup via SSH
-        ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 root@localhost \\
+        ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 {SSH_USER}@localhost \\
             "export ACTION=delete && cd {script_path} && ./deploy.sh" 2>/dev/null || true
 
         echo "[INFO] Cleanup attempted"
@@ -339,7 +346,7 @@ def _generate_validation_script(
 
     # Check SSH connectivity to host
     echo -n "[1/4] SSH connectivity... "
-    if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 root@localhost "echo ok" > /dev/null 2>&1; then
+    if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 {SSH_USER}@localhost "echo ok" > /dev/null 2>&1; then
         echo "OK"
     else
         echo "FAILED"
@@ -350,7 +357,7 @@ def _generate_validation_script(
 
     # Check deploy script exists
     echo -n "[2/4] Deploy script... "
-    if ssh -o StrictHostKeyChecking=no root@localhost "test -f {script_path}/deploy.sh"; then
+    if ssh -o StrictHostKeyChecking=no {SSH_USER}@localhost "test -f {script_path}/deploy.sh"; then
         echo "OK"
     else
         echo "FAILED"
@@ -360,7 +367,7 @@ def _generate_validation_script(
 
     # Check kcli availability on host (warning only)
     echo -n "[3/4] kcli availability... "
-    if ssh -o StrictHostKeyChecking=no root@localhost "command -v kcli" > /dev/null 2>&1; then
+    if ssh -o StrictHostKeyChecking=no {SSH_USER}@localhost "command -v kcli" > /dev/null 2>&1; then
         echo "OK"
     else
         echo "WARN (not installed)"
@@ -368,7 +375,7 @@ def _generate_validation_script(
 
     # Check libvirt connectivity (warning only)
     echo -n "[4/4] libvirt connectivity... "
-    if ssh -o StrictHostKeyChecking=no root@localhost "virsh -c qemu:///system list" > /dev/null 2>&1; then
+    if ssh -o StrictHostKeyChecking=no {SSH_USER}@localhost "virsh -c qemu:///system list" > /dev/null 2>&1; then
         echo "OK"
     else
         echo "WARN (not available)"
@@ -401,7 +408,7 @@ def _generate_deploy_script(
     ACTION="{{{{ params.action }}}}"
 
     # Execute deploy.sh on host via SSH (ADR-0046 pattern)
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \\
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \\
         "export ACTION=$ACTION && \\
          cd {script_path} && \\
          ./deploy.sh"
@@ -575,7 +582,7 @@ def add_stage(
         echo "Stage: {stage_name}"
         echo "========================================"
 
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \\
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \\
             "cd {script_path} && ./{script_name}"
 
         echo "[OK] Stage {stage_name} complete"

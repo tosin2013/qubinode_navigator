@@ -20,6 +20,12 @@ from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator
 
+
+# User-configurable SSH user (fix for hardcoded root issue)
+SSH_USER = get_ssh_user()
+# Import user-configurable helpers for portable DAGs
+from dag_helpers import get_ssh_user
+
 # Configuration
 KCLI_PIPELINES_DIR = "/opt/kcli-pipelines"
 HARBOR_DIR = f"{KCLI_PIPELINES_DIR}/harbor"
@@ -194,7 +200,7 @@ check_prerequisites = BashOperator(
         echo ""
         echo "Checking Step-CA server..."
 
-        STEP_CA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        STEP_CA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "kcli info vm $STEP_CA_VM 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
         if [ -z "$STEP_CA_IP" ] || [ "$STEP_CA_IP" == "None" ]; then
@@ -212,7 +218,7 @@ check_prerequisites = BashOperator(
         echo "[OK] Step-CA server found at: $STEP_CA_IP"
 
         # Check Step-CA health
-        if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "curl -sk https://$STEP_CA_IP:443/health 2>/dev/null | grep -q ok"; then
             echo "[OK] Step-CA is healthy"
         else
@@ -237,7 +243,7 @@ check_prerequisites = BashOperator(
     # Check Ubuntu image
     echo ""
     echo "Checking Ubuntu image..."
-    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli list image | grep -q ubuntu2204"; then
         echo "[OK] Ubuntu 22.04 image available"
     else
@@ -268,7 +274,7 @@ validate_environment = BashOperator(
 
     # Check kcli
     echo "Checking kcli..."
-    if ! ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    if ! ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "which kcli" &>/dev/null; then
         echo "[ERROR] kcli not found on host"
         exit 1
@@ -277,7 +283,7 @@ validate_environment = BashOperator(
 
     # Check for Harbor scripts
     echo "Checking Harbor deployment scripts..."
-    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "test -f /opt/kcli-pipelines/harbor/deploy.sh"; then
         echo "[OK] Harbor deploy script found"
     else
@@ -287,7 +293,7 @@ validate_environment = BashOperator(
 
     # Check FreeIPA for DNS
     echo "Checking FreeIPA..."
-    FREEIPA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    FREEIPA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm freeipa 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     if [ -n "$FREEIPA_IP" ]; then
@@ -325,22 +331,22 @@ create_harbor = BashOperator(
     echo "Certificate Mode: $CERT_MODE"
 
     # Check if VM already exists
-    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli list vm | grep -q $VM_NAME"; then
         echo "[OK] VM $VM_NAME already exists"
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "kcli info vm $VM_NAME"
         exit 0
     fi
 
     # Prepare environment variables based on cert mode
     if [ "$CERT_MODE" == "step-ca" ]; then
-        STEP_CA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        STEP_CA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "kcli info vm $STEP_CA_VM 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
         CA_URL="https://${STEP_CA_IP}:443"
 
-        FINGERPRINT=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        FINGERPRINT=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "ssh -o StrictHostKeyChecking=no cloud-user@$STEP_CA_IP \
                 'sudo step certificate fingerprint /root/.step/certs/root_ca.crt 2>/dev/null'")
 
@@ -348,7 +354,7 @@ create_harbor = BashOperator(
         echo "CA Fingerprint: $FINGERPRINT"
 
         # Create Harbor with Step-CA
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "export VM_NAME=$VM_NAME && \
              export HARBOR_VERSION=$HARBOR_VERSION && \
              export CERT_MODE=step-ca && \
@@ -359,7 +365,7 @@ create_harbor = BashOperator(
              ./harbor/deploy.sh create"
     else
         # Create Harbor with Let's Encrypt
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "export VM_NAME=$VM_NAME && \
              export HARBOR_VERSION=$HARBOR_VERSION && \
              export CERT_MODE=letsencrypt && \
@@ -395,14 +401,14 @@ wait_for_harbor = BashOperator(
         echo "Check $ATTEMPT/$MAX_ATTEMPTS..."
 
         # Get VM IP
-        IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
         if [ -n "$IP" ] && [ "$IP" != "None" ]; then
             echo "VM IP: $IP"
 
             # Check SSH connectivity
-            if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+            if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
                 "nc -z -w5 $IP 22" 2>/dev/null; then
                 echo ""
                 echo "[OK] Harbor VM is accessible at $IP"
@@ -432,7 +438,7 @@ validate_harbor_health = BashOperator(
     VM_NAME="{{ params.vm_name }}"
 
     # Get VM IP
-    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     if [ -z "$IP" ]; then
@@ -451,7 +457,7 @@ validate_harbor_health = BashOperator(
         ATTEMPT=$((ATTEMPT + 1))
 
         # Check Harbor health endpoint
-        HEALTH=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        HEALTH=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "curl -sk https://$IP/api/v2.0/health 2>/dev/null" || true)
 
         if echo "$HEALTH" | grep -qi "healthy"; then
@@ -488,7 +494,7 @@ deployment_complete = BashOperator(
     DOMAIN="{{ params.domain }}"
 
     # Get VM info
-    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     echo ""
@@ -528,7 +534,7 @@ health_check = BashOperator(
     VM_NAME="{{ params.vm_name }}"
 
     # Get VM IP
-    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     if [ -z "$IP" ]; then
@@ -541,7 +547,7 @@ health_check = BashOperator(
     echo ""
 
     echo "Checking Harbor health..."
-    HEALTH=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    HEALTH=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "curl -sk https://$IP/api/v2.0/health 2>/dev/null")
 
     if echo "$HEALTH" | grep -qi "healthy"; then
@@ -571,11 +577,11 @@ delete_harbor = BashOperator(
 
     echo "Deleting VM: $VM_NAME"
 
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "export VM_NAME=$VM_NAME && \
          cd /opt/kcli-pipelines && \
          ./harbor/deploy.sh delete" || \
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "kcli delete vm $VM_NAME -y" || \
         echo "[WARN] VM may not exist"
 
@@ -598,17 +604,17 @@ check_status = BashOperator(
     VM_NAME="{{ params.vm_name }}"
 
     # Get VM info
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm $VM_NAME" 2>/dev/null || echo "VM not found: $VM_NAME"
 
     # Get IP and check health
-    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     if [ -n "$IP" ]; then
         echo ""
         echo "Health Check:"
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "curl -sk https://$IP/api/v2.0/health 2>/dev/null" || echo "Health check failed"
     fi
     """,

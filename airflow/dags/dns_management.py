@@ -17,6 +17,12 @@ from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator
 from airflow.models.param import Param
 
+
+# User-configurable SSH user (fix for hardcoded root issue)
+SSH_USER = get_ssh_user()
+# Import user-configurable helpers for portable DAGs
+from dag_helpers import get_ssh_user
+
 default_args = {
     "owner": "qubinode",
     "depends_on_past": False,
@@ -156,7 +162,7 @@ validate_freeipa = BashOperator(
     echo "========================================"
 
     # Check if FreeIPA VM exists (ADR-0046: Execute kcli via SSH to host)
-    FREEIPA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    FREEIPA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm freeipa 2>/dev/null | grep '^ip:' | awk '{print \\$2}' | head -1")
 
     if [ -z "$FREEIPA_IP" ] || [ "$FREEIPA_IP" == "None" ]; then
@@ -168,13 +174,13 @@ validate_freeipa = BashOperator(
     echo "[OK] FreeIPA VM found at: $FREEIPA_IP"
 
     # Check Kerberos ticket (on host)
-    if ! ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost "klist -s" 2>/dev/null; then
+    if ! ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost "klist -s" 2>/dev/null; then
         echo "[WARN] No valid Kerberos ticket on host"
         echo "Attempting kinit..."
 
         # Try to get ticket
         if [ -n "${FREEIPA_PASSWORD:-}" ]; then
-            ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+            ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
                 "echo '$FREEIPA_PASSWORD' | kinit admin" 2>/dev/null || {
                 echo "[ERROR] Failed to obtain Kerberos ticket"
                 exit 1
@@ -187,7 +193,7 @@ validate_freeipa = BashOperator(
     fi
 
     echo "[OK] Valid Kerberos ticket"
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost "klist"
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost "klist"
 
     echo ""
     echo "[OK] FreeIPA environment validated"
@@ -233,7 +239,7 @@ add_dns_record = BashOperator(
     echo "Create PTR: $CREATE_PTR"
 
     # ADR-0046: Execute ipa commands via SSH to host (requires Kerberos ticket)
-    SSH_CMD="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR root@localhost"
+    SSH_CMD="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR {SSH_USER}@localhost"
 
     # Check if zone exists
     if ! $SSH_CMD "ipa dnszone-show '$RECORD_ZONE'" &>/dev/null; then
@@ -318,7 +324,7 @@ remove_dns_record = BashOperator(
     echo "Zone: $RECORD_ZONE"
 
     # ADR-0046: Execute ipa commands via SSH to host (requires Kerberos ticket)
-    SSH_CMD="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR root@localhost"
+    SSH_CMD="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR {SSH_USER}@localhost"
 
     # Get current IP for PTR cleanup
     IP=$($SSH_CMD "ipa dnsrecord-show '$RECORD_ZONE' '$RECORD_NAME'" 2>/dev/null | \
@@ -387,7 +393,7 @@ add_cname_record = BashOperator(
     echo "Target: $TARGET_FQDN"
 
     # ADR-0046: Execute ipa commands via SSH to host (requires Kerberos ticket)
-    SSH_CMD="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR root@localhost"
+    SSH_CMD="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR {SSH_USER}@localhost"
 
     $SSH_CMD "ipa dnsrecord-add '$RECORD_ZONE' '$RECORD_NAME' --cname-rec='${TARGET_FQDN}.'" || {
         echo "[ERROR] Failed to add CNAME record"
@@ -436,7 +442,7 @@ add_srv_record = BashOperator(
     echo "Weight: $WEIGHT"
 
     # ADR-0046: Execute ipa commands via SSH to host (requires Kerberos ticket)
-    SSH_CMD="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR root@localhost"
+    SSH_CMD="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR {SSH_USER}@localhost"
 
     $SSH_CMD "ipa dnsrecord-add '$DOMAIN' '$SERVICE' --srv-rec='$PRIORITY $WEIGHT $PORT ${HOSTNAME}.'" || {
         echo "[ERROR] Failed to add SRV record"
@@ -465,7 +471,7 @@ list_dns_records = BashOperator(
     echo ""
 
     # ADR-0046: Execute ipa commands via SSH to host (requires Kerberos ticket)
-    SSH_CMD="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR root@localhost"
+    SSH_CMD="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR {SSH_USER}@localhost"
 
     $SSH_CMD "ipa dnsrecord-find '$DOMAIN'" || {
         echo "[ERROR] Failed to list records for zone: $DOMAIN"
@@ -518,7 +524,7 @@ check_dns_record = BashOperator(
     RECORD_NAME="${FQDN%%.*}"
     RECORD_ZONE="${FQDN#*.}"
     # ADR-0046: Execute ipa commands via SSH to host (requires Kerberos ticket)
-    SSH_CMD="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR root@localhost"
+    SSH_CMD="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR {SSH_USER}@localhost"
     $SSH_CMD "ipa dnsrecord-show '$RECORD_ZONE' '$RECORD_NAME'" 2>/dev/null || echo "  Not found in FreeIPA"
     """,
     trigger_rule="none_failed_min_one_success",
@@ -547,7 +553,7 @@ bulk_add_records = BashOperator(
     echo ""
 
     # ADR-0046: Execute ipa commands via SSH to host (requires Kerberos ticket)
-    SSH_CMD="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR root@localhost"
+    SSH_CMD="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR {SSH_USER}@localhost"
 
     # Parse JSON and add each record
     echo "$BULK_RECORDS" | jq -r '.[] | "\\(.hostname) \\(.ip)"' | while read -r hostname ip; do
@@ -606,7 +612,7 @@ sync_inventory = BashOperator(
     echo ""
 
     # ADR-0046: Execute ipa commands via SSH to host (requires Kerberos ticket)
-    SSH_CMD="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR root@localhost"
+    SSH_CMD="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR {SSH_USER}@localhost"
 
     # Parse inventory and add records
     jq -r '.certificates[] | "\\(.hostname) \\(.ip // "")"' "$INVENTORY_FILE" 2>/dev/null | \

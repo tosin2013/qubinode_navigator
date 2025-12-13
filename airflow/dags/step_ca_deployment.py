@@ -18,6 +18,12 @@ from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator
 
+
+# User-configurable SSH user (fix for hardcoded root issue)
+SSH_USER = get_ssh_user()
+# Import user-configurable helpers for portable DAGs
+from dag_helpers import get_ssh_user
+
 # Configuration
 KCLI_PIPELINES_DIR = "/opt/kcli-pipelines"
 STEP_CA_DIR = f"{KCLI_PIPELINES_DIR}/step-ca-server"
@@ -132,7 +138,7 @@ validate_environment = BashOperator(
 
     # Check kcli
     echo "Checking kcli..."
-    if ! ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    if ! ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "which kcli" &>/dev/null; then
         echo "[ERROR] kcli not found on host"
         exit 1
@@ -141,7 +147,7 @@ validate_environment = BashOperator(
 
     # Check for step-ca-server scripts
     echo "Checking Step-CA scripts..."
-    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "test -d /opt/kcli-pipelines/step-ca-server"; then
         echo "[OK] Step-CA scripts found"
     else
@@ -151,7 +157,7 @@ validate_environment = BashOperator(
 
     # Check FreeIPA for DNS
     echo "Checking FreeIPA..."
-    FREEIPA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    FREEIPA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm freeipa 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     if [ -n "$FREEIPA_IP" ]; then
@@ -184,7 +190,7 @@ configure_profile = BashOperator(
     echo "VM Name: $VM_NAME"
 
     # Run profile configuration
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "export VM_PROFILE=step-ca-server && \
          export VM_NAME=$VM_NAME && \
          export DOMAIN=$DOMAIN && \
@@ -219,17 +225,17 @@ create_step_ca = BashOperator(
     echo "Domain: $DOMAIN"
 
     # Check if VM already exists
-    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli list vm | grep -q $VM_NAME"; then
         echo "[OK] VM $VM_NAME already exists"
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "kcli info vm $VM_NAME"
         exit 0
     fi
 
     # Create VM using step-ca-server/deploy.sh
     echo "Creating Step-CA VM..."
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "export VM_NAME=$VM_NAME && \
          export COMMUNITY_VERSION={{ params.community_version }} && \
          export INITIAL_PASSWORD=password && \
@@ -238,7 +244,7 @@ create_step_ca = BashOperator(
          ./step-ca-server/deploy.sh create" || true
 
     # Verify VM was created
-    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli list vm | grep -q $VM_NAME"; then
         echo "[OK] Step-CA VM created successfully"
     else
@@ -268,14 +274,14 @@ wait_for_vm = BashOperator(
         echo "Check $ATTEMPT/$MAX_ATTEMPTS..."
 
         # Get VM IP
-        IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
         if [ -n "$IP" ] && [ "$IP" != "None" ]; then
             echo "VM IP: $IP"
 
             # Check SSH connectivity
-            if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+            if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
                 "nc -z -w5 $IP 22" 2>/dev/null; then
                 echo ""
                 echo "[OK] Step-CA VM is ready at $IP"
@@ -306,7 +312,7 @@ configure_step_ca = BashOperator(
     DOMAIN="{{ params.domain }}"
 
     # Get VM IP
-    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     if [ -z "$IP" ]; then
@@ -318,14 +324,14 @@ configure_step_ca = BashOperator(
     echo "Domain: $DOMAIN"
 
     # Check if Step-CA is already configured
-    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "curl -sk https://$IP:443/health 2>/dev/null | grep -q ok"; then
         echo "[OK] Step-CA is already configured and running"
         exit 0
     fi
 
     # Get FreeIPA DNS IP
-    FREEIPA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    FREEIPA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm freeipa 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
     if [ -z "$FREEIPA_IP" ]; then
         FREEIPA_IP="8.8.8.8"
@@ -334,7 +340,7 @@ configure_step_ca = BashOperator(
 
     # Copy local configuration script to VM and run it
     echo "Copying and running Step-CA configuration..."
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "scp -o StrictHostKeyChecking=no /opt/kcli-pipelines/step-ca-server/configure-step-ca-local.sh cloud-user@$IP:/tmp/ && \
          ssh -o StrictHostKeyChecking=no cloud-user@$IP 'echo password | sudo tee /tmp/initial_password > /dev/null && \
          chmod +x /tmp/configure-step-ca-local.sh && \
@@ -342,7 +348,7 @@ configure_step_ca = BashOperator(
 
     # Verify Step-CA is running
     sleep 10
-    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "curl -sk https://$IP:443/health 2>/dev/null | grep -q ok"; then
         echo "[OK] Step-CA is configured and running"
     else
@@ -367,14 +373,14 @@ register_ca = BashOperator(
     DOMAIN="{{ params.domain }}"
 
     # Get VM IP
-    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     echo "Step-CA IP: $IP"
 
     # Get CA fingerprint from the Step-CA VM
     echo "Getting CA fingerprint..."
-    FINGERPRINT=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    FINGERPRINT=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "ssh -o StrictHostKeyChecking=no cloud-user@$IP 'sudo step certificate fingerprint /root/.step/certs/root_ca.crt 2>/dev/null'")
 
     if [ -z "$FINGERPRINT" ]; then
@@ -385,7 +391,7 @@ register_ca = BashOperator(
 
         # Bootstrap the host to trust the CA
         echo "Bootstrapping host to trust Step-CA..."
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "step ca bootstrap --ca-url https://$IP:443 --fingerprint $FINGERPRINT --install 2>/dev/null || \
              echo 'Bootstrap completed (may already be configured)'"
     fi
@@ -418,7 +424,7 @@ validate_deployment = BashOperator(
     DOMAIN="{{ params.domain }}"
 
     # Get VM info
-    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     echo "Step-CA VM: $VM_NAME"
@@ -428,7 +434,7 @@ validate_deployment = BashOperator(
     # Check Step-CA health
     echo ""
     echo "Checking Step-CA health..."
-    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "curl -sk https://$IP:443/health 2>/dev/null"; then
         echo ""
         echo "[OK] Step-CA is healthy"
@@ -470,7 +476,7 @@ delete_step_ca = BashOperator(
 
     echo "Deleting VM: $VM_NAME"
 
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "export VM_NAME=$VM_NAME && \
          export VM_PROFILE=step-ca-server && \
          export ACTION=delete && \
@@ -497,17 +503,17 @@ check_status = BashOperator(
     VM_NAME="{{ params.vm_name }}"
 
     # Get VM info
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm $VM_NAME" 2>/dev/null || echo "VM not found: $VM_NAME"
 
     # Get IP and check health
-    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     if [ -n "$IP" ]; then
         echo ""
         echo "Step-CA Health Check:"
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "curl -sk https://$IP:443/health 2>/dev/null" || echo "Health check failed"
     fi
     """,

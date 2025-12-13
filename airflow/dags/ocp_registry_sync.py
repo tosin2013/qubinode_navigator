@@ -30,6 +30,12 @@ from airflow.operators.bash import BashOperator
 from airflow.utils.trigger_rule import TriggerRule
 from airflow.models.param import Param
 
+
+# User-configurable SSH user (fix for hardcoded root issue)
+SSH_USER = get_ssh_user()
+# Import user-configurable helpers for portable DAGs
+from dag_helpers import get_ssh_user
+
 # Note: Using inline SSH heredoc pattern for host execution (ADR-0046)
 # This ensures Jinja variables are expanded before SSH session
 
@@ -240,7 +246,7 @@ setup_credentials = BashOperator(
 preflight_checks = BashOperator(
     task_id="preflight_checks",
     bash_command="""
-    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR root@localhost << 'REMOTE_SCRIPT'
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR {SSH_USER}@localhost << 'REMOTE_SCRIPT'
 set -euo pipefail
 
 OCP_VERSION="{{ params.ocp_version }}"
@@ -404,7 +410,7 @@ health_check_registry = BashOperator(
 download_images = BashOperator(
     task_id="download_images",
     bash_command="""
-    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR root@localhost << 'REMOTE_SCRIPT'
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR {SSH_USER}@localhost << 'REMOTE_SCRIPT'
 set -euo pipefail
 
 OCP_VERSION="{{ params.ocp_version }}"
@@ -492,7 +498,7 @@ REMOTE_SCRIPT
 push_to_registry = BashOperator(
     task_id="push_to_registry",
     bash_command="""
-    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR root@localhost << 'REMOTE_SCRIPT'
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR {SSH_USER}@localhost << 'REMOTE_SCRIPT'
 set -euo pipefail
 
 TARGET_REGISTRY="{{ params.target_registry }}"

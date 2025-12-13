@@ -21,6 +21,12 @@ from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator
 
+
+# User-configurable SSH user (fix for hardcoded root issue)
+SSH_USER = get_ssh_user()
+# Import user-configurable helpers for portable DAGs
+from dag_helpers import get_ssh_user
+
 # Configuration
 KCLI_PIPELINES_DIR = "/opt/kcli-pipelines"
 MIRROR_REGISTRY_DIR = f"{KCLI_PIPELINES_DIR}/mirror-registry"
@@ -186,7 +192,7 @@ check_step_ca = BashOperator(
     STEP_CA_VM="{{ params.step_ca_vm }}"
 
     # Check if Step-CA VM exists
-    STEP_CA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    STEP_CA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm $STEP_CA_VM 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     if [ -z "$STEP_CA_IP" ] || [ "$STEP_CA_IP" == "None" ]; then
@@ -202,7 +208,7 @@ check_step_ca = BashOperator(
 
     # Check Step-CA health
     echo "Checking Step-CA health..."
-    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "curl -sk https://$STEP_CA_IP:443/health 2>/dev/null | grep -q ok"; then
         echo "[OK] Step-CA is healthy"
     else
@@ -212,7 +218,7 @@ check_step_ca = BashOperator(
     # Get CA fingerprint for later use
     echo ""
     echo "Getting CA fingerprint..."
-    FINGERPRINT=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    FINGERPRINT=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "ssh -o StrictHostKeyChecking=no cloud-user@$STEP_CA_IP \
             'sudo step certificate fingerprint /root/.step/certs/root_ca.crt 2>/dev/null'" || true)
 
@@ -246,7 +252,7 @@ validate_environment = BashOperator(
 
     # Check kcli
     echo "Checking kcli..."
-    if ! ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    if ! ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "which kcli" &>/dev/null; then
         echo "[ERROR] kcli not found on host"
         exit 1
@@ -256,7 +262,7 @@ validate_environment = BashOperator(
     # Check for registry scripts
     echo "Checking registry deployment scripts..."
     if [ "$REGISTRY_TYPE" == "mirror-registry" ]; then
-        if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "test -f /opt/kcli-pipelines/mirror-registry/deploy.sh"; then
             echo "[OK] Mirror-registry deploy script found"
         else
@@ -264,7 +270,7 @@ validate_environment = BashOperator(
             exit 1
         fi
     elif [ "$REGISTRY_TYPE" == "harbor" ]; then
-        if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "test -f /opt/kcli-pipelines/harbor/harbor.sh"; then
             echo "[OK] Harbor script found"
         else
@@ -276,7 +282,7 @@ validate_environment = BashOperator(
     # Check RHEL image for mirror-registry
     if [ "$REGISTRY_TYPE" == "mirror-registry" ]; then
         echo "Checking RHEL8 image..."
-        if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "ls /var/lib/libvirt/images/rhel8 2>/dev/null" | grep -q rhel; then
             echo "[OK] RHEL8 image found"
         else
@@ -287,7 +293,7 @@ validate_environment = BashOperator(
 
     # Check FreeIPA for DNS
     echo "Checking FreeIPA..."
-    FREEIPA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    FREEIPA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm freeipa 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     if [ -n "$FREEIPA_IP" ]; then
@@ -324,22 +330,22 @@ create_registry = BashOperator(
     echo "VM Name: $VM_NAME"
 
     # Check if VM already exists
-    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli list vm | grep -q $VM_NAME"; then
         echo "[OK] VM $VM_NAME already exists"
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "kcli info vm $VM_NAME"
         exit 0
     fi
 
     # Get Step-CA info
-    STEP_CA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    STEP_CA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm $STEP_CA_VM 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     CA_URL="https://${STEP_CA_IP}:443"
 
     # Get CA fingerprint
-    FINGERPRINT=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    FINGERPRINT=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "ssh -o StrictHostKeyChecking=no cloud-user@$STEP_CA_IP \
             'sudo step certificate fingerprint /root/.step/certs/root_ca.crt 2>/dev/null'")
 
@@ -349,7 +355,7 @@ create_registry = BashOperator(
     # Create registry based on type
     if [ "$REGISTRY_TYPE" == "mirror-registry" ]; then
         echo "Creating Mirror-Registry..."
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "export VM_NAME=$VM_NAME && \
              export QUAY_VERSION=$QUAY_VERSION && \
              export CA_URL=$CA_URL && \
@@ -389,14 +395,14 @@ wait_for_registry = BashOperator(
         echo "Check $ATTEMPT/$MAX_ATTEMPTS..."
 
         # Get VM IP
-        IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
         if [ -n "$IP" ] && [ "$IP" != "None" ]; then
             echo "VM IP: $IP"
 
             # Check SSH connectivity
-            if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+            if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
                 "nc -z -w5 $IP 22" 2>/dev/null; then
                 echo ""
                 echo "[OK] Registry VM is accessible at $IP"
@@ -427,7 +433,7 @@ validate_registry_health = BashOperator(
     REGISTRY_TYPE="{{ params.registry_type }}"
 
     # Get VM IP
-    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     if [ -z "$IP" ]; then
@@ -447,7 +453,7 @@ validate_registry_health = BashOperator(
 
         if [ "$REGISTRY_TYPE" == "mirror-registry" ]; then
             # Check Quay health endpoint
-            HEALTH=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+            HEALTH=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
                 "curl -sk https://$IP:8443/health/instance 2>/dev/null" || true)
 
             if echo "$HEALTH" | grep -qi "healthy"; then
@@ -458,7 +464,7 @@ validate_registry_health = BashOperator(
             fi
         elif [ "$REGISTRY_TYPE" == "harbor" ]; then
             # Check Harbor health
-            HEALTH=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+            HEALTH=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
                 "curl -sk https://$IP/api/v2.0/health 2>/dev/null" || true)
 
             if echo "$HEALTH" | grep -qi "healthy"; then
@@ -496,7 +502,7 @@ deployment_complete = BashOperator(
     DOMAIN="{{ params.domain }}"
 
     # Get VM info
-    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     echo ""
@@ -540,7 +546,7 @@ health_check = BashOperator(
     REGISTRY_TYPE="{{ params.registry_type }}"
 
     # Get VM IP
-    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     if [ -z "$IP" ]; then
@@ -554,7 +560,7 @@ health_check = BashOperator(
 
     if [ "$REGISTRY_TYPE" == "mirror-registry" ]; then
         echo "Checking Mirror-Registry health..."
-        HEALTH=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        HEALTH=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "curl -sk https://$IP:8443/health/instance 2>/dev/null")
 
         if echo "$HEALTH" | grep -qi "healthy"; then
@@ -568,7 +574,7 @@ health_check = BashOperator(
         fi
     elif [ "$REGISTRY_TYPE" == "harbor" ]; then
         echo "Checking Harbor health..."
-        HEALTH=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        HEALTH=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "curl -sk https://$IP/api/v2.0/health 2>/dev/null")
 
         if echo "$HEALTH" | grep -qi "healthy"; then
@@ -598,11 +604,11 @@ delete_registry = BashOperator(
 
     echo "Deleting VM: $VM_NAME"
 
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "export VM_NAME=$VM_NAME && \
          cd /opt/kcli-pipelines && \
          ./mirror-registry/deploy.sh delete" || \
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "kcli delete vm $VM_NAME -y" || \
         echo "[WARN] VM may not exist"
 
@@ -625,17 +631,17 @@ check_status = BashOperator(
     VM_NAME="{{ params.vm_name }}"
 
     # Get VM info
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm $VM_NAME" 2>/dev/null || echo "VM not found: $VM_NAME"
 
     # Get IP and check health
-    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     if [ -n "$IP" ]; then
         echo ""
         echo "Health Check:"
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "curl -sk https://$IP:8443/health/instance 2>/dev/null" || echo "Health check failed"
     fi
     """,

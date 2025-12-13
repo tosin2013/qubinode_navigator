@@ -43,7 +43,7 @@ def main():
     registry_paths = [
         os.path.join(DAGS_DIR, "registry.yaml"),
         "/opt/kcli-pipelines/dags/registry.yaml",
-        "/root/qubinode_navigator/airflow/dags/registry.yaml",
+        os.path.expanduser("~/qubinode_navigator/airflow/dags/registry.yaml"),
     ]
 
     for path in registry_paths:
