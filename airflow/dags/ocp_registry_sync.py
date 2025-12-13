@@ -30,17 +30,15 @@ from airflow.operators.bash import BashOperator
 from airflow.utils.trigger_rule import TriggerRule
 from airflow.models.param import Param
 
-# User-configurable SSH user (fix for hardcoded root issue)
-SSH_USER = get_ssh_user()
-
 # Import user-configurable helpers for portable DAGs
 from dag_helpers import get_ssh_user
 
-
 # User-configurable SSH user (fix for hardcoded root issue)
 SSH_USER = get_ssh_user()
-# Import user-configurable helpers for portable DAGs
-from dag_helpers import get_ssh_user
+
+
+
+
 
 # Note: Using inline SSH heredoc pattern for host execution (ADR-0046)
 # This ensures Jinja variables are expanded before SSH session

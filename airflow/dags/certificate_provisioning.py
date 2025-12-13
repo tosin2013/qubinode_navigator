@@ -30,17 +30,15 @@ from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator
 from airflow.utils.trigger_rule import TriggerRule
 
-# User-configurable SSH user (fix for hardcoded root issue)
-SSH_USER = get_ssh_user()
-
 # Import user-configurable helpers for portable DAGs
 from dag_helpers import get_ssh_user
 
-
 # User-configurable SSH user (fix for hardcoded root issue)
 SSH_USER = get_ssh_user()
-# Import user-configurable helpers for portable DAGs
-from dag_helpers import get_ssh_user
+
+
+
+
 
 # Configuration
 QUBINODE_CERT_SCRIPT = "/opt/qubinode_navigator/scripts/qubinode-cert"
