@@ -17,6 +17,13 @@ from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator
 
+# Import user-configurable helpers for portable DAGs
+from dag_helpers import (
+    get_ssh_user,
+    get_ssh_key_path,
+    get_inventory_dir,
+)
+
 # Default arguments
 default_args = {
     "owner": "qubinode",
@@ -51,6 +58,11 @@ dag = DAG(
 FREEIPA_DEPLOYER = "/opt/freeipa-workshop-deployer"
 QUBINODE_NAV = "/opt/qubinode_navigator"
 
+# User-configurable paths (fix for hardcoded root user issue)
+SSH_USER = get_ssh_user()
+SSH_KEY_PATH = get_ssh_key_path()
+INVENTORY_BASE_DIR = get_inventory_dir()
+
 
 def decide_action(**context):
     """Branch based on action parameter (create or destroy)."""
@@ -83,7 +95,7 @@ validate_environment = BashOperator(
     ssh -o StrictHostKeyChecking=no \
         -o UserKnownHostsFile=/dev/null \
         -o LogLevel=ERROR \
-        root@localhost \
+        " + SSH_USER  + "@localhost \
         '
         COMMUNITY_VERSION="{{ params.community_version }}"
         OS_VERSION="{{ params.os_version }}"
@@ -144,7 +156,7 @@ create_freeipa_vm = BashOperator(
     ssh -o StrictHostKeyChecking=no \
         -o UserKnownHostsFile=/dev/null \
         -o LogLevel=ERROR \
-        root@localhost \
+        " + SSH_USER  + "@localhost \
         '
         COMMUNITY_VERSION="{{ params.community_version }}"
         OS_VERSION="{{ params.os_version }}"
@@ -201,7 +213,7 @@ wait_for_vm = BashOperator(
     ssh -o StrictHostKeyChecking=no \
         -o UserKnownHostsFile=/dev/null \
         -o LogLevel=ERROR \
-        root@localhost \
+        " + SSH_USER  + "@localhost \
         '
         VM_NAME=freeipa
         MAX_ATTEMPTS=60
@@ -262,7 +274,7 @@ prepare_ansible = BashOperator(
     ssh -o StrictHostKeyChecking=no \
         -o UserKnownHostsFile=/dev/null \
         -o LogLevel=ERROR \
-        root@localhost \
+        " + SSH_USER  + "@localhost \
         '
         DOMAIN="{{ params.domain }}"
         IDM_HOSTNAME="{{ params.idm_hostname }}"
@@ -286,7 +298,7 @@ prepare_ansible = BashOperator(
         [ "$COMMUNITY_VERSION" == "true" ] && LOGIN_USER="cloud-user" || LOGIN_USER="cloud-user"
 
         # Create inventory directory
-        INVENTORY_DIR="/root/.generated/.${IDM_HOSTNAME}.${DOMAIN}"
+        INVENTORY_DIR=INVENTORY_BASE_DIR + "/.${IDM_HOSTNAME}.${DOMAIN}"
         mkdir -p "$INVENTORY_DIR"
 
         # Create Ansible inventory
@@ -295,7 +307,7 @@ prepare_ansible = BashOperator(
 ${IDM_HOSTNAME}
 
 [all:vars]
-ansible_ssh_private_key_file=/root/.ssh/id_rsa
+ansible_ssh_private_key_file=" + SSH_KEY_PATH + "
 ansible_ssh_user=${LOGIN_USER}
 ansible_ssh_common_args=-o StrictHostKeyChecking=no
 ansible_host=${IP}
@@ -354,7 +366,7 @@ install_freeipa = BashOperator(
     ssh -o StrictHostKeyChecking=no \
         -o UserKnownHostsFile=/dev/null \
         -o LogLevel=ERROR \
-        root@localhost \
+        " + SSH_USER  + "@localhost \
         '
         set -e
         DOMAIN="{{ params.domain }}"
@@ -369,7 +381,7 @@ install_freeipa = BashOperator(
             exit 1
         fi
 
-        INVENTORY_DIR="/root/.generated/.${IDM_HOSTNAME}.${DOMAIN}"
+        INVENTORY_DIR=INVENTORY_BASE_DIR + "/.${IDM_HOSTNAME}.${DOMAIN}"
         PLAYBOOK_DIR="/opt/freeipa-workshop-deployer"
 
         echo "Running Ansible playbook..."
@@ -417,7 +429,7 @@ validate_freeipa = BashOperator(
     ssh -o StrictHostKeyChecking=no \
         -o UserKnownHostsFile=/dev/null \
         -o LogLevel=ERROR \
-        root@localhost \
+        " + SSH_USER  + "@localhost \
         '
         DOMAIN="{{ params.domain }}"
         IDM_HOSTNAME="{{ params.idm_hostname }}"
@@ -466,7 +478,7 @@ destroy_freeipa = BashOperator(
     ssh -o StrictHostKeyChecking=no \
         -o UserKnownHostsFile=/dev/null \
         -o LogLevel=ERROR \
-        root@localhost \
+        " + SSH_USER  + "@localhost \
         '
         VM_NAME=freeipa
 
