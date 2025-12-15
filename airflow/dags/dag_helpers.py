@@ -111,6 +111,317 @@ def get_pull_secret_path() -> str:
     return os.environ.get("QUBINODE_PULL_SECRET_PATH", default)
 
 
+def get_kcli_pipelines_dir() -> str:
+    """
+    Get kcli-pipelines directory from environment or default to /opt/kcli-pipelines.
+
+    Environment variable: KCLI_PIPELINES_DIR
+    Default: /opt/kcli-pipelines
+
+    Returns:
+        Full path to kcli-pipelines directory
+
+    Example:
+        >>> pipelines_dir = get_kcli_pipelines_dir()
+        >>> deploy_script = f"{pipelines_dir}/vyos-router/deploy.sh"
+    """
+    return os.environ.get("KCLI_PIPELINES_DIR", "/opt/kcli-pipelines")
+
+
+# =============================================================================
+# Vault Password Management Helpers (Issue #123)
+# =============================================================================
+# These helpers ensure vault password files exist before running Ansible
+# commands via kcli-pipelines or direct ansible-playbook calls.
+
+
+def get_ensure_vault_password_command(
+    vault_password_file: Optional[str] = None,
+    default_password_var: str = "VAULT_PASSWORD",
+    create_if_missing: bool = True,
+) -> str:
+    """
+    Generate bash command to ensure vault password file exists.
+
+    This addresses Issue #123: Missing vault password files cause deployment
+    failures when running kcli-pipelines or ansible-playbook commands.
+
+    Args:
+        vault_password_file: Path to vault password file (default: uses get_vault_password_file())
+        default_password_var: Airflow Variable name for default password
+        create_if_missing: Whether to create file if missing (default: True)
+
+    Returns:
+        Bash command string that checks/creates vault password file
+
+    Example:
+        >>> cmd = get_ensure_vault_password_command()
+        >>> # Use in BashOperator before ansible commands
+
+    Usage in DAG:
+        from dag_helpers import get_ensure_vault_password_command
+
+        ensure_vault = BashOperator(
+            task_id='ensure_vault_password',
+            bash_command=get_ensure_vault_password_command(),
+            dag=dag,
+        )
+        # Then: ensure_vault >> deploy_task
+    """
+    if vault_password_file is None:
+        vault_password_file = get_vault_password_file()
+
+    return f"""
+    echo "========================================"
+    echo "Ensuring Vault Password File Exists"
+    echo "========================================"
+
+    VAULT_FILE="{vault_password_file}"
+
+    if [ -f "$VAULT_FILE" ]; then
+        echo "[OK] Vault password file exists: $VAULT_FILE"
+        # Verify permissions
+        PERMS=$(stat -c %a "$VAULT_FILE" 2>/dev/null || stat -f %Lp "$VAULT_FILE" 2>/dev/null)
+        if [ "$PERMS" != "600" ] && [ "$PERMS" != "400" ]; then
+            echo "[WARN] Fixing permissions on vault password file"
+            chmod 600 "$VAULT_FILE"
+        fi
+        echo "[OK] Vault password file ready"
+        exit 0
+    fi
+
+    echo "[INFO] Vault password file not found: $VAULT_FILE"
+
+    CREATE_IF_MISSING="{str(create_if_missing).lower()}"
+    if [ "$CREATE_IF_MISSING" != "true" ]; then
+        echo "[ERROR] Vault password file required but create_if_missing=false"
+        echo ""
+        echo "To fix manually, create the file:"
+        echo "  echo 'your-vault-password' > $VAULT_FILE"
+        echo "  chmod 600 $VAULT_FILE"
+        exit 1
+    fi
+
+    echo "[INFO] Attempting to create vault password file..."
+
+    # Try to get password from Airflow Variable
+    DEFAULT_PASSWORD=""
+    if command -v airflow &> /dev/null; then
+        DEFAULT_PASSWORD=$(airflow variables get {default_password_var} 2>/dev/null || echo "")
+    fi
+
+    if [ -n "$DEFAULT_PASSWORD" ]; then
+        echo "[INFO] Using password from Airflow Variable: {default_password_var}"
+        mkdir -p "$(dirname "$VAULT_FILE")"
+        echo "$DEFAULT_PASSWORD" > "$VAULT_FILE"
+        chmod 600 "$VAULT_FILE"
+        echo "[OK] Vault password file created from Airflow Variable"
+    else
+        echo "[WARN] No password found in Airflow Variable '{default_password_var}'"
+        echo ""
+        echo "Options to fix:"
+        echo "  1. Set Airflow Variable:"
+        echo "     airflow variables set {default_password_var} 'your-vault-password'"
+        echo ""
+        echo "  2. Create file manually:"
+        echo "     echo 'your-vault-password' > $VAULT_FILE"
+        echo "     chmod 600 $VAULT_FILE"
+        echo ""
+        echo "  3. Use a default password for testing (NOT for production):"
+        echo "     echo 'changeme' > $VAULT_FILE"
+        echo "     chmod 600 $VAULT_FILE"
+
+        # For development/testing, create with a placeholder
+        # In production, this should fail
+        if [ "${{QUBINODE_DEV_MODE:-false}}" = "true" ]; then
+            echo ""
+            echo "[WARN] QUBINODE_DEV_MODE=true - creating with placeholder password"
+            mkdir -p "$(dirname "$VAULT_FILE")"
+            echo "changeme" > "$VAULT_FILE"
+            chmod 600 "$VAULT_FILE"
+            echo "[OK] Vault password file created (DEV MODE)"
+        else
+            exit 1
+        fi
+    fi
+    """
+
+
+def get_kcli_pipelines_vault_setup_command(
+    components: Optional[List[str]] = None,
+    vault_password_file: Optional[str] = None,
+    pipelines_dir: Optional[str] = None,
+) -> str:
+    """
+    Generate bash command to setup vault password for kcli-pipelines components.
+
+    This creates symlinks from the global vault password file to component
+    directories in kcli-pipelines, ensuring deploy.sh scripts can find
+    the vault password.
+
+    Args:
+        components: List of component names (e.g., ['vyos-router', 'step-ca-server'])
+                   If None, sets up all known components
+        vault_password_file: Source vault password file (default: uses get_vault_password_file())
+        pipelines_dir: kcli-pipelines directory (default: /opt/kcli-pipelines)
+
+    Returns:
+        Bash command string that creates symlinks for vault password
+
+    Example:
+        >>> cmd = get_kcli_pipelines_vault_setup_command(['vyos-router'])
+        >>> # Creates: /opt/kcli-pipelines/vyos-router/.vault_password -> ~/.vault_password
+
+    Usage in DAG:
+        from dag_helpers import get_kcli_pipelines_vault_setup_command
+
+        setup_vault = BashOperator(
+            task_id='setup_kcli_vault',
+            bash_command=get_kcli_pipelines_vault_setup_command(['vyos-router']),
+            dag=dag,
+        )
+    """
+    if vault_password_file is None:
+        vault_password_file = get_vault_password_file()
+
+    if pipelines_dir is None:
+        pipelines_dir = get_kcli_pipelines_dir()
+
+    # Default components that use vault password
+    if components is None:
+        components = [
+            "vyos-router",
+            "step-ca-server",
+            "freeipa-workshop-deployer",
+            "ceph-cluster",
+            "kubernetes",
+            "openshift4-disconnected-helper",
+        ]
+
+    components_str = " ".join(components)
+
+    return f"""
+    echo "========================================"
+    echo "Setting Up Vault Password for kcli-pipelines"
+    echo "========================================"
+
+    VAULT_FILE="{vault_password_file}"
+    PIPELINES_DIR="{pipelines_dir}"
+    COMPONENTS="{components_str}"
+
+    # First ensure the source vault password file exists
+    if [ ! -f "$VAULT_FILE" ]; then
+        echo "[ERROR] Source vault password file not found: $VAULT_FILE"
+        echo ""
+        echo "Run the ensure_vault_password task first, or create manually:"
+        echo "  echo 'your-vault-password' > $VAULT_FILE"
+        echo "  chmod 600 $VAULT_FILE"
+        exit 1
+    fi
+
+    echo "Source vault file: $VAULT_FILE"
+    echo "Pipelines directory: $PIPELINES_DIR"
+    echo ""
+
+    # Check if pipelines directory exists
+    if [ ! -d "$PIPELINES_DIR" ]; then
+        echo "[WARN] kcli-pipelines directory not found: $PIPELINES_DIR"
+        echo "This is OK if kcli-pipelines is not yet cloned"
+        exit 0
+    fi
+
+    # Create symlinks for each component
+    for COMPONENT in $COMPONENTS; do
+        COMPONENT_DIR="$PIPELINES_DIR/$COMPONENT"
+        TARGET_FILE="$COMPONENT_DIR/.vault_password"
+
+        if [ ! -d "$COMPONENT_DIR" ]; then
+            echo "[SKIP] Component directory not found: $COMPONENT"
+            continue
+        fi
+
+        if [ -L "$TARGET_FILE" ]; then
+            # Already a symlink - check if valid
+            if [ -e "$TARGET_FILE" ]; then
+                echo "[OK] $COMPONENT: symlink exists and valid"
+            else
+                echo "[FIX] $COMPONENT: broken symlink, recreating..."
+                rm -f "$TARGET_FILE"
+                ln -s "$VAULT_FILE" "$TARGET_FILE"
+                echo "[OK] $COMPONENT: symlink recreated"
+            fi
+        elif [ -f "$TARGET_FILE" ]; then
+            # Regular file exists - leave it alone
+            echo "[OK] $COMPONENT: vault file exists (not symlink)"
+        else
+            # Create symlink
+            echo "[CREATE] $COMPONENT: creating symlink..."
+            ln -s "$VAULT_FILE" "$TARGET_FILE"
+            echo "[OK] $COMPONENT: symlink created"
+        fi
+    done
+
+    echo ""
+    echo "[OK] Vault password setup complete for kcli-pipelines"
+    """
+
+
+def get_vault_password_check_command(
+    vault_password_file: Optional[str] = None,
+    fail_if_missing: bool = True,
+) -> str:
+    """
+    Generate bash command to check if vault password file exists.
+
+    Use this for validation tasks that should fail early if vault
+    password is not configured.
+
+    Args:
+        vault_password_file: Path to check (default: uses get_vault_password_file())
+        fail_if_missing: Whether to exit with error if missing (default: True)
+
+    Returns:
+        Bash command string for vault password validation
+
+    Example:
+        >>> cmd = get_vault_password_check_command()
+        >>> # Add to validation task in DAG
+    """
+    if vault_password_file is None:
+        vault_password_file = get_vault_password_file()
+
+    fail_action = "exit 1" if fail_if_missing else "echo '[WARN] Continuing without vault password'"
+
+    return f"""
+    VAULT_FILE="{vault_password_file}"
+
+    echo "Checking vault password file: $VAULT_FILE"
+
+    if [ -f "$VAULT_FILE" ]; then
+        echo "[OK] Vault password file exists"
+
+        # Check permissions
+        PERMS=$(stat -c %a "$VAULT_FILE" 2>/dev/null || stat -f %Lp "$VAULT_FILE" 2>/dev/null)
+        if [ "$PERMS" = "600" ] || [ "$PERMS" = "400" ]; then
+            echo "[OK] Permissions are secure ($PERMS)"
+        else
+            echo "[WARN] Permissions should be 600, currently: $PERMS"
+        fi
+    else
+        echo "[ERROR] Vault password file not found: $VAULT_FILE"
+        echo ""
+        echo "To create vault password file:"
+        echo "  1. Set via Airflow Variable:"
+        echo "     airflow variables set VAULT_PASSWORD 'your-password'"
+        echo ""
+        echo "  2. Or create manually:"
+        echo "     echo 'your-password' > $VAULT_FILE"
+        echo "     chmod 600 $VAULT_FILE"
+        {fail_action}
+    fi
+    """
+
+
 # =============================================================================
 # Error Reporting Helpers
 # =============================================================================

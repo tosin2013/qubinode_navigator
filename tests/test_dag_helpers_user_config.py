@@ -17,8 +17,12 @@ from dag_helpers import (
     get_inventory_dir,
     get_vault_password_file,
     get_pull_secret_path,
+    get_kcli_pipelines_dir,
     ssh_to_host_command,
     ssh_to_host_script,
+    get_ensure_vault_password_command,
+    get_kcli_pipelines_vault_setup_command,
+    get_vault_password_check_command,
 )
 
 
@@ -173,6 +177,134 @@ class TestSSHHelperFunctions:
 
         # Cleanup
         os.environ.pop("QUBINODE_SSH_USER", None)
+
+
+class TestKcliPipelinesDir:
+    """Test kcli-pipelines directory helper."""
+
+    def test_get_kcli_pipelines_dir_default(self):
+        """Test get_kcli_pipelines_dir returns /opt/kcli-pipelines by default."""
+        os.environ.pop("KCLI_PIPELINES_DIR", None)
+
+        pipelines_dir = get_kcli_pipelines_dir()
+        assert pipelines_dir == "/opt/kcli-pipelines"
+
+    def test_get_kcli_pipelines_dir_from_env(self):
+        """Test get_kcli_pipelines_dir respects KCLI_PIPELINES_DIR env var."""
+        test_dir = "/custom/kcli-pipelines"
+        os.environ["KCLI_PIPELINES_DIR"] = test_dir
+
+        pipelines_dir = get_kcli_pipelines_dir()
+        assert pipelines_dir == test_dir
+
+        # Cleanup
+        os.environ.pop("KCLI_PIPELINES_DIR", None)
+
+
+class TestVaultPasswordHelpers:
+    """Test vault password management helper functions (Issue #123)."""
+
+    def test_get_ensure_vault_password_command_default_path(self):
+        """Test get_ensure_vault_password_command uses default vault path."""
+        os.environ.pop("QUBINODE_VAULT_PASSWORD_FILE", None)
+
+        cmd = get_ensure_vault_password_command()
+
+        # Should contain expected vault password path (expanded home)
+        assert "/.vault_password" in cmd
+        assert "Ensuring Vault Password File Exists" in cmd
+        assert "[OK]" in cmd
+        assert "chmod 600" in cmd
+
+    def test_get_ensure_vault_password_command_custom_path(self):
+        """Test get_ensure_vault_password_command with custom path."""
+        custom_path = "/custom/vault/password"
+
+        cmd = get_ensure_vault_password_command(vault_password_file=custom_path)
+
+        assert custom_path in cmd
+        assert "VAULT_FILE=" in cmd
+
+    def test_get_ensure_vault_password_command_custom_variable(self):
+        """Test get_ensure_vault_password_command with custom Airflow variable."""
+        cmd = get_ensure_vault_password_command(default_password_var="CUSTOM_VAR")
+
+        assert "CUSTOM_VAR" in cmd
+        assert "airflow variables get CUSTOM_VAR" in cmd
+
+    def test_get_ensure_vault_password_command_no_create(self):
+        """Test get_ensure_vault_password_command with create_if_missing=False."""
+        cmd = get_ensure_vault_password_command(create_if_missing=False)
+
+        assert 'CREATE_IF_MISSING="false"' in cmd
+
+    def test_get_kcli_pipelines_vault_setup_command_default(self):
+        """Test get_kcli_pipelines_vault_setup_command with defaults."""
+        os.environ.pop("QUBINODE_VAULT_PASSWORD_FILE", None)
+        os.environ.pop("KCLI_PIPELINES_DIR", None)
+
+        cmd = get_kcli_pipelines_vault_setup_command()
+
+        # Should contain default pipelines directory
+        assert "/opt/kcli-pipelines" in cmd
+        assert "Setting Up Vault Password for kcli-pipelines" in cmd
+        # Should include default components
+        assert "vyos-router" in cmd
+        assert "step-ca-server" in cmd
+        assert "ln -s" in cmd  # Creates symlinks
+
+    def test_get_kcli_pipelines_vault_setup_command_specific_components(self):
+        """Test get_kcli_pipelines_vault_setup_command with specific components."""
+        components = ["vyos-router", "freeipa-workshop-deployer"]
+
+        cmd = get_kcli_pipelines_vault_setup_command(components=components)
+
+        assert "vyos-router" in cmd
+        assert "freeipa-workshop-deployer" in cmd
+        # Should not contain components not in list
+        assert "COMPONENTS=" in cmd
+
+    def test_get_kcli_pipelines_vault_setup_command_custom_paths(self):
+        """Test get_kcli_pipelines_vault_setup_command with custom paths."""
+        custom_vault = "/custom/vault"
+        custom_pipelines = "/custom/pipelines"
+
+        cmd = get_kcli_pipelines_vault_setup_command(
+            vault_password_file=custom_vault,
+            pipelines_dir=custom_pipelines,
+        )
+
+        assert custom_vault in cmd
+        assert custom_pipelines in cmd
+
+    def test_get_vault_password_check_command_default(self):
+        """Test get_vault_password_check_command with defaults."""
+        os.environ.pop("QUBINODE_VAULT_PASSWORD_FILE", None)
+
+        cmd = get_vault_password_check_command()
+
+        assert "/.vault_password" in cmd
+        assert "Checking vault password file" in cmd
+        assert "[OK]" in cmd
+        assert "[ERROR]" in cmd
+        assert "exit 1" in cmd  # Should fail if missing by default
+
+    def test_get_vault_password_check_command_no_fail(self):
+        """Test get_vault_password_check_command with fail_if_missing=False."""
+        cmd = get_vault_password_check_command(fail_if_missing=False)
+
+        assert "[WARN] Continuing without vault password" in cmd
+        # Should not exit 1
+        assert "exit 1" not in cmd.split("[WARN]")[1]
+
+    def test_get_vault_password_check_command_custom_path(self):
+        """Test get_vault_password_check_command with custom path."""
+        custom_path = "/etc/ansible/vault"
+
+        cmd = get_vault_password_check_command(vault_password_file=custom_path)
+
+        assert custom_path in cmd
+        assert f'VAULT_FILE="{custom_path}"' in cmd
 
 
 if __name__ == "__main__":
