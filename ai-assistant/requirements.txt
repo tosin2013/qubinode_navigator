@@ -10,7 +10,7 @@ anyio==4.12.0
 attrs==25.4.0
 authlib==1.6.5
 beartype==0.22.8
-cachetools==6.2.2
+cachetools==6.2.3
 certifi==2025.11.12
 cffi==2.0.0
 charset-normalizer==3.4.4
@@ -84,7 +84,6 @@ py-key-value-aio[disk,memory]==0.3.0
 py-key-value-shared==0.3.0
 pycparser==2.23
 pydantic[email]==2.12.4
-pydantic-ai-slim[google,openai,anthropic,openrouter,logfire,duckduckgo]==1.28.0
 pydantic-core==2.41.5
 pydantic-settings==2.12.0
 pygments==2.19.2
