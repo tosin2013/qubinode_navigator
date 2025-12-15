@@ -387,7 +387,7 @@ start_ai_assistant() {
     log_info "Creating required directories for AI Assistant..."
     mkdir -p "${REPO_ROOT}/ai-assistant/data/rag-docs"
     mkdir -p "${REPO_ROOT}/ai-assistant/data/vector-db"
-    
+
     # Set ownership to match container user (UID 1001, GID 0 per Dockerfile)
     # This ensures the container can read/write to mounted directories
     if command -v chown &> /dev/null; then
@@ -395,7 +395,7 @@ start_ai_assistant() {
             log_warning "Could not set ownership on data directory, container will use SELinux context or existing permissions"
         }
     fi
-    
+
     log_success "Data directories created successfully"
 
     # Determine image source: build from source or pull from registry
@@ -459,19 +459,19 @@ start_ai_assistant() {
     log_info "Waiting for AI Assistant to be ready (may take up to 2 minutes for initial startup)..."
     local max_attempts=60  # 2 minutes with 2-second intervals
     local attempt=1
-    
+
     while [ $attempt -le $max_attempts ]; do
         if curl -s http://localhost:${AI_ASSISTANT_PORT}/health &> /dev/null; then
             log_success "AI Assistant is ready at http://localhost:${AI_ASSISTANT_PORT}"
             log_ai "You can ask me for help if you encounter any issues during deployment!"
             return 0
         fi
-        
+
         # Show progress every 10 seconds
         if [ $((attempt % 5)) -eq 0 ]; then
             log_info "Still waiting... (attempt $attempt/$max_attempts)"
         fi
-        
+
         sleep 2
         attempt=$((attempt + 1))
     done
@@ -479,7 +479,7 @@ start_ai_assistant() {
     log_warning "AI Assistant started but health check failed after $((max_attempts * 2)) seconds"
     log_warning "Container may still be starting up. Check logs with: podman logs qubinode-ai-assistant"
     log_warning "To troubleshoot: curl -v http://localhost:${AI_ASSISTANT_PORT}/health"
-    
+
     # Non-fatal: allow deployment to continue even if AI Assistant isn't ready yet
     return 1
 }

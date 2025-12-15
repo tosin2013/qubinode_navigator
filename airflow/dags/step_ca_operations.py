@@ -17,6 +17,13 @@ from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator
 
+# Import user-configurable helpers for portable DAGs
+from dag_helpers import get_ssh_user
+
+# User-configurable SSH user (fix for hardcoded root issue)
+SSH_USER = get_ssh_user()
+
+
 default_args = {
     "owner": "qubinode",
     "depends_on_past": False,
@@ -134,13 +141,13 @@ ensure_step_cli = BashOperator(
     echo "========================================"
 
     # Check if step CLI is installed on host
-    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "which step" &>/dev/null; then
         echo "[OK] step CLI is already installed"
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost "step version"
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost "step version"
     else
         echo "[INFO] Installing step CLI on host..."
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "wget -q https://dl.smallstep.com/cli/docs-ca-install/latest/step-cli_amd64.rpm -O /tmp/step-cli_amd64.rpm && \
              rpm -i /tmp/step-cli_amd64.rpm 2>/dev/null || rpm -U /tmp/step-cli_amd64.rpm && \
              step version"
@@ -177,27 +184,27 @@ get_ca_info = BashOperator(
     # Get CA health
     echo ""
     echo "CA Health Check:"
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "curl -sk ${CA_URL}/health" || echo "Health check failed"
 
     # Get root CA certificate
     echo ""
     echo "Root CA Certificate:"
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "step ca root --ca-url ${CA_URL} /tmp/root_ca.crt 2>/dev/null && cat /tmp/root_ca.crt" || \
         echo "Could not fetch root CA (may need to bootstrap first)"
 
     # Get fingerprint
     echo ""
     echo "CA Fingerprint:"
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "step certificate fingerprint /tmp/root_ca.crt 2>/dev/null" || \
         echo "Could not get fingerprint"
 
     # List provisioners
     echo ""
     echo "Available Provisioners:"
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "step ca provisioner list --ca-url ${CA_URL} 2>/dev/null" || \
         echo "Could not list provisioners"
 

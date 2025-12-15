@@ -19,6 +19,13 @@ from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator
 
+# Import user-configurable helpers for portable DAGs
+from dag_helpers import get_ssh_user
+
+# User-configurable SSH user (fix for hardcoded root issue)
+SSH_USER = get_ssh_user()
+
+
 # Configuration
 KCLI_PIPELINES_DIR = "/opt/kcli-pipelines"
 JFROG_DIR = f"{KCLI_PIPELINES_DIR}/jfrog"
@@ -202,7 +209,7 @@ check_prerequisites = BashOperator(
         echo ""
         echo "Checking Step-CA server..."
 
-        STEP_CA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        STEP_CA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "kcli info vm $STEP_CA_VM 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
         if [ -z "$STEP_CA_IP" ] || [ "$STEP_CA_IP" == "None" ]; then
@@ -212,7 +219,7 @@ check_prerequisites = BashOperator(
             echo "[OK] Step-CA server found at: $STEP_CA_IP"
 
             # Check Step-CA health
-            if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+            if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
                 "curl -sk https://$STEP_CA_IP:443/health 2>/dev/null | grep -q ok"; then
                 echo "[OK] Step-CA is healthy"
             else
@@ -224,7 +231,7 @@ check_prerequisites = BashOperator(
     # Check RHEL9 image
     echo ""
     echo "Checking RHEL9 image..."
-    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli list image | grep -q rhel9"; then
         echo "[OK] RHEL9 image available"
     else
@@ -255,7 +262,7 @@ validate_environment = BashOperator(
 
     # Check kcli
     echo "Checking kcli..."
-    if ! ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    if ! ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "which kcli" &>/dev/null; then
         echo "[ERROR] kcli not found on host"
         exit 1
@@ -264,7 +271,7 @@ validate_environment = BashOperator(
 
     # Check for JFrog scripts
     echo "Checking JFrog deployment scripts..."
-    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "test -f /opt/kcli-pipelines/jfrog/deploy.sh"; then
         echo "[OK] JFrog deploy script found"
     else
@@ -274,7 +281,7 @@ validate_environment = BashOperator(
 
     # Check FreeIPA for DNS
     echo "Checking FreeIPA..."
-    FREEIPA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    FREEIPA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm freeipa 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     if [ -n "$FREEIPA_IP" ]; then
@@ -313,23 +320,23 @@ create_jfrog = BashOperator(
     echo "Certificate Mode: $CERT_MODE"
 
     # Check if VM already exists
-    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli list vm | grep -q $VM_NAME"; then
         echo "[OK] VM $VM_NAME already exists"
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "kcli info vm $VM_NAME"
         exit 0
     fi
 
     # Prepare environment variables based on cert mode
     if [ "$CERT_MODE" == "step-ca" ]; then
-        STEP_CA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        STEP_CA_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "kcli info vm $STEP_CA_VM 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
         if [ -n "$STEP_CA_IP" ] && [ "$STEP_CA_IP" != "None" ]; then
             CA_URL="https://${STEP_CA_IP}:443"
 
-            FINGERPRINT=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+            FINGERPRINT=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
                 "ssh -o StrictHostKeyChecking=no cloud-user@$STEP_CA_IP \
                     'sudo step certificate fingerprint /root/.step/certs/root_ca.crt 2>/dev/null'")
 
@@ -337,7 +344,7 @@ create_jfrog = BashOperator(
             echo "CA Fingerprint: $FINGERPRINT"
 
             # Create JFrog with Step-CA
-            ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+            ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
                 "export VM_NAME=$VM_NAME && \
                  export JFROG_VERSION=$JFROG_VERSION && \
                  export JFROG_EDITION=$JFROG_EDITION && \
@@ -355,7 +362,7 @@ create_jfrog = BashOperator(
 
     if [ "$CERT_MODE" == "self-signed" ]; then
         # Create JFrog with self-signed certs
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "export VM_NAME=$VM_NAME && \
              export JFROG_VERSION=$JFROG_VERSION && \
              export JFROG_EDITION=$JFROG_EDITION && \
@@ -391,14 +398,14 @@ wait_for_jfrog = BashOperator(
         echo "Check $ATTEMPT/$MAX_ATTEMPTS..."
 
         # Get VM IP
-        IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
         if [ -n "$IP" ] && [ "$IP" != "None" ]; then
             echo "VM IP: $IP"
 
             # Check SSH connectivity
-            if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+            if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
                 "nc -z -w5 $IP 22" 2>/dev/null; then
                 echo ""
                 echo "[OK] JFrog VM is accessible at $IP"
@@ -428,7 +435,7 @@ validate_jfrog_health = BashOperator(
     VM_NAME="{{ params.vm_name }}"
 
     # Get VM IP
-    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     if [ -z "$IP" ]; then
@@ -447,7 +454,7 @@ validate_jfrog_health = BashOperator(
         ATTEMPT=$((ATTEMPT + 1))
 
         # Check Artifactory ping endpoint
-        PING=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        PING=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "curl -s http://$IP:8082/artifactory/api/system/ping 2>/dev/null" || true)
 
         if echo "$PING" | grep -qi "OK"; then
@@ -485,7 +492,7 @@ deployment_complete = BashOperator(
     JFROG_EDITION="{{ params.jfrog_edition }}"
 
     # Get VM info
-    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     echo ""
@@ -525,7 +532,7 @@ health_check = BashOperator(
     VM_NAME="{{ params.vm_name }}"
 
     # Get VM IP
-    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     if [ -z "$IP" ]; then
@@ -538,7 +545,7 @@ health_check = BashOperator(
     echo ""
 
     echo "Checking JFrog Artifactory health..."
-    PING=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    PING=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "curl -s http://$IP:8082/artifactory/api/system/ping 2>/dev/null")
 
     if echo "$PING" | grep -qi "OK"; then
@@ -548,7 +555,7 @@ health_check = BashOperator(
         # Get version info
         echo ""
         echo "Version Info:"
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "curl -s http://$IP:8082/artifactory/api/system/version 2>/dev/null" | jq . || true
         exit 0
     else
@@ -574,11 +581,11 @@ delete_jfrog = BashOperator(
 
     echo "Deleting VM: $VM_NAME"
 
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "export VM_NAME=$VM_NAME && \
          cd /opt/kcli-pipelines && \
          ./jfrog/deploy.sh delete" || \
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "kcli delete vm $VM_NAME -y" || \
         echo "[WARN] VM may not exist"
 
@@ -601,17 +608,17 @@ check_status = BashOperator(
     VM_NAME="{{ params.vm_name }}"
 
     # Get VM info
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm $VM_NAME" 2>/dev/null || echo "VM not found: $VM_NAME"
 
     # Get IP and check health
-    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm $VM_NAME 2>/dev/null | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     if [ -n "$IP" ]; then
         echo ""
         echo "Health Check:"
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "curl -s http://$IP:8082/artifactory/api/system/ping 2>/dev/null" || echo "Health check failed"
     fi
     """,

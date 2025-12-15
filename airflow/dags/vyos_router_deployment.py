@@ -19,6 +19,13 @@ from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator
 from airflow.models import Variable
 
+# Import user-configurable helpers for portable DAGs
+from dag_helpers import get_ssh_user
+
+# User-configurable SSH user (fix for hardcoded root issue)
+SSH_USER = get_ssh_user()
+
+
 # Default arguments
 default_args = {
     "owner": "qubinode",
@@ -86,14 +93,14 @@ validate_environment = BashOperator(
     # virsh is not available inside the Airflow container
 
     # Check SSH connectivity to host
-    if ! ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 root@localhost "echo 'SSH OK'" 2>/dev/null; then
+    if ! ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 {SSH_USER}@localhost "echo 'SSH OK'" 2>/dev/null; then
         echo "[ERROR] Cannot SSH to localhost"
         exit 1
     fi
     echo "[OK] SSH connectivity verified"
 
     # Check virsh connectivity via SSH
-    if ! ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    if ! ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "virsh -c qemu:///system list" &>/dev/null; then
         echo "[ERROR] Cannot connect to libvirt on host"
         exit 1
@@ -101,15 +108,15 @@ validate_environment = BashOperator(
     echo "[OK] virsh connected to libvirt"
 
     # Check default network via SSH
-    if ! ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    if ! ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "virsh -c qemu:///system net-info default" &>/dev/null; then
         echo "[WARN] Default network not found"
         echo "Creating default network..."
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "virsh -c qemu:///system net-define /usr/share/libvirt/networks/default.xml 2>/dev/null || true"
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "virsh -c qemu:///system net-start default 2>/dev/null || true"
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "virsh -c qemu:///system net-autostart default 2>/dev/null || true"
     fi
     echo "[OK] Default network available"
@@ -117,7 +124,7 @@ validate_environment = BashOperator(
     # List current VMs via SSH
     echo ""
     echo "Current VMs:"
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "virsh -c qemu:///system list --all"
 
     echo ""
@@ -151,16 +158,16 @@ create_networks = BashOperator(
     for NET in "${NETWORKS[@]}"; do
         echo "Checking network: $NET"
 
-        if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "virsh -c qemu:///system net-info $NET" &>/dev/null; then
-            STATE=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+            STATE=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
                 "virsh -c qemu:///system net-info $NET | grep 'Active:' | awk '{print \\$2}'")
             if [ "$STATE" == "yes" ]; then
                 echo "  [OK] Network $NET already exists and is active"
                 continue
             else
                 echo "  Starting network $NET..."
-                ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+                ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
                     "virsh -c qemu:///system net-start $NET"
             fi
         else
@@ -170,7 +177,7 @@ create_networks = BashOperator(
             LAST_DIGIT="${NET: -1}"
 
             # Create network XML on host via SSH
-            ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+            ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
                 "cat > /tmp/net-$NET.xml <<NETEOF
 <network>
   <name>$NET</name>
@@ -179,13 +186,13 @@ create_networks = BashOperator(
 </network>
 NETEOF"
 
-            ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+            ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
                 "virsh -c qemu:///system net-define /tmp/net-$NET.xml"
-            ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+            ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
                 "virsh -c qemu:///system net-start $NET"
-            ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+            ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
                 "virsh -c qemu:///system net-autostart $NET"
-            ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+            ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
                 "rm /tmp/net-$NET.xml"
 
             echo "  [OK] Network $NET created"
@@ -194,7 +201,7 @@ NETEOF"
 
     echo ""
     echo "Current networks:"
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "virsh -c qemu:///system net-list --all"
     """,
     dag=dag,
@@ -225,21 +232,21 @@ download_vyos = BashOperator(
     echo "ISO URL: $ISO_URL"
 
     # Check if ISO already exists on host
-    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost "test -f $ISO_PATH"; then
+    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost "test -f $ISO_PATH"; then
         echo "[OK] VyOS ISO already exists on host: $ISO_PATH"
-        SIZE=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost "stat -c%s $ISO_PATH")
+        SIZE=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost "stat -c%s $ISO_PATH")
         echo "ISO Size: $((SIZE / 1024 / 1024)) MB"
     else
         echo "Downloading VyOS ISO to host..."
         echo "This may take several minutes..."
 
         # Download on host via SSH
-        if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "curl -L -o $ISO_PATH '$ISO_URL'"; then
             echo "[OK] VyOS ISO downloaded successfully"
 
             # Verify size
-            SIZE=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost "stat -c%s $ISO_PATH")
+            SIZE=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost "stat -c%s $ISO_PATH")
             echo "ISO Size: $((SIZE / 1024 / 1024)) MB"
 
             if [ "$SIZE" -lt 100000000 ]; then
@@ -277,17 +284,17 @@ create_vyos_vm = BashOperator(
     VYOS_VERSION="{{ params.vyos_version }}"
 
     # Check if VM already exists via SSH to host
-    if ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR root@localhost \
+    if ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR {SSH_USER}@localhost \
         "virsh dominfo $VM_NAME" &>/dev/null; then
         echo "[OK] VM $VM_NAME already exists"
 
-        STATE=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        STATE=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "virsh domstate $VM_NAME")
         echo "Current state: $STATE"
 
         if [ "$STATE" != "running" ]; then
             echo "Starting existing VM..."
-            ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+            ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
                 "virsh start $VM_NAME"
         fi
         exit 0
@@ -295,7 +302,7 @@ create_vyos_vm = BashOperator(
 
     # Execute kcli-pipelines deploy.sh on host via SSH (ADR-0047)
     echo "Calling kcli-pipelines/vyos-router/deploy.sh..."
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "export ACTION=create && \
          export VYOS_VERSION=$VYOS_VERSION && \
          cd /opt/kcli-pipelines/vyos-router && \
@@ -355,7 +362,7 @@ wait_for_install = BashOperator(
 
     while true; do
         # Check if the IP is accessible via ping from host
-        if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "ping -c 1 $IP_ADDRESS" &>/dev/null; then
             echo ""
             echo "========================================"
@@ -417,7 +424,7 @@ wait_for_boot = BashOperator(
 
     while true; do
         # Check if the internal IP is accessible via ping from host
-        if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "ping -c 1 $IP_ADDRESS" &>/dev/null; then
             echo ""
             echo "========================================"
@@ -474,9 +481,9 @@ configure_vyos = BashOperator(
     CONFIG_SCRIPT="{KCLI_PIPELINES_DIR}/vyos-router/vyos-config.sh"
     DEMO_VIRT_SCRIPT="{DEMO_VIRT_DIR}/demo.redhat.com/vyos-config-1.5.sh"
 
-    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost "test -f $CONFIG_SCRIPT"; then
+    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost "test -f $CONFIG_SCRIPT"; then
         echo "Found configuration script: $CONFIG_SCRIPT"
-    elif ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost "test -f $DEMO_VIRT_SCRIPT"; then
+    elif ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost "test -f $DEMO_VIRT_SCRIPT"; then
         echo "Found configuration script: $DEMO_VIRT_SCRIPT"
         CONFIG_SCRIPT="$DEMO_VIRT_SCRIPT"
     else
@@ -492,11 +499,11 @@ configure_vyos = BashOperator(
 
     # Get VyOS IP via SSH
     VM_NAME="vyos-router"
-    VYOS_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    VYOS_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "virsh domifaddr $VM_NAME 2>/dev/null | grep -oP '\\\\d+\\\\.\\\\d+\\\\.\\\\d+\\\\.\\\\d+' | head -1")
 
     if [ -z "$VYOS_IP" ]; then
-        VYOS_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        VYOS_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "virsh net-dhcp-leases default 2>/dev/null | grep vyos | awk '{{print \\$5}}' | sed 's/\\\\/24//g' | tail -1")
     fi
 
@@ -538,11 +545,11 @@ add_host_routes = BashOperator(
 
     # Get VyOS IP (gateway) via SSH
     VM_NAME="vyos-router"
-    GATEWAY=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    GATEWAY=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "virsh domifaddr $VM_NAME 2>/dev/null | grep -oP '\\\\d+\\\\.\\\\d+\\\\.\\\\d+\\\\.\\\\d+' | head -1")
 
     if [ -z "$GATEWAY" ]; then
-        GATEWAY=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        GATEWAY=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "virsh net-dhcp-leases default 2>/dev/null | grep vyos | awk '{print \\$5}' | sed 's/\\\\/24//g' | tail -1")
     fi
 
@@ -571,11 +578,11 @@ add_host_routes = BashOperator(
 
     echo "Adding routes via $GATEWAY on host..."
     for ROUTE in "${ROUTES[@]}"; do
-        if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "ip route show | grep -q '$ROUTE'"; then
             echo "  [WARN] Route $ROUTE already exists"
         else
-            if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+            if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
                 "ip route add $ROUTE via $GATEWAY" 2>/dev/null; then
                 echo "  [OK] Added route: $ROUTE via $GATEWAY"
             else
@@ -586,7 +593,7 @@ add_host_routes = BashOperator(
 
     echo ""
     echo "Current routes to VyOS networks:"
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "ip route show | grep '$GATEWAY'" || echo "No routes found"
     """,
     dag=dag,
@@ -605,27 +612,27 @@ validate_deployment = BashOperator(
 
     # Check VM status via SSH
     echo "VM Status:"
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "virsh domstate $VM_NAME"
 
     # Get IP via SSH
-    VYOS_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    VYOS_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "virsh domifaddr $VM_NAME 2>/dev/null | grep -oP '\\\\d+\\\\.\\\\d+\\\\.\\\\d+\\\\.\\\\d+' | head -1")
 
     if [ -z "$VYOS_IP" ]; then
-        VYOS_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        VYOS_IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "virsh net-dhcp-leases default 2>/dev/null | grep vyos | awk '{print \\$5}' | sed 's/\\\\/24//g' | tail -1")
     fi
 
     echo ""
     echo "Network Interfaces:"
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "virsh domifaddr $VM_NAME 2>/dev/null" || echo "Could not get interface addresses"
 
     echo ""
     echo "Isolated Networks:"
     for NET in 1924 1925 1926 1927 1928; do
-        STATE=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        STATE=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "virsh net-info $NET 2>/dev/null | grep 'Active:' | awk '{print \\$2}'")
         if [ "$STATE" == "yes" ]; then
             echo "  [OK] Network $NET: Active"
@@ -665,32 +672,32 @@ destroy_vyos = BashOperator(
     VM_NAME="vyos-router"
 
     # Stop VM if running via SSH
-    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "virsh domstate $VM_NAME 2>/dev/null | grep -q 'running'"; then
         echo "Stopping VM..."
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "virsh destroy $VM_NAME"
     fi
 
     # Undefine VM via SSH
-    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "virsh dominfo $VM_NAME" &>/dev/null; then
         echo "Removing VM definition..."
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "virsh undefine $VM_NAME --remove-all-storage"
     fi
 
     # Cleanup files on host via SSH
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "rm -f /var/lib/libvirt/images/${VM_NAME}.qcow2"
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "rm -f /var/lib/libvirt/images/seed.iso"
 
     # Optionally remove networks (commented out to preserve for other VMs)
     # for NET in 1924 1925 1926 1927 1928; do
-    #     ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    #     ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
     #         "virsh net-destroy $NET" 2>/dev/null
-    #     ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    #     ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
     #         "virsh net-undefine $NET" 2>/dev/null
     # done
 

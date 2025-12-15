@@ -28,7 +28,7 @@ TESTS_FAILED=0
 run_test() {
     local test_name="$1"
     local test_cmd="$2"
-    
+
     echo -e "${BLUE}Test: $test_name${NC}"
     if eval "$test_cmd"; then
         echo -e "${GREEN}✓ PASS${NC}"

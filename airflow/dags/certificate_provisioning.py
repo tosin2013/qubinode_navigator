@@ -30,6 +30,13 @@ from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator
 from airflow.utils.trigger_rule import TriggerRule
 
+# Import user-configurable helpers for portable DAGs
+from dag_helpers import get_ssh_user
+
+# User-configurable SSH user (fix for hardcoded root issue)
+SSH_USER = get_ssh_user()
+
+
 # Configuration
 QUBINODE_CERT_SCRIPT = "/opt/qubinode_navigator/scripts/qubinode-cert"
 
@@ -204,7 +211,7 @@ ensure_script = BashOperator(
         {QUBINODE_CERT_SCRIPT} version
     else
         echo "[INFO] Installing qubinode-cert to host..."
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "cp /opt/qubinode_navigator/scripts/qubinode-cert /usr/local/bin/ && \
              chmod +x /usr/local/bin/qubinode-cert"
         echo "[OK] qubinode-cert installed"
@@ -258,7 +265,7 @@ request = BashOperator(
     echo ""
 
     # Execute on host
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost "$CMD"
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost "$CMD"
     """,
     execution_timeout=timedelta(minutes=10),
     dag=dag,
@@ -278,11 +285,11 @@ renew = BashOperator(
 
     if [[ "$RENEW_ALL" == "True" ]] || [[ "$RENEW_ALL" == "true" ]]; then
         echo "Renewing all expiring certificates..."
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "qubinode-cert renew --all"
     elif [[ -n "$HOSTNAME" ]]; then
         echo "Renewing certificate for: $HOSTNAME"
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "qubinode-cert renew $HOSTNAME"
     else
         echo "[ERROR] Either set renew_all=true or provide hostname"
@@ -312,7 +319,7 @@ revoke = BashOperator(
     echo "Revoking certificate for: $HOSTNAME"
 
     # Auto-confirm revocation in DAG context
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "echo 'yes' | qubinode-cert revoke $HOSTNAME"
     """,
     execution_timeout=timedelta(minutes=5),
@@ -328,7 +335,7 @@ list = BashOperator(
     echo "Certificate Inventory"
     echo "========================================"
 
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "qubinode-cert list"
     """,
     dag=dag,
@@ -347,7 +354,7 @@ install_ca = BashOperator(
 
     echo "Installing $CA root certificate to system trust..."
 
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "qubinode-cert install-ca $CA"
     """,
     execution_timeout=timedelta(minutes=5),
@@ -388,7 +395,7 @@ bulk_request = BashOperator(
             CMD="$CMD --san '$SAN'"
         fi
 
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost "$CMD" || \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost "$CMD" || \
             echo "[WARN] Failed to request cert for $HOSTNAME"
     done
 
@@ -415,7 +422,7 @@ summary = BashOperator(
     echo ""
 
     # Show current inventory
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "qubinode-cert list" 2>/dev/null || echo "(inventory not available)"
     """,
     trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,

@@ -5,6 +5,7 @@ Provides reusable utilities for:
 - Clear error reporting with file paths
 - Credential management via Airflow Variables
 - Validation helpers
+- User-configurable paths (fixes hardcoded root user issue)
 
 These helpers implement CI/CD-style patterns:
 - Idempotent operations
@@ -12,8 +13,103 @@ These helpers implement CI/CD-style patterns:
 - Clear error messages pointing to specific files
 """
 
+import os
 from datetime import datetime
 from typing import Optional, Dict, List, Any
+
+# =============================================================================
+# User Configuration Helpers (Fix for hardcoded root user issue)
+# =============================================================================
+
+
+def get_ssh_user() -> str:
+    """
+    Get SSH user from environment or default to current user.
+
+    Environment variable: QUBINODE_SSH_USER
+    Default: Current user from $USER or 'root' if not set
+
+    Returns:
+        SSH username to use for connections
+
+    Example:
+        >>> user = get_ssh_user()
+        >>> ssh_cmd = f"ssh {user}@localhost 'command'"
+    """
+    return os.environ.get("QUBINODE_SSH_USER", os.environ.get("USER", "root"))
+
+
+def get_ssh_key_path() -> str:
+    """
+    Get SSH key path from environment or default to ~/.ssh/id_rsa.
+
+    Environment variable: QUBINODE_SSH_KEY_PATH
+    Default: ~/.ssh/id_rsa (expands to current user's home)
+
+    Returns:
+        Full path to SSH private key
+
+    Example:
+        >>> key_path = get_ssh_key_path()
+        >>> ansible_vars = f"ansible_ssh_private_key_file={key_path}"
+    """
+    default = os.path.expanduser("~/.ssh/id_rsa")
+    return os.environ.get("QUBINODE_SSH_KEY_PATH", default)
+
+
+def get_inventory_dir() -> str:
+    """
+    Get inventory directory from environment or default to ~/.generated.
+
+    Environment variable: QUBINODE_INVENTORY_DIR
+    Default: ~/.generated (expands to current user's home)
+
+    Returns:
+        Full path to inventory directory
+
+    Example:
+        >>> inv_dir = get_inventory_dir()
+        >>> inventory_path = f"{inv_dir}/.{hostname}.{domain}"
+    """
+    default = os.path.expanduser("~/.generated")
+    return os.environ.get("QUBINODE_INVENTORY_DIR", default)
+
+
+def get_vault_password_file() -> str:
+    """
+    Get vault password file path from environment or default to ~/.vault_password.
+
+    Environment variable: QUBINODE_VAULT_PASSWORD_FILE
+    Default: ~/.vault_password (expands to current user's home)
+
+    Returns:
+        Full path to vault password file
+
+    Example:
+        >>> vault_file = get_vault_password_file()
+        >>> cmd = f"ansible-playbook --vault-password-file {vault_file}"
+    """
+    default = os.path.expanduser("~/.vault_password")
+    return os.environ.get("QUBINODE_VAULT_PASSWORD_FILE", default)
+
+
+def get_pull_secret_path() -> str:
+    """
+    Get pull secret path from environment or default to ~/pull-secret.json.
+
+    Environment variable: QUBINODE_PULL_SECRET_PATH
+    Default: ~/pull-secret.json (expands to current user's home)
+
+    Returns:
+        Full path to pull secret file
+
+    Example:
+        >>> pull_secret = get_pull_secret_path()
+        >>> cmd = f"cat {pull_secret} | jq '.auths'"
+    """
+    default = os.path.expanduser("~/pull-secret.json")
+    return os.environ.get("QUBINODE_PULL_SECRET_PATH", default)
+
 
 # =============================================================================
 # Error Reporting Helpers
@@ -228,13 +324,24 @@ def get_credential_setup_command(
     registry_port: str = "8443",
     username_var: str = "quay_username",
     password_var: str = "quay_password",
-    pull_secret_path: str = "/root/pull-secret.json",
+    pull_secret_path: Optional[str] = None,
     output_path: str = "/tmp/merged-pull-secret.json",
 ) -> str:
     """
     Generate bash command to setup registry credentials.
     Fetches from Airflow Variables and merges with pull-secret.
+
+    Args:
+        registry_host: Registry hostname
+        registry_port: Registry port (default: "8443")
+        username_var: Airflow variable name for username (default: "quay_username")
+        password_var: Airflow variable name for password (default: "quay_password")
+        pull_secret_path: Path to pull secret (default: None, uses get_pull_secret_path())
+        output_path: Output path for merged secret (default: "/tmp/merged-pull-secret.json")
     """
+    if pull_secret_path is None:
+        pull_secret_path = get_pull_secret_path()
+
     registry = f"{registry_host}:{registry_port}"
 
     return f"""
@@ -661,7 +768,7 @@ def create_cleanup_on_failure_task(dag, vm_name_param: str = "{{ params.vm_name 
 # Issue #4 Fix: Provide standardized SSH execution patterns for host commands
 
 
-def ssh_to_host_command(cmd: str, host: str = "localhost", user: str = "root") -> str:
+def ssh_to_host_command(cmd: str, host: str = "localhost", user: Optional[str] = None) -> str:
     """
     Wrap a command to execute on the host via SSH (ADR-0046).
 
@@ -674,14 +781,14 @@ def ssh_to_host_command(cmd: str, host: str = "localhost", user: str = "root") -
     Args:
         cmd: Command to execute on host
         host: Target host (default: localhost)
-        user: SSH user (default: root)
+        user: SSH user (default: None, uses get_ssh_user() for configurable default)
 
     Returns:
         SSH-wrapped command string using single quotes for clean escaping
 
     Example:
         >>> ssh_to_host_command("kcli list vm")
-        'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR root@localhost \'kcli list vm\''
+        'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR user@localhost \'kcli list vm\''
 
     Usage in DAG:
         from dag_helpers import ssh_to_host_command
@@ -689,7 +796,12 @@ def ssh_to_host_command(cmd: str, host: str = "localhost", user: str = "root") -
         bash_command = ssh_to_host_command("kcli list vm")
         # Or with variables (use double quotes in command):
         bash_command = ssh_to_host_command(f'kcli create vm -i centos10stream {vm_name}')
+        # Or override user:
+        bash_command = ssh_to_host_command("command", user="root")
     """
+    if user is None:
+        user = get_ssh_user()
+
     return f"""ssh -o StrictHostKeyChecking=no \\
     -o UserKnownHostsFile=/dev/null \\
     -o LogLevel=ERROR \\
@@ -698,7 +810,7 @@ def ssh_to_host_command(cmd: str, host: str = "localhost", user: str = "root") -
     """
 
 
-def ssh_to_host_script(script: str, host: str = "localhost", user: str = "root") -> str:
+def ssh_to_host_script(script: str, host: str = "localhost", user: Optional[str] = None) -> str:
     """
     Execute a multi-line script on the host via SSH (ADR-0046).
 
@@ -708,7 +820,7 @@ def ssh_to_host_script(script: str, host: str = "localhost", user: str = "root")
     Args:
         script: Multi-line bash script to execute
         host: Target host (default: localhost)
-        user: SSH user (default: root)
+        user: SSH user (default: None, uses get_ssh_user() for configurable default)
 
     Returns:
         SSH command with heredoc for script execution
@@ -730,7 +842,12 @@ def ssh_to_host_script(script: str, host: str = "localhost", user: str = "root")
         virsh dominfo "$VM_NAME"
         '''
         bash_command = ssh_to_host_script(script)
+        # Or override user:
+        bash_command = ssh_to_host_script(script, user="root")
     """
+    if user is None:
+        user = get_ssh_user()
+
     return f"""ssh -o StrictHostKeyChecking=no \\
     -o UserKnownHostsFile=/dev/null \\
     -o LogLevel=ERROR \\
@@ -776,8 +893,9 @@ def get_ansible_playbook_command(
     playbook_path: str,
     inventory: str = "/opt/qubinode_navigator/inventories/localhost",
     extra_vars: Optional[Dict[str, str]] = None,
-    vault_password_file: str = "/root/.vault_password",
+    vault_password_file: Optional[str] = None,
     via_ssh: bool = True,
+    ssh_user: Optional[str] = None,
 ) -> str:
     """
     Generate an ansible-playbook command with proper configuration.
@@ -789,8 +907,9 @@ def get_ansible_playbook_command(
         playbook_path: Path to the playbook file
         inventory: Path to inventory directory
         extra_vars: Optional dictionary of extra variables
-        vault_password_file: Path to vault password file
+        vault_password_file: Path to vault password file (default: None, uses get_vault_password_file())
         via_ssh: Whether to wrap in SSH for host execution (default: True)
+        ssh_user: SSH user for connection (default: None, uses get_ssh_user())
 
     Returns:
         Complete bash command string
@@ -801,6 +920,9 @@ def get_ansible_playbook_command(
         ...     extra_vars={"action": "create"}
         ... )
     """
+    if vault_password_file is None:
+        vault_password_file = get_vault_password_file()
+
     cmd_parts = [
         "ansible-playbook",
         playbook_path,
@@ -817,5 +939,5 @@ def get_ansible_playbook_command(
     full_cmd = " ".join(cmd_parts)
 
     if via_ssh:
-        return ssh_to_host_script(full_cmd)
+        return ssh_to_host_script(full_cmd, user=ssh_user)
     return full_cmd

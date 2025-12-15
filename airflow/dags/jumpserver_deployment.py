@@ -19,6 +19,13 @@ from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator
 
+# Import user-configurable helpers for portable DAGs
+from dag_helpers import get_ssh_user
+
+# User-configurable SSH user (fix for hardcoded root issue)
+SSH_USER = get_ssh_user()
+
+
 default_args = {
     "owner": "qubinode",
     "depends_on_past": False,
@@ -94,16 +101,16 @@ create_jumpserver = BashOperator(
     echo "Memory: ${MEMORY}MB"
 
     # Check if VM already exists
-    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    if ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli list vm | grep -q ${VM_NAME}"; then
         echo "[INFO] VM ${VM_NAME} already exists"
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "kcli info vm ${VM_NAME}"
         exit 0
     fi
 
     # Download Fedora image if needed
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli download image ${IMAGE} || true"
 
     # Create VM with dual NICs: default (DHCP) + isolated (static IP)
@@ -112,7 +119,7 @@ create_jumpserver = BashOperator(
     # Build the nets parameter with proper quoting
     NETS_PARAM='[{"name": "default"}, {"name": "'${NETWORK}'", "nic": "eth1", "ip": "'${STATIC_IP}'", "mask": "255.255.255.0", "gateway": "'${GATEWAY}'"}]'
 
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli create vm ${VM_NAME} -i ${IMAGE} -P numcpus=4 -P memory=${MEMORY} -P disks=[${DISK_SIZE}] -P nets='${NETS_PARAM}' --wait"
 
     # Wait for VM to be ready
@@ -120,7 +127,7 @@ create_jumpserver = BashOperator(
     sleep 30
 
     # Get VM IP on default network
-    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm ${VM_NAME} | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     echo "[OK] VM created successfully"
@@ -144,7 +151,7 @@ configure_network = BashOperator(
     GATEWAY="{{ params.gateway }}"
 
     # Get VM IP on default network
-    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm ${VM_NAME} | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     if [ -z "$IP" ] || [ "$IP" == "None" ]; then
@@ -156,7 +163,7 @@ configure_network = BashOperator(
 
     # Find and configure the second NIC (handles Fedora ens naming)
     # Step 1: Get the second NIC name from the VM
-    SECOND_NIC=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    SECOND_NIC=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "ssh -o StrictHostKeyChecking=no fedora@${IP} 'ip -o link show | grep -v lo: | tail -1 | cut -d: -f2 | tr -d \" \"'")
 
     if [ -z "$SECOND_NIC" ]; then
@@ -164,7 +171,7 @@ configure_network = BashOperator(
     else
         echo "[INFO] Found second NIC: $SECOND_NIC"
         # Step 2: Configure the NIC if not already done
-        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+        ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
             "ssh -o StrictHostKeyChecking=no fedora@${IP} 'if ! ip addr show ${SECOND_NIC} | grep -q ${STATIC_IP}; then sudo nmcli con add type ethernet con-name isolated ifname ${SECOND_NIC} ip4 ${STATIC_IP}/24 gw4 ${GATEWAY} && sudo nmcli con up isolated && echo OK; else echo Already configured; fi'"
     fi
 
@@ -196,7 +203,7 @@ install_gui = BashOperator(
     fi
 
     # Get VM IP
-    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm ${VM_NAME} | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     if [ -z "$IP" ] || [ "$IP" == "None" ]; then
@@ -208,18 +215,18 @@ install_gui = BashOperator(
     echo "[INFO] This will take 10-15 minutes..."
 
     # Install GNOME Workstation (Fedora)
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "ssh -o StrictHostKeyChecking=no fedora@${IP} 'sudo dnf groupinstall -y Workstation --skip-broken || echo \"Desktop install completed with warnings\"'"
 
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "ssh -o StrictHostKeyChecking=no fedora@${IP} 'sudo systemctl set-default graphical.target'"
 
     # Install VNC and additional tools
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "ssh -o StrictHostKeyChecking=no fedora@${IP} 'sudo dnf install -y tigervnc-server firefox htop || true'"
 
     # Configure VNC password
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "ssh -o StrictHostKeyChecking=no fedora@${IP} 'mkdir -p ~/.vnc && echo \"password\" | vncpasswd -f > ~/.vnc/passwd && chmod 600 ~/.vnc/passwd'"
 
     echo "[OK] GUI installation complete"
@@ -247,7 +254,7 @@ show_connection_info = BashOperator(
     STATIC_IP="{{ params.static_ip }}"
 
     # Get VM IP
-    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    IP=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm ${VM_NAME} | grep 'ip:' | awk '{print \\$2}' | head -1")
 
     echo ""
@@ -287,7 +294,7 @@ delete_jumpserver = BashOperator(
 
     VM_NAME="{{ params.vm_name }}"
 
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli delete vm ${VM_NAME} -y" || echo "VM may not exist"
 
     echo "[OK] Jumpserver deleted"
@@ -306,7 +313,7 @@ check_status = BashOperator(
 
     VM_NAME="{{ params.vm_name }}"
 
-    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
+    ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR {SSH_USER}@localhost \
         "kcli info vm ${VM_NAME}" || echo "VM not found"
     """,
     execution_timeout=timedelta(minutes=2),
