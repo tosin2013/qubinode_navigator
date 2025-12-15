@@ -166,8 +166,9 @@ services:
       start_period: 30s
     restart: always
     # ADR-0050: Resource limits for webserver
-    mem_limit: 1g
-    mem_reservation: 512m
+    # Increased from 1g to 2g to prevent crashes on systems with heavy DAG loads
+    mem_limit: 2g
+    mem_reservation: 1g
     ulimits:
       nofile:
         soft: 65536
