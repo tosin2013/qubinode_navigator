@@ -7,8 +7,8 @@ This guide explains how to make configuration files in user home directories acc
 When deploying OpenShift or other infrastructure via Airflow DAGs, configuration files located in user directories (e.g., `/home/vpcuser/openshift-agent-install/`) are not accessible inside Airflow containers because:
 
 1. Volume mounts in `docker-compose.yml` only mount `/root`
-2. Configuration files in `/home/username/` are not visible to containers
-3. DAGs fail with errors like:
+1. Configuration files in `/home/username/` are not visible to containers
+1. DAGs fail with errors like:
 
 ```
 [ERROR] Environment file not found: /home/vpcuser/openshift-agent-install/examples/jfrog-disconnected-vlan/env/passthrough.env
@@ -146,11 +146,11 @@ except FileNotFoundError as e:
 
 ## Path Mappings
 
-| Host Path                        | Container Path               | Purpose                |
-| -------------------------------- | ---------------------------- | ---------------------- |
-| `~/openshift-agent-install`      | `/opt/openshift-agent-install` | OpenShift configs      |
-| `~/.generated`                   | `/opt/generated`             | Generated inventory    |
-| `~/kcli-pipelines`               | `/opt/kcli-pipelines`        | Deployment scripts     |
+| Host Path                   | Container Path                 | Purpose             |
+| --------------------------- | ------------------------------ | ------------------- |
+| `~/openshift-agent-install` | `/opt/openshift-agent-install` | OpenShift configs   |
+| `~/.generated`              | `/opt/generated`               | Generated inventory |
+| `~/kcli-pipelines`          | `/opt/kcli-pipelines`          | Deployment scripts  |
 
 ## Example: OpenShift JFrog Deployment
 
@@ -201,13 +201,13 @@ validate >> deploy
    ls -la ~/openshift-agent-install/examples/
    ```
 
-2. Run discover to find config directories:
+1. Run discover to find config directories:
 
    ```bash
    ./airflow/scripts/config-sync.sh discover
    ```
 
-3. Generate and apply volume mounts:
+1. Generate and apply volume mounts:
 
    ```bash
    ./airflow/scripts/config-sync.sh generate
