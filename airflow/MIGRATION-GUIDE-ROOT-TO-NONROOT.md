@@ -106,13 +106,13 @@ services:
       - QUBINODE_SSH_USER=vpcuser
       - QUBINODE_SSH_KEY_PATH=/home/vpcuser/.ssh/id_rsa
       - QUBINODE_INVENTORY_DIR=/home/vpcuser/.generated
-      
+
   airflow-scheduler:
     environment:
       - QUBINODE_SSH_USER=vpcuser
       - QUBINODE_SSH_KEY_PATH=/home/vpcuser/.ssh/id_rsa
       - QUBINODE_INVENTORY_DIR=/home/vpcuser/.generated
-      
+
   airflow-worker:
     environment:
       - QUBINODE_SSH_USER=vpcuser
@@ -272,20 +272,20 @@ tar -czf /backup/root-qubinode-$(date +%Y%m%d).tar.gz .generated .ssh .vault_pas
 For issues during migration:
 
 1. Check logs: `podman logs airflow_airflow-webserver_1`
-2. Review environment: `env | grep QUBINODE`
-3. Test SSH manually: `ssh localhost`
-4. Consult DAG-USER-CONFIGURATION.md
-5. Open GitHub issue with migration details
+1. Review environment: `env | grep QUBINODE`
+1. Test SSH manually: `ssh localhost`
+1. Consult DAG-USER-CONFIGURATION.md
+1. Open GitHub issue with migration details
 
 ## Next Steps
 
 After successful migration:
 
 1. Update documentation with your user
-2. Test all DAGs you regularly use
-3. Document any environment-specific changes
-4. Update backup scripts for new user paths
-5. Train team on new user context
+1. Test all DAGs you regularly use
+1. Document any environment-specific changes
+1. Update backup scripts for new user paths
+1. Train team on new user context
 
 ## Related Documentation
 

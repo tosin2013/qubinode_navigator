@@ -15,6 +15,7 @@ Configure the following environment variables to customize DAG behavior for your
 **Default:** Current user from `$USER` environment variable, falls back to `root` if not set.
 
 **Example:**
+
 ```bash
 export QUBINODE_SSH_USER=vpcuser
 ```
@@ -26,6 +27,7 @@ export QUBINODE_SSH_USER=vpcuser
 **Default:** `~/.ssh/id_rsa` (expands to current user's home directory)
 
 **Example:**
+
 ```bash
 export QUBINODE_SSH_KEY_PATH=/home/vpcuser/.ssh/id_rsa
 ```
@@ -37,6 +39,7 @@ export QUBINODE_SSH_KEY_PATH=/home/vpcuser/.ssh/id_rsa
 **Default:** `~/.generated` (expands to current user's home directory)
 
 **Example:**
+
 ```bash
 export QUBINODE_INVENTORY_DIR=/home/vpcuser/.generated
 ```
@@ -48,6 +51,7 @@ export QUBINODE_INVENTORY_DIR=/home/vpcuser/.generated
 **Default:** `~/.vault_password` (expands to current user's home directory)
 
 **Example:**
+
 ```bash
 export QUBINODE_VAULT_PASSWORD_FILE=/home/vpcuser/.vault_password
 ```
@@ -59,6 +63,7 @@ export QUBINODE_VAULT_PASSWORD_FILE=/home/vpcuser/.vault_password
 **Default:** `~/pull-secret.json` (expands to current user's home directory)
 
 **Example:**
+
 ```bash
 export QUBINODE_PULL_SECRET_PATH=/home/vpcuser/pull-secret.json
 ```
@@ -121,12 +126,14 @@ airflow dags trigger freeipa_deployment
 Different users can run the same DAGs with different configurations:
 
 **User 1 (vpcuser):**
+
 ```bash
 export QUBINODE_SSH_USER=vpcuser
 export QUBINODE_INVENTORY_DIR=/home/vpcuser/.generated
 ```
 
 **User 2 (cloud-user):**
+
 ```bash
 export QUBINODE_SSH_USER=cloud-user
 export QUBINODE_INVENTORY_DIR=/home/cloud-user/.generated
@@ -184,25 +191,29 @@ podman-compose up -d
 If you were previously running DAGs as root and want to migrate to a non-root user:
 
 1. **Copy SSH keys:**
+
    ```bash
    sudo cp -r /root/.ssh /home/vpcuser/
    sudo chown -R vpcuser:vpcuser /home/vpcuser/.ssh
    ```
 
-2. **Copy generated files:**
+1. **Copy generated files:**
+
    ```bash
    sudo cp -r /root/.generated /home/vpcuser/
    sudo chown -R vpcuser:vpcuser /home/vpcuser/.generated
    ```
 
-3. **Set environment variables:**
+1. **Set environment variables:**
+
    ```bash
    export QUBINODE_SSH_USER=vpcuser
    export QUBINODE_SSH_KEY_PATH=/home/vpcuser/.ssh/id_rsa
    export QUBINODE_INVENTORY_DIR=/home/vpcuser/.generated
    ```
 
-4. **Restart Airflow:**
+1. **Restart Airflow:**
+
    ```bash
    cd airflow
    podman-compose restart
@@ -235,6 +246,7 @@ All DAGs that perform SSH operations or file I/O have been updated to use these 
 ### Backward Compatibility
 
 The defaults maintain backward compatibility with root user deployments:
+
 - If no environment variables are set and `$USER` is `root`, behavior is identical to previous versions
 - Existing deployments continue to work without configuration changes
 
