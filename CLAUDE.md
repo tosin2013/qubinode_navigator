@@ -41,27 +41,33 @@ make test-mcp-ai        # AI Assistant MCP only
 ## Architecture
 
 ### Core Framework (`core/`)
+
 - `plugin_manager.py` - Plugin discovery and dependency resolution
 - `config_manager.py` - Configuration loading from `config/plugins.yml`
 - `base_plugin.py` - Base class for all plugins (ADR-0028 compliant)
 - `event_system.py` - Event bus for inter-plugin communication
 
 ### Plugin System (`plugins/`)
+
 Plugins implement `QubiNodePlugin` base class with methods:
+
 - `_initialize_plugin()`, `check_state()`, `get_desired_state()`, `apply_changes()`
 
 Families:
+
 - `plugins/os/` - RHEL 8/9/10, Rocky, CentOS Stream
 - `plugins/cloud/` - Hetzner, Equinix
 - `plugins/services/` - AI Assistant, Vault, Log Analysis
 - `plugins/environments/` - Deployment contexts
 
 ### Airflow Layer (`airflow/`)
+
 - `dags/` - Workflow DAG definitions
 - `plugins/qubinode/` - Custom operators (KcliVMCreate/Delete/List)
 - `scripts/mcp_server_fastmcp.py` - Primary MCP server (20+ tools)
 
 ### AI Assistant (`ai-assistant/`)
+
 - FastAPI service with PydanticAI orchestrator (ADR-0063, ADR-0066)
 - Three-agent system: Manager, Developer, Observer
 - RAG-powered documentation search
@@ -69,7 +75,7 @@ Families:
 ## Services and Ports
 
 | Service      | Port | Purpose                       |
-|--------------|------|-------------------------------|
+| ------------ | ---- | ----------------------------- |
 | AI Assistant | 8080 | PydanticAI orchestrator + RAG |
 | Airflow UI   | 8888 | DAG management                |
 | MCP Server   | 8889 | Tool API for LLM integration  |
@@ -80,13 +86,15 @@ Families:
 ## DAG Development Standards (ADR-0045)
 
 **Critical rules:**
+
 1. Use `"""` (triple double quotes) for `bash_command`, NEVER `'''`
-2. DAG IDs must be snake_case matching filename
-3. ASCII-only log prefixes: `[OK]`, `[ERROR]`, `[WARN]`, `[INFO]`, `[SKIP]`
-4. No string concatenation in `bash_command`
-5. No Unicode/emoji in bash commands
+1. DAG IDs must be snake_case matching filename
+1. ASCII-only log prefixes: `[OK]`, `[ERROR]`, `[WARN]`, `[INFO]`, `[SKIP]`
+1. No string concatenation in `bash_command`
+1. No Unicode/emoji in bash commands
 
 **SSH execution pattern (ADR-0046):**
+
 ```python
 bash_command="""
 ssh -o StrictHostKeyChecking=no root@localhost \
@@ -95,6 +103,7 @@ ssh -o StrictHostKeyChecking=no root@localhost \
 ```
 
 **Validate before committing:**
+
 ```bash
 # Syntax check
 python3 -c "import ast; ast.parse(open('airflow/dags/my_dag.py').read())"
@@ -109,11 +118,13 @@ cd airflow && make lint-dags
 ## Code Style
 
 **Python:**
+
 - PEP 8 compliant
 - Type hints required
 - f-strings preferred
 
 **Bash:**
+
 - shellcheck compliant
 - Use `[[` over `[` for conditionals
 - Use `set -euo pipefail` for scripts
@@ -149,7 +160,7 @@ Podman is the primary runtime (RHEL-based systems). Scripts assume Podman paths 
 ## Important ADRs
 
 | ADR      | Topic                                |
-|----------|--------------------------------------|
+| -------- | ------------------------------------ |
 | ADR-0001 | Container-first execution model      |
 | ADR-0028 | Plugin architecture                  |
 | ADR-0036 | Airflow integration architecture     |

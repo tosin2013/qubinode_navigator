@@ -100,12 +100,12 @@ validate_vault = BashOperator(
 
 ## Environment Variables
 
-| Variable                       | Default              | Description                       |
-| ------------------------------ | -------------------- | --------------------------------- |
-| `QUBINODE_VAULT_PASSWORD_FILE` | `~/.vault_password`  | Path to vault password file       |
-| `KCLI_PIPELINES_DIR`           | `/opt/kcli-pipelines`| Path to kcli-pipelines directory  |
-| `VAULT_PASSWORD`               | (Airflow Variable)   | Vault password stored in Airflow  |
-| `QUBINODE_DEV_MODE`            | `false`              | If true, creates placeholder password |
+| Variable                       | Default               | Description                           |
+| ------------------------------ | --------------------- | ------------------------------------- |
+| `QUBINODE_VAULT_PASSWORD_FILE` | `~/.vault_password`   | Path to vault password file           |
+| `KCLI_PIPELINES_DIR`           | `/opt/kcli-pipelines` | Path to kcli-pipelines directory      |
+| `VAULT_PASSWORD`               | (Airflow Variable)    | Vault password stored in Airflow      |
+| `QUBINODE_DEV_MODE`            | `false`               | If true, creates placeholder password |
 
 ## Helper Functions Reference
 
@@ -114,6 +114,7 @@ validate_vault = BashOperator(
 Generates bash command to ensure vault password file exists.
 
 **Arguments:**
+
 - `vault_password_file`: Path to vault password file (default: uses `get_vault_password_file()`)
 - `default_password_var`: Airflow Variable name for default password (default: `"VAULT_PASSWORD"`)
 - `create_if_missing`: Whether to create file if missing (default: `True`)
@@ -125,6 +126,7 @@ Generates bash command to ensure vault password file exists.
 Generates bash command to setup vault password symlinks for kcli-pipelines components.
 
 **Arguments:**
+
 - `components`: List of component names (default: all known components)
 - `vault_password_file`: Source vault password file
 - `pipelines_dir`: kcli-pipelines directory
@@ -136,6 +138,7 @@ Generates bash command to setup vault password symlinks for kcli-pipelines compo
 Generates bash command to check if vault password file exists.
 
 **Arguments:**
+
 - `vault_password_file`: Path to check
 - `fail_if_missing`: Whether to exit with error if missing (default: `True`)
 
@@ -195,17 +198,20 @@ ensure_vault >> setup_kcli_vault >> deploy_vyos
 ### Error: Vault password file not found
 
 1. Check if the Airflow Variable is set:
+
    ```bash
    airflow variables get VAULT_PASSWORD
    ```
 
-2. Create the file manually:
+1. Create the file manually:
+
    ```bash
    echo 'your-password' > ~/.vault_password
    chmod 600 ~/.vault_password
    ```
 
-3. Verify the symlinks for kcli-pipelines:
+1. Verify the symlinks for kcli-pipelines:
+
    ```bash
    ls -la /opt/kcli-pipelines/*/. vault_password
    ```
@@ -213,6 +219,7 @@ ensure_vault >> setup_kcli_vault >> deploy_vyos
 ### Error: Permission denied
 
 Ensure the vault password file has correct permissions:
+
 ```bash
 chmod 600 ~/.vault_password
 ```
@@ -220,6 +227,7 @@ chmod 600 ~/.vault_password
 ### Development Mode
 
 For testing, you can enable development mode to create placeholder passwords:
+
 ```bash
 export QUBINODE_DEV_MODE=true
 ```
