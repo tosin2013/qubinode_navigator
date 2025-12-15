@@ -271,6 +271,64 @@ cat /root/.ssh/authorized_keys
 
 This pattern is documented in [ADR-0043](./adrs/adr-0043-airflow-container-host-network-access.md) and [ADR-0046](./adrs/adr-0046-dag-validation-pipeline-and-host-execution.md).
 
+## Running as Non-Root User (Recommended)
+
+If you prefer not to run as root, you can create a dedicated `lab-user` with sudo privileges:
+
+### Create the lab-user
+
+```bash
+# Download and run the user creation script
+curl -OL https://gist.githubusercontent.com/tosin2013/385054f345ff7129df6167631156fa2a/raw/b67866c8d0ec220c393ea83d2c7056f33c472e65/configure-sudo-user.sh
+chmod +x configure-sudo-user.sh
+./configure-sudo-user.sh lab-user
+```
+
+### Configure SSH for lab-user
+
+```bash
+# Switch to lab-user
+sudo su - lab-user
+
+# Generate SSH key
+ssh-keygen -f ~/.ssh/id_rsa -t rsa -N ''
+
+# Copy key to localhost for Airflow container access
+IP_ADDRESS=$(hostname -I | awk '{print $1}')
+ssh-copy-id lab-user@${IP_ADDRESS}
+
+# Verify SSH works
+ssh lab-user@${IP_ADDRESS} "echo 'SSH OK'"
+```
+
+### Configure Environment Variables
+
+When running as `lab-user`, set these environment variables to use the correct paths:
+
+```bash
+# Add to ~/.bashrc or export before deployment
+export QUBINODE_SSH_USER=lab-user
+export QUBINODE_SSH_KEY_PATH=~/.ssh/id_rsa
+export QUBINODE_INVENTORY_DIR=~/.generated
+export QUBINODE_VAULT_PASSWORD_FILE=~/.vault_password
+```
+
+### Deploy as lab-user
+
+```bash
+# Clone repository
+git clone https://github.com/Qubinode/qubinode_navigator.git
+cd qubinode_navigator
+
+# Run pre-flight checks
+./scripts/preflight-check.sh --fix
+
+# Deploy (sudo -E preserves environment variables)
+sudo -E ./scripts/development/deploy-qubinode.sh
+```
+
+> **Note**: The DAG helper functions automatically detect the current user via `QUBINODE_SSH_USER` environment variable or fall back to the `USER` environment variable. See [Issue #122](https://github.com/Qubinode/qubinode_navigator/issues/122) for details on the configurable user support.
+
 ## Troubleshooting
 
 ### DAG Not Appearing in Airflow
