@@ -18,6 +18,9 @@ from dag_helpers import (
     get_vault_password_file,
     get_pull_secret_path,
     get_kcli_pipelines_dir,
+    get_openshift_agent_install_dir,
+    get_config_file_path,
+    get_config_check_command,
     ssh_to_host_command,
     ssh_to_host_script,
     get_ensure_vault_password_command,
@@ -199,6 +202,74 @@ class TestKcliPipelinesDir:
 
         # Cleanup
         os.environ.pop("KCLI_PIPELINES_DIR", None)
+
+
+class TestConfigPathHelpers:
+    """Test configuration path helper functions (Issue #124)."""
+
+    def test_get_openshift_agent_install_dir_default(self):
+        """Test get_openshift_agent_install_dir returns container path by default."""
+        os.environ.pop("OPENSHIFT_AGENT_INSTALL_DIR", None)
+
+        # Should return container mount point if home path doesn't exist
+        agent_dir = get_openshift_agent_install_dir()
+        # Will return /opt/openshift-agent-install or home path depending on existence
+        assert "openshift-agent-install" in agent_dir
+
+    def test_get_openshift_agent_install_dir_from_env(self):
+        """Test get_openshift_agent_install_dir respects env var."""
+        # Create a temp directory for testing
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            os.environ["OPENSHIFT_AGENT_INSTALL_DIR"] = tmpdir
+
+            agent_dir = get_openshift_agent_install_dir()
+            assert agent_dir == tmpdir
+
+        # Cleanup
+        os.environ.pop("OPENSHIFT_AGENT_INSTALL_DIR", None)
+
+    def test_get_config_file_path_not_found(self):
+        """Test get_config_file_path raises FileNotFoundError when not found."""
+        with pytest.raises(FileNotFoundError) as exc_info:
+            get_config_file_path("nonexistent/file/path.yml")
+
+        assert "Configuration file not found" in str(exc_info.value)
+        assert "config-sync.sh" in str(exc_info.value)
+
+    def test_get_config_file_path_found(self):
+        """Test get_config_file_path finds existing file."""
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create a test file
+            test_file = os.path.join(tmpdir, "test.yml")
+            with open(test_file, "w") as f:
+                f.write("test: true")
+
+            # Search with tmpdir as search path
+            found_path = get_config_file_path("test.yml", search_paths=[tmpdir])
+            assert found_path == test_file
+
+    def test_get_config_check_command_generates_bash(self):
+        """Test get_config_check_command generates valid bash."""
+        paths = ["/opt/test/file1.yml", "/opt/test/file2.env"]
+        cmd = get_config_check_command(paths)
+
+        assert "Checking Configuration File Access" in cmd
+        assert "/opt/test/file1.yml" in cmd
+        assert "/opt/test/file2.env" in cmd
+        assert "[OK]" in cmd
+        assert "[ERROR]" in cmd
+
+    def test_get_config_check_command_custom_error(self):
+        """Test get_config_check_command with custom error message."""
+        paths = ["/opt/test.yml"]
+        custom_error = "Custom error message for testing"
+        cmd = get_config_check_command(paths, error_message=custom_error)
+
+        assert custom_error in cmd
 
 
 class TestVaultPasswordHelpers:
