@@ -25,90 +25,90 @@ from typing import Optional, Dict, List, Any
 def get_ssh_user() -> str:
     """
     Get SSH user from environment or default to current user.
-    
+
     Environment variable: QUBINODE_SSH_USER
     Default: Current user from $USER or 'root' if not set
-    
+
     Returns:
         SSH username to use for connections
-        
+
     Example:
         >>> user = get_ssh_user()
         >>> ssh_cmd = f"ssh {user}@localhost 'command'"
     """
-    return os.environ.get('QUBINODE_SSH_USER', os.environ.get('USER', 'root'))
+    return os.environ.get("QUBINODE_SSH_USER", os.environ.get("USER", "root"))
 
 
 def get_ssh_key_path() -> str:
     """
     Get SSH key path from environment or default to ~/.ssh/id_rsa.
-    
+
     Environment variable: QUBINODE_SSH_KEY_PATH
     Default: ~/.ssh/id_rsa (expands to current user's home)
-    
+
     Returns:
         Full path to SSH private key
-        
+
     Example:
         >>> key_path = get_ssh_key_path()
         >>> ansible_vars = f"ansible_ssh_private_key_file={key_path}"
     """
-    default = os.path.expanduser('~/.ssh/id_rsa')
-    return os.environ.get('QUBINODE_SSH_KEY_PATH', default)
+    default = os.path.expanduser("~/.ssh/id_rsa")
+    return os.environ.get("QUBINODE_SSH_KEY_PATH", default)
 
 
 def get_inventory_dir() -> str:
     """
     Get inventory directory from environment or default to ~/.generated.
-    
+
     Environment variable: QUBINODE_INVENTORY_DIR
     Default: ~/.generated (expands to current user's home)
-    
+
     Returns:
         Full path to inventory directory
-        
+
     Example:
         >>> inv_dir = get_inventory_dir()
         >>> inventory_path = f"{inv_dir}/.{hostname}.{domain}"
     """
-    default = os.path.expanduser('~/.generated')
-    return os.environ.get('QUBINODE_INVENTORY_DIR', default)
+    default = os.path.expanduser("~/.generated")
+    return os.environ.get("QUBINODE_INVENTORY_DIR", default)
 
 
 def get_vault_password_file() -> str:
     """
     Get vault password file path from environment or default to ~/.vault_password.
-    
+
     Environment variable: QUBINODE_VAULT_PASSWORD_FILE
     Default: ~/.vault_password (expands to current user's home)
-    
+
     Returns:
         Full path to vault password file
-        
+
     Example:
         >>> vault_file = get_vault_password_file()
         >>> cmd = f"ansible-playbook --vault-password-file {vault_file}"
     """
-    default = os.path.expanduser('~/.vault_password')
-    return os.environ.get('QUBINODE_VAULT_PASSWORD_FILE', default)
+    default = os.path.expanduser("~/.vault_password")
+    return os.environ.get("QUBINODE_VAULT_PASSWORD_FILE", default)
 
 
 def get_pull_secret_path() -> str:
     """
     Get pull secret path from environment or default to ~/pull-secret.json.
-    
+
     Environment variable: QUBINODE_PULL_SECRET_PATH
     Default: ~/pull-secret.json (expands to current user's home)
-    
+
     Returns:
         Full path to pull secret file
-        
+
     Example:
         >>> pull_secret = get_pull_secret_path()
         >>> cmd = f"cat {pull_secret} | jq '.auths'"
     """
-    default = os.path.expanduser('~/pull-secret.json')
-    return os.environ.get('QUBINODE_PULL_SECRET_PATH', default)
+    default = os.path.expanduser("~/pull-secret.json")
+    return os.environ.get("QUBINODE_PULL_SECRET_PATH", default)
 
 
 # =============================================================================
@@ -330,7 +330,7 @@ def get_credential_setup_command(
     """
     Generate bash command to setup registry credentials.
     Fetches from Airflow Variables and merges with pull-secret.
-    
+
     Args:
         registry_host: Registry hostname
         registry_port: Registry port (default: "8443")
@@ -341,7 +341,7 @@ def get_credential_setup_command(
     """
     if pull_secret_path is None:
         pull_secret_path = get_pull_secret_path()
-    
+
     registry = f"{registry_host}:{registry_port}"
 
     return f"""
@@ -801,7 +801,7 @@ def ssh_to_host_command(cmd: str, host: str = "localhost", user: Optional[str] =
     """
     if user is None:
         user = get_ssh_user()
-    
+
     return f"""ssh -o StrictHostKeyChecking=no \\
     -o UserKnownHostsFile=/dev/null \\
     -o LogLevel=ERROR \\
@@ -847,7 +847,7 @@ def ssh_to_host_script(script: str, host: str = "localhost", user: Optional[str]
     """
     if user is None:
         user = get_ssh_user()
-    
+
     return f"""ssh -o StrictHostKeyChecking=no \\
     -o UserKnownHostsFile=/dev/null \\
     -o LogLevel=ERROR \\
@@ -922,7 +922,7 @@ def get_ansible_playbook_command(
     """
     if vault_password_file is None:
         vault_password_file = get_vault_password_file()
-    
+
     cmd_parts = [
         "ansible-playbook",
         playbook_path,

@@ -37,9 +37,6 @@ from dag_helpers import get_ssh_user
 SSH_USER = get_ssh_user()
 
 
-
-
-
 # Configuration
 QUBINODE_CERT_SCRIPT = "/opt/qubinode_navigator/scripts/qubinode-cert"
 

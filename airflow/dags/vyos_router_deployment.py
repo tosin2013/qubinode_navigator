@@ -26,9 +26,6 @@ from dag_helpers import get_ssh_user
 SSH_USER = get_ssh_user()
 
 
-
-
-
 # Default arguments
 default_args = {
     "owner": "qubinode",

@@ -37,9 +37,6 @@ from dag_helpers import get_ssh_user
 SSH_USER = get_ssh_user()
 
 
-
-
-
 # Note: Using inline SSH heredoc pattern for host execution (ADR-0046)
 # This ensures Jinja variables are expanded before SSH session
 

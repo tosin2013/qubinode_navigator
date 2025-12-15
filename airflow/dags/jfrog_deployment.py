@@ -26,9 +26,6 @@ from dag_helpers import get_ssh_user
 SSH_USER = get_ssh_user()
 
 
-
-
-
 # Configuration
 KCLI_PIPELINES_DIR = "/opt/kcli-pipelines"
 JFROG_DIR = f"{KCLI_PIPELINES_DIR}/jfrog"
