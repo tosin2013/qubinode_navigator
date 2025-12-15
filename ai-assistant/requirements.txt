@@ -67,7 +67,7 @@ mdurl==0.1.2
 multidict==6.7.0
 mypy-extensions==1.1.0
 numpy==2.3.5
-openai==2.9.0
+openai==2.11.0
 openapi-pydantic==0.5.1
 orjson==3.11.5
 packaging==25.0
@@ -84,7 +84,6 @@ py-key-value-aio[disk,memory]==0.3.0
 py-key-value-shared==0.3.0
 pycparser==2.23
 pydantic[email]==2.12.4
-pydantic-ai-slim[google,openai,anthropic,openrouter,logfire,duckduckgo]==1.28.0
 pydantic-core==2.41.5
 pydantic-settings==2.12.0
 pygments==2.19.2
