@@ -17,9 +17,9 @@ Even after manually creating the directory, the health check would fail, prevent
 ## Root Causes
 
 1. **Missing Directory**: The `ai-assistant/data` directory was excluded by `.gitignore` and not created before container start
-2. **Permission Issues**: The bind-mounted directory needed proper ownership (UID 1001) for the container user
-3. **Short Health Check Timeout**: Initial 60-second timeout was insufficient for RAG service initialization
-4. **No Troubleshooting Guidance**: Limited information when health checks failed
+1. **Permission Issues**: The bind-mounted directory needed proper ownership (UID 1001) for the container user
+1. **Short Health Check Timeout**: Initial 60-second timeout was insufficient for RAG service initialization
+1. **No Troubleshooting Guidance**: Limited information when health checks failed
 
 ## Solution
 
@@ -45,6 +45,7 @@ Falls back gracefully if not running as root (SELinux `:z` flag handles permissi
 ### 3. Extended Health Check Timeout
 
 Increased from 60 seconds to 120 seconds (60 attempts × 2s) to accommodate:
+
 - Model initialization (if USE_LOCAL_MODEL=true)
 - RAG service setup and document loading
 - PydanticAI agent context initialization
@@ -52,6 +53,7 @@ Increased from 60 seconds to 120 seconds (60 attempts × 2s) to accommodate:
 ### 4. Better Error Messages
 
 Added troubleshooting hints when health checks fail:
+
 ```
 [WARNING] AI Assistant started but health check failed after 120 seconds
 [WARNING] Container may still be starting up. Check logs with: podman logs qubinode-ai-assistant
@@ -73,6 +75,7 @@ Run the test suite to validate the fix:
 ```
 
 Expected output:
+
 ```
 All tests passed! (11/11)
 
@@ -90,21 +93,25 @@ Summary of validated fixes:
 If you need to manually verify the fix:
 
 1. **Check directory exists**:
+
    ```bash
    ls -la ai-assistant/data/
    ```
 
-2. **Verify permissions** (if running container):
+1. **Verify permissions** (if running container):
+
    ```bash
    podman exec qubinode-ai-assistant ls -la /app/data
    ```
 
-3. **Check health endpoint**:
+1. **Check health endpoint**:
+
    ```bash
    curl -v http://localhost:8080/health
    ```
 
-4. **View container logs**:
+1. **View container logs**:
+
    ```bash
    podman logs qubinode-ai-assistant
    ```
@@ -112,13 +119,17 @@ If you need to manually verify the fix:
 ## Technical Details
 
 ### Container User
+
 The AI Assistant container runs as UID 1001 (non-root user) as defined in the Dockerfile:
+
 ```dockerfile
 USER 1001
 ```
 
 ### SELinux Context
+
 The `:z` flag in the volume mount ensures proper SELinux labeling:
+
 ```bash
 -v "${REPO_ROOT}/ai-assistant/data:/app/data:z"
 ```
@@ -126,11 +137,14 @@ The `:z` flag in the volume mount ensures proper SELinux labeling:
 This allows the container to read/write even on SELinux-enabled systems (RHEL, CentOS, Rocky Linux).
 
 ### Health Check Endpoint
+
 The `/health` endpoint returns:
+
 - **200**: Service is healthy or degraded (operational)
 - **503**: Service is unhealthy or not ready
 
 The endpoint checks:
+
 - System resources (CPU, memory, disk)
 - RAG service availability
 - API responsiveness
@@ -148,11 +162,12 @@ The endpoint checks:
 ## Future Improvements
 
 Potential enhancements for consideration:
+
 1. Add pre-flight validation check for disk space before directory creation
-2. Create systemd service for automatic container restart
-3. Add metrics endpoint for health monitoring
-4. Implement health check retry with exponential backoff
-5. Add container logs streaming during deployment
+1. Create systemd service for automatic container restart
+1. Add metrics endpoint for health monitoring
+1. Implement health check retry with exponential backoff
+1. Add container logs streaming during deployment
 
 ## References
 
