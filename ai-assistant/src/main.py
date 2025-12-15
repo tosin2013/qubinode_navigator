@@ -35,6 +35,7 @@ try:
     from agents.developer import create_developer_agent, DeveloperDependencies  # noqa: F401
     from agents.context import initialize_agent_context, get_agent_context  # noqa: F401
     from models.domain import SessionPlan, DeveloperTaskResult  # noqa: F401
+    from services.task_executor import execute_session_plan, ExecutionResult  # noqa: F401
 
     PYDANTICAI_AVAILABLE = True
 except ImportError:
@@ -49,6 +50,7 @@ except ImportError:
         from agents.developer import create_developer_agent, DeveloperDependencies  # noqa: F401
         from agents.context import initialize_agent_context, get_agent_context  # noqa: F401
         from models.domain import SessionPlan, DeveloperTaskResult  # noqa: F401
+        from services.task_executor import execute_session_plan, ExecutionResult  # noqa: F401
 
         PYDANTICAI_AVAILABLE = True
     except ImportError as e:
@@ -527,6 +529,8 @@ class OrchestratorRequest(BaseModel):
     session_id: Optional[str] = Field(None, description="Session ID for conversation continuity")
     user_role: str = Field(default="operator", description="User role for permissions")
     environment: str = Field(default="development", description="Target environment")
+    execute_tasks: bool = Field(default=True, description="Execute planned tasks via Developer Agent")
+    working_directory: str = Field(default="/root/qubinode_navigator", description="Working directory for code changes")
 
 
 class OrchestratorResponse(BaseModel):
@@ -542,6 +546,17 @@ class OrchestratorResponse(BaseModel):
     planned_tasks: List[str] = []
     required_providers: List[str] = []
     timestamp: float
+    # Execution results (when execute_tasks=True)
+    execution_performed: bool = False
+    execution_success: bool = False
+    tasks_executed: int = 0
+    tasks_succeeded: int = 0
+    tasks_failed: int = 0
+    tasks_escalated: int = 0
+    execution_confidence: float = 0.0
+    execution_log_file: Optional[str] = None
+    execution_summary: Optional[str] = None
+    code_changes: List[dict] = []
 
 
 @app.post("/orchestrator/chat", response_model=OrchestratorResponse)
@@ -549,13 +564,29 @@ async def orchestrator_chat(request: OrchestratorRequest):
     """
     Chat with the PydanticAI Manager Agent (orchestrator).
 
-    This endpoint uses the Manager Agent with LiteLLM to:
+    This endpoint implements the three-tier agent architecture (ADR-0049):
+    1. Manager Agent: Analyzes intent and creates execution plans
+    2. Developer Agent: Executes each planned task (when execute_tasks=True)
+    3. Calling LLM: Handles escalations when confidence is low
+
+    Features:
     - Analyze user intent and create execution plans
     - Query RAG for relevant documentation context
     - Query lineage for execution history
     - Identify required Airflow providers
-    - Set escalation triggers for complex operations
-    - Coordinate task execution
+    - Execute planned tasks via Developer Agent
+    - Log the entire coding process to a reviewable file
+    - Handle escalations for complex operations
+
+    Request Options:
+    - execute_tasks (default: True): Execute planned tasks via Developer Agent
+    - working_directory: Directory for code changes
+
+    Response includes:
+    - Session plan from Manager Agent
+    - Execution results (tasks succeeded/failed/escalated)
+    - Path to execution log file for review
+    - Code changes made during execution
 
     Models supported via LiteLLM:
     - gemini/gemini-2.0-flash (default, fast and cheap)
@@ -673,17 +704,108 @@ Or call the MCP tool: `trigger_dag(dag_id="<dag_id>", conf={{...}})`"""
 
         response_text = "\n".join(response_parts)
 
+        # Initialize execution result fields
+        execution_performed = False
+        execution_success = False
+        tasks_executed = 0
+        tasks_succeeded = 0
+        tasks_failed = 0
+        tasks_escalated = 0
+        execution_confidence = 0.0
+        execution_log_file = None
+        execution_summary = None
+        code_changes = []
+        escalation_needed = plan.estimated_confidence < 0.6
+        escalation_reason = "Low confidence - requires additional context" if escalation_needed else None
+
+        # Execute planned tasks via Developer Agent if requested
+        if request.execute_tasks and plan.planned_tasks and not escalation_needed:
+            logger.info(f"Executing {len(plan.planned_tasks)} planned tasks via Developer Agent...")
+            response_parts.append("\n---\n")
+            response_parts.append("## Task Execution\n")
+
+            try:
+                exec_result = await execute_session_plan(
+                    session_id=session_id,
+                    plan=plan,
+                    rag_service=agent_ctx.rag_service if agent_ctx else None,
+                    lineage_service=agent_ctx.lineage_service if agent_ctx else None,
+                    rag_context=rag_context,
+                    lineage_context=lineage_context,
+                    working_directory=request.working_directory,
+                )
+
+                execution_performed = True
+                execution_success = exec_result.success
+                tasks_executed = exec_result.tasks_executed
+                tasks_succeeded = exec_result.tasks_succeeded
+                tasks_failed = exec_result.tasks_failed
+                tasks_escalated = exec_result.tasks_escalated
+                execution_confidence = exec_result.overall_confidence
+                execution_log_file = exec_result.log_file_path
+                execution_summary = exec_result.summary
+                code_changes = exec_result.code_changes
+
+                # Update escalation status based on execution
+                if exec_result.escalation_needed:
+                    escalation_needed = True
+                    escalation_reason = "Tasks require escalation - see execution log for details"
+
+                # Add execution summary to response
+                response_parts.append(f"**Status:** {'Success' if execution_success else 'Partial/Failed'}\n")
+                response_parts.append(f"**Tasks Executed:** {tasks_executed}\n")
+                response_parts.append(f"**Tasks Succeeded:** {tasks_succeeded}\n")
+                if tasks_failed > 0:
+                    response_parts.append(f"**Tasks Failed:** {tasks_failed}\n")
+                if tasks_escalated > 0:
+                    response_parts.append(f"**Tasks Escalated:** {tasks_escalated}\n")
+                response_parts.append(f"**Execution Confidence:** {execution_confidence:.0%}\n")
+                response_parts.append(f"\n**Execution Log:** `{execution_log_file}`\n")
+                response_parts.append("*Review the log file for detailed execution information.*")
+
+                if code_changes:
+                    response_parts.append("\n### Code Changes:")
+                    for change in code_changes[:5]:  # Show top 5
+                        response_parts.append(f"- {change.get('task', 'Unknown')[:60]}...")
+
+                logger.info(f"Task execution completed: {tasks_succeeded}/{tasks_executed} succeeded")
+
+            except Exception as exec_error:
+                logger.error(f"Task execution failed: {exec_error}", exc_info=True)
+                execution_performed = True
+                execution_success = False
+                response_parts.append(f"**Execution Error:** {str(exec_error)}\n")
+                escalation_needed = True
+                escalation_reason = f"Task execution failed: {str(exec_error)}"
+
+        elif request.execute_tasks and not plan.planned_tasks:
+            response_parts.append("\n*No tasks to execute.*")
+        elif request.execute_tasks and escalation_needed:
+            response_parts.append("\n*Task execution skipped due to low confidence. Escalation required.*")
+
+        response_text = "\n".join(response_parts)
+
         return OrchestratorResponse(
             session_id=session_id,
             model_used=model_name,
             plan=plan.model_dump(),
             response_text=response_text,
             confidence=plan.estimated_confidence,
-            escalation_needed=plan.estimated_confidence < 0.6,
-            escalation_reason="Low confidence - requires additional context" if plan.estimated_confidence < 0.6 else None,
+            escalation_needed=escalation_needed,
+            escalation_reason=escalation_reason,
             planned_tasks=plan.planned_tasks,
             required_providers=plan.required_providers,
             timestamp=time.time(),
+            execution_performed=execution_performed,
+            execution_success=execution_success,
+            tasks_executed=tasks_executed,
+            tasks_succeeded=tasks_succeeded,
+            tasks_failed=tasks_failed,
+            tasks_escalated=tasks_escalated,
+            execution_confidence=execution_confidence,
+            execution_log_file=execution_log_file,
+            execution_summary=execution_summary,
+            code_changes=code_changes,
         )
 
     except Exception as e:
