@@ -65,6 +65,13 @@ jobs:
           pip install -r requirements.txt
           pip install pytest-cov
 
+      - name: Validate dependencies
+        run: |
+          cd ai-assistant
+          echo "🔍 Validating dependency compatibility..."
+          pip check
+          echo "✅ All dependencies are compatible"
+
       - name: Run AI Assistant tests
         run: |
           cd ai-assistant
@@ -96,6 +103,12 @@ jobs:
         run: |
           pip install pytest-cov pytest-mock
           pip install -r requirements.txt
+
+      - name: Validate dependencies
+        run: |
+          echo "🔍 Validating dependency compatibility..."
+          pip check
+          echo "✅ All dependencies are compatible"
 
       - name: Run AI Assistant plugin tests
         run: |
