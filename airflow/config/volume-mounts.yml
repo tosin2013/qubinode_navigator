@@ -1,0 +1,108 @@
+# =============================================================================
+# Volume Mounts Configuration for Airflow Containers
+# =============================================================================
+# This file defines additional volume mounts for Airflow containers.
+# It solves the problem where configuration files in user home directories
+# (e.g., /home/vpcuser/) are not accessible inside containers.
+#
+# Usage:
+#   1. Edit this file to add your volume mounts
+#   2. Run: ./scripts/config-sync.sh generate
+#   3. Restart Airflow: podman-compose down && podman-compose up -d
+#
+# See: Issue #124 - Configuration File Sync Mechanism
+# =============================================================================
+
+# Default volume mounts (always applied)
+# These are in addition to the mounts defined in docker-compose.yml
+default_mounts:
+  # OpenShift agent install configurations
+  - source: "${HOME}/openshift-agent-install"
+    target: "/opt/openshift-agent-install"
+    mode: "ro"
+    description: "OpenShift agent install examples and configs"
+
+  # Generated assets (inventory files, etc.)
+  - source: "${HOME}/.generated"
+    target: "/opt/generated"
+    mode: "rw"
+    description: "Generated inventory and asset files"
+
+  # kcli-pipelines (if not in /opt)
+  - source: "${HOME}/kcli-pipelines"
+    target: "/opt/kcli-pipelines"
+    mode: "ro"
+    description: "kcli-pipelines deployment scripts"
+
+# User-defined mounts (add your custom mounts here)
+# Examples:
+#
+# custom_mounts:
+#   - source: "/home/myuser/my-configs"
+#     target: "/opt/my-configs"
+#     mode: "ro"
+#     description: "My custom configuration files"
+#
+#   - source: "/data/shared-configs"
+#     target: "/opt/shared"
+#     mode: "rw"
+#     description: "Shared configuration directory"
+#
+custom_mounts: []
+
+# Auto-discovery rules
+# The config-sync tool will scan these patterns and suggest mounts
+auto_discover:
+  # Common OpenShift/Kubernetes config patterns
+  patterns:
+    - "*/openshift-agent-install"
+    - "*/openshift-install"
+    - "*/.kube"
+    - "*/cluster-configs"
+    - "*/.generated"
+
+  # Directories to search for patterns
+  search_paths:
+    - "/home/*"
+    - "/root"
+    - "/opt"
+
+  # Files that indicate a directory should be mounted
+  marker_files:
+    - "cluster.yml"
+    - "install-config.yaml"
+    - "agent-config.yaml"
+    - "*.env"
+
+# Sync rules (for config-sync watch mode)
+sync_rules:
+  # Default sync behavior
+  default:
+    # Patterns to include
+    include:
+      - "**/*.yml"
+      - "**/*.yaml"
+      - "**/*.env"
+      - "**/*.json"
+      - "**/cluster.yml"
+      - "**/nodes.yml"
+
+    # Patterns to exclude (never sync these)
+    exclude:
+      - "**/.git/**"
+      - "**/node_modules/**"
+      - "**/__pycache__/**"
+      - "**/*.pyc"
+      - "**/pull-secret.json"  # Sensitive - use Airflow Variables instead
+      - "**/*.pem"
+      - "**/*.key"
+      - "**/credentials*"
+
+  # Sensitive files handling
+  sensitive:
+    # These files should be stored in Airflow Variables, not synced
+    use_airflow_variables:
+      - "pull-secret.json"
+      - ".vault_password"
+      - "*.pem"
+      - "*.key"

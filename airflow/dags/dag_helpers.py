@@ -129,6 +129,161 @@ def get_kcli_pipelines_dir() -> str:
 
 
 # =============================================================================
+# Configuration Path Helpers (Issue #124)
+# =============================================================================
+# These helpers resolve configuration file paths that may be mounted from
+# user home directories into the container. They check multiple locations
+# to find configuration files.
+
+
+def get_openshift_agent_install_dir() -> str:
+    """
+    Get OpenShift agent install directory.
+
+    Checks multiple locations in order:
+    1. OPENSHIFT_AGENT_INSTALL_DIR environment variable
+    2. /opt/openshift-agent-install (container mount point)
+    3. ~/openshift-agent-install (user home directory)
+
+    Returns:
+        Path to OpenShift agent install directory
+
+    Example:
+        >>> agent_dir = get_openshift_agent_install_dir()
+        >>> env_file = f"{agent_dir}/examples/jfrog-disconnected-vlan/env/passthrough.env"
+    """
+    # Check environment variable first
+    env_path = os.environ.get("OPENSHIFT_AGENT_INSTALL_DIR")
+    if env_path and os.path.isdir(env_path):
+        return env_path
+
+    # Check container mount point
+    container_path = "/opt/openshift-agent-install"
+    if os.path.isdir(container_path):
+        return container_path
+
+    # Check user home directory
+    home_path = os.path.expanduser("~/openshift-agent-install")
+    if os.path.isdir(home_path):
+        return home_path
+
+    # Default to container mount point (may not exist yet)
+    return container_path
+
+
+def get_config_file_path(
+    relative_path: str,
+    search_paths: Optional[List[str]] = None,
+) -> str:
+    """
+    Find a configuration file by searching multiple locations.
+
+    This addresses Issue #124: Configuration files in user directories
+    may be mounted at different locations in containers.
+
+    Args:
+        relative_path: Relative path to the config file (e.g., "examples/cluster.yml")
+        search_paths: List of base directories to search (default: common locations)
+
+    Returns:
+        Full path to the configuration file
+
+    Raises:
+        FileNotFoundError: If the file is not found in any location
+
+    Example:
+        >>> path = get_config_file_path("examples/jfrog-disconnected-vlan/env/passthrough.env")
+        >>> # Returns: /opt/openshift-agent-install/examples/jfrog-disconnected-vlan/env/passthrough.env
+    """
+    if search_paths is None:
+        search_paths = [
+            get_openshift_agent_install_dir(),
+            "/opt/openshift-agent-install",
+            "/opt/cluster-configs",
+            os.path.expanduser("~/openshift-agent-install"),
+            os.path.expanduser("~/cluster-configs"),
+            "/root/openshift-agent-install",
+        ]
+
+    for base_path in search_paths:
+        full_path = os.path.join(base_path, relative_path)
+        if os.path.exists(full_path):
+            return full_path
+
+    # Not found - raise error with helpful message
+    raise FileNotFoundError(
+        f"Configuration file not found: {relative_path}\n"
+        f"Searched in: {', '.join(search_paths)}\n"
+        f"To fix, either:\n"
+        f"  1. Run: ./airflow/scripts/config-sync.sh generate\n"
+        f"  2. Or mount the directory in docker-compose.override.yml"
+    )
+
+
+def get_config_check_command(
+    config_paths: List[str],
+    error_message: Optional[str] = None,
+) -> str:
+    """
+    Generate bash command to check if configuration files exist.
+
+    Use this at the start of DAGs to validate required configs are accessible.
+
+    Args:
+        config_paths: List of configuration file paths to check
+        error_message: Custom error message (default: auto-generated)
+
+    Returns:
+        Bash command string for config validation
+
+    Example:
+        >>> cmd = get_config_check_command([
+        ...     "/opt/openshift-agent-install/examples/cluster.yml",
+        ...     "/opt/openshift-agent-install/examples/env/passthrough.env",
+        ... ])
+    """
+    paths_str = " ".join(f'"{p}"' for p in config_paths)
+    default_error = "Configuration files not accessible in container.\\n" "Run: ./airflow/scripts/config-sync.sh generate\\n" "Then restart Airflow to apply volume mounts."
+    error_msg = error_message or default_error
+
+    return f"""
+    echo "========================================"
+    echo "Checking Configuration File Access"
+    echo "========================================"
+
+    CONFIG_FILES=({paths_str})
+    MISSING=()
+
+    for CONFIG in "${{CONFIG_FILES[@]}}"; do
+        if [ -f "$CONFIG" ]; then
+            echo "[OK] Found: $CONFIG"
+        else
+            echo "[ERROR] Missing: $CONFIG"
+            MISSING+=("$CONFIG")
+        fi
+    done
+
+    if [ ${{#MISSING[@]}} -gt 0 ]; then
+        echo ""
+        echo "========================================"
+        echo "[ERROR] Missing configuration files!"
+        echo "========================================"
+        echo ""
+        echo "{error_msg}"
+        echo ""
+        echo "Missing files:"
+        for f in "${{MISSING[@]}}"; do
+            echo "  - $f"
+        done
+        exit 1
+    fi
+
+    echo ""
+    echo "[OK] All configuration files accessible"
+    """
+
+
+# =============================================================================
 # Vault Password Management Helpers (Issue #123)
 # =============================================================================
 # These helpers ensure vault password files exist before running Ansible
