@@ -16,7 +16,7 @@ Qubinode Navigator is an AI-enhanced, container-first infrastructure automation 
 - **Airflow MCP Server**: DAG management and VM operations (9 tools)
 - **AI Assistant MCP Server**: RAG-powered documentation search and chat (3 tools)
 
-**Quick start:** `git clone https://github.com/Qubinode/qubinode_navigator.git && cd qubinode_navigator && ./setup_modernized.sh`
+**Quick start:** `git clone https://github.com/Qubinode/qubinode_navigator.git && cd qubinode_navigator && sudo -E ./scripts/development/deploy-qubinode.sh`
 
 ## 🚀 Key Features
 
@@ -52,9 +52,31 @@ Qubinode Navigator is an AI-enhanced, container-first infrastructure automation 
 git clone https://github.com/Qubinode/qubinode_navigator.git
 cd qubinode_navigator
 
-# Run the modernized setup script
-./setup_modernized.sh
+# Run pre-flight checks
+./scripts/preflight-check.sh --fix
+
+# Deploy everything (AI Assistant + Airflow + PostgreSQL)
+sudo -E ./scripts/development/deploy-qubinode.sh
 ```
+
+### Running as Non-Root User
+
+For security best practices, you can run as a dedicated `lab-user` instead of root:
+
+```bash
+# Create lab-user with sudo privileges
+curl -OL https://gist.githubusercontent.com/tosin2013/385054f345ff7129df6167631156fa2a/raw/b67866c8d0ec220c393ea83d2c7056f33c472e65/configure-sudo-user.sh
+chmod +x configure-sudo-user.sh
+./configure-sudo-user.sh lab-user
+
+# Switch to lab-user and configure SSH
+sudo su - lab-user
+ssh-keygen -f ~/.ssh/id_rsa -t rsa -N ''
+IP_ADDRESS=$(hostname -I | awk '{print $1}')
+ssh-copy-id lab-user@${IP_ADDRESS}
+```
+
+See the **[Getting Started Guide](docs/GETTING_STARTED.md#running-as-non-root-user-recommended)** for complete non-root setup instructions.
 
 ### Legacy Setup
 
@@ -87,6 +109,7 @@ Qubinode Navigator follows a **container-first, plugin-based architecture**:
 ## 📚 Documentation
 
 - **[Complete Documentation](https://qubinode.github.io/qubinode_navigator/)** - Full documentation website
+- **[Getting Started Guide](docs/GETTING_STARTED.md)** - Quick start with AI orchestrator and non-root setup
 - **[MCP Quick Start](MCP-QUICK-START.md)** - Get started with MCP servers in 5 minutes
 - **[MCP Implementation Guide](FASTMCP-COMPLETE.md)** - Complete FastMCP migration details
 - **[Installation Guide](docs/tutorials/getting-started.md)** - Step-by-step installation instructions
