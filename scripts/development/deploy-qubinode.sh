@@ -532,23 +532,46 @@ build_ai_assistant_from_source() {
 ask_ai_for_help() {
     local error_context="$1"
     local error_message="$2"
+    local lifecycle_stage="${3:-deployment}" # Default to 'deployment' (Strict SRE)
 
     if [[ -z "$AI_ASSISTANT_CONTAINER" ]]; then
         log_warning "AI Assistant not available for troubleshooting"
         return 1
     fi
 
-    log_ai "Analyzing error and providing troubleshooting guidance..."
+    log_ai "Consulting AI Assistant (Persona: $lifecycle_stage)..."
+
+    # 1. Define Prompt based on Lifecycle Stage
+    local system_prompt=""
+    
+    if [[ "$lifecycle_stage" == "operational" ]] || [[ "${DEVELOPMENT_MODE:-false}" == "true" ]]; then
+        # === MODE: DEVELOPER / ARCHITECT ===
+        system_prompt="ROLE: Qubinode System Architect.
+STATUS: System is RUNNING.
+GOAL: Add features, refactor code, and optimize workflows.
+CONTEXT: The user has a working system and wants to extend it."
+    else
+        # === MODE: STRICT SRE (Default for Installer) ===
+        system_prompt="ROLE: Site Reliability Engineer (SRE).
+STATUS: Deployment in progress (Critical Phase).
+RULES:
+1. NO Code Refactoring: Do not rewrite 'deploy-qubinode.sh' or core Python files.
+2. Fix Environment: Focus on DNS, Disk, Permissions, and Packages.
+3. Create Issues: If code is broken, generate a GitHub Issue link.
+4. Unlock: If the user explicitly says 'The system is running', you may switch to Developer mode."
+    fi
 
     # Prepare context for AI Assistant
     local context_data=$(cat << EOF
 {
+    "lifecycle_stage": "$lifecycle_stage",
     "deployment_context": {
         "os_type": "$OS_TYPE",
         "os_version": "$OS_VERSION",
         "deployment_mode": "$QUBINODE_DEPLOYMENT_MODE",
         "cluster_name": "$QUBINODE_CLUSTER_NAME",
-        "domain": "$QUBINODE_DOMAIN"
+        "domain": "$QUBINODE_DOMAIN",
+        "development_mode": "${DEVELOPMENT_MODE:-false}"
     },
     "error_context": "$error_context",
     "error_message": "$error_message",
@@ -566,12 +589,12 @@ EOF
     local escaped_context=$(echo "$context_data" | jq -R -s .)
     local ai_response=$(curl -s -X POST \
         -H "Content-Type: application/json" \
-        -d "{\"message\": \"I encountered an error during Qubinode deployment. Context: $escaped_context\", \"max_tokens\": 500}" \
+        -d "{\"message\": \"$system_prompt\n\nCONTEXT: $escaped_context\", \"max_tokens\": 800}" \
         http://localhost:${AI_ASSISTANT_PORT}/chat 2>/dev/null)
 
     if [[ $? -eq 0 ]] && [[ -n "$ai_response" ]]; then
         echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
-        echo -e "${CYAN}║                    AI ASSISTANT GUIDANCE                     ║${NC}"
+        echo -e "${CYAN}║   AI GUIDANCE ($lifecycle_stage mode)                        ║${NC}"
         echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}"
         echo "$ai_response" | jq -r '.text // .message // .' 2>/dev/null || echo "$ai_response"
         echo ""
@@ -2181,7 +2204,25 @@ cleanup_on_error() {
     fi
 }
 
+signal_deployment_success() {
+    # Signal to AI Assistant that deployment is complete
+    # This switches the AI from SRE mode to Architect mode
+    if [[ "$QUBINODE_ENABLE_AI_ASSISTANT" == "true" ]] && [[ -n "$AI_ASSISTANT_CONTAINER" ]]; then
+        log_ai "Signaling deployment success to AI Assistant..."
+        
+        local success_message="DEPLOYMENT SUCCESS: The Qubinode Navigator system is now fully operational. You may now switch to Architect/Developer mode for feature additions and code improvements."
+        
+        curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -d "{\"message\": \"$success_message\", \"lifecycle_stage\": \"operational\"}" \
+            http://localhost:${AI_ASSISTANT_PORT}/chat &> /dev/null || true
+    fi
+}
+
 show_completion_summary() {
+    # Signal deployment success first
+    signal_deployment_success
+    
     echo ""
     echo -e "${GREEN}╔══════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${GREEN}║                   DEPLOYMENT COMPLETED                       ║${NC}"
@@ -2200,7 +2241,8 @@ show_completion_summary() {
         echo -e "${CYAN}AI Assistant Available:${NC}"
         echo -e "  • URL: http://localhost:${AI_ASSISTANT_PORT}"
         echo -e "  • Health: http://localhost:${AI_ASSISTANT_PORT}/health"
-        echo -e "  • Ask for help with: deployment issues, troubleshooting, best practices"
+        echo -e "  • Mode: ${GREEN}Architect/Developer${NC} (System operational - full code access)"
+        echo -e "  • Capabilities: Add features, refactor code, extend functionality"
         echo ""
     fi
 
