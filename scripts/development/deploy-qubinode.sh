@@ -593,8 +593,13 @@ EOF
         http://localhost:${AI_ASSISTANT_PORT}/chat 2>/dev/null)
 
     if [[ $? -eq 0 ]] && [[ -n "$ai_response" ]]; then
+        # Format header with proper padding for variable lifecycle_stage length
+        local mode_text="AI GUIDANCE ($lifecycle_stage mode)"
+        local padding_length=$((62 - ${#mode_text}))
+        local padding=$(printf '%*s' $padding_length '')
+        
         echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
-        echo -e "${CYAN}║   AI GUIDANCE ($lifecycle_stage mode)                        ║${NC}"
+        echo -e "${CYAN}║   ${mode_text}${padding}║${NC}"
         echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}"
         echo "$ai_response" | jq -r '.text // .message // .' 2>/dev/null || echo "$ai_response"
         echo ""
