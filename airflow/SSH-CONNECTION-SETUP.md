@@ -15,8 +15,8 @@ Airflow DAGs use the SSHOperator to execute commands on the host machine (kcli, 
 ## Prerequisites
 
 1. SSH server running on host (typically already installed)
-2. SSH key-based authentication configured
-3. Airflow containers running with host network access (ADR-0043)
+1. SSH key-based authentication configured
+1. Airflow containers running with host network access (ADR-0043)
 
 ## Setup Methods
 
@@ -39,15 +39,18 @@ airflow connections add 'localhost_ssh' \
 ### Method 2: Using Airflow Web UI
 
 1. Navigate to **Admin → Connections** in the Airflow UI (http://localhost:8888)
-2. Click **+** to add a new connection
-3. Fill in the form:
+
+1. Click **+** to add a new connection
+
+1. Fill in the form:
+
    - **Connection Id**: `localhost_ssh`
    - **Connection Type**: SSH
    - **Host**: `localhost`
    - **Username**: Your admin user (e.g., `root` or your username)
    - **Extra**: `{"key_file": "/root/.ssh/id_rsa"}`
 
-4. Click **Save**
+1. Click **Save**
 
 ### Method 3: Using Environment Variables
 
@@ -105,6 +108,7 @@ The SSH connection supports these Extra fields (JSON format):
 ### Common Configurations
 
 **Using password instead of key:**
+
 ```bash
 airflow connections add 'localhost_ssh' \
     --conn-type 'ssh' \
@@ -114,6 +118,7 @@ airflow connections add 'localhost_ssh' \
 ```
 
 **Using non-standard SSH port:**
+
 ```bash
 airflow connections add 'localhost_ssh' \
     --conn-type 'ssh' \
@@ -124,6 +129,7 @@ airflow connections add 'localhost_ssh' \
 ```
 
 **For remote hosts (not localhost):**
+
 ```bash
 airflow connections add 'remote_host_ssh' \
     --conn-type 'ssh' \
@@ -187,7 +193,7 @@ validate_env = SSHOperator(
         exit 1
     fi
     echo "[OK] kcli installed"
-    
+
     echo "Checking libvirt..."
     virsh list --all
     echo "[OK] libvirt accessible"
@@ -203,24 +209,29 @@ validate_env = SSHOperator(
 **Error**: `Connection refused` or `Permission denied`
 
 **Solutions**:
+
 1. Verify SSH service is running on host:
+
    ```bash
    systemctl status sshd
    ```
 
-2. Check SSH key permissions:
+1. Check SSH key permissions:
+
    ```bash
    chmod 600 /root/.ssh/id_rsa
    chmod 644 /root/.ssh/id_rsa.pub
    ```
 
-3. Verify SSH key is authorized:
+1. Verify SSH key is authorized:
+
    ```bash
    cat /root/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
    chmod 600 /root/.ssh/authorized_keys
    ```
 
-4. Test SSH manually:
+1. Test SSH manually:
+
    ```bash
    ssh -i /root/.ssh/id_rsa -o StrictHostKeyChecking=no localhost 'echo test'
    ```
@@ -230,6 +241,7 @@ validate_env = SSHOperator(
 **Error**: `Command not found` (e.g., kcli, virsh)
 
 **Solution**: Commands may not be in PATH. Use full paths or add PATH:
+
 ```python
 command="""
 export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
@@ -240,6 +252,7 @@ kcli list vm
 **Error**: `Connection timeout`
 
 **Solution**: Increase timeout in connection Extra or operator:
+
 ```python
 SSHOperator(
     task_id='long_running_task',
@@ -253,6 +266,7 @@ SSHOperator(
 ### Host Key Verification Failed
 
 **Solution**: Disable host key checking in connection Extra:
+
 ```json
 {
   "key_file": "/root/.ssh/id_rsa",
@@ -274,16 +288,17 @@ This affects `get_ssh_conn_id()` in all DAGs.
 ## Security Considerations
 
 1. **Key Management**: Store SSH private keys securely, never in git
-2. **Connection Secrets**: Use Airflow's secrets backend for production
-3. **Least Privilege**: Use dedicated user accounts with minimal permissions
-4. **Audit Logging**: Enable SSH audit logging for compliance
-5. **Key Rotation**: Regularly rotate SSH keys
+1. **Connection Secrets**: Use Airflow's secrets backend for production
+1. **Least Privilege**: Use dedicated user accounts with minimal permissions
+1. **Audit Logging**: Enable SSH audit logging for compliance
+1. **Key Rotation**: Regularly rotate SSH keys
 
 ## Migrating from Manual SSH
 
 If you have existing DAGs using BashOperator with manual SSH:
 
 **Before (Manual SSH - Buggy)**:
+
 ```python
 validate = BashOperator(
     task_id="validate",
@@ -296,6 +311,7 @@ validate = BashOperator(
 ```
 
 **After (SSHOperator - Clean)**:
+
 ```python
 validate = SSHOperator(
     task_id="validate",
@@ -305,6 +321,7 @@ validate = SSHOperator(
 ```
 
 Benefits:
+
 - ✅ No string concatenation bugs
 - ✅ Cleaner code
 - ✅ Better error handling

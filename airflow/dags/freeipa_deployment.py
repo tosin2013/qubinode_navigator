@@ -14,17 +14,14 @@ Follows the kcli-pipelines and freeipa-workshop-deployer patterns.
 
 from datetime import datetime, timedelta
 from airflow import DAG
-from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator
 from airflow.providers.ssh.operators.ssh import SSHOperator
 
 # Import user-configurable helpers for portable DAGs
 from dag_helpers import (
-    get_ssh_user,
     get_ssh_key_path,
     get_inventory_dir,
     get_ssh_conn_id,
-    create_ssh_operator,
 )
 
 # Default arguments
