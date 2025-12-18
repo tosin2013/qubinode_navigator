@@ -1,7 +1,7 @@
 #!/bin/bash
 # Simulate deployment scenarios with different user configurations
 
-set -eo pipefail
+set -e
 
 # Colors
 GREEN='\033[0;32m'

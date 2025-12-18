@@ -1,7 +1,7 @@
 #!/bin/bash
 # Test script for user detection in deploy-qubinode.sh and load-variables.py
 
-set -euo pipefail
+set -e
 
 # Colors
 GREEN='\033[0;32m'

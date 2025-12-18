@@ -49,12 +49,13 @@
 import argparse
 import getpass
 import os
+import pwd
+import re
+import subprocess
+import sys
 import yaml
 import netifaces
 import psutil
-import re
-import sys
-import pwd
 
 # Constants for user validation
 MIN_USER_UID = 1000  # Minimum UID for regular users
@@ -114,7 +115,6 @@ def update_inventory(username=None, domain_name=None, dnf_forwarder=None):
         print(f"ERROR: User '{username}' does not exist on this system", file=sys.stderr)
         print("Available non-root users:", file=sys.stderr)
         # Use getent passwd for consistency with bash script and better performance
-        import subprocess
         try:
             result = subprocess.run(
                 ["getent", "passwd"],
