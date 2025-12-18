@@ -139,8 +139,8 @@ export MANAGER_MODEL="${MANAGER_MODEL:-google-gla:gemini-2.0-flash}"
 export DEVELOPER_MODEL="${DEVELOPER_MODEL:-google-gla:gemini-2.0-flash}"
 export PYDANTICAI_MODEL="${PYDANTICAI_MODEL:-${MANAGER_MODEL}}"
 
-# Airflow Orchestration Configuration (Optional Feature)
-export QUBINODE_ENABLE_AIRFLOW="${QUBINODE_ENABLE_AIRFLOW:-false}"
+# Airflow Orchestration Configuration (Core Infrastructure)
+export QUBINODE_ENABLE_AIRFLOW="${QUBINODE_ENABLE_AIRFLOW:-true}"
 export AIRFLOW_PORT="${AIRFLOW_PORT:-8888}"
 export AIRFLOW_VERSION="${AIRFLOW_VERSION:-2.10.4-python3.12}"
 export AIRFLOW_NETWORK="${AIRFLOW_NETWORK:-airflow_default}"
@@ -2451,7 +2451,7 @@ case "${1:-}" in
         echo "  QUBINODE_ENABLE_AI_ASSISTANT - Enable AI Assistant (default: true)"
         echo "  BUILD_AI_ASSISTANT_FROM_SOURCE - Build AI Assistant from source (default: false)"
         echo "                                   Set to true for E2E testing with PydanticAI + Smart Pipeline"
-        echo "  QUBINODE_ENABLE_AIRFLOW      - Enable Airflow orchestration (default: false)"
+        echo "  QUBINODE_ENABLE_AIRFLOW      - Enable Airflow orchestration (default: true)"
         echo "  QUBINODE_ENABLE_AI_SERVICES  - Enable host AI services (default: false, ADR-0050)"
         echo "  QUBINODE_ENABLE_NGINX_PROXY  - Enable nginx reverse proxy (auto-enabled with Airflow)"
         echo "  AI_ASSISTANT_PORT            - AI Assistant port (default: 8080)"
