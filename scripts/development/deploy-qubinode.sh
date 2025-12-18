@@ -78,8 +78,15 @@ log_ai() {
 # =============================================================================
 
 # Load environment variables from .env file if it exists
-if [[ -f "$SCRIPT_DIR/.env" ]]; then
-    log_info "Loading configuration from .env file..."
+# Check both repository root and script directory
+# Security Note: Only source .env files that you control. Do not source untrusted files.
+if [[ -f "$REPO_ROOT/.env" ]]; then
+    log_info "Loading configuration from $REPO_ROOT/.env..."
+    set -a  # Automatically export all variables
+    source "$REPO_ROOT/.env"
+    set +a
+elif [[ -f "$SCRIPT_DIR/.env" ]]; then
+    log_info "Loading configuration from $SCRIPT_DIR/.env..."
     set -a  # Automatically export all variables
     source "$SCRIPT_DIR/.env"
     set +a
@@ -124,6 +131,13 @@ export AI_ASSISTANT_VERSION="${AI_ASSISTANT_VERSION:-latest}"
 # Build AI Assistant from source (includes PydanticAI + Smart Pipeline)
 # Set to true for E2E testing or when using latest development features
 export BUILD_AI_ASSISTANT_FROM_SOURCE="${BUILD_AI_ASSISTANT_FROM_SOURCE:-false}"
+
+# PydanticAI Model Configuration (ADR-0049/ADR-0063)
+# Explicitly export model variables to ensure they're passed to container
+# Default to Google Gemini 2.0 Flash (fast, cheap, capable)
+export MANAGER_MODEL="${MANAGER_MODEL:-google-gla:gemini-2.0-flash}"
+export DEVELOPER_MODEL="${DEVELOPER_MODEL:-google-gla:gemini-2.0-flash}"
+export PYDANTICAI_MODEL="${PYDANTICAI_MODEL:-${MANAGER_MODEL}}"
 
 # Airflow Orchestration Configuration (Optional Feature)
 export QUBINODE_ENABLE_AIRFLOW="${QUBINODE_ENABLE_AIRFLOW:-false}"
@@ -431,6 +445,24 @@ start_ai_assistant() {
     fi
 
     log_success "Data directories created successfully"
+
+    # Validate and log model configuration
+    log_info "AI Model Configuration:"
+    log_info "  Manager Model: ${MANAGER_MODEL}"
+    log_info "  Developer Model: ${DEVELOPER_MODEL}"
+    log_info "  Deployment Model: ${PYDANTICAI_MODEL}"
+    if [[ -n "${OPENROUTER_API_KEY:-}" ]]; then
+        log_info "  OpenRouter API Key: [SET]"
+    fi
+    if [[ -n "${GEMINI_API_KEY:-}" ]]; then
+        log_info "  Gemini API Key: [SET]"
+    fi
+    if [[ -n "${ANTHROPIC_API_KEY:-}" ]]; then
+        log_info "  Anthropic API Key: [SET]"
+    fi
+    if [[ -n "${OPENAI_API_KEY:-}" ]]; then
+        log_info "  OpenAI API Key: [SET]"
+    fi
 
     # Determine image source: build from source or pull from registry
     local ai_image=""
