@@ -41,6 +41,10 @@ x-airflow-common:
     QUBINODE_AI_ASSISTANT_URL: 'http://localhost:8080'
     QUBINODE_KCLI_ENABLED: 'true'
     QUBINODE_RAG_INTEGRATION: 'true'
+    # SSH Connection Configuration (for SSHOperator in DAGs)
+    # Override default SSH connection ID if needed (default: localhost_ssh)
+    # QUBINODE_SSH_CONN_ID: 'localhost_ssh'
+    # See SSH-CONNECTION-SETUP.md for configuration instructions
     # MCP Server Configuration - Enabled by default for AI assistant integration
     AIRFLOW_MCP_ENABLED: ${AIRFLOW_MCP_ENABLED:-true}
     AIRFLOW_MCP_PORT: ${AIRFLOW_MCP_PORT:-8889}
