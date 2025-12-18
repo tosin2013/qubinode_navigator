@@ -56,6 +56,7 @@ GEMINI_API_KEY=your-api-key
 Get API key: https://makersuite.google.com/app/apikey
 
 **Available Models:**
+
 - `google-gla:gemini-2.0-flash` - Fast, recommended for most tasks
 - `google-gla:gemini-2.5-flash` - Latest version
 - `google-gla:gemini-1.5-pro` - More capable, higher latency
@@ -72,6 +73,7 @@ OPENROUTER_API_KEY=sk-or-your-api-key
 Get API key: https://openrouter.ai/keys
 
 **Popular Models:**
+
 - `openrouter:anthropic/claude-3.5-sonnet` - Claude via OpenRouter
 - `openrouter:google/gemini-2.0-flash-exp` - Gemini via OpenRouter
 - `openrouter:openai/gpt-4o` - GPT-4o via OpenRouter
@@ -88,6 +90,7 @@ ANTHROPIC_API_KEY=sk-ant-your-api-key
 Get API key: https://console.anthropic.com/
 
 **Available Models:**
+
 - `anthropic:claude-3-5-sonnet-latest` - Claude 3.5 Sonnet
 - `anthropic:claude-3-haiku-20240307` - Fast & cheap
 - `anthropic:claude-3-opus-latest` - Most capable
@@ -100,6 +103,7 @@ OPENAI_API_KEY=sk-your-api-key
 ```
 
 **Available Models:**
+
 - `openai:gpt-4o` - GPT-4o
 - `openai:gpt-4-turbo` - GPT-4 Turbo
 
@@ -113,6 +117,7 @@ OLLAMA_BASE_URL=http://localhost:11434
 Setup: https://ollama.com/download
 
 **Popular Models:**
+
 - `ollama:llama3.2:latest` - Meta Llama 3.2
 - `ollama:granite3.3:8b` - IBM Granite 3.3 8B
 - `ollama:mistral:7b` - Mistral 7B
@@ -175,10 +180,11 @@ After configuring your `.env` file, deploy with:
 ```
 
 The script will:
+
 1. Load your `.env` file from the repository root
-2. Validate model configuration
-3. Log the models being used
-4. Start the AI Assistant container with your configuration
+1. Validate model configuration
+1. Log the models being used
+1. Start the AI Assistant container with your configuration
 
 ### Verification
 
@@ -197,6 +203,7 @@ curl http://localhost:8080/orchestrator/status
 ```
 
 Expected response:
+
 ```json
 {
   "status": "ready",
@@ -260,6 +267,7 @@ podman logs qubinode-ai-assistant
 ```
 
 Common issues:
+
 - Invalid API key format
 - Network connectivity issues
 - Missing required environment variables
