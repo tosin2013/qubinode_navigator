@@ -10,8 +10,9 @@
 # 3. airflint (if available) - Best practices enforcement
 # 4. Complex escape sequences in SSH commands
 # 5. Non-SSH kcli/virsh commands (ADR-0046 compliance)
-# 6. DAG ID matches filename (ADR-0045)
+# 6. Manual SSH in BashOperator (prefer SSHOperator)
 # 7. Non-ASCII characters in bash commands
+# 8. DAG ID matches filename (ADR-0045)
 #
 # Usage: ./lint-dags.sh [dag_file_or_directory]
 # =============================================================================
@@ -141,7 +142,21 @@ for dag_file in $FILES; do
     fi
 
     # ==========================================================================
-    # Check 6: Non-ASCII characters in bash commands
+    # Check 6: Manual SSH in BashOperator (prefer SSHOperator)
+    # ==========================================================================
+    # Detect manual SSH patterns that should use SSHOperator instead
+    # Pattern: ssh root@localhost, ssh -o StrictHostKeyChecking=no, etc.
+    if grep -qE 'BashOperator' "$dag_file" 2>/dev/null; then
+        if grep -qE 'ssh\s+(-o\s+\S+\s+)*\S+@(localhost|127\.0\.0\.1)' "$dag_file" 2>/dev/null; then
+            echo -e "  ${YELLOW}[WARN]${NC} Manual SSH in BashOperator detected"
+            echo "         Consider using SSHOperator from airflow.providers.ssh"
+            echo "         See: airflow/SSH-CONNECTION-SETUP.md"
+            WARNINGS=$((WARNINGS + 1))
+        fi
+    fi
+
+    # ==========================================================================
+    # Check 8: Non-ASCII characters in bash commands
     # ==========================================================================
     # Per ADR-0045: ASCII-only characters in bash commands
     if grep -P '[\x80-\xFF]' "$dag_file" 2>/dev/null | grep -qE 'bash_command'; then
@@ -151,7 +166,7 @@ for dag_file in $FILES; do
     fi
 
     # ==========================================================================
-    # Check 7: DAG ID matches filename
+    # Check 9: DAG ID matches filename
     # ==========================================================================
     # Per ADR-0045: DAG IDs must be snake_case matching filename
     expected_dag_id=$(basename "$dag_file" .py)
