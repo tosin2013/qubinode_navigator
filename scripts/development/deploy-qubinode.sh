@@ -79,6 +79,7 @@ log_ai() {
 
 # Load environment variables from .env file if it exists
 # Check both repository root and script directory
+# Security Note: Only source .env files that you control. Do not source untrusted files.
 if [[ -f "$REPO_ROOT/.env" ]]; then
     log_info "Loading configuration from $REPO_ROOT/.env..."
     set -a  # Automatically export all variables

@@ -28,7 +28,7 @@ cat > "$REPO_ROOT/.env.test" << 'EOF'
 MANAGER_MODEL=openrouter:anthropic/claude-3.5-sonnet
 DEVELOPER_MODEL=openrouter:google/gemini-2.0-flash-exp
 PYDANTICAI_MODEL=openrouter:openai/gpt-4o
-OPENROUTER_API_KEY=sk-or-test-key
+OPENROUTER_API_KEY=TEST_API_KEY_PLACEHOLDER_NOT_REAL
 EOF
 
 # Simulate the script's .env loading logic
@@ -98,7 +98,7 @@ echo -e "${BLUE}Test 3: Container environment variable passing${NC}"
 export MANAGER_MODEL="openrouter:test/model-1"
 export DEVELOPER_MODEL="openrouter:test/model-2"
 export PYDANTICAI_MODEL="openrouter:test/model-3"
-export OPENROUTER_API_KEY="sk-test-123"
+export OPENROUTER_API_KEY="TEST_API_KEY_PLACEHOLDER_NOT_REAL"
 
 # Test conditional syntax (used in podman run command)
 MANAGER_ARG="${MANAGER_MODEL:+-e MANAGER_MODEL=\"${MANAGER_MODEL}\"}"
