@@ -1,6 +1,29 @@
-# Troubleshooting Guide
+# Troubleshooting Guide (SRE Mode)
 
 Use this rule when debugging issues with Qubinode Navigator.
+
+## CRITICAL SRE RULES
+
+**When troubleshooting deployment or runtime issues:**
+
+1. **PRIORITIZE environmental diagnostics over source code inspection**
+1. **DO NOT refactor or rewrite deployment scripts during troubleshooting**
+1. **FIX the environment** (DNS, disk, permissions, packages), not the code
+1. **If you find a code bug, PROPOSE A GITHUB ISSUE** instead of fixing it
+
+## Step 1: Environmental Diagnosis First
+
+Before looking at ANY code, check these environmental factors:
+
+| Check       | Command                            | Common Fix                    |
+| ----------- | ---------------------------------- | ----------------------------- |
+| Services    | `systemctl status libvirtd podman` | `systemctl restart <service>` |
+| Disk Space  | `df -h / /var/lib/libvirt`         | Clean up old images/VMs       |
+| Memory      | `free -h`                          | Stop unused containers        |
+| DNS         | `nslookup $(hostname)`             | Check /etc/resolv.conf        |
+| Firewall    | `firewall-cmd --list-all`          | Open required ports           |
+| SELinux     | `getenforce; ausearch -m avc`      | Set correct contexts          |
+| Permissions | `ls -la <path>`                    | chown/chmod as needed         |
 
 ## DAG Issues
 
@@ -88,6 +111,19 @@ virsh net-list --all
 virsh net-dhcp-leases default
 ```
 
+## SRE Mode Rules
+
+| Action                         | Allowed | Forbidden |
+| ------------------------------ | ------- | --------- |
+| Check journalctl/systemctl     | ✓       |           |
+| Diagnose DNS/firewall/SELinux  | ✓       |           |
+| Suggest dnf/yum install        | ✓       |           |
+| Fix permissions/disk space     | ✓       |           |
+| Propose GitHub Issues for bugs | ✓       |           |
+| Refactor deploy-qubinode.sh    |         | ✗         |
+| Rewrite core Python files      |         | ✗         |
+| Add new features during debug  |         | ✗         |
+
 ## Quick Health Check
 
 ```bash
@@ -96,4 +132,7 @@ echo "=== Containers ===" && podman-compose ps
 echo "=== Airflow ===" && curl -s http://localhost:8888/health
 echo "=== MCP ===" && curl -s http://localhost:8889/health
 echo "=== Libvirt ===" && virsh list --all | head -5
+echo "=== Recent Errors ===" && journalctl -p err --since "30 minutes ago" | tail -10
 ```
+
+**REMEMBER:** 90% of deployment issues are environmental. Fix the environment first!
