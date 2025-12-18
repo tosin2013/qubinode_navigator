@@ -543,7 +543,7 @@ ask_ai_for_help() {
 
     # 1. Define Prompt based on Lifecycle Stage
     local system_prompt=""
-    
+
     if [[ "$lifecycle_stage" == "operational" ]] || [[ "${DEVELOPMENT_MODE:-false}" == "true" ]]; then
         # === MODE: DEVELOPER / ARCHITECT ===
         system_prompt="ROLE: Qubinode System Architect.
@@ -597,7 +597,7 @@ EOF
         local mode_text="AI GUIDANCE ($lifecycle_stage mode)"
         local padding_length=$((62 - ${#mode_text}))
         local padding=$(printf '%*s' $padding_length '')
-        
+
         echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
         echo -e "${CYAN}║   ${mode_text}${padding}║${NC}"
         echo -e "${CYAN}╚══════════════════════════════════════════════════════════════╝${NC}"
@@ -2214,9 +2214,9 @@ signal_deployment_success() {
     # This switches the AI from SRE mode to Architect mode
     if [[ "$QUBINODE_ENABLE_AI_ASSISTANT" == "true" ]] && [[ -n "$AI_ASSISTANT_CONTAINER" ]]; then
         log_ai "Signaling deployment success to AI Assistant..."
-        
+
         local success_message="DEPLOYMENT SUCCESS: The Qubinode Navigator system is now fully operational. You may now switch to Architect/Developer mode for feature additions and code improvements."
-        
+
         curl -s -X POST \
             -H "Content-Type: application/json" \
             -d "{\"message\": \"$success_message\", \"lifecycle_stage\": \"operational\"}" \
@@ -2227,7 +2227,7 @@ signal_deployment_success() {
 show_completion_summary() {
     # Signal deployment success first
     signal_deployment_success
-    
+
     echo ""
     echo -e "${GREEN}╔══════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${GREEN}║                   DEPLOYMENT COMPLETED                       ║${NC}"
