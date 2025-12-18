@@ -56,6 +56,10 @@ import re
 import sys
 import pwd
 
+# Constants for user validation
+MIN_USER_UID = 1000  # Minimum UID for regular users
+MAX_USER_UID = 65534  # Maximum UID for regular users (excludes nobody/nogroup)
+
 # 📊 GLOBAL VARIABLES (shared with other scripts):
 inventory_env = os.environ.get("INVENTORY")  # Environment inventory name
 if not inventory_env:
@@ -109,9 +113,29 @@ def update_inventory(username=None, domain_name=None, dnf_forwarder=None):
     except KeyError:
         print(f"ERROR: User '{username}' does not exist on this system", file=sys.stderr)
         print("Available non-root users:", file=sys.stderr)
-        for user in pwd.getpwall():
-            if 1000 <= user.pw_uid < 65534:
-                print(f"  - {user.pw_name}", file=sys.stderr)
+        # Use getent passwd for consistency with bash script and better performance
+        import subprocess
+        try:
+            result = subprocess.run(
+                ["getent", "passwd"],
+                capture_output=True,
+                text=True,
+                check=False
+            )
+            for line in result.stdout.splitlines():
+                parts = line.split(":")
+                if len(parts) >= 3:
+                    try:
+                        uid = int(parts[2])
+                        if MIN_USER_UID <= uid < MAX_USER_UID:
+                            print(f"  - {parts[0]}", file=sys.stderr)
+                    except ValueError:
+                        continue
+        except Exception:
+            # Fallback to pwd module if getent fails
+            for user in pwd.getpwall():
+                if MIN_USER_UID <= user.pw_uid < MAX_USER_UID:
+                    print(f"  - {user.pw_name}", file=sys.stderr)
         print("\nTo fix this issue:", file=sys.stderr)
         print(f"  1. Set QUBINODE_ADMIN_USER in .env to an existing user", file=sys.stderr)
         print(f"  2. Or create the user: sudo useradd -m {username}", file=sys.stderr)

@@ -44,6 +44,10 @@ PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+# Constants
+readonly MIN_USER_UID=1000  # Minimum UID for regular users
+readonly MAX_USER_UID=65534  # Maximum UID for regular users (excludes nobody/nogroup)
+
 # Logging functions
 log_info() {
     echo -e "${BLUE}[INFO]${NC} $1"
@@ -359,7 +363,8 @@ validate_configuration() {
     if ! id "$QUBINODE_ADMIN_USER" &>/dev/null; then
         log_error "User '$QUBINODE_ADMIN_USER' does not exist on this system"
         log_error "Available non-root users:"
-        getent passwd | awk -F: '$3 >= 1000 && $3 < 65534 {print "  - " $1}' || true
+        getent passwd | awk -F: -v min="$MIN_USER_UID" -v max="$MAX_USER_UID" \
+            '$3 >= min && $3 < max {print "  - " $1}' || true
         log_error ""
         log_error "To fix this issue:"
         log_error "  1. Set QUBINODE_ADMIN_USER in .env to an existing user"
