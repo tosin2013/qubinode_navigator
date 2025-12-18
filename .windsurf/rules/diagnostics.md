@@ -1,6 +1,29 @@
-# Diagnostics and Troubleshooting
+# Diagnostics and Troubleshooting (SRE Mode)
 
 Use this rule when debugging issues with Qubinode Navigator.
+
+## CRITICAL SRE RULES
+
+**When troubleshooting deployment or runtime issues:**
+
+1. **PRIORITIZE environmental diagnostics over source code inspection**
+1. **DO NOT refactor or rewrite deployment scripts during troubleshooting**
+1. **FIX the environment** (DNS, disk, permissions, packages), not the code
+1. **If you find a code bug, PROPOSE A GITHUB ISSUE** instead of fixing it
+
+## Step 1: Environmental Diagnosis First
+
+Before looking at ANY code, run these diagnostic commands:
+
+| Check       | Command                            | Common Fix                    |
+| ----------- | ---------------------------------- | ----------------------------- |
+| Services    | `systemctl status libvirtd podman` | `systemctl restart <service>` |
+| Disk Space  | `df -h / /var/lib/libvirt`         | Clean up old images/VMs       |
+| Memory      | `free -h`                          | Stop unused containers        |
+| DNS         | `nslookup $(hostname)`             | Check /etc/resolv.conf        |
+| Firewall    | `firewall-cmd --list-all`          | Open required ports           |
+| SELinux     | `getenforce; ausearch -m avc`      | Set correct contexts          |
+| Permissions | `ls -la <path>`                    | chown/chmod as needed         |
 
 ## Quick Diagnostic Commands
 
@@ -10,6 +33,22 @@ Use this rule when debugging issues with Qubinode Navigator.
 echo "=== System ===" && uname -a && free -h && df -h /
 echo "=== Containers ===" && cd ${QUBINODE_HOME:-$HOME/qubinode_navigator}/airflow && podman-compose ps
 echo "=== Services ===" && systemctl is-active libvirtd postgresql
+echo "=== Recent Errors ===" && journalctl -p err --since "30 minutes ago" --no-pager | tail -20
+```
+
+### Network/DNS Check
+
+```bash
+ping -c1 8.8.8.8
+nslookup $(hostname)
+firewall-cmd --list-all
+```
+
+### SELinux Check
+
+```bash
+getenforce
+ausearch -m avc -ts recent | tail -10
 ```
 
 ### Service Health
@@ -88,6 +127,19 @@ podman-compose logs airflow-mcp-server
 grep MCP_API_KEY ${QUBINODE_HOME:-$HOME/qubinode_navigator}/airflow/.env
 ```
 
+## SRE Mode Rules
+
+| Action                         | Allowed | Forbidden |
+| ------------------------------ | ------- | --------- |
+| Check journalctl/systemctl     | ✓       |           |
+| Diagnose DNS/firewall/SELinux  | ✓       |           |
+| Suggest dnf/yum install        | ✓       |           |
+| Fix permissions/disk space     | ✓       |           |
+| Propose GitHub Issues for bugs | ✓       |           |
+| Refactor deploy-qubinode.sh    |         | ✗         |
+| Rewrite core Python files      |         | ✗         |
+| Add new features during debug  |         | ✗         |
+
 ## Query Knowledge Base for Help
 
 ```bash
@@ -105,3 +157,5 @@ journalctl -p err --since "1 hour ago" --no-pager | tail -30
 # Airflow scheduler logs
 tail -100 ${QUBINODE_HOME:-$HOME/qubinode_navigator}/airflow/logs/scheduler/latest/*.log | grep -i error
 ```
+
+**REMEMBER:** 90% of deployment issues are environmental. Fix the environment first!
