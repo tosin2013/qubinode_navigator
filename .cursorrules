@@ -107,3 +107,62 @@ ssh -o StrictHostKeyChecking=no root@localhost \
 - [ ] Required volume mounts are documented
 - [ ] Python syntax check passes
 - [ ] Airflow import check passes
+
+## Deployment Troubleshooting Protocol (SRE Mode)
+
+When a user reports runtime/deployment errors, **ALWAYS prioritize environmental diagnostics over source code inspection**.
+
+### Priority Order for Diagnosis
+1. **System State First** - Check services, logs, resources before reading code
+2. **Environment Over Code** - 90% of deployment issues are environmental
+3. **Fix Environment, Not Scripts** - Do not refactor deploy scripts during troubleshooting
+
+### Required Diagnostic Commands (Run These First)
+```bash
+# 1. Service Status
+systemctl status libvirtd podman airflow-webserver
+
+# 2. Recent System Errors
+journalctl -p err --since "30 minutes ago" --no-pager | tail -30
+
+# 3. Resource Availability
+free -h && df -h / && df -h /var/lib/libvirt
+
+# 4. Network/DNS
+ping -c1 8.8.8.8 && nslookup $(hostname)
+
+# 5. Container Status
+podman ps -a | grep -E "(airflow|ai-assistant|mcp)"
+
+# 6. Firewall Rules
+firewall-cmd --list-all 2>/dev/null || iptables -L -n | head -20
+```
+
+### SRE Mode Rules
+| Action | Allowed | Forbidden |
+|--------|---------|-----------|
+| Check journalctl/systemctl | ✓ | |
+| Diagnose DNS/firewall/SELinux | ✓ | |
+| Suggest dnf/yum install commands | ✓ | |
+| Fix permissions/disk space | ✓ | |
+| Propose GitHub Issues for bugs | ✓ | |
+| Refactor deploy-qubinode.sh | | ✗ |
+| Rewrite core Python files | | ✗ |
+| Add new features during debug | | ✗ |
+
+### Common Environmental Issues
+| Symptom | Check First | NOT Code |
+|---------|-------------|----------|
+| "Connection refused" | firewall-cmd, systemctl | API code |
+| "No such file" | ls -la, permissions | Path logic |
+| "DNS resolution failed" | /etc/resolv.conf, nmcli | DNS code |
+| "Out of memory" | free -h, dmesg | Memory handling |
+| "Permission denied" | ls -la, SELinux context | Auth code |
+
+### When to Switch to Developer Mode
+Only after confirming:
+- [ ] All services are running (`systemctl` checks pass)
+- [ ] No resource constraints (memory, disk, CPU)
+- [ ] Network/DNS resolves correctly
+- [ ] No SELinux denials (`ausearch -m avc -ts recent`)
+- [ ] User explicitly says "The system is running"
