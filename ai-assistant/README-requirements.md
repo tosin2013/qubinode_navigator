@@ -28,12 +28,13 @@ pip check
 ### Add New Dependency
 
 1. Edit `requirements.in` to add the new package
-2. Run `pip-compile requirements.in` to regenerate requirements.txt
-3. Run `pip install -r requirements.txt` to install
-4. Run `pip check` to validate no conflicts
-5. Commit both `requirements.in` and `requirements.txt`
+1. Run `pip-compile requirements.in` to regenerate requirements.txt
+1. Run `pip install -r requirements.txt` to install
+1. Run `pip check` to validate no conflicts
+1. Commit both `requirements.in` and `requirements.txt`
 
 **Example:**
+
 ```bash
 # Add pydantic-ai to requirements.in
 echo "pydantic-ai>=0.2.0" >> requirements.in
@@ -75,11 +76,11 @@ pip check
 ## Why This Approach?
 
 1. **Automatic conflict resolution** - `pip-compile` solves dependency conflicts during compilation
-2. **Reproducible builds** - `requirements.txt` locks exact versions for consistent deployments
-3. **Easy updates** - One command to upgrade all dependencies safely
-4. **Dependabot compatible** - Dependabot can still create PRs for individual package updates
-5. **Clear intent** - `requirements.in` shows direct dependencies, not transitive ones
-6. **Early conflict detection** - Issues found during development, not in CI
+1. **Reproducible builds** - `requirements.txt` locks exact versions for consistent deployments
+1. **Easy updates** - One command to upgrade all dependencies safely
+1. **Dependabot compatible** - Dependabot can still create PRs for individual package updates
+1. **Clear intent** - `requirements.in` shows direct dependencies, not transitive ones
+1. **Early conflict detection** - Issues found during development, not in CI
 
 ## CI/CD Integration
 
@@ -88,11 +89,13 @@ pip check
 The CI pipeline automatically validates dependencies in two ways:
 
 1. **On every PR** (`.github/workflows/ai-assistant-ci.yml`):
+
    - Installs dependencies from `requirements.txt`
    - Runs `pip check` to validate no conflicts exist
    - Fails the build if conflicts are detected
 
-2. **Weekly health check** (`.github/workflows/dependency-health-check.yml`):
+1. **Weekly health check** (`.github/workflows/dependency-health-check.yml`):
+
    - Runs every Monday at 8am UTC
    - Validates all Python dependency sets across the project
    - Creates GitHub issues if conflicts are found
@@ -125,17 +128,19 @@ Or in CI:
 If `pip check` reports conflicts:
 
 1. **Identify the conflict**: Look for packages with incompatible version requirements
-2. **Check requirements.in**: Ensure version constraints aren't too strict
-3. **Regenerate**: Run `pip-compile requirements.in` to resolve conflicts
-4. **Test**: Run `pip install -r requirements.txt && pip check`
+1. **Check requirements.in**: Ensure version constraints aren't too strict
+1. **Regenerate**: Run `pip-compile requirements.in` to resolve conflicts
+1. **Test**: Run `pip install -r requirements.txt && pip check`
 
 **Example conflict:**
+
 ```
 grpcio 1.76.0 has requirement protobuf<6.0.0,>=5.0.0, but you have protobuf 6.33.2.
 litellm 1.80.10 requires grpcio<1.68.0, but you have grpcio 1.76.0.
 ```
 
 **Resolution:**
+
 ```bash
 # Check requirements.in for overly strict constraints
 # Remove or relax version pins if appropriate
@@ -152,12 +157,13 @@ pip check
 When Dependabot creates a PR to update a package:
 
 1. **Review the PR**: Check what changed and why
-2. **Regenerate requirements.txt**: Run `pip-compile requirements.in`
-3. **Validate**: Run `pip check` to ensure no conflicts
-4. **Test**: Run the test suite to ensure functionality
-5. **Merge**: If all checks pass, merge the PR
+1. **Regenerate requirements.txt**: Run `pip-compile requirements.in`
+1. **Validate**: Run `pip check` to ensure no conflicts
+1. **Test**: Run the test suite to ensure functionality
+1. **Merge**: If all checks pass, merge the PR
 
 **Note**: Dependabot updates `requirements.txt` directly. After merging a Dependabot PR, you may need to:
+
 - Update `requirements.in` if version constraints need adjusting
 - Run `pip-compile requirements.in` to ensure consistency
 
@@ -166,27 +172,27 @@ When Dependabot creates a PR to update a package:
 If CI fails with "No module named 'X'":
 
 1. **Add to requirements.in**: The package is missing from requirements.in
-2. **Regenerate**: Run `pip-compile requirements.in`
-3. **Commit**: Commit both requirements.in and requirements.txt
+1. **Regenerate**: Run `pip-compile requirements.in`
+1. **Commit**: Commit both requirements.in and requirements.txt
 
 ### Version Conflicts in CI
 
 If CI fails during `pip install`:
 
 1. **Check the error**: Identify which packages conflict
-2. **Test locally**: Reproduce the issue locally
-3. **Update requirements.in**: Adjust version constraints
-4. **Regenerate**: Run `pip-compile requirements.in`
-5. **Validate**: Run `pip check` before committing
+1. **Test locally**: Reproduce the issue locally
+1. **Update requirements.in**: Adjust version constraints
+1. **Regenerate**: Run `pip-compile requirements.in`
+1. **Validate**: Run `pip check` before committing
 
 ## Best Practices
 
 1. **Always use pip-compile**: Never manually edit requirements.txt
-2. **Validate before committing**: Always run `pip check` after changes
-3. **Be specific in requirements.in**: Pin major versions for stability
-4. **Test after updates**: Run the full test suite after dependency updates
-5. **Review Dependabot PRs**: Don't blindly merge, validate with pip-compile
-6. **Keep in sync**: Ensure requirements.txt matches requirements.in
+1. **Validate before committing**: Always run `pip check` after changes
+1. **Be specific in requirements.in**: Pin major versions for stability
+1. **Test after updates**: Run the full test suite after dependency updates
+1. **Review Dependabot PRs**: Don't blindly merge, validate with pip-compile
+1. **Keep in sync**: Ensure requirements.txt matches requirements.in
 
 ## Related Links
 

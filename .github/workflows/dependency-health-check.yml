@@ -39,7 +39,7 @@ jobs:
           cd ai-assistant
           echo "📦 Installing AI Assistant dependencies..."
           pip install -r requirements.txt
-          
+
           echo ""
           echo "🔍 Validating dependency compatibility..."
           if pip check; then
@@ -58,10 +58,10 @@ jobs:
           cd ai-assistant
           echo "🔍 Checking if requirements.txt is in sync with requirements.in..."
           pip install pip-tools
-          
+
           # Generate a test requirements.txt and compare
           pip-compile requirements.in --output-file=requirements.test.txt --quiet
-          
+
           if diff -q requirements.txt requirements.test.txt > /dev/null 2>&1; then
             echo "✅ requirements.txt is in sync with requirements.in"
             echo "status=success" >> $GITHUB_OUTPUT
@@ -73,7 +73,7 @@ jobs:
             diff requirements.txt requirements.test.txt || true
             echo "status=warning" >> $GITHUB_OUTPUT
           fi
-          
+
           rm -f requirements.test.txt
 
   check-root-deps:
@@ -96,7 +96,7 @@ jobs:
           if [ -f requirements.txt ]; then
             echo "📦 Installing root dependencies..."
             pip install -r requirements.txt
-            
+
             echo ""
             echo "🔍 Validating dependency compatibility..."
             if pip check; then
@@ -132,7 +132,7 @@ jobs:
           if [ -f ansible-builder/requirements.txt ]; then
             echo "📦 Installing ansible-builder dependencies..."
             pip install -r ansible-builder/requirements.txt
-            
+
             echo ""
             echo "🔍 Validating dependency compatibility..."
             if pip check; then
@@ -168,7 +168,7 @@ jobs:
           if [ -f bash-aliases/requirements.txt ]; then
             echo "📦 Installing bash-aliases dependencies..."
             pip install -r bash-aliases/requirements.txt
-            
+
             echo ""
             echo "🔍 Validating dependency compatibility..."
             if pip check; then
@@ -198,7 +198,7 @@ jobs:
           echo "Root: ${{ needs.check-root-deps.result }}"
           echo "Ansible Builder: ${{ needs.check-ansible-builder-deps.result }}"
           echo "Bash Aliases: ${{ needs.check-bash-aliases-deps.result }}"
-          
+
           # Count failures
           failures=0
           if [ "${{ needs.check-ai-assistant-deps.result }}" == "failure" ]; then
@@ -213,9 +213,9 @@ jobs:
           if [ "${{ needs.check-bash-aliases-deps.result }}" == "failure" ]; then
             failures=$((failures + 1))
           fi
-          
+
           echo "failures=$failures" >> $GITHUB_OUTPUT
-          
+
           if [ $failures -gt 0 ]; then
             echo "has_failures=true" >> $GITHUB_OUTPUT
           else
@@ -229,35 +229,35 @@ jobs:
           script: |
             const title = '🚨 Weekly Dependency Health Check Failed';
             const body = `## Dependency Health Check Results
-            
+
             The weekly dependency health check has detected issues with one or more dependency sets.
-            
+
             ### Results Summary
-            
+
             - **AI Assistant**: ${{ needs.check-ai-assistant-deps.result }}
             - **Root**: ${{ needs.check-root-deps.result }}
             - **Ansible Builder**: ${{ needs.check-ansible-builder-deps.result }}
             - **Bash Aliases**: ${{ needs.check-bash-aliases-deps.result }}
-            
+
             ### Action Required
-            
+
             1. Review the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details
             2. Check for dependency conflicts using \`pip check\`
             3. Update conflicting dependencies in the respective requirements.txt files
             4. For AI Assistant, run \`pip-compile requirements.in\` to regenerate requirements.txt
             5. Test the changes locally before committing
-            
+
             ### Related Documentation
-            
+
             - [AI Assistant Dependency Management](./ai-assistant/README-requirements.md)
             - [Dependabot Configuration](./.github/dependabot.yml)
-            
+
             ---
-            
+
             **Run ID**: ${{ github.run_id }}
             **Triggered**: ${{ github.event_name }}
             **Branch**: ${{ github.ref }}`;
-            
+
             // Check if an issue already exists
             const issues = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
@@ -265,11 +265,11 @@ jobs:
               state: 'open',
               labels: ['dependencies', 'automated-issue']
             });
-            
-            const existingIssue = issues.data.find(issue => 
+
+            const existingIssue = issues.data.find(issue =>
               issue.title.includes('Weekly Dependency Health Check Failed')
             );
-            
+
             if (existingIssue) {
               // Update existing issue
               await github.rest.issues.createComment({
@@ -298,7 +298,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## Status" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           # Function to get status icon
           get_icon() {
             case "$1" in
@@ -308,13 +308,13 @@ jobs:
               *) echo "❓" ;;
             esac
           }
-          
+
           echo "- $(get_icon '${{ needs.check-ai-assistant-deps.result }}') **AI Assistant**: ${{ needs.check-ai-assistant-deps.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- $(get_icon '${{ needs.check-root-deps.result }}') **Root**: ${{ needs.check-root-deps.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- $(get_icon '${{ needs.check-ansible-builder-deps.result }}') **Ansible Builder**: ${{ needs.check-ansible-builder-deps.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- $(get_icon '${{ needs.check-bash-aliases-deps.result }}') **Bash Aliases**: ${{ needs.check-bash-aliases-deps.result }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ "${{ steps.check-results.outputs.has_failures }}" == "true" ]; then
             echo "## ⚠️ Action Required" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
