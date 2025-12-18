@@ -49,11 +49,17 @@
 import argparse
 import getpass
 import os
+import pwd
+import re
+import subprocess
+import sys
 import yaml
 import netifaces
 import psutil
-import re
-import sys
+
+# Constants for user validation
+MIN_USER_UID = 1000  # Minimum UID for regular users
+MAX_USER_UID = 65534  # Maximum UID for regular users (excludes nobody/nogroup)
 
 # 📊 GLOBAL VARIABLES (shared with other scripts):
 inventory_env = os.environ.get("INVENTORY")  # Environment inventory name
@@ -86,8 +92,14 @@ def update_inventory(username=None, domain_name=None, dnf_forwarder=None):
     # Priority 3: Interactive prompts
 
     if username is None:
-        # Check environment variables first
-        username = os.environ.get("QUBINODE_ADMIN_USER") or os.environ.get("ENV_USERNAME")
+        # Check environment variables first (priority order)
+        username = (
+            os.environ.get("QUBINODE_ADMIN_USER")
+            or os.environ.get("ENV_USERNAME")
+            or (os.environ.get("SUDO_USER") if os.environ.get("SUDO_USER") != "root" else None)
+            or (os.environ.get("SSH_USER") if os.environ.get("SSH_USER") != "root" else None)
+            or (os.environ.get("USER") if os.environ.get("USER") != "root" else None)
+        )
 
         if username is None:
             # Fall back to interactive prompt
@@ -95,6 +107,35 @@ def update_inventory(username=None, domain_name=None, dnf_forwarder=None):
                 username = input("Enter username: ")
             else:
                 username = getpass.getuser()
+
+    # Validate that the user exists on the system
+    try:
+        pwd.getpwnam(username)
+    except KeyError:
+        print(f"ERROR: User '{username}' does not exist on this system", file=sys.stderr)
+        print("Available non-root users:", file=sys.stderr)
+        # Use getent passwd for consistency with bash script and better performance
+        try:
+            result = subprocess.run(["getent", "passwd"], capture_output=True, text=True, check=False)
+            for line in result.stdout.splitlines():
+                parts = line.split(":")
+                if len(parts) >= 3:
+                    try:
+                        uid = int(parts[2])
+                        if MIN_USER_UID <= uid < MAX_USER_UID:
+                            print(f"  - {parts[0]}", file=sys.stderr)
+                    except ValueError:
+                        continue
+        except Exception:
+            # Fallback to pwd module if getent fails
+            for user in pwd.getpwall():
+                if MIN_USER_UID <= user.pw_uid < MAX_USER_UID:
+                    print(f"  - {user.pw_name}", file=sys.stderr)
+        print("\nTo fix this issue:", file=sys.stderr)
+        print("  1. Set QUBINODE_ADMIN_USER in .env to an existing user", file=sys.stderr)
+        print(f"  2. Or create the user: sudo useradd -m {username}", file=sys.stderr)
+        print("  3. Or run the script as the target user (it will be auto-detected)", file=sys.stderr)
+        sys.exit(1)
 
     if domain_name is None:
         # Check environment variables first
