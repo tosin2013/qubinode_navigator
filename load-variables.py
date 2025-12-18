@@ -116,12 +116,7 @@ def update_inventory(username=None, domain_name=None, dnf_forwarder=None):
         print("Available non-root users:", file=sys.stderr)
         # Use getent passwd for consistency with bash script and better performance
         try:
-            result = subprocess.run(
-                ["getent", "passwd"],
-                capture_output=True,
-                text=True,
-                check=False
-            )
+            result = subprocess.run(["getent", "passwd"], capture_output=True, text=True, check=False)
             for line in result.stdout.splitlines():
                 parts = line.split(":")
                 if len(parts) >= 3:
@@ -137,9 +132,9 @@ def update_inventory(username=None, domain_name=None, dnf_forwarder=None):
                 if MIN_USER_UID <= user.pw_uid < MAX_USER_UID:
                     print(f"  - {user.pw_name}", file=sys.stderr)
         print("\nTo fix this issue:", file=sys.stderr)
-        print(f"  1. Set QUBINODE_ADMIN_USER in .env to an existing user", file=sys.stderr)
+        print("  1. Set QUBINODE_ADMIN_USER in .env to an existing user", file=sys.stderr)
         print(f"  2. Or create the user: sudo useradd -m {username}", file=sys.stderr)
-        print(f"  3. Or run the script as the target user (it will be auto-detected)", file=sys.stderr)
+        print("  3. Or run the script as the target user (it will be auto-detected)", file=sys.stderr)
         sys.exit(1)
 
     if domain_name is None:

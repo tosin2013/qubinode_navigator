@@ -27,13 +27,13 @@ run_test() {
     local test_name="$1"
     local test_cmd="$2"
     local expected_user="$3"
-    
+
     echo -e "${BLUE}Test: $test_name${NC}"
-    
+
     # Extract just the user detection logic from the script
     local detected_user
     detected_user=$(eval "$test_cmd")
-    
+
     if [[ "$detected_user" == "$expected_user" ]]; then
         echo -e "${GREEN}✓ PASS${NC} - Detected user: $detected_user"
         ((TESTS_PASSED++))

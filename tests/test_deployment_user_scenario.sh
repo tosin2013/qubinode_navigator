@@ -30,22 +30,22 @@ test_scenario() {
     local scenario_name="$1"
     local env_setup="$2"
     local expected_user="$3"
-    
+
     echo -e "${BLUE}Scenario: $scenario_name${NC}"
-    
+
     # Create temp .env file
     local temp_env=$(mktemp)
     echo "$env_setup" > "$temp_env"
-    
+
     # Extract and test user detection logic from deploy script
     local detected_user
     detected_user=$(bash -c "
         # Clear all user-related environment variables first
         unset QUBINODE_ADMIN_USER SUDO_USER SSH_USER USER
-        
+
         # Then source the test environment
         source '$temp_env'
-        
+
         # Extract user detection logic from deploy-qubinode.sh
         if [[ -z \"\${QUBINODE_ADMIN_USER:-}\" ]]; then
             if [[ -n \"\${SUDO_USER:-}\" && \"\${SUDO_USER}\" != \"root\" ]]; then
@@ -59,12 +59,12 @@ test_scenario() {
             fi
             export QUBINODE_ADMIN_USER=\"\$DEFAULT_USER\"
         fi
-        
+
         echo \"\$QUBINODE_ADMIN_USER\"
     ")
-    
+
     rm -f "$temp_env"
-    
+
     if [[ "$detected_user" == "$expected_user" ]]; then
         echo -e "${GREEN}✓ PASS${NC} - Detected: $detected_user"
         TESTS_PASSED=$((TESTS_PASSED + 1))
