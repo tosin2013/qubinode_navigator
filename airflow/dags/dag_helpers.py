@@ -1407,3 +1407,129 @@ def get_ansible_playbook_command(
     if via_ssh:
         return ssh_to_host_script(full_cmd, user=ssh_user)
     return full_cmd
+
+
+# =============================================================================
+# SSHOperator Helpers (Replaces manual SSH in BashOperator)
+# =============================================================================
+# These helpers use Airflow's built-in SSHOperator for cleaner, more reliable
+# SSH execution with connection pooling and proper error handling.
+
+
+def get_ssh_conn_id() -> str:
+    """
+    Get the Airflow SSH connection ID to use for host connections.
+    
+    Environment variable: QUBINODE_SSH_CONN_ID
+    Default: localhost_ssh
+    
+    Returns:
+        SSH connection ID for Airflow Connections
+    
+    Example:
+        >>> conn_id = get_ssh_conn_id()
+        >>> operator = SSHOperator(ssh_conn_id=conn_id, ...)
+    """
+    return os.environ.get("QUBINODE_SSH_CONN_ID", "localhost_ssh")
+
+
+def create_ssh_operator(
+    task_id: str,
+    command: str,
+    dag,
+    ssh_conn_id: Optional[str] = None,
+    **kwargs
+):
+    """
+    Create an SSHOperator for executing commands on the host.
+    
+    This replaces the BashOperator + manual SSH pattern with a cleaner
+    SSHOperator that uses Airflow's connection management.
+    
+    Args:
+        task_id: Task ID for the operator
+        command: Command to execute on remote host (no SSH wrapper needed)
+        dag: DAG object
+        ssh_conn_id: SSH connection ID (default: uses get_ssh_conn_id())
+        **kwargs: Additional SSHOperator arguments (timeout, retries, etc.)
+    
+    Returns:
+        SSHOperator instance
+    
+    Example:
+        >>> from dag_helpers import create_ssh_operator
+        >>> 
+        >>> list_vms = create_ssh_operator(
+        ...     task_id='list_vms',
+        ...     command='kcli list vm',
+        ...     dag=dag,
+        ... )
+        >>> 
+        >>> # With custom timeout
+        >>> validate = create_ssh_operator(
+        ...     task_id='validate',
+        ...     command='virsh list --all',
+        ...     dag=dag,
+        ...     timeout=30,
+        ... )
+    """
+    from airflow.providers.ssh.operators.ssh import SSHOperator
+    
+    if ssh_conn_id is None:
+        ssh_conn_id = get_ssh_conn_id()
+    
+    return SSHOperator(
+        task_id=task_id,
+        ssh_conn_id=ssh_conn_id,
+        command=command,
+        dag=dag,
+        **kwargs
+    )
+
+
+def create_kcli_ssh_operator(
+    task_id: str,
+    kcli_command: str,
+    dag,
+    ssh_conn_id: Optional[str] = None,
+    **kwargs
+):
+    """
+    Create an SSHOperator for executing kcli commands on the host.
+    
+    Convenience wrapper around create_ssh_operator for kcli commands.
+    
+    Args:
+        task_id: Task ID for the operator
+        kcli_command: kcli command without 'kcli' prefix (e.g., 'list vm')
+        dag: DAG object
+        ssh_conn_id: SSH connection ID (default: uses get_ssh_conn_id())
+        **kwargs: Additional SSHOperator arguments
+    
+    Returns:
+        SSHOperator instance
+    
+    Example:
+        >>> from dag_helpers import create_kcli_ssh_operator
+        >>> 
+        >>> list_vms = create_kcli_ssh_operator(
+        ...     task_id='list_vms',
+        ...     kcli_command='list vm',
+        ...     dag=dag,
+        ... )
+        >>> 
+        >>> create_vm = create_kcli_ssh_operator(
+        ...     task_id='create_vm',
+        ...     kcli_command='create vm freeipa -i centos9stream',
+        ...     dag=dag,
+        ...     timeout=600,
+        ... )
+    """
+    command = f"kcli {kcli_command}"
+    return create_ssh_operator(
+        task_id=task_id,
+        command=command,
+        dag=dag,
+        ssh_conn_id=ssh_conn_id,
+        **kwargs
+    )

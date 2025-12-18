@@ -16,12 +16,15 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator
+from airflow.providers.ssh.operators.ssh import SSHOperator
 
 # Import user-configurable helpers for portable DAGs
 from dag_helpers import (
     get_ssh_user,
     get_ssh_key_path,
     get_inventory_dir,
+    get_ssh_conn_id,
+    create_ssh_operator,
 )
 
 # Default arguments
@@ -58,8 +61,8 @@ dag = DAG(
 FREEIPA_DEPLOYER = "/opt/freeipa-workshop-deployer"
 QUBINODE_NAV = "/opt/qubinode_navigator"
 
-# User-configurable paths (fix for hardcoded root user issue)
-SSH_USER = get_ssh_user()
+# User-configurable paths (used in commands, not for string concatenation)
+# SSH connection is managed by Airflow SSHOperator via get_ssh_conn_id()
 SSH_KEY_PATH = get_ssh_key_path()
 INVENTORY_BASE_DIR = get_inventory_dir()
 
@@ -84,381 +87,348 @@ decide_action_task = BranchPythonOperator(
 # =============================================================================
 
 # Task: Validate environment
-validate_environment = BashOperator(
+# Using SSHOperator instead of BashOperator + manual SSH
+validate_environment = SSHOperator(
     task_id="validate_environment",
-    bash_command="""
+    ssh_conn_id=get_ssh_conn_id(),
+    command="""
     echo "========================================"
     echo "Validating FreeIPA Deployment Environment"
     echo "========================================"
 
-    # ADR-0046: Run validation on host via SSH
-    ssh -o StrictHostKeyChecking=no \
-        -o UserKnownHostsFile=/dev/null \
-        -o LogLevel=ERROR \
-        " + SSH_USER  + "@localhost \
-        '
-        COMMUNITY_VERSION="{{ params.community_version }}"
-        OS_VERSION="{{ params.os_version }}"
+    COMMUNITY_VERSION="{{ params.community_version }}"
+    OS_VERSION="{{ params.os_version }}"
 
-        echo "Community Version: $COMMUNITY_VERSION"
-        echo "OS Version: $OS_VERSION"
+    echo "Community Version: $COMMUNITY_VERSION"
+    echo "OS Version: $OS_VERSION"
 
-        if [ "$COMMUNITY_VERSION" == "true" ]; then
-            [ "$OS_VERSION" == "9" ] && IMAGE_NAME=centos9stream || IMAGE_NAME=centos8stream
-        else
-            [ "$OS_VERSION" == "9" ] && IMAGE_NAME=rhel9 || IMAGE_NAME=rhel8
-        fi
-        echo "Image: $IMAGE_NAME"
+    if [ "$COMMUNITY_VERSION" == "true" ]; then
+        [ "$OS_VERSION" == "9" ] && IMAGE_NAME=centos9stream || IMAGE_NAME=centos8stream
+    else
+        [ "$OS_VERSION" == "9" ] && IMAGE_NAME=rhel9 || IMAGE_NAME=rhel8
+    fi
+    echo "Image: $IMAGE_NAME"
 
-        if ! command -v kcli &> /dev/null; then
-            echo "[ERROR] kcli not installed"
-            exit 1
-        fi
-        echo "[OK] kcli installed: $(kcli --version 2>&1 | head -1)"
+    if ! command -v kcli &> /dev/null; then
+        echo "[ERROR] kcli not installed"
+        exit 1
+    fi
+    echo "[OK] kcli installed: $(kcli --version 2>&1 | head -1)"
 
-        if kcli list images | grep -q "$IMAGE_NAME"; then
-            echo "[OK] Image $IMAGE_NAME available"
-        else
-            echo "[WARN] Image $IMAGE_NAME not found, will download during VM creation"
-        fi
+    if kcli list images | grep -q "$IMAGE_NAME"; then
+        echo "[OK] Image $IMAGE_NAME available"
+    else
+        echo "[WARN] Image $IMAGE_NAME not found, will download during VM creation"
+    fi
 
-        VAULT_FILE=/opt/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml
-        if [ -f "$VAULT_FILE" ]; then
-            echo "[OK] vault.yml found"
-        else
-            echo "[ERROR] vault.yml not found at $VAULT_FILE"
-            exit 1
-        fi
+    VAULT_FILE=/opt/qubinode_navigator/inventories/localhost/group_vars/control/vault.yml
+    if [ -f "$VAULT_FILE" ]; then
+        echo "[OK] vault.yml found"
+    else
+        echo "[ERROR] vault.yml not found at $VAULT_FILE"
+        exit 1
+    fi
 
-        if [ -d /opt/freeipa-workshop-deployer ]; then
-            echo "[OK] freeipa-workshop-deployer found"
-        else
-            echo "[WARN] Cloning freeipa-workshop-deployer..."
-            git clone https://github.com/tosin2013/freeipa-workshop-deployer.git /opt/freeipa-workshop-deployer
-        fi
+    if [ -d /opt/freeipa-workshop-deployer ]; then
+        echo "[OK] freeipa-workshop-deployer found"
+    else
+        echo "[WARN] Cloning freeipa-workshop-deployer..."
+        git clone https://github.com/tosin2013/freeipa-workshop-deployer.git /opt/freeipa-workshop-deployer
+    fi
 
-        echo ""
-        echo "[OK] Environment validation complete"
-        '
+    echo ""
+    echo "[OK] Environment validation complete"
     """,
     dag=dag,
 )
 
 # Task: Create FreeIPA VM
-create_freeipa_vm = BashOperator(
+# Using SSHOperator instead of BashOperator + manual SSH
+create_freeipa_vm = SSHOperator(
     task_id="create_freeipa_vm",
-    bash_command="""
+    ssh_conn_id=get_ssh_conn_id(),
+    command="""
     echo "========================================"
     echo "Creating FreeIPA VM"
     echo "========================================"
 
-    # ADR-0046: Run kcli on host via SSH
-    ssh -o StrictHostKeyChecking=no \
-        -o UserKnownHostsFile=/dev/null \
-        -o LogLevel=ERROR \
-        " + SSH_USER  + "@localhost \
-        '
-        COMMUNITY_VERSION="{{ params.community_version }}"
-        OS_VERSION="{{ params.os_version }}"
+    COMMUNITY_VERSION="{{ params.community_version }}"
+    OS_VERSION="{{ params.os_version }}"
 
-        if [ "$COMMUNITY_VERSION" == "true" ]; then
-            [ "$OS_VERSION" == "9" ] && IMAGE_NAME=centos9stream || IMAGE_NAME=centos8stream
-        else
-            [ "$OS_VERSION" == "9" ] && IMAGE_NAME=rhel9 || IMAGE_NAME=rhel8
-        fi
+    if [ "$COMMUNITY_VERSION" == "true" ]; then
+        [ "$OS_VERSION" == "9" ] && IMAGE_NAME=centos9stream || IMAGE_NAME=centos8stream
+    else
+        [ "$OS_VERSION" == "9" ] && IMAGE_NAME=rhel9 || IMAGE_NAME=rhel8
+    fi
 
-        VM_NAME=freeipa
+    VM_NAME=freeipa
 
-        if kcli info vm $VM_NAME &>/dev/null; then
-            echo "[WARN] VM $VM_NAME already exists"
-            kcli info vm $VM_NAME
-            exit 0
-        fi
-
-        echo "Creating VM: $VM_NAME"
-        echo "  Image: $IMAGE_NAME"
-        echo "  Memory: 4096 MB"
-        echo "  CPUs: 2"
-        echo "  Disk: 50 GB"
-
-        kcli create vm $VM_NAME \
-            -i $IMAGE_NAME \
-            -P memory=4096 \
-            -P numcpus=2 \
-            -P disks=[50] \
-            -P nets=[default] \
-            --wait || {
-            echo "[ERROR] Failed to create VM"
-            exit 1
-        }
-
-        echo ""
-        echo "[OK] VM created successfully"
+    if kcli info vm $VM_NAME &>/dev/null; then
+        echo "[WARN] VM $VM_NAME already exists"
         kcli info vm $VM_NAME
-        '
+        exit 0
+    fi
+
+    echo "Creating VM: $VM_NAME"
+    echo "  Image: $IMAGE_NAME"
+    echo "  Memory: 4096 MB"
+    echo "  CPUs: 2"
+    echo "  Disk: 50 GB"
+
+    kcli create vm $VM_NAME \
+        -i $IMAGE_NAME \
+        -P memory=4096 \
+        -P numcpus=2 \
+        -P disks=[50] \
+        -P nets=[default] \
+        --wait || {
+        echo "[ERROR] Failed to create VM"
+        exit 1
+    }
+
+    echo ""
+    echo "[OK] VM created successfully"
+    kcli info vm $VM_NAME
     """,
-    execution_timeout=timedelta(minutes=10),
+    cmd_timeout=600,
     dag=dag,
 )
 
 # Task: Wait for VM and get IP
-wait_for_vm = BashOperator(
+# Using SSHOperator instead of BashOperator + manual SSH
+wait_for_vm = SSHOperator(
     task_id="wait_for_vm",
-    bash_command="""
+    ssh_conn_id=get_ssh_conn_id(),
+    command="""
     echo "========================================"
     echo "Waiting for FreeIPA VM to be Ready"
     echo "========================================"
 
-    # ADR-0046: Run kcli on host via SSH
-    ssh -o StrictHostKeyChecking=no \
-        -o UserKnownHostsFile=/dev/null \
-        -o LogLevel=ERROR \
-        " + SSH_USER  + "@localhost \
-        '
-        VM_NAME=freeipa
-        MAX_ATTEMPTS=60
+    VM_NAME=freeipa
+    MAX_ATTEMPTS=60
 
-        echo "Waiting for VM to get IP address..."
+    echo "Waiting for VM to get IP address..."
 
-        for i in $(seq 1 $MAX_ATTEMPTS); do
-            VM_INFO=$(kcli info vm $VM_NAME 2>/dev/null)
-            IP=$(echo "$VM_INFO" | grep "^ip:" | awk "{print \\$2}")
+    for i in $(seq 1 $MAX_ATTEMPTS); do
+        VM_INFO=$(kcli info vm $VM_NAME 2>/dev/null)
+        IP=$(echo "$VM_INFO" | grep "^ip:" | awk "{print \\$2}")
 
-            if [ -n "$IP" ] && [ "$IP" != "None" ] && [ "$IP" != "" ]; then
-                echo "[OK] VM IP: $IP"
+        if [ -n "$IP" ] && [ "$IP" != "None" ] && [ "$IP" != "" ]; then
+            echo "[OK] VM IP: $IP"
 
-                echo "Waiting for SSH..."
-                for j in $(seq 1 30); do
-                    if nc -z -w5 $IP 22 2>/dev/null; then
-                        echo "[OK] SSH is available"
+            echo "Waiting for SSH..."
+            for j in $(seq 1 30); do
+                if nc -z -w5 $IP 22 2>/dev/null; then
+                    echo "[OK] SSH is available"
 
-                        echo ""
-                        echo "========================================"
-                        echo "FreeIPA VM Ready"
-                        echo "========================================"
-                        echo "VM Name: $VM_NAME"
-                        echo "IP Address: $IP"
-                        echo "SSH: ssh cloud-user@$IP"
-                        exit 0
-                    fi
-                    echo "  Attempt $j/30: SSH not ready..."
-                    sleep 5
-                done
+                    echo ""
+                    echo "========================================"
+                    echo "FreeIPA VM Ready"
+                    echo "========================================"
+                    echo "VM Name: $VM_NAME"
+                    echo "IP Address: $IP"
+                    echo "SSH: ssh cloud-user@$IP"
+                    exit 0
+                fi
+                echo "  Attempt $j/30: SSH not ready..."
+                sleep 5
+            done
 
-                echo "[WARN] SSH not available after 30 attempts"
-                exit 0
-            fi
+            echo "[WARN] SSH not available after 30 attempts"
+            exit 0
+        fi
 
-            echo "  Attempt $i/$MAX_ATTEMPTS: Waiting for IP..."
-            sleep 5
-        done
+        echo "  Attempt $i/$MAX_ATTEMPTS: Waiting for IP..."
+        sleep 5
+    done
 
-        echo "[ERROR] Failed to get VM IP after $MAX_ATTEMPTS attempts"
-        exit 1
-        '
+    echo "[ERROR] Failed to get VM IP after $MAX_ATTEMPTS attempts"
+    exit 1
     """,
-    execution_timeout=timedelta(minutes=10),
+    cmd_timeout=600,
     dag=dag,
 )
 
 # Task: Prepare Ansible Inventory
-# ADR-0046: Run all host-dependent commands via SSH
-prepare_ansible = BashOperator(
+# Using SSHOperator instead of BashOperator + manual SSH
+prepare_ansible = SSHOperator(
     task_id="prepare_ansible",
-    bash_command="""
+    ssh_conn_id=get_ssh_conn_id(),
+    command=f"""
     echo "========================================"
     echo "Preparing Ansible for FreeIPA Installation"
     echo "========================================"
 
-    # ADR-0046: Run kcli and ansible-galaxy on host via SSH
-    ssh -o StrictHostKeyChecking=no \
-        -o UserKnownHostsFile=/dev/null \
-        -o LogLevel=ERROR \
-        " + SSH_USER  + "@localhost \
-        '
-        DOMAIN="{{ params.domain }}"
-        IDM_HOSTNAME="{{ params.idm_hostname }}"
-        DNS_FORWARDER="{{ params.dns_forwarder }}"
-        COMMUNITY_VERSION="{{ params.community_version }}"
+    DOMAIN="{{{{ params.domain }}}}"
+    IDM_HOSTNAME="{{{{ params.idm_hostname }}}}"
+    DNS_FORWARDER="{{{{ params.dns_forwarder }}}}"
+    COMMUNITY_VERSION="{{{{ params.community_version }}}}"
 
-        # Get IP via kcli on host
-        VM_NAME="freeipa"
-        IP=$(kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{print \\$2}")
+    # Get IP via kcli on host
+    VM_NAME="freeipa"
+    IP=$(kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{{print \\$2}}")
 
-        if [ -z "$IP" ] || [ "$IP" == "None" ]; then
-            echo "[ERROR] Could not get VM IP"
-            exit 1
-        fi
+    if [ -z "$IP" ] || [ "$IP" == "None" ]; then
+        echo "[ERROR] Could not get VM IP"
+        exit 1
+    fi
 
-        echo "VM IP: $IP"
-        echo "Domain: $DOMAIN"
-        echo "IDM Hostname: $IDM_HOSTNAME"
+    echo "VM IP: $IP"
+    echo "Domain: $DOMAIN"
+    echo "IDM Hostname: $IDM_HOSTNAME"
 
-        # Determine login user
-        [ "$COMMUNITY_VERSION" == "true" ] && LOGIN_USER="cloud-user" || LOGIN_USER="cloud-user"
+    # Determine login user
+    [ "$COMMUNITY_VERSION" == "true" ] && LOGIN_USER="cloud-user" || LOGIN_USER="cloud-user"
 
-        # Create inventory directory
-        INVENTORY_DIR=INVENTORY_BASE_DIR + "/.${IDM_HOSTNAME}.${DOMAIN}"
-        mkdir -p "$INVENTORY_DIR"
+    # Create inventory directory
+    INVENTORY_DIR="{INVENTORY_BASE_DIR}/.${{IDM_HOSTNAME}}.${{DOMAIN}}"
+    mkdir -p "$INVENTORY_DIR"
 
-        # Create Ansible inventory
-        cat > "$INVENTORY_DIR/inventory" << INVENTORY_EOF
+    # Create Ansible inventory
+    cat > "$INVENTORY_DIR/inventory" << 'INVENTORY_EOF'
 [idm]
-${IDM_HOSTNAME}
+${{IDM_HOSTNAME}}
 
 [all:vars]
-ansible_ssh_private_key_file=" + SSH_KEY_PATH + "
-ansible_ssh_user=${LOGIN_USER}
+ansible_ssh_private_key_file={SSH_KEY_PATH}
+ansible_ssh_user=${{LOGIN_USER}}
 ansible_ssh_common_args=-o StrictHostKeyChecking=no
-ansible_host=${IP}
-ansible_internal_private_ip=${IP}
+ansible_host=${{IP}}
+ansible_internal_private_ip=${{IP}}
 INVENTORY_EOF
 
-        echo "[OK] Inventory created at $INVENTORY_DIR/inventory"
-        cat "$INVENTORY_DIR/inventory"
+    echo "[OK] Inventory created at $INVENTORY_DIR/inventory"
+    cat "$INVENTORY_DIR/inventory"
 
-        # Update /etc/hosts
-        grep -v "${IDM_HOSTNAME}" /etc/hosts > /tmp/hosts.tmp || true
-        echo "${IP} ${IDM_HOSTNAME}.${DOMAIN} ${IDM_HOSTNAME}" >> /tmp/hosts.tmp
-        cp /tmp/hosts.tmp /etc/hosts
-        echo "[OK] Updated /etc/hosts"
+    # Update /etc/hosts
+    grep -v "${{IDM_HOSTNAME}}" /etc/hosts > /tmp/hosts.tmp || true
+    echo "${{IP}} ${{IDM_HOSTNAME}}.${{DOMAIN}} ${{IDM_HOSTNAME}}" >> /tmp/hosts.tmp
+    cp /tmp/hosts.tmp /etc/hosts
+    echo "[OK] Updated /etc/hosts"
 
-        # Test SSH connectivity
-        echo ""
-        echo "Testing SSH connectivity..."
-        ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${LOGIN_USER}@${IP} "hostname" || {
-            echo "[WARN] SSH test failed - may need to wait longer"
-        }
+    # Test SSH connectivity
+    echo ""
+    echo "Testing SSH connectivity..."
+    ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${{LOGIN_USER}}@${{IP}} "hostname" || {{
+        echo "[WARN] SSH test failed - may need to wait longer"
+    }}
 
-        # Install Ansible collections
-        echo ""
-        echo "Installing Ansible collections..."
-        cd /opt/freeipa-workshop-deployer
-        if [ -f "2_ansible_config/collections/requirements.yaml" ]; then
-            ansible-galaxy install --force -r /opt/freeipa-workshop-deployer/2_ansible_config/collections/requirements.yaml 2>/dev/null || true
-            ansible-galaxy collection install freeipa.ansible_freeipa 2>/dev/null || true
-        fi
+    # Install Ansible collections
+    echo ""
+    echo "Installing Ansible collections..."
+    cd /opt/freeipa-workshop-deployer
+    if [ -f "2_ansible_config/collections/requirements.yaml" ]; then
+        ansible-galaxy install --force -r /opt/freeipa-workshop-deployer/2_ansible_config/collections/requirements.yaml 2>/dev/null || true
+        ansible-galaxy collection install freeipa.ansible_freeipa 2>/dev/null || true
+    fi
 
-        echo ""
-        echo "[OK] Ansible preparation complete"
-        '
+    echo ""
+    echo "[OK] Ansible preparation complete"
     """,
     dag=dag,
 )
 
 # Task: Install FreeIPA via Ansible
-# ADR-0046: Use SSH to run Ansible on host to avoid version conflicts
-install_freeipa = BashOperator(
+# Using SSHOperator instead of BashOperator + manual SSH
+install_freeipa = SSHOperator(
     task_id="install_freeipa",
-    bash_command="""
+    ssh_conn_id=get_ssh_conn_id(),
+    command=f"""
     echo "========================================"
     echo "Installing FreeIPA via Ansible"
     echo "========================================"
 
-    RUN_ANSIBLE="{{ params.run_ansible_install }}"
+    RUN_ANSIBLE="{{{{ params.run_ansible_install }}}}"
 
     if [ "$RUN_ANSIBLE" != "true" ]; then
         echo "[SKIP] Ansible installation skipped"
         exit 0
     fi
 
-    # ADR-0046: Run kcli and ansible-playbook on host via SSH
-    ssh -o StrictHostKeyChecking=no \
-        -o UserKnownHostsFile=/dev/null \
-        -o LogLevel=ERROR \
-        " + SSH_USER  + "@localhost \
-        '
-        set -e
-        DOMAIN="{{ params.domain }}"
-        IDM_HOSTNAME="{{ params.idm_hostname }}"
-        DNS_FORWARDER="{{ params.dns_forwarder }}"
+    set -e
+    DOMAIN="{{{{ params.domain }}}}"
+    IDM_HOSTNAME="{{{{ params.idm_hostname }}}}"
+    DNS_FORWARDER="{{{{ params.dns_forwarder }}}}"
 
-        VM_NAME="freeipa"
-        IP=$(kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{print \\$2}")
+    VM_NAME="freeipa"
+    IP=$(kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{{print \\$2}}")
 
-        if [ -z "$IP" ]; then
-            echo "[ERROR] Could not get VM IP"
-            exit 1
-        fi
+    if [ -z "$IP" ]; then
+        echo "[ERROR] Could not get VM IP"
+        exit 1
+    fi
 
-        INVENTORY_DIR=INVENTORY_BASE_DIR + "/.${IDM_HOSTNAME}.${DOMAIN}"
-        PLAYBOOK_DIR="/opt/freeipa-workshop-deployer"
+    INVENTORY_DIR="{INVENTORY_BASE_DIR}/.${{IDM_HOSTNAME}}.${{DOMAIN}}"
+    PLAYBOOK_DIR="/opt/freeipa-workshop-deployer"
 
-        echo "Running Ansible playbook..."
-        echo "  Inventory: $INVENTORY_DIR/inventory"
-        echo "  Playbook: $PLAYBOOK_DIR/2_ansible_config/deploy_idm.yaml"
-        echo "  Domain: $DOMAIN"
-        echo "  IDM Hostname: $IDM_HOSTNAME"
-        echo "  DNS Forwarder: $DNS_FORWARDER"
-        echo "  VM IP: $IP"
+    echo "Running Ansible playbook..."
+    echo "  Inventory: $INVENTORY_DIR/inventory"
+    echo "  Playbook: $PLAYBOOK_DIR/2_ansible_config/deploy_idm.yaml"
+    echo "  Domain: $DOMAIN"
+    echo "  IDM Hostname: $IDM_HOSTNAME"
+    echo "  DNS Forwarder: $DNS_FORWARDER"
+    echo "  VM IP: $IP"
 
-        cd $PLAYBOOK_DIR
-        ANSIBLE_HOST_KEY_CHECKING=False \
-        ansible-playbook \
-            -i $INVENTORY_DIR/inventory \
-            --extra-vars "idm_hostname=${IDM_HOSTNAME}" \
-            --extra-vars "private_ip=${IP}" \
-            --extra-vars "domain=${DOMAIN}" \
-            --extra-vars "dns_forwarder=${DNS_FORWARDER}" \
-            2_ansible_config/deploy_idm.yaml \
-            -v
+    cd $PLAYBOOK_DIR
+    ANSIBLE_HOST_KEY_CHECKING=False \
+    ansible-playbook \
+        -i $INVENTORY_DIR/inventory \
+        --extra-vars "idm_hostname=${{IDM_HOSTNAME}}" \
+        --extra-vars "private_ip=${{IP}}" \
+        --extra-vars "domain=${{DOMAIN}}" \
+        --extra-vars "dns_forwarder=${{DNS_FORWARDER}}" \
+        2_ansible_config/deploy_idm.yaml \
+        -v
 
-        echo ""
-        echo "========================================"
-        echo "FreeIPA Installation Complete!"
-        echo "========================================"
-        echo "FreeIPA Web UI: https://${IDM_HOSTNAME}.${DOMAIN}"
-        echo "IP Address: ${IP}"
-        echo "Username: admin"
-        '
+    echo ""
+    echo "========================================"
+    echo "FreeIPA Installation Complete!"
+    echo "========================================"
+    echo "FreeIPA Web UI: https://${{IDM_HOSTNAME}}.${{DOMAIN}}"
+    echo "IP Address: ${{IP}}"
+    echo "Username: admin"
     """,
-    execution_timeout=timedelta(minutes=30),
+    cmd_timeout=1800,
     dag=dag,
 )
 
 # Task: Validate FreeIPA Installation
-# ADR-0046: Run kcli on host via SSH
-validate_freeipa = BashOperator(
+# Using SSHOperator instead of BashOperator + manual SSH
+validate_freeipa = SSHOperator(
     task_id="validate_freeipa",
-    bash_command="""
+    ssh_conn_id=get_ssh_conn_id(),
+    command="""
     echo "========================================"
     echo "Validating FreeIPA Installation"
     echo "========================================"
 
-    # ADR-0046: Run kcli on host via SSH
-    ssh -o StrictHostKeyChecking=no \
-        -o UserKnownHostsFile=/dev/null \
-        -o LogLevel=ERROR \
-        " + SSH_USER  + "@localhost \
-        '
-        DOMAIN="{{ params.domain }}"
-        IDM_HOSTNAME="{{ params.idm_hostname }}"
-        RUN_ANSIBLE="{{ params.run_ansible_install }}"
+    DOMAIN="{{ params.domain }}"
+    IDM_HOSTNAME="{{ params.idm_hostname }}"
+    RUN_ANSIBLE="{{ params.run_ansible_install }}"
 
-        VM_NAME="freeipa"
-        IP=$(kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{print \\$2}")
+    VM_NAME="freeipa"
+    IP=$(kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{print \\$2}")
 
-        echo "Checking FreeIPA services on $IP..."
+    echo "Checking FreeIPA services on $IP..."
 
-        if [ "$RUN_ANSIBLE" == "true" ]; then
-            ssh -o StrictHostKeyChecking=no cloud-user@$IP "sudo ipactl status" 2>/dev/null || echo "[WARN] Could not verify FreeIPA services yet"
-        else
-            echo "[INFO] Ansible installation was skipped"
-        fi
+    if [ "$RUN_ANSIBLE" == "true" ]; then
+        ssh -o StrictHostKeyChecking=no cloud-user@$IP "sudo ipactl status" 2>/dev/null || echo "[WARN] Could not verify FreeIPA services yet"
+    else
+        echo "[INFO] Ansible installation was skipped"
+    fi
 
-        echo ""
-        echo "========================================"
-        echo "FreeIPA Deployment Summary"
-        echo "========================================"
-        echo "VM Name: $VM_NAME"
-        echo "IP Address: $IP"
-        echo "FQDN: ${IDM_HOSTNAME}.${DOMAIN}"
-        echo ""
-        echo "Access:"
-        echo "  SSH: ssh cloud-user@$IP"
-        echo "  Web UI: https://${IDM_HOSTNAME}.${DOMAIN}"
-        echo "  Username: admin"
-        '
+    echo ""
+    echo "========================================"
+    echo "FreeIPA Deployment Summary"
+    echo "========================================"
+    echo "VM Name: $VM_NAME"
+    echo "IP Address: $IP"
+    echo "FQDN: ${IDM_HOSTNAME}.${DOMAIN}"
+    echo ""
+    echo "Access:"
+    echo "  SSH: ssh cloud-user@$IP"
+    echo "  Web UI: https://${IDM_HOSTNAME}.${DOMAIN}"
+    echo "  Username: admin"
     """,
     dag=dag,
 )
@@ -467,39 +437,33 @@ validate_freeipa = BashOperator(
 # DESTROY WORKFLOW
 # =============================================================================
 
-destroy_freeipa = BashOperator(
+destroy_freeipa = SSHOperator(
     task_id="destroy_freeipa",
-    bash_command="""
+    ssh_conn_id=get_ssh_conn_id(),
+    command="""
     echo "========================================"
     echo "Destroying FreeIPA VM"
     echo "========================================"
 
-    # ADR-0046: Run kcli on host via SSH
-    ssh -o StrictHostKeyChecking=no \
-        -o UserKnownHostsFile=/dev/null \
-        -o LogLevel=ERROR \
-        " + SSH_USER  + "@localhost \
-        '
-        VM_NAME=freeipa
+    VM_NAME=freeipa
 
-        if kcli info vm $VM_NAME &>/dev/null; then
-            echo "Deleting VM: $VM_NAME"
-            kcli delete vm $VM_NAME -y
-            echo "[OK] VM deleted"
-        else
-            echo "[WARN] VM $VM_NAME does not exist"
-        fi
+    if kcli info vm $VM_NAME &>/dev/null; then
+        echo "Deleting VM: $VM_NAME"
+        kcli delete vm $VM_NAME -y
+        echo "[OK] VM deleted"
+    else
+        echo "[WARN] VM $VM_NAME does not exist"
+    fi
 
-        DOMAIN="{{ params.domain }}"
-        IDM_HOSTNAME="{{ params.idm_hostname }}"
-        rm -rf $HOME/.generated/.${IDM_HOSTNAME}.${DOMAIN} 2>/dev/null || true
+    DOMAIN="{{ params.domain }}"
+    IDM_HOSTNAME="{{ params.idm_hostname }}"
+    rm -rf $HOME/.generated/.${IDM_HOSTNAME}.${DOMAIN} 2>/dev/null || true
 
-        grep -v "${IDM_HOSTNAME}" /etc/hosts > /tmp/hosts.tmp 2>/dev/null || true
-        cp /tmp/hosts.tmp /etc/hosts 2>/dev/null || true
+    grep -v "${IDM_HOSTNAME}" /etc/hosts > /tmp/hosts.tmp 2>/dev/null || true
+    cp /tmp/hosts.tmp /etc/hosts 2>/dev/null || true
 
-        echo ""
-        echo "[OK] FreeIPA cleanup complete"
-        '
+    echo ""
+    echo "[OK] FreeIPA cleanup complete"
     """,
     dag=dag,
 )
