@@ -83,7 +83,22 @@ fi
 
 # Required Environment Variables (with defaults)
 export QUBINODE_DOMAIN="${QUBINODE_DOMAIN:-example.com}"
-export QUBINODE_ADMIN_USER="${QUBINODE_ADMIN_USER:-admin}"
+
+# Auto-detect admin user with better defaults
+# Priority: 1. QUBINODE_ADMIN_USER env var, 2. SUDO_USER (when using sudo), 3. SSH_USER, 4. Current USER
+if [[ -z "${QUBINODE_ADMIN_USER:-}" ]]; then
+    if [[ -n "${SUDO_USER:-}" && "${SUDO_USER}" != "root" ]]; then
+        DEFAULT_USER="$SUDO_USER"
+    elif [[ -n "${SSH_USER:-}" && "${SSH_USER}" != "root" ]]; then
+        DEFAULT_USER="$SSH_USER"
+    elif [[ -n "${USER:-}" && "${USER}" != "root" ]]; then
+        DEFAULT_USER="$USER"
+    else
+        DEFAULT_USER="lab-user"  # Common default for lab environments
+    fi
+    export QUBINODE_ADMIN_USER="$DEFAULT_USER"
+fi
+
 export QUBINODE_CLUSTER_NAME="${QUBINODE_CLUSTER_NAME:-qubinode}"
 export QUBINODE_DEPLOYMENT_MODE="${QUBINODE_DEPLOYMENT_MODE:-production}"
 
@@ -340,7 +355,21 @@ validate_configuration() {
         return 1
     fi
 
+    # Validate that admin user exists on the system
+    if ! id "$QUBINODE_ADMIN_USER" &>/dev/null; then
+        log_error "User '$QUBINODE_ADMIN_USER' does not exist on this system"
+        log_error "Available non-root users:"
+        getent passwd | awk -F: '$3 >= 1000 && $3 < 65534 {print "  - " $1}' || true
+        log_error ""
+        log_error "To fix this issue:"
+        log_error "  1. Set QUBINODE_ADMIN_USER in .env to an existing user"
+        log_error "  2. Or create the user: sudo useradd -m $QUBINODE_ADMIN_USER"
+        log_error "  3. Or run the script as the target user (it will be auto-detected)"
+        return 1
+    fi
+
     log_success "Configuration validation completed"
+    log_info "Using admin user: $QUBINODE_ADMIN_USER"
     return 0
 }
 
