@@ -266,7 +266,7 @@ prepare_ansible = SSHOperator(
 
     # Get IP via kcli on host
     VM_NAME="freeipa"
-    IP=$(kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{{print \\$2}}")
+    IP=$(kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{{{{print \\$2}}}}")
 
     if [ -z "$IP" ] || [ "$IP" == "None" ]; then
         echo "[ERROR] Could not get VM IP"
@@ -281,35 +281,35 @@ prepare_ansible = SSHOperator(
     [ "$COMMUNITY_VERSION" == "true" ] && LOGIN_USER="cloud-user" || LOGIN_USER="cloud-user"
 
     # Create inventory directory
-    INVENTORY_DIR="{INVENTORY_BASE_DIR}/.${{IDM_HOSTNAME}}.${{DOMAIN}}"
+    INVENTORY_DIR="{INVENTORY_BASE_DIR}/.$(echo $IDM_HOSTNAME).$(echo $DOMAIN)"
     mkdir -p "$INVENTORY_DIR"
 
     # Create Ansible inventory
-    cat > "$INVENTORY_DIR/inventory" << 'INVENTORY_EOF'
+    cat > "$INVENTORY_DIR/inventory" << INVENTORY_EOF
 [idm]
-${{IDM_HOSTNAME}}
+$(echo $IDM_HOSTNAME)
 
 [all:vars]
 ansible_ssh_private_key_file={SSH_KEY_PATH}
-ansible_ssh_user=${{LOGIN_USER}}
+ansible_ssh_user=$(echo $LOGIN_USER)
 ansible_ssh_common_args=-o StrictHostKeyChecking=no
-ansible_host=${{IP}}
-ansible_internal_private_ip=${{IP}}
+ansible_host=$(echo $IP)
+ansible_internal_private_ip=$(echo $IP)
 INVENTORY_EOF
 
     echo "[OK] Inventory created at $INVENTORY_DIR/inventory"
     cat "$INVENTORY_DIR/inventory"
 
     # Update /etc/hosts
-    grep -v "${{IDM_HOSTNAME}}" /etc/hosts > /tmp/hosts.tmp || true
-    echo "${{IP}} ${{IDM_HOSTNAME}}.${{DOMAIN}} ${{IDM_HOSTNAME}}" >> /tmp/hosts.tmp
+    grep -v "$(echo $IDM_HOSTNAME)" /etc/hosts > /tmp/hosts.tmp || true
+    echo "$(echo $IP) $(echo $IDM_HOSTNAME).$(echo $DOMAIN) $(echo $IDM_HOSTNAME)" >> /tmp/hosts.tmp
     cp /tmp/hosts.tmp /etc/hosts
     echo "[OK] Updated /etc/hosts"
 
     # Test SSH connectivity
     echo ""
     echo "Testing SSH connectivity..."
-    ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${{LOGIN_USER}}@${{IP}} "hostname" || {{
+    ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 $(echo $LOGIN_USER)@$(echo $IP) "hostname" || {{
         echo "[WARN] SSH test failed - may need to wait longer"
     }}
 
@@ -351,14 +351,14 @@ install_freeipa = SSHOperator(
     DNS_FORWARDER="{{{{ params.dns_forwarder }}}}"
 
     VM_NAME="freeipa"
-    IP=$(kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{{print \\$2}}")
+    IP=$(kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{{{{print \\$2}}}}")
 
     if [ -z "$IP" ]; then
         echo "[ERROR] Could not get VM IP"
         exit 1
     fi
 
-    INVENTORY_DIR="{INVENTORY_BASE_DIR}/.${{IDM_HOSTNAME}}.${{DOMAIN}}"
+    INVENTORY_DIR="{INVENTORY_BASE_DIR}/.$(echo $IDM_HOSTNAME).$(echo $DOMAIN)"
     PLAYBOOK_DIR="/opt/freeipa-workshop-deployer"
 
     echo "Running Ansible playbook..."
@@ -373,10 +373,10 @@ install_freeipa = SSHOperator(
     ANSIBLE_HOST_KEY_CHECKING=False \
     ansible-playbook \
         -i $INVENTORY_DIR/inventory \
-        --extra-vars "idm_hostname=${{IDM_HOSTNAME}}" \
-        --extra-vars "private_ip=${{IP}}" \
-        --extra-vars "domain=${{DOMAIN}}" \
-        --extra-vars "dns_forwarder=${{DNS_FORWARDER}}" \
+        --extra-vars "idm_hostname=$(echo $IDM_HOSTNAME)" \
+        --extra-vars "private_ip=$(echo $IP)" \
+        --extra-vars "domain=$(echo $DOMAIN)" \
+        --extra-vars "dns_forwarder=$(echo $DNS_FORWARDER)" \
         2_ansible_config/deploy_idm.yaml \
         -v
 
@@ -384,8 +384,8 @@ install_freeipa = SSHOperator(
     echo "========================================"
     echo "FreeIPA Installation Complete!"
     echo "========================================"
-    echo "FreeIPA Web UI: https://${{IDM_HOSTNAME}}.${{DOMAIN}}"
-    echo "IP Address: ${{IP}}"
+    echo "FreeIPA Web UI: https://$(echo $IDM_HOSTNAME).$(echo $DOMAIN)"
+    echo "IP Address: $(echo $IP)"
     echo "Username: admin"
     """,
     cmd_timeout=1800,
