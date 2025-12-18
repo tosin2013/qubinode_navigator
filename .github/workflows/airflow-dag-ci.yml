@@ -43,6 +43,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install "apache-airflow[postgres,celery]==${{ env.AIRFLOW_VERSION }}"
+          pip install "apache-airflow-providers-ssh"
           pip install pytest pytest-asyncio
 
           # Install project dependencies
