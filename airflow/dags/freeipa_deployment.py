@@ -187,7 +187,7 @@ create_freeipa_vm = SSHOperator(
     echo "[OK] VM created successfully"
     kcli info vm $VM_NAME
     """,
-    command_timeout=600,
+    cmd_timeout=600,
     dag=dag,
 )
 
@@ -242,7 +242,7 @@ wait_for_vm = SSHOperator(
     echo "[ERROR] Failed to get VM IP after $MAX_ATTEMPTS attempts"
     exit 1
     """,
-    command_timeout=600,
+    cmd_timeout=600,
     dag=dag,
 )
 
@@ -385,7 +385,7 @@ install_freeipa = SSHOperator(
     echo "IP Address: $IP"
     echo "Username: admin"
     """,
-    command_timeout=1800,
+    cmd_timeout=1800,
     dag=dag,
 )
 
