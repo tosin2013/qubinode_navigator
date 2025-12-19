@@ -26,6 +26,7 @@ from dag_helpers import (
     get_ensure_vault_password_command,
     get_kcli_pipelines_vault_setup_command,
     get_vault_password_check_command,
+    get_ssh_conn_id,
 )
 
 
@@ -376,6 +377,28 @@ class TestVaultPasswordHelpers:
 
         assert custom_path in cmd
         assert f'VAULT_FILE="{custom_path}"' in cmd
+
+
+class TestSSHOperatorHelpers:
+    """Test SSHOperator helper functions (Issue: Replace manual SSH)."""
+
+    def test_get_ssh_conn_id_default(self):
+        """Test get_ssh_conn_id returns default connection ID."""
+        os.environ.pop("QUBINODE_SSH_CONN_ID", None)
+
+        conn_id = get_ssh_conn_id()
+        assert conn_id == "localhost_ssh"
+
+    def test_get_ssh_conn_id_from_env(self):
+        """Test get_ssh_conn_id respects QUBINODE_SSH_CONN_ID env var."""
+        test_conn_id = "custom_ssh_connection"
+        os.environ["QUBINODE_SSH_CONN_ID"] = test_conn_id
+
+        conn_id = get_ssh_conn_id()
+        assert conn_id == test_conn_id
+
+        # Cleanup
+        os.environ.pop("QUBINODE_SSH_CONN_ID", None)
 
 
 if __name__ == "__main__":

@@ -31,6 +31,11 @@ RUN pip install --no-cache-dir \
 RUN pip install --no-cache-dir \
     apache-airflow-providers-hashicorp>=3.0.0
 
+# SSH provider for remote host execution (replaces manual SSH in BashOperator)
+# Used for executing commands on host from container (kcli, virsh, ansible)
+RUN pip install --no-cache-dir \
+    apache-airflow-providers-ssh>=3.0.0
+
 # ADR-0038: FastMCP framework for MCP server
 # Required for MCP server integration with Claude/AI assistants
 RUN pip install --no-cache-dir \

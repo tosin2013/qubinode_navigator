@@ -102,6 +102,7 @@ jobs:
 
           pip install "apache-airflow==2.10.4" --constraint "$CONSTRAINT_URL"
           pip install "apache-airflow-providers-postgres" --constraint "$CONSTRAINT_URL"
+          pip install "apache-airflow-providers-ssh" --constraint "$CONSTRAINT_URL"
           pip install pyyaml
 
           # Find scripts directory
@@ -367,6 +368,7 @@ jobs:
 
           pip install "apache-airflow==2.10.4" --constraint "$CONSTRAINT_URL"
           pip install "apache-airflow-providers-postgres" --constraint "$CONSTRAINT_URL"
+          pip install "apache-airflow-providers-ssh" --constraint "$CONSTRAINT_URL"
           pip install openlineage-airflow
           pip install pyyaml
           pip install httpx  # For MCP server testing
