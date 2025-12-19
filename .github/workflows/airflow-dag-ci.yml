@@ -60,7 +60,11 @@ jobs:
         run: |
           export AIRFLOW_HOME=${{ env.AIRFLOW_HOME }}
           # Add scripts directory to PATH for this step
-          export PATH="$(python3 -c 'import sysconfig; print(sysconfig.get_path("scripts"))'):$PATH"
+          SCRIPTS_DIR=$(python3 -c "import sysconfig; print(sysconfig.get_path('scripts'))")
+          export PATH="$SCRIPTS_DIR:$PATH"
+          echo "PATH now includes: $SCRIPTS_DIR"
+          which airflow || echo "airflow not found"
+          ls -la "$SCRIPTS_DIR/airflow" 2>/dev/null || echo "airflow binary not in scripts dir"
           airflow db init
 
       - name: Install PyYAML for Registry Validation
