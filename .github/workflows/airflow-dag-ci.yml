@@ -58,6 +58,11 @@ jobs:
       - name: Initialize Airflow Database
         run: |
           export AIRFLOW_HOME=${{ env.AIRFLOW_HOME }}
+          # GITHUB_PATH from previous step should work, but add fallback
+          SCRIPTS_DIR=$(python3 -c "import sysconfig; print(sysconfig.get_path('scripts'))")
+          export PATH="$SCRIPTS_DIR:$PATH"
+          # Verify airflow is available
+          which airflow
           airflow db init
 
       - name: Install PyYAML for Registry Validation
@@ -196,6 +201,10 @@ jobs:
           # Copy DAGs to Airflow DAGs folder
           mkdir -p ${{ env.AIRFLOW_HOME }}/dags
           cp -r airflow/dags/* ${{ env.AIRFLOW_HOME }}/dags/ || true
+
+          # Add scripts directory to PATH
+          SCRIPTS_DIR=$(python3 -c "import sysconfig; print(sysconfig.get_path('scripts'))")
+          export PATH="$SCRIPTS_DIR:$PATH"
 
           # List and validate DAGs
           echo "Listing DAGs..."
