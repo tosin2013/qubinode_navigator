@@ -59,7 +59,8 @@ jobs:
       - name: Initialize Airflow Database
         run: |
           export AIRFLOW_HOME=${{ env.AIRFLOW_HOME }}
-          airflow db init
+          # Use python -m airflow for reliable execution
+          python -m airflow db init
 
       - name: Install PyYAML for Registry Validation
         run: |
@@ -200,7 +201,7 @@ jobs:
 
           # List and validate DAGs
           echo "Listing DAGs..."
-          airflow dags list || echo "⚠️  No DAGs found or error listing"
+          python -m airflow dags list || echo "⚠️  No DAGs found or error listing"
 
           # Test DAG loading
           python << 'PYTHON_SCRIPT'
@@ -250,7 +251,7 @@ jobs:
       - name: Initialize Airflow
         run: |
           export AIRFLOW_HOME=${{ env.AIRFLOW_HOME }}
-          airflow db init
+          python -m airflow db init
 
       - name: Validate RAG Ingestion DAG
         run: |
