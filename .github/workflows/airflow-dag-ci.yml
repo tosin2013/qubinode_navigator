@@ -46,9 +46,14 @@ jobs:
           # Install dependencies
           python -m pip install --upgrade pip
           echo "Installing Apache Airflow ${{ env.AIRFLOW_VERSION }}..."
-          pip install "apache-airflow[postgres,celery]==${{ env.AIRFLOW_VERSION }}"
+          # Use constraints to ensure compatible package versions
+          PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+          CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-${{ env.AIRFLOW_VERSION }}/constraints-${PYTHON_VERSION}.txt"
+          echo "Using constraints: $CONSTRAINT_URL"
+
+          pip install "apache-airflow[postgres,celery]==${{ env.AIRFLOW_VERSION }}" --constraint "$CONSTRAINT_URL"
           echo "Installing SSH provider..."
-          pip install "apache-airflow-providers-ssh"
+          pip install "apache-airflow-providers-ssh" --constraint "$CONSTRAINT_URL"
           pip install pytest pytest-asyncio pyyaml
           echo "Airflow packages installed successfully"
 
@@ -59,26 +64,12 @@ jobs:
 
           # Setup PATH and initialize DB
           SCRIPTS_DIR=$(python3 -c "import sysconfig; print(sysconfig.get_path('scripts'))")
-          echo "Scripts directory: $SCRIPTS_DIR"
           export PATH="$SCRIPTS_DIR:$PATH"
           echo "$SCRIPTS_DIR" >> $GITHUB_PATH
 
-          # Debug: show where airflow might be
-          echo "Searching for airflow binary..."
-          find /opt/hostedtoolcache -name "airflow" -type f 2>/dev/null | head -5 || true
-          ls -la "$SCRIPTS_DIR/" | head -10 || true
-
           # Verify airflow is available
-          if ! which airflow; then
-            echo "airflow not in PATH, trying direct execution..."
-            AIRFLOW_BIN="$SCRIPTS_DIR/airflow"
-            if [[ -x "$AIRFLOW_BIN" ]]; then
-              echo "Found airflow at: $AIRFLOW_BIN"
-            else
-              echo "ERROR: airflow binary not found!"
-              exit 1
-            fi
-          fi
+          which airflow
+          airflow version
 
           export AIRFLOW_HOME=${{ env.AIRFLOW_HOME }}
           airflow db init
