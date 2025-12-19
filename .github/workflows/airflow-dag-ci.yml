@@ -59,8 +59,9 @@ jobs:
       - name: Initialize Airflow Database
         run: |
           export AIRFLOW_HOME=${{ env.AIRFLOW_HOME }}
-          # Use python -m airflow for reliable execution
-          python -m airflow db init
+          # Add scripts directory to PATH for this step
+          export PATH="$(python3 -c 'import sysconfig; print(sysconfig.get_path("scripts"))'):$PATH"
+          airflow db init
 
       - name: Install PyYAML for Registry Validation
         run: |
@@ -199,9 +200,12 @@ jobs:
           mkdir -p ${{ env.AIRFLOW_HOME }}/dags
           cp -r airflow/dags/* ${{ env.AIRFLOW_HOME }}/dags/ || true
 
+          # Add scripts directory to PATH
+          export PATH="$(python3 -c 'import sysconfig; print(sysconfig.get_path("scripts"))'):$PATH"
+
           # List and validate DAGs
           echo "Listing DAGs..."
-          python -m airflow dags list || echo "⚠️  No DAGs found or error listing"
+          airflow dags list || echo "⚠️  No DAGs found or error listing"
 
           # Test DAG loading
           python << 'PYTHON_SCRIPT'
@@ -251,7 +255,8 @@ jobs:
       - name: Initialize Airflow
         run: |
           export AIRFLOW_HOME=${{ env.AIRFLOW_HOME }}
-          python -m airflow db init
+          export PATH="$(python3 -c 'import sysconfig; print(sysconfig.get_path("scripts"))'):$PATH"
+          airflow db init
 
       - name: Validate RAG Ingestion DAG
         run: |
