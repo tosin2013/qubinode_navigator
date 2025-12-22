@@ -12,6 +12,25 @@
 
 set -euo pipefail
 
+# =============================================================================
+# QUBINODE_HOME Path Detection
+# =============================================================================
+# Auto-detect the Qubinode Navigator installation directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export QUBINODE_HOME="${QUBINODE_HOME:-$SCRIPT_DIR}"
+
+# Validate qubinode_navigator directory structure
+if [[ ! -d "$QUBINODE_HOME/inventories" ]] && [[ ! -d "$QUBINODE_HOME/config" ]]; then
+    echo "Warning: QUBINODE_HOME ($QUBINODE_HOME) does not appear to be a valid qubinode_navigator directory"
+    # Try common fallback locations
+    if [[ -d "/root/qubinode_navigator/inventories" ]]; then
+        export QUBINODE_HOME="/root/qubinode_navigator"
+    elif [[ -d "/opt/qubinode_navigator/inventories" ]]; then
+        export QUBINODE_HOME="/opt/qubinode_navigator"
+    fi
+fi
+# =============================================================================
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -37,7 +56,7 @@ log_error() {
 }
 
 # Create backup directory
-BACKUP_DIR="/root/qubinode_navigator_backup_$(date +%Y%m%d-%H%M%S)"
+BACKUP_DIR="${HOME}/qubinode_navigator_backup_$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$BACKUP_DIR"
 log_info "Created backup directory: $BACKUP_DIR"
 
@@ -53,15 +72,15 @@ echo ""
 log_info "🔄 Backing up critical files..."
 
 # 1. Backup environment files
-if [[ -f /root/qubinode_navigator/.env ]]; then
-    cp /root/qubinode_navigator/.env "$BACKUP_DIR/.env"
+if [[ -f ${QUBINODE_HOME}/.env ]]; then
+    cp ${QUBINODE_HOME}/.env "$BACKUP_DIR/.env"
     log_success "Backed up existing .env file"
 else
     log_info "No existing .env file found"
 fi
 
-if [[ -f /root/qubinode_navigator/notouch.env ]]; then
-    cp /root/qubinode_navigator/notouch.env "$BACKUP_DIR/notouch.env"
+if [[ -f ${QUBINODE_HOME}/notouch.env ]]; then
+    cp ${QUBINODE_HOME}/notouch.env "$BACKUP_DIR/notouch.env"
     log_success "Backed up notouch.env file"
 fi
 
@@ -85,8 +104,8 @@ if [[ -f /root/.vault_password ]]; then
 fi
 
 # 4. Backup inventories
-if [[ -d /root/qubinode_navigator/inventories ]]; then
-    cp -r /root/qubinode_navigator/inventories "$BACKUP_DIR/inventories"
+if [[ -d ${QUBINODE_HOME}/inventories ]]; then
+    cp -r ${QUBINODE_HOME}/inventories "$BACKUP_DIR/inventories"
     log_success "Backed up inventory configurations"
 fi
 
@@ -116,9 +135,9 @@ log_success "Cleaned up old deployment logs"
 
 # 2. Remove temporary ansible files
 log_info "Removing temporary ansible files..."
-rm -f /root/qubinode_navigator/ansible_vault_setup.sh
-rm -f /root/qubinode_navigator/ansiblesafe-*.tar.gz
-rm -f /root/qubinode_navigator/*.tar.gz
+rm -f ${QUBINODE_HOME}/ansible_vault_setup.sh
+rm -f ${QUBINODE_HOME}/ansiblesafe-*.tar.gz
+rm -f ${QUBINODE_HOME}/*.tar.gz
 log_success "Cleaned up temporary ansible files"
 
 # 3. Remove ansible navigator config (will be regenerated)
@@ -184,19 +203,19 @@ fi
 log_info "📝 Preparing environment configuration..."
 
 # Check if .env.example exists
-if [[ ! -f /root/qubinode_navigator/.env.example ]]; then
+if [[ ! -f ${QUBINODE_HOME}/.env.example ]]; then
     log_error ".env.example file not found! Please ensure you have the latest version."
     exit 1
 fi
 
 # Create .env from example if it doesn't exist
-if [[ ! -f /root/qubinode_navigator/.env ]]; then
-    cp /root/qubinode_navigator/.env.example /root/qubinode_navigator/.env
+if [[ ! -f ${QUBINODE_HOME}/.env ]]; then
+    cp ${QUBINODE_HOME}/.env.example ${QUBINODE_HOME}/.env
     log_success "Created .env file from .env.example"
-    log_warning "⚠️  IMPORTANT: Edit /root/qubinode_navigator/.env with your configuration before running deployment!"
+    log_warning "⚠️  IMPORTANT: Edit ${QUBINODE_HOME}/.env with your configuration before running deployment!"
 else
     log_info "Existing .env file found (backed up to $BACKUP_DIR)"
-    log_warning "⚠️  IMPORTANT: Review and update /root/qubinode_navigator/.env if needed!"
+    log_warning "⚠️  IMPORTANT: Review and update ${QUBINODE_HOME}/.env if needed!"
 fi
 
 # =============================================================================
@@ -218,7 +237,7 @@ done
 
 echo ""
 log_info "🚀 Next Steps:"
-echo "   1. Review and edit /root/qubinode_navigator/.env with your configuration"
+echo "   1. Review and edit ${QUBINODE_HOME}/.env with your configuration"
 echo "   2. Ensure required variables are set (QUBINODE_DOMAIN, QUBINODE_ADMIN_USER, etc.)"
 echo "   3. Run the deployment: ./deploy-qubinode.sh"
 echo ""
