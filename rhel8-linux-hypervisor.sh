@@ -349,16 +349,8 @@ function configure_ansible_vault_setup() {
     echo "*****************************"
     if [ ! -f ${QUBINODE_HOME}/ansible_vault_setup.sh ];
     then
-
-# Check if the script is run as root
-# Source environment variables if .env file exists
-# Set default values for CICD_PIPELINE and INVENTORY if not already set
-# Set GUID if not already set
-# Check if USE_HASHICORP_VAULT is set and validate VAULT_ADDRESS and SECRET_PATH
-ros    # Generate inventory
-S# @description This function installs necessary packages
         cd "${QUBINODE_HOME}"
-         curl -OL https://gist.githubusercontent.com/tosin2013/022841d90216df8617244ab6d6aceaf8/raw/92400b9e459351d204feb67b985c08df6477d7fa/ansible_vault_setup.sh
+        curl -OL https://gist.githubusercontent.com/tosin2013/022841d90216df8617244ab6d6aceaf8/raw/92400b9e459351d204feb67b985c08df6477d7fa/ansible_vault_setup.sh
         chmod +x ansible_vault_setup.sh
     fi
     rm -f ~/.vault_password

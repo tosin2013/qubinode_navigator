@@ -17,7 +17,7 @@ from pathlib import Path
 class ModernizedSetupTester:
     def __init__(self):
         self.test_results = []
-        # Use QUBINODE_HOME environment variable or default to /opt
+        # Use QUBINODE_HOME environment variable or default to /opt/qubinode_navigator
         qubinode_home = os.environ.get('QUBINODE_HOME', '/opt/qubinode_navigator')
         self.setup_script = Path(f"{qubinode_home}/setup_modernized.sh")
 
