@@ -61,6 +61,31 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
+# =============================================================================
+# QUBINODE_HOME Path Detection
+# =============================================================================
+# Auto-detect the Qubinode Navigator installation directory
+# Priority: 1. Existing QUBINODE_HOME env var, 2. Script location, 3. Default /opt
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export QUBINODE_HOME="${QUBINODE_HOME:-$SCRIPT_DIR}"
+
+# Validate qubinode_navigator directory structure
+if [[ ! -d "$QUBINODE_HOME/inventories" ]] && [[ ! -d "$QUBINODE_HOME/config" ]]; then
+    echo "Warning: QUBINODE_HOME ($QUBINODE_HOME) does not appear to be a valid qubinode_navigator directory"
+    echo "Expected to find inventories/ or config/ directories"
+    # Try common fallback locations
+    if [[ -d "/root/qubinode_navigator/inventories" ]]; then
+        export QUBINODE_HOME="/root/qubinode_navigator"
+        echo "Using fallback location: $QUBINODE_HOME"
+    elif [[ -d "/opt/qubinode_navigator/inventories" ]]; then
+        export QUBINODE_HOME="/opt/qubinode_navigator"
+        echo "Using fallback location: $QUBINODE_HOME"
+    fi
+fi
+
+echo "Using QUBINODE_HOME: $QUBINODE_HOME"
+# =============================================================================
+
 # Environment Variables with defaults
 : "${CICD_PIPELINE:="false"}"
 : "${USE_HASHICORP_VAULT:="false"}"
@@ -120,16 +145,9 @@ handle_hashicorp_vault() {
 configure_vault_integrated() {
     log_message "Configuring Vault-Integrated Setup..."
 
-    # Determine the correct qubinode_navigator directory
-    local qubinode_dir
-    if [ -d "/root/qubinode_navigator" ] && [ -f "/root/qubinode_navigator/vault-integrated-setup.sh" ]; then
-        qubinode_dir="/root/qubinode_navigator"
-    elif [ -f "./vault-integrated-setup.sh" ]; then
-        qubinode_dir="$(pwd)"
-    else
-        qubinode_dir="/root/qubinode_navigator"
-    fi
-
+    # Use QUBINODE_HOME for consistent path handling
+    local qubinode_dir="$QUBINODE_HOME"
+    
     log_message "Using qubinode directory: ${qubinode_dir}"
     cd "${qubinode_dir}"
 
@@ -306,9 +324,9 @@ function configure_python() {
         echo "ansible-navigator not found, installing..."
         # Use main branch for latest ansible-navigator compatible with Python 3.11
         curl -sSL https://raw.githubusercontent.com/ansible/ansible-navigator/main/requirements.txt | python3 -m pip install -r /dev/stdin --user lab-user
-        pip3 install -r /root/qubinode_navigator/dependancies/hetzner/bastion-requirements.txt --user lab-user
+        pip3 install -r ${QUBINODE_HOME}/dependancies/hetzner/bastion-requirements.txt --user lab-user
         curl -sSL https://raw.githubusercontent.com/ansible/ansible-navigator/main/requirements.txt | python3 -m pip install -r /dev/stdin
-        pip3 install -r /root/qubinode_navigator/dependancies/hetzner/bastion-requirements.txt
+        pip3 install -r ${QUBINODE_HOME}/dependancies/hetzner/bastion-requirements.txt
         # Install ansible-navigator 25.5.0+ for Python 3.11 compatibility
         pip3 install ansible-navigator>=25.5.0
     else
@@ -335,9 +353,12 @@ function configure_navigator() {
     else
         cd "$HOME"
         git clone ${GIT_REPO}
-        ln -s /root/qubinode_navigator /opt/qubinode_navigator
+        # Create symlink to allow access from /opt if installed in /root
+        if [ "$QUBINODE_HOME" = "/root/qubinode_navigator" ] && [ ! -e /opt/qubinode_navigator ]; then
+            ln -s ${QUBINODE_HOME} /opt/qubinode_navigator
+        fi
     fi
-    cd "$HOME"/qubinode_navigator
+    cd "${QUBINODE_HOME}"
     sudo pip3 install -r requirements.txt
     echo "Current DNS Server: $(cat /etc/resolv.conf | grep nameserver | awk '{print $2}' | head -1)"
     log_message "Load variables with template support"
@@ -398,7 +419,7 @@ ansible-navigator:
   ansible:
     inventory:
       entries:
-      - /root/qubinode_navigator/inventories/${INVENTORY}
+      - ${QUBINODE_HOME}/inventories/${INVENTORY}
   execution-environment:
     container-engine: podman
     enabled: true
@@ -416,8 +437,9 @@ EOF
 function configure_ansible_vault_setup() {
     echo "Configuring Ansible Vault Setup"
     echo "*****************************"
-    if [ ! -f /root/qubinode_navigator/ansible_vault_setup.sh ];
+    if [ ! -f ${QUBINODE_HOME}/ansible_vault_setup.sh ];
     then
+        cd "${QUBINODE_HOME}"
         curl -OL https://gist.githubusercontent.com/tosin2013/022841d90216df8617244ab6d6aceaf8/raw/92400b9e459351d204feb67b985c08df6477d7fa/ansible_vault_setup.sh
         chmod +x ansible_vault_setup.sh
     fi
@@ -428,8 +450,10 @@ function configure_ansible_vault_setup() {
         echo "$SSH_PASSWORD" > ~/.vault_password
         sudo cp ~/.vault_password /root/.vault_password
         sudo cp ~/.vault_password /home/lab-user/.vault_password
+        cd "${QUBINODE_HOME}"
         bash  ./ansible_vault_setup.sh
     else
+        cd "${QUBINODE_HOME}"
         bash  ./ansible_vault_setup.sh
     fi
 
@@ -446,14 +470,14 @@ function configure_ansible_vault_setup() {
     then
         if [ -f /tmp/config.yml ];
         then
-            cp /tmp/config.yml /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml
-            /usr/local/bin/ansiblesafe -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml -o 1
+            cp /tmp/config.yml ${QUBINODE_HOME}/inventories/${INVENTORY}/group_vars/control/vault.yml
+            /usr/local/bin/ansiblesafe -f ${QUBINODE_HOME}/inventories/${INVENTORY}/group_vars/control/vault.yml -o 1
         else
             echo "Error: config.yml file not found"
             exit 1
         fi
     else
-        /usr/local/bin/ansiblesafe -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml
+        /usr/local/bin/ansiblesafe -f ${QUBINODE_HOME}/inventories/${INVENTORY}/group_vars/control/vault.yml
     fi
     generate_inventory /root
 }
@@ -480,12 +504,12 @@ function deploy_kvmhost() {
 }
 
 function configure_onedev(){
-    if [ "$(pwd)" != "/root/qubinode_navigator" ]; then
-        echo "Current directory is not /root/qubinode_navigator."
-        echo "Changing to /root/qubinode_navigator..."
-        cd /root/qubinode_navigator
+    if [ "$(pwd)" != "${QUBINODE_HOME}" ]; then
+        echo "Current directory is not ${QUBINODE_HOME}."
+        echo "Changing to ${QUBINODE_HOME}..."
+        cd "${QUBINODE_HOME}"
     else
-        echo "Current directory is /root/qubinode_navigator."
+        echo "Current directory is ${QUBINODE_HOME}."
     fi
     echo "Configuring OneDev"
     echo "******************"
@@ -495,12 +519,12 @@ function configure_onedev(){
 function configure_bash_aliases() {
     echo "Configuring bash aliases"
     echo "************************"
-    if [ "$(pwd)" != "/root/qubinode_navigator" ]; then
-        echo "Current directory is not /root/qubinode_navigator."
-        echo "Changing to /root/qubinode_navigator..."
-        cd /root/qubinode_navigator
+    if [ "$(pwd)" != "${QUBINODE_HOME}" ]; then
+        echo "Current directory is not ${QUBINODE_HOME}."
+        echo "Changing to ${QUBINODE_HOME}..."
+        cd "${QUBINODE_HOME}"
     else
-        echo "Current directory is /root/qubinode_navigator."
+        echo "Current directory is ${QUBINODE_HOME}."
     fi
     # Source the function definitions
     source bash-aliases/functions.sh
@@ -533,12 +557,12 @@ function confiure_lvm_storage(){
 }
 
 function setup_kcli_base() {
-    if [ "$(pwd)" != "/root/qubinode_navigator" ]; then
-        echo "Current directory is not /root/qubinode_navigator."
-        echo "Changing to /root/qubinode_navigator..."
-        cd /root/qubinode_navigator
+    if [ "$(pwd)" != "${QUBINODE_HOME}" ]; then
+        echo "Current directory is not ${QUBINODE_HOME}."
+        echo "Changing to ${QUBINODE_HOME}..."
+        cd "${QUBINODE_HOME}"
     else
-        echo "Current directory is /root/qubinode_navigator."
+        echo "Current directory is ${QUBINODE_HOME}."
     fi
     echo "Configuring Kcli"
     echo "****************"
