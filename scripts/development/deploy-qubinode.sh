@@ -27,10 +27,15 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # so we go up two levels to get to the repository root
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
+# Set QUBINODE_HOME environment variable
+# Priority: 1. Existing QUBINODE_HOME env var, 2. Auto-detected REPO_ROOT
+# This allows flexible installation locations (root, non-root, custom paths)
+export QUBINODE_HOME="${QUBINODE_HOME:-$REPO_ROOT}"
+
 # Validate we're in the right repository
-if [[ ! -d "$REPO_ROOT/airflow" ]] || [[ ! -d "$REPO_ROOT/ai-assistant" ]]; then
+if [[ ! -d "$QUBINODE_HOME/airflow" ]] || [[ ! -d "$QUBINODE_HOME/ai-assistant" ]]; then
     echo "ERROR: Cannot find qubinode_navigator repository root"
-    echo "Expected to find airflow/ and ai-assistant/ directories at: $REPO_ROOT"
+    echo "Expected to find airflow/ and ai-assistant/ directories at: $QUBINODE_HOME"
     echo "Please run this script from within the qubinode_navigator repository"
     exit 1
 fi
@@ -80,10 +85,10 @@ log_ai() {
 # Load environment variables from .env file if it exists
 # Check both repository root and script directory
 # Security Note: Only source .env files that you control. Do not source untrusted files.
-if [[ -f "$REPO_ROOT/.env" ]]; then
-    log_info "Loading configuration from $REPO_ROOT/.env..."
+if [[ -f "$QUBINODE_HOME/.env" ]]; then
+    log_info "Loading configuration from $QUBINODE_HOME/.env..."
     set -a  # Automatically export all variables
-    source "$REPO_ROOT/.env"
+    source "$QUBINODE_HOME/.env"
     set +a
 elif [[ -f "$SCRIPT_DIR/.env" ]]; then
     log_info "Loading configuration from $SCRIPT_DIR/.env..."
@@ -160,10 +165,10 @@ DEPLOYMENT_FAILED=false
 
 # Set working directory - use repository root calculated earlier
 # MY_DIR is the parent of the repository (where qubinode_navigator folder lives)
-MY_DIR="$(dirname "$REPO_ROOT")"
+MY_DIR="$(dirname "$QUBINODE_HOME")"
 
-# Export REPO_ROOT for use in functions
-export REPO_ROOT
+# Keep REPO_ROOT as alias to QUBINODE_HOME for backward compatibility with existing code
+export REPO_ROOT="$QUBINODE_HOME"
 
 # =============================================================================
 # UTILITY FUNCTIONS
