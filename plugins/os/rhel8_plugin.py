@@ -592,12 +592,15 @@ class RHEL8Plugin(QubiNodePlugin):
     def _configure_ansible_navigator_settings(self) -> None:
         """Configure Ansible Navigator settings"""
         try:
+            # Get QUBINODE_HOME from environment or use default
+            qubinode_home = os.environ.get('QUBINODE_HOME', '/opt/qubinode_navigator')
+            
             config_content = f"""---
 ansible-navigator:
   ansible:
     inventory:
       entries:
-      - /root/qubinode_navigator/inventories/{self.inventory}
+      - {qubinode_home}/inventories/{self.inventory}
   execution-environment:
     container-engine: podman
     enabled: true
