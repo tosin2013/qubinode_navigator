@@ -224,7 +224,7 @@ jobs:
 
       - name: Create issue on failure
         if: steps.check-results.outputs.has_failures == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const title = '🚨 Weekly Dependency Health Check Failed';
