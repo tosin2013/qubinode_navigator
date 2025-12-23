@@ -18,7 +18,7 @@ class ModernizedSetupTester:
     def __init__(self):
         self.test_results = []
         # Use QUBINODE_HOME environment variable or default to /opt/qubinode_navigator
-        self.qubinode_home = os.environ.get('QUBINODE_HOME', '/opt/qubinode_navigator')
+        self.qubinode_home = os.environ.get("QUBINODE_HOME", "/opt/qubinode_navigator")
         self.setup_script = Path(f"{self.qubinode_home}/scripts/development/setup_modernized.sh")
 
     def run_bash_function(self, function_name, setup_env=True):

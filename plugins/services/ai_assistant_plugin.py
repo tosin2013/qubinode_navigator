@@ -36,7 +36,7 @@ class AIAssistantPlugin(QubiNodePlugin):
         super().__init__(config)
 
         # Get QUBINODE_HOME from environment or use default
-        qubinode_home = os.environ.get('QUBINODE_HOME', '/opt/qubinode_navigator')
+        qubinode_home = os.environ.get("QUBINODE_HOME", "/opt/qubinode_navigator")
 
         # Initialize configuration attributes immediately
         self.ai_service_url = self.config.get("ai_service_url", "http://localhost:8080")

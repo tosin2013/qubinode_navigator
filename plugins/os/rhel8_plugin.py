@@ -593,7 +593,7 @@ class RHEL8Plugin(QubiNodePlugin):
         """Configure Ansible Navigator settings"""
         try:
             # Get QUBINODE_HOME from environment or use default
-            qubinode_home = os.environ.get('QUBINODE_HOME', '/opt/qubinode_navigator')
+            qubinode_home = os.environ.get("QUBINODE_HOME", "/opt/qubinode_navigator")
 
             config_content = f"""---
 ansible-navigator:

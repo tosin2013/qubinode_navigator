@@ -49,7 +49,7 @@ curl -s localhost:8889/health         # MCP Server running
 
 | Environment          | Indicators                       | Key Paths                             |
 | -------------------- | -------------------------------- | ------------------------------------- |
-| **Development Host** | Has `.env`, libvirtd running     | `/opt/qubinode_navigator/`           |
+| **Development Host** | Has `.env`, libvirtd running     | `/opt/qubinode_navigator/`            |
 | **Remote/SSH**       | No local `.env`, SSH connection  | Clone repo first                      |
 | **Container**        | Running inside Airflow container | `/opt/airflow/`, SSH to host for kcli |
 | **CI/CD**            | GitHub Actions context vars      | Use test fixtures                     |
