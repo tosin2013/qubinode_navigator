@@ -31,7 +31,7 @@ Single-script deployment of complete Qubinode Navigator stack with production-re
 ### One-Command Deployment:
 
 ```bash
-cd /root/qubinode_navigator
+cd /opt/qubinode_navigator
 ./deploy-qubinode-with-airflow.sh
 ```
 
@@ -138,7 +138,7 @@ Automatically created by deployment script with:
 
 ### Airflow Configuration:
 
-**Location:** `/root/qubinode_navigator/airflow/docker-compose.yml`
+**Location:** `/opt/qubinode_navigator/airflow/docker-compose.yml`
 
 Key settings:
 
@@ -156,7 +156,7 @@ Key settings:
 systemctl status nginx
 
 # Check Airflow containers
-cd /root/qubinode_navigator/airflow
+cd /opt/qubinode_navigator/airflow
 podman ps
 
 # Test health endpoint
@@ -205,7 +205,7 @@ $ firewall-cmd --list-ports
 
 ```bash
 # From command line
-cd /root/qubinode_navigator/airflow
+cd /opt/qubinode_navigator/airflow
 ./scripts/test-kcli-create-vm.sh test-vm centos10stream 1024 1 10
 
 # Or trigger via Airflow UI:
@@ -350,7 +350,7 @@ location / {
 ### Update Airflow:
 
 ```bash
-cd /root/qubinode_navigator/airflow
+cd /opt/qubinode_navigator/airflow
 ./deploy-airflow.sh rebuild
 ```
 
@@ -365,7 +365,7 @@ systemctl reload nginx
 ### Re-run Full Deployment:
 
 ```bash
-cd /root/qubinode_navigator
+cd /opt/qubinode_navigator
 ./deploy-qubinode-with-airflow.sh
 ```
 
@@ -401,7 +401,7 @@ curl http://localhost:8888/
 
 ```bash
 # Restart Airflow
-cd /root/qubinode_navigator/airflow
+cd /opt/qubinode_navigator/airflow
 podman-compose restart
 
 # Check logs

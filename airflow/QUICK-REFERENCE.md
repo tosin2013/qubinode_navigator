@@ -12,7 +12,7 @@
 ## 📝 Testing Scripts
 
 ```bash
-cd /root/qubinode_navigator/airflow/scripts
+cd /opt/qubinode_navigator/airflow/scripts
 
 # Test VM creation
 ./test-kcli-create-vm.sh [vm_name] [image] [memory] [cpus] [disk]
@@ -208,7 +208,7 @@ vm_name=f'test-{datetime.now().strftime("%Y%m%d")}'  # Python
 
 ```bash
 # 1. Make scripts executable (one-time)
-cd /root/qubinode_navigator/airflow/scripts
+cd /opt/qubinode_navigator/airflow/scripts
 chmod +x *.sh
 
 # 2. Test VM creation
@@ -227,7 +227,7 @@ VM_NAME=$(virsh -c qemu:///system list --name | head -1)
 ## 📍 File Locations
 
 ```
-/root/qubinode_navigator/airflow/
+/opt/qubinode_navigator/airflow/
 ├── scripts/                      ← Testing scripts
 │   ├── test-kcli-create-vm.sh
 │   ├── test-kcli-delete-vm.sh

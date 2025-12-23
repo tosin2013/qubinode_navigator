@@ -24,7 +24,7 @@ Based on comprehensive analysis of the Qubinode Navigator repository, this docum
 # CI/CD Mode (current implementation)
 if [ $CICD_PIPELINE == "true" ]; then
     if [ -f /tmp/config.yml ]; then
-        cp /tmp/config.yml /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml
+        cp /tmp/config.yml /opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml
         /usr/local/bin/ansiblesafe -f vault.yml -o 1  # Encrypt
     else
         echo "Error: config.yml file not found"

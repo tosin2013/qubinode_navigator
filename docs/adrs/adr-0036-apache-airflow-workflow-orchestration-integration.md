@@ -352,7 +352,7 @@ See [Bidirectional Learning Guide](../airflow-rag-bidirectional-learning.md) for
 export ENABLE_AIRFLOW=true
 
 # 2. Start AI Assistant with Airflow
-cd /root/qubinode_navigator
+cd /opt/qubinode_navigator
 docker-compose up -d
 
 # 3. Wait for Airflow to initialize (30-60 seconds)

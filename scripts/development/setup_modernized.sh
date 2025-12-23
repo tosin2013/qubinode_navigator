@@ -32,6 +32,12 @@
 
 set -e
 
+# QUBINODE_HOME Setup
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEFAULT_QUBINODE_HOME="/opt/qubinode_navigator"
+QUBINODE_HOME="${QUBINODE_HOME:-$DEFAULT_QUBINODE_HOME}"
+export QUBINODE_HOME
+
 # 📊 GLOBAL VARIABLES
 export ANSIBLE_SAFE_VERSION="0.0.14"
 export GIT_REPO="https://github.com/Qubinode/qubinode_navigator.git"
@@ -119,14 +125,15 @@ function setup_plugin_framework() {
     echo "🔧 Setting up plugin framework..."
 
     # Ensure we're in the right directory
-    if [ ! -d "/root/qubinode_navigator" ]; then
-        echo "📥 Cloning Qubinode Navigator..."
-        git clone ${GIT_REPO} /root/qubinode_navigator
-        cd /root/qubinode_navigator
+    if [ ! -d "${QUBINODE_HOME}" ]; then
+        echo "📥 Cloning Qubinode Navigator to ${QUBINODE_HOME}..."
+        mkdir -p "$(dirname ${QUBINODE_HOME})"
+        git clone ${GIT_REPO} "${QUBINODE_HOME}"
+        cd "${QUBINODE_HOME}"
     else
-        echo "📂 Using existing Qubinode Navigator installation"
-        cd /root/qubinode_navigator
-        git pull origin main
+        echo "📂 Using existing Qubinode Navigator installation at ${QUBINODE_HOME}"
+        cd "${QUBINODE_HOME}"
+        git pull origin main || true
     fi
 
     # Install Python dependencies for plugin framework

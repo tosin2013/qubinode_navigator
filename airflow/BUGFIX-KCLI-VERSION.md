@@ -65,7 +65,7 @@ LATEST: 99.0.202511192102  ✅ (Much newer!)
 
 ### Fix: Update to Latest kcli
 
-**File:** `/root/qubinode_navigator/airflow/Dockerfile`
+**File:** `/opt/qubinode_navigator/airflow/Dockerfile`
 
 **Before:**
 
@@ -164,14 +164,14 @@ root.iter('pool')
 ### Step 1: Update Dockerfile
 
 ```bash
-vim /root/qubinode_navigator/airflow/Dockerfile
+vim /opt/qubinode_navigator/airflow/Dockerfile
 # Change: kcli==99.0 → kcli
 ```
 
 ### Step 2: Rebuild Image
 
 ```bash
-cd /root/qubinode_navigator/airflow
+cd /opt/qubinode_navigator/airflow
 podman build -t qubinode-airflow:2.10.4-python3.11 -f Dockerfile .
 ```
 

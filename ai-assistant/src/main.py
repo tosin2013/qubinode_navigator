@@ -530,7 +530,7 @@ class OrchestratorRequest(BaseModel):
     user_role: str = Field(default="operator", description="User role for permissions")
     environment: str = Field(default="development", description="Target environment")
     execute_tasks: bool = Field(default=True, description="Execute planned tasks via Developer Agent")
-    working_directory: str = Field(default="/root/qubinode_navigator", description="Working directory for code changes")
+    working_directory: str = Field(default="/opt/qubinode_navigator", description="Working directory for code changes")
 
 
 class OrchestratorResponse(BaseModel):

@@ -225,7 +225,7 @@ DAGs that access host resources must document required mounts:
 ```python
 """
 Required Volume Mounts:
-- /root/qubinode_navigator:/opt/qubinode_navigator:ro
+- /opt/qubinode_navigator:/opt/qubinode_navigator:ro
 - /root/freeipa-workshop-deployer:/opt/freeipa-workshop-deployer
 - /root/.ssh:/root/.ssh:ro
 - /var/run/libvirt/libvirt-sock:/var/run/libvirt/libvirt-sock

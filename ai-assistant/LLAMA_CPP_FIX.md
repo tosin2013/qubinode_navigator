@@ -43,7 +43,7 @@ The running container was built from an older version of the code that expected 
 ### Option 1: Rebuild Container (Recommended)
 
 ```bash
-cd /root/qubinode_navigator/ai-assistant
+cd /opt/qubinode_navigator/ai-assistant
 ./rebuild-container.sh
 ```
 

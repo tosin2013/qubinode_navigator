@@ -3,9 +3,9 @@ ansible-navigator:
   ansible:
     inventory:
       entries:
-        - /root/qubinode_navigator/inventories/localhost
+        - /opt/qubinode_navigator/inventories/localhost
     config:
-      path: /root/qubinode_navigator/ansible.cfg
+      path: /opt/qubinode_navigator/ansible.cfg
   execution-environment:
     container-engine: podman
     enabled: true
@@ -18,7 +18,7 @@ ansible-navigator:
       policy: missing
   logging:
     append: true
-    file: /root/qubinode_navigator/ansible-navigator.log
+    file: /opt/qubinode_navigator/ansible-navigator.log
     level: info
   playbook-artifact:
     enable: false

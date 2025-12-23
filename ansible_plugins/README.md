@@ -264,7 +264,7 @@ ansible-playbook playbook.yml -vvv
 
 ```bash
 # Run callback plugin tests
-cd /root/qubinode_navigator
+cd /opt/qubinode_navigator
 python3 -m pytest tests/test_ansible_callback_plugin.py -v
 
 # Expected: 16 tests pass

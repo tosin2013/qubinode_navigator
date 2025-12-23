@@ -61,7 +61,7 @@ podman exec airflow_airflow-scheduler_1 airflow dags list-import-errors
 ### 🔄 Restart Services (If Needed)
 
 ```bash
-cd /root/qubinode_navigator/airflow
+cd /opt/qubinode_navigator/airflow
 podman-compose restart airflow-webserver airflow-scheduler
 
 # Wait 30 seconds
@@ -124,7 +124,7 @@ Toggle | DAG ID                       | Owner    | Runs | Last Run
 
 ```bash
 # Check if DAG files exist
-ls -la /root/qubinode_navigator/airflow/dags/example_*.py
+ls -la /opt/qubinode_navigator/airflow/dags/example_*.py
 
 # Should show:
 # example_kcli_vm_provisioning.py
@@ -189,7 +189,7 @@ podman exec airflow_airflow-scheduler_1 airflow tasks list example_kcli_vm_provi
 1. **Restart Everything:**
 
    ```bash
-   cd /root/qubinode_navigator/airflow
+   cd /opt/qubinode_navigator/airflow
    ./deploy-airflow.sh restart
    ```
 

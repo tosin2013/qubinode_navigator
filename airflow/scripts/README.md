@@ -33,7 +33,7 @@ These scripts help you:
 ### 1. Make Scripts Executable
 
 ```bash
-cd /root/qubinode_navigator/airflow/scripts
+cd /opt/qubinode_navigator/airflow/scripts
 chmod +x *.sh
 ```
 

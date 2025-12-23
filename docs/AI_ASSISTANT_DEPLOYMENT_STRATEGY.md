@@ -72,7 +72,7 @@ ai_assistant:
   deployment_mode: "auto"  # auto, development, production
   ai_service_url: "http://localhost:8080"
   container_name: "qubinode-ai-assistant"
-  ai_assistant_path: "/root/qubinode_navigator/ai-assistant"
+  ai_assistant_path: "/opt/qubinode_navigator/ai-assistant"
   auto_start: true
   health_check_timeout: 90
   enable_diagnostics: true
@@ -130,7 +130,7 @@ export QUBINODE_DEPLOYMENT_MODE=production
 
 ```bash
 # Example development setup
-cd /root/qubinode_navigator
+cd /opt/qubinode_navigator
 export QUBINODE_DEPLOYMENT_MODE=development
 python qubinode_cli.py --plugin ai_assistant --execute
 ```

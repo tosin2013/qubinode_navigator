@@ -380,7 +380,7 @@ class QubinodeDeployOperator(BaseOperator):
 
         # Build deployment command
         cmd = [
-            '/root/qubinode_navigator/setup.sh',
+            '/opt/qubinode_navigator/setup.sh',
             '--host', self.target_host,
             '--type', self.deployment_type
         ]
@@ -496,14 +496,14 @@ dag = DAG(
 # Pre-deployment validation
 validate = BashOperator(
     task_id='validate_prerequisites',
-    bash_command='cd /root/qubinode_navigator && ./scripts/validate.sh',
+    bash_command='cd /opt/qubinode_navigator && ./scripts/validate.sh',
     dag=dag,
 )
 
 # Deploy Qubinode
 deploy = BashOperator(
     task_id='deploy_qubinode',
-    bash_command='cd /root/qubinode_navigator && ./setup.sh',
+    bash_command='cd /opt/qubinode_navigator && ./setup.sh',
     dag=dag,
 )
 
@@ -565,7 +565,7 @@ branch = BranchPythonOperator(
 
 deploy_qubinode = BashOperator(
     task_id='deploy_qubinode',
-    bash_command='cd /root/qubinode_navigator && ./setup.sh',
+    bash_command='cd /opt/qubinode_navigator && ./setup.sh',
     dag=dag,
 )
 

@@ -18,10 +18,10 @@ The script consists of several major functions:
 1. `bash_aliases`:
 
 ```bash
-if [ "$(pwd)" != "/root/qubinode_navigator" ]; then
-    echo "Current directory is not /root/qubinode_navigator."
-    echo "Changing to /root/qubinode_navigator..."
-    cd /root/qubinode_navigator
+if [ "$(pwd)" != "/opt/qubinode_navigator" ]; then
+    echo "Current directory is not /opt/qubinode_navigator."
+    echo "Changing to /opt/qubinode_navigator..."
+    cd /opt/qubinode_navigator
 fi
 ```
 

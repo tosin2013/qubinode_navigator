@@ -6,7 +6,7 @@ set -euo pipefail
 
 # Configuration
 MODEL_URL="https://huggingface.co/ibm-granite/granite-4.0-micro-GGUF/resolve/main/granite-4.0-micro-Q4_K_M.gguf"
-MODEL_DIR="/root/qubinode_navigator/ai-assistant/models"
+MODEL_DIR="/opt/qubinode_navigator/ai-assistant/models"
 MODEL_FILE="granite-4.0-micro.gguf"
 MODEL_PATH="${MODEL_DIR}/${MODEL_FILE}"
 

@@ -55,7 +55,7 @@ ls -la ~/.vault_password /root/.vault_password
 
 **Current Evidence**:
 
-- ✅ ansible-navigator config points to: `/root/qubinode_navigator/inventories/${INVENTORY}`
+- ✅ ansible-navigator config points to: `/opt/qubinode_navigator/inventories/${INVENTORY}`
 - ✅ Uses podman execution environment: `quay.io/qubinode/qubinode-installer`
 - ❓ **UNKNOWN**: If vault.yml files are accessible within container environment
 

@@ -30,9 +30,9 @@ When starting a session, **automatically detect** the current environment by che
 
 ```bash
 # 1. Check if running on a Qubinode host
-if [ -f "/root/qubinode_navigator/.env" ]; then
+if [ -f "/opt/qubinode_navigator/.env" ]; then
     echo "Running on Qubinode host"
-    source /root/qubinode_navigator/.env
+    source /opt/qubinode_navigator/.env
 fi
 
 # 2. Detect OS
@@ -49,7 +49,7 @@ curl -s localhost:8889/health         # MCP Server running
 
 | Environment          | Indicators                       | Key Paths                             |
 | -------------------- | -------------------------------- | ------------------------------------- |
-| **Development Host** | Has `.env`, libvirtd running     | `/root/qubinode_navigator/`           |
+| **Development Host** | Has `.env`, libvirtd running     | `/opt/qubinode_navigator/`           |
 | **Remote/SSH**       | No local `.env`, SSH connection  | Clone repo first                      |
 | **Container**        | Running inside Airflow container | `/opt/airflow/`, SSH to host for kcli |
 | **CI/CD**            | GitHub Actions context vars      | Use test fixtures                     |
@@ -542,7 +542,7 @@ ______________________________________________________________________
 
 ```bash
 # All services status
-cd /root/qubinode_navigator/airflow
+cd /opt/qubinode_navigator/airflow
 podman-compose ps
 
 # Logs
@@ -837,7 +837,7 @@ export QUBINODE_HOME=/path/to/qubinode_navigator
 
 This allows the same configurations to work whether:
 
-- Running as root (`/root/qubinode_navigator`)
+- Running as root (`/opt/qubinode_navigator`)
 - Running as regular user (`$HOME/qubinode_navigator`)
 - Custom installation path (set `QUBINODE_HOME`)
 

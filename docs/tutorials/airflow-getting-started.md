@@ -38,7 +38,7 @@ ______________________________________________________________________
 On the prepared host:
 
 ```bash
-cd /root/qubinode_navigator    # or your clone path
+cd /opt/qubinode_navigator    # or your clone path
 
 ./deploy-qubinode-with-airflow.sh
 ```

@@ -142,7 +142,7 @@ execute_plugins()         # Plugin framework orchestration
 
 ## References
 
-- Plugin Framework Implementation: `/root/qubinode_navigator/core/`
-- Legacy Setup Script: `/root/qubinode_navigator/setup.sh`
-- Modernized Setup Script: `/root/qubinode_navigator/setup_modernized.sh`
-- Plugin Configurations: `/root/qubinode_navigator/config/plugins.yml`
+- Plugin Framework Implementation: `/opt/qubinode_navigator/core/`
+- Legacy Setup Script: `/opt/qubinode_navigator/setup.sh`
+- Modernized Setup Script: `/opt/qubinode_navigator/setup_modernized.sh`
+- Plugin Configurations: `/opt/qubinode_navigator/config/plugins.yml`

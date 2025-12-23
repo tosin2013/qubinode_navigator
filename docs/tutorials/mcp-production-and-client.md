@@ -39,7 +39,7 @@ ______________________________________________________________________
 On the host where `qubinode_navigator` is cloned:
 
 ```bash
-cd /root/qubinode_navigator  # or the path where you cloned the repo
+cd /opt/qubinode_navigator  # or the path where you cloned the repo
 
 ./deploy-fastmcp-production.sh
 ```

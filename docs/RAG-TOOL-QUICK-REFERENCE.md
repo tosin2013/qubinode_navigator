@@ -6,7 +6,7 @@
 
 ## Location
 
-`/root/qubinode_navigator/airflow/plugins/qubinode/mcp_server_fastmcp.py`
+`/opt/qubinode_navigator/airflow/plugins/qubinode/mcp_server_fastmcp.py`
 
 ## Status
 
@@ -135,8 +135,8 @@ ______________________________________________________________________
 
 ## Documentation
 
-- **Full Guide:** `/root/qubinode_navigator/docs/RAG-TOOL-GUIDE.md`
-- **Implementation:** `/root/qubinode_navigator/RAG-TOOL-IMPLEMENTATION-SUMMARY.md`
+- **Full Guide:** `/opt/qubinode_navigator/docs/RAG-TOOL-GUIDE.md`
+- **Implementation:** `/opt/qubinode_navigator/RAG-TOOL-IMPLEMENTATION-SUMMARY.md`
 
 ______________________________________________________________________
 

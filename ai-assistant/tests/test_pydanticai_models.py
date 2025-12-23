@@ -333,7 +333,7 @@ class TestCodeGenerationModels:
             rag_context=["ADR-0045 DAG standards", "Error handling patterns"],
         )
         assert len(request.target_files) == 1
-        assert request.working_directory == "/root/qubinode_navigator"
+        assert request.working_directory == "/opt/qubinode_navigator"
 
     def test_fallback_code_prompt(self):
         """Test FallbackCodePrompt for Calling LLM."""

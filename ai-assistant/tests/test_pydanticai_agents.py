@@ -107,7 +107,7 @@ class TestDeveloperDependencies:
         deps = DeveloperDependencies(session_id="test")
         assert deps.aider_enabled is True
         assert deps.aider_model == "claude-sonnet-4-20250514"
-        assert deps.working_directory == "/root/qubinode_navigator"
+        assert deps.working_directory == "/opt/qubinode_navigator"
         assert deps.provider_cache == {}
 
     def test_developer_dependencies_custom(self):

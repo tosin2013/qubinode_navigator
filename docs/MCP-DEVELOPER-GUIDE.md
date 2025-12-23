@@ -492,7 +492,7 @@ ______________________________________________________________________
 API keys are generated during setup:
 
 ```bash
-cd /root/qubinode_navigator/airflow
+cd /opt/qubinode_navigator/airflow
 ./setup-mcp-servers.sh
 ```
 
@@ -511,7 +511,7 @@ export MCP_API_KEY="your-generated-key"
 
 Keys are stored in:
 
-- `/root/qubinode_navigator/airflow/.env.mcp`
+- `/opt/qubinode_navigator/airflow/.env.mcp`
 - Environment variables in docker-compose.yml
 
 ### Security Best Practices
@@ -551,7 +551,7 @@ If tools return permission errors:
 
 ```bash
 # Check read-only mode
-grep READ_ONLY /root/qubinode_navigator/airflow/.env
+grep READ_ONLY /opt/qubinode_navigator/airflow/.env
 
 # Disable read-only for write operations
 export AIRFLOW_MCP_TOOLS_READ_ONLY=false

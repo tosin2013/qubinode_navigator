@@ -171,7 +171,7 @@ sudo mv ansiblesafe-linux-amd64 /usr/local/bin/ansiblesafe
 
 # export INVENTORY=supermicro
 # ansiblesafe -f /home/${USER}/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml
-# ansiblesafe -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml
+# ansiblesafe -f /opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml
 ```
 
 ## Configure Additional Variables

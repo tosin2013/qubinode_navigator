@@ -120,7 +120,7 @@ class TaskExecutor:
         session_id: str,
         rag_service: Any = None,
         lineage_service: Any = None,
-        working_directory: str = "/root/qubinode_navigator",
+        working_directory: str = "/opt/qubinode_navigator",
     ):
         self.session_id = session_id
         self.rag_service = rag_service
@@ -524,7 +524,7 @@ async def execute_session_plan(
     lineage_service: Any = None,
     rag_context: List[str] = None,
     lineage_context: Dict[str, Any] = None,
-    working_directory: str = "/root/qubinode_navigator",
+    working_directory: str = "/opt/qubinode_navigator",
 ) -> ExecutionResult:
     """
     Convenience function to execute a session plan.

@@ -110,7 +110,7 @@ Airflow UI is not loading through nginx because Airflow needs to know about the 
 
 Update Airflow configuration to set the base URL.
 
-**File:** `/root/qubinode_navigator/airflow/docker-compose.yml`
+**File:** `/opt/qubinode_navigator/airflow/docker-compose.yml`
 
 Add to environment:
 
@@ -123,7 +123,7 @@ environment:
 Then restart:
 
 ```bash
-cd /root/qubinode_navigator/airflow
+cd /opt/qubinode_navigator/airflow
 podman-compose down
 podman-compose up -d
 ```
@@ -360,7 +360,7 @@ nginx -t
 journalctl -u nginx -f
 
 # Restart Airflow
-cd /root/qubinode_navigator/airflow
+cd /opt/qubinode_navigator/airflow
 podman-compose restart
 
 # Check what's listening
@@ -400,7 +400,7 @@ ss -tlnp | grep -E '80|8888'
 1. **Fix Airflow Base URL** (REQUIRED):
 
    ```bash
-   vim /root/qubinode_navigator/airflow/docker-compose.yml
+   vim /opt/qubinode_navigator/airflow/docker-compose.yml
    # Add AIRFLOW__WEBSERVER__BASE_URL environment variable
    podman-compose restart
    ```

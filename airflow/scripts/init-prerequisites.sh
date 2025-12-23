@@ -21,7 +21,7 @@ echo "========================================"
 echo ""
 
 # Configuration
-QUBINODE_DIR="${QUBINODE_DIR:-/root/qubinode_navigator}"
+QUBINODE_DIR="${QUBINODE_DIR:-/opt/qubinode_navigator}"
 VAULT_FILE="$QUBINODE_DIR/inventories/localhost/group_vars/control/vault.yml"
 FREEIPA_DIR="/opt/freeipa-workshop-deployer"
 KCLI_PIPELINES_DIR="/opt/kcli-pipelines"

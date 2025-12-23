@@ -94,7 +94,7 @@ done
 
 ```bash
 # Restart webserver to reload plugins
-cd /root/qubinode_navigator/airflow
+cd /opt/qubinode_navigator/airflow
 podman-compose restart airflow-webserver
 
 # Wait for webserver to be ready
@@ -164,7 +164,7 @@ podman logs airflow_airflow-webserver_1 --tail 100
 podman logs qubinode-ai-assistant --tail 100
 
 # All Airflow services
-cd /root/qubinode_navigator/airflow
+cd /opt/qubinode_navigator/airflow
 podman-compose logs -f
 ```
 
@@ -201,7 +201,7 @@ podman exec airflow_airflow-webserver_1 \
 ### Complete Restart
 
 ```bash
-cd /root/qubinode_navigator/airflow
+cd /opt/qubinode_navigator/airflow
 podman-compose down
 podman-compose up -d
 
@@ -213,7 +213,7 @@ podman network connect airflow_default qubinode-ai-assistant
 
 ```bash
 # Rebuild image with latest plugin changes
-cd /root/qubinode_navigator/airflow
+cd /opt/qubinode_navigator/airflow
 podman build -t qubinode-airflow:2.10.4-python3.12 -f Dockerfile .
 podman-compose up -d --force-recreate
 ```

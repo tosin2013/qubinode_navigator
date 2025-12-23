@@ -71,7 +71,7 @@ Looking at your screenshot:
 **Why:** Forces UI to resync with database
 
 ```bash
-cd /root/qubinode_navigator/airflow
+cd /opt/qubinode_navigator/airflow
 podman-compose restart airflow-webserver
 
 # Wait 30 seconds
@@ -170,7 +170,7 @@ Diagnosis: Browser cache or UI filter issue
 1. **If still not showing:**
 
    ```bash
-   cd /root/qubinode_navigator/airflow
+   cd /opt/qubinode_navigator/airflow
    podman-compose restart airflow-webserver airflow-scheduler
    sleep 30
    # Then refresh browser
@@ -226,7 +226,7 @@ podman exec airflow_airflow-scheduler_1 which curl
 
 ```bash
 # Method 1: Touch the DAG file (forces rescan)
-touch /root/qubinode_navigator/airflow/dags/example_kcli_script_based.py
+touch /opt/qubinode_navigator/airflow/dags/example_kcli_script_based.py
 
 # Wait 30 seconds for scheduler to detect change
 
@@ -372,7 +372,7 @@ If scheduler unhealthy → Check logs, but DAGs might still work
 **Nuclear option (restarts everything):**
 
 ```bash
-cd /root/qubinode_navigator/airflow
+cd /opt/qubinode_navigator/airflow
 
 # Stop everything
 podman-compose down

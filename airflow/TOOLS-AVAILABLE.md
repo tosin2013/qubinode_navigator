@@ -196,4 +196,4 @@ The containers run as root and have access to the libvirt socket because:
   - `/opt/airflow/dags/example_kcli_vm_provisioning.py`
   - `/opt/airflow/dags/example_kcli_virsh_combined.py`
 - **Plugin Code**: `/opt/airflow/plugins/qubinode/`
-- **Architecture**: `/root/qubinode_navigator/airflow/ARCHITECTURE.md`
+- **Architecture**: `/opt/qubinode_navigator/airflow/ARCHITECTURE.md`

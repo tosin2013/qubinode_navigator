@@ -10,13 +10,16 @@ across all supported environments and configurations.
 
 import subprocess
 import sys
+import os
 from pathlib import Path
 
 
 class ModernizedSetupTester:
     def __init__(self):
         self.test_results = []
-        self.setup_script = Path("/root/qubinode_navigator/setup_modernized.sh")
+        # Use QUBINODE_HOME environment variable or default to /opt/qubinode_navigator
+        self.qubinode_home = os.environ.get('QUBINODE_HOME', '/opt/qubinode_navigator')
+        self.setup_script = Path(f"{self.qubinode_home}/scripts/development/setup_modernized.sh")
 
     def run_bash_function(self, function_name, setup_env=True):
         """Run a specific bash function from the setup script"""
@@ -29,7 +32,7 @@ class ModernizedSetupTester:
             ["bash", "-c", cmd],
             capture_output=True,
             text=True,
-            cwd="/root/qubinode_navigator",
+            cwd=self.qubinode_home,
         )
         return result
 
@@ -122,7 +125,7 @@ class ModernizedSetupTester:
             ["python3", "qubinode_cli.py", "list"],
             capture_output=True,
             text=True,
-            cwd="/root/qubinode_navigator",
+            cwd=self.qubinode_home,
         )
 
         success = result.returncode == 0 and "CentOSStream10Plugin" in result.stdout and "Available Plugins" in result.stdout
@@ -144,9 +147,9 @@ class ModernizedSetupTester:
         print("📋 Testing Configuration Validation...")
 
         # Check if configuration files exist
-        config_file = Path("/root/qubinode_navigator/config/plugins.yml")
+        config_file = Path(f"{self.qubinode_home}/config/plugins.yml")
         tmp_config = Path("/tmp/config.yml")
-        notouch_env = Path("/root/qubinode_navigator/notouch.env")
+        notouch_env = Path(f"{self.qubinode_home}/notouch.env")
 
         success = config_file.exists() and tmp_config.exists()
 

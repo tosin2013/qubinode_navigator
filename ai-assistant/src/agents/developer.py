@@ -50,7 +50,7 @@ class DeveloperDependencies(AgentDependencies):
     aider_model: str = "claude-sonnet-4-20250514"  # Model for Aider via LiteLLM
 
     # Working directory for code changes
-    working_directory: str = "/root/qubinode_navigator"
+    working_directory: str = "/opt/qubinode_navigator"
 
     # Provider cache for Provider-First Rule checks
     provider_cache: dict = {}

@@ -35,10 +35,13 @@ class AIAssistantPlugin(QubiNodePlugin):
         """Initialize AI Assistant plugin with configuration"""
         super().__init__(config)
 
+        # Get QUBINODE_HOME from environment or use default
+        qubinode_home = os.environ.get('QUBINODE_HOME', '/opt/qubinode_navigator')
+
         # Initialize configuration attributes immediately
         self.ai_service_url = self.config.get("ai_service_url", "http://localhost:8080")
         self.container_name = self.config.get("container_name", "qubinode-ai-assistant")
-        self.ai_assistant_path = self.config.get("ai_assistant_path", "/root/qubinode_navigator/ai-assistant")
+        self.ai_assistant_path = self.config.get("ai_assistant_path", f"{qubinode_home}/ai-assistant")
         self.auto_start = self.config.get("auto_start", True)
         self.health_check_timeout = self.config.get("health_check_timeout", 60)
         self.enable_diagnostics = self.config.get("enable_diagnostics", True)

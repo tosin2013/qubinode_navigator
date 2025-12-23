@@ -116,5 +116,5 @@
           - Total Tools: 3
           - Passed: {{ [query_test.test_passed, chat_test.test_passed, status_test.test_passed] | select('equalto', true) | list | length }}
           - Failed: {{ [query_test.test_passed, chat_test.test_passed, status_test.test_passed] | select('equalto', false) | list | length }}
-        dest: "/root/qubinode_navigator/tests/mcp/ai_assistant_test_report.md"
+        dest: "/opt/qubinode_navigator/tests/mcp/ai_assistant_test_report.md"
       tags: [report]

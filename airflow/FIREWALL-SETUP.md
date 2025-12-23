@@ -247,7 +247,7 @@ echo "   Access Airflow at: http://localhost:8888"
 echo "   Login: admin / admin"
 ```
 
-Save as `/root/qubinode_navigator/airflow/setup-firewall.sh` and run:
+Save as `/opt/qubinode_navigator/airflow/setup-firewall.sh` and run:
 
 ```bash
 chmod +x setup-firewall.sh

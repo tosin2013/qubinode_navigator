@@ -98,7 +98,8 @@ x-airflow-common:
     - /var/run/libvirt/libvirt-sock:/var/run/libvirt/libvirt-sock
     - /root/.kcli:/root/.kcli:ro
     # Mount qubinode_navigator for vault.yml and inventory access
-    - /root/qubinode_navigator:/opt/qubinode_navigator:ro
+    # Uses QUBINODE_HOME env var (default /opt/qubinode_navigator)
+    - ${QUBINODE_HOME:-/opt/qubinode_navigator}:/opt/qubinode_navigator:ro
     # Mount freeipa-workshop-deployer for Ansible playbooks
     - /root/freeipa-workshop-deployer:/opt/freeipa-workshop-deployer
     # Mount qubinode-pipelines for deployment scripts (ADR-0047)

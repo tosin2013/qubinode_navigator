@@ -16,7 +16,7 @@ import hashlib
 class KcliDocsFetcher:
     """Fetches and prepares kcli documentation for RAG ingestion"""
 
-    def __init__(self, output_dir: str = "/root/qubinode_navigator/ai-assistant/data/kcli-docs"):
+    def __init__(self, output_dir: str = "/opt/qubinode_navigator/ai-assistant/data/kcli-docs"):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
 

@@ -102,5 +102,5 @@
           - Total Tests: {{ ai_suite_results.test_summary.total_tests + airflow_suite_results.test_summary.total_tests }}
           - Total Passed: {{ ai_suite_results.test_summary.passed + airflow_suite_results.test_summary.passed }}
           - Total Failed: {{ ai_suite_results.test_summary.failed + airflow_suite_results.test_summary.failed }}
-        dest: "/root/qubinode_navigator/tests/mcp/comprehensive_test_report.md"
+        dest: "/opt/qubinode_navigator/tests/mcp/comprehensive_test_report.md"
       tags: [report]

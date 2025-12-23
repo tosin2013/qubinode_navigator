@@ -208,7 +208,7 @@ plugins:
     ai_service_url: "http://localhost:8080"
     container_name: "qubinode-ai-assistant"
     container_image: "localhost/qubinode-ai-assistant:latest"
-    ai_assistant_path: "/root/qubinode_navigator/ai-assistant"
+    ai_assistant_path: "/opt/qubinode_navigator/ai-assistant"
     auto_start: true
     health_check_timeout: 60
     enable_diagnostics: true

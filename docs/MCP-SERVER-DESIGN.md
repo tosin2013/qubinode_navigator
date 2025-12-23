@@ -416,7 +416,7 @@ Claude: [Calls get_dag_status tool]
 ### Enable MCP Servers:
 
 ```bash
-cd /root/qubinode_navigator
+cd /opt/qubinode_navigator
 
 # Generate API keys
 export MCP_API_KEY=$(openssl rand -hex 32)

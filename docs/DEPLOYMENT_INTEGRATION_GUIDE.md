@@ -100,7 +100,7 @@ fi
 ### **Configuration Files**
 
 ```
-/root/qubinode_navigator/
+/opt/qubinode_navigator/
 ├── .env                    # New: One-shot script configuration
 ├── .env.example           # New: Configuration template with deployment examples
 ├── notouch.env            # Generated: Compatibility with existing scripts

@@ -9,7 +9,7 @@ The AI Assistant container was failing to start due to missing bind-mount direct
 When running `scripts/development/deploy-qubinode.sh`, the AI Assistant container would fail with:
 
 ```
-Error: statfs /root/qubinode_navigator/ai-assistant/data: no such file or directory
+Error: statfs /opt/qubinode_navigator/ai-assistant/data: no such file or directory
 ```
 
 Even after manually creating the directory, the health check would fail, preventing successful deployment.

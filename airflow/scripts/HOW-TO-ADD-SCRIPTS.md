@@ -9,7 +9,7 @@ Adding new test scripts is **easy**! Follow this guide to create custom scripts 
 ### Step 1: Copy the Template (30 seconds)
 
 ```bash
-cd /root/qubinode_navigator/airflow/scripts
+cd /opt/qubinode_navigator/airflow/scripts
 
 # Copy template with your desired name
 cp TEMPLATE-new-script.sh test-my-feature.sh

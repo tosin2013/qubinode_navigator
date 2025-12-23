@@ -122,7 +122,7 @@ DEFAULT_PROJECTS: Dict[str, Dict[str, Any]] = {
         },
     },
     "qubinode_navigator": {
-        "path": "/root/qubinode_navigator",
+        "path": "/opt/qubinode_navigator",
         "git_url": "https://github.com/Qubinode/qubinode_navigator.git",
         "description": "Qubinode Navigator - Airflow-based infrastructure orchestration",
         "capabilities": [

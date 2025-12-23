@@ -73,7 +73,7 @@ echo ""
 # Step 5: Run Ansible test
 echo -e "${YELLOW}[5/5]${NC} Running Ansible MCP test playbook..."
 echo ""
-cd /root/qubinode_navigator
+cd /opt/qubinode_navigator
 
 ansible-playbook tests/mcp/test_ai_assistant_mcp.yml -v 2>&1 | tee /tmp/ansible-fastmcp-test.log
 

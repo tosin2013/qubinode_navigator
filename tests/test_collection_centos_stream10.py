@@ -18,7 +18,7 @@ from pathlib import Path
 class CentOSStream10CollectionTester:
     def __init__(self):
         self.test_results = []
-        self.collection_path = Path("/root/qubinode_navigator/qubinode_kvmhost_setup_collection")
+        self.collection_path = Path("/opt/qubinode_navigator/qubinode_kvmhost_setup_collection")
         self.role_path = self.collection_path / "roles" / "kvmhost_setup"
 
     def create_test_playbook(self):

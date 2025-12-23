@@ -36,7 +36,7 @@ class TestAIAssistantFullIntegration:
             "ai_service_url": self.ai_service_url,
             "container_name": self.container_name,
             "container_image": self.container_image,
-            "ai_assistant_path": "/root/qubinode_navigator/ai-assistant",  # Use real path
+            "ai_assistant_path": "/opt/qubinode_navigator/ai-assistant",  # Use real path
             "auto_start": False,  # Don't auto-start to avoid build process
             "health_check_timeout": 30,
             "enable_diagnostics": True,
@@ -267,7 +267,7 @@ class TestAIAssistantFullIntegration:
         # Test valid configuration
         valid_config = {
             "ai_service_url": "http://localhost:8080",
-            "ai_assistant_path": "/root/qubinode_navigator/ai-assistant",  # This path exists
+            "ai_assistant_path": "/opt/qubinode_navigator/ai-assistant",  # This path exists
         }
 
         valid_plugin = AIAssistantPlugin(valid_config)

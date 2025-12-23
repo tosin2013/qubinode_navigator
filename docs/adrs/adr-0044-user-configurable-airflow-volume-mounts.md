@@ -72,7 +72,7 @@ DAGs need access to host paths for:
 AIRFLOW_EXTRA_VOLUMES="
 /root/freeipa-workshop-deployer:/opt/freeipa-workshop-deployer
 /root/kcli-pipelines:/opt/kcli-pipelines:ro
-/root/qubinode_navigator:/opt/qubinode_navigator:ro
+/opt/qubinode_navigator:/opt/qubinode_navigator:ro
 /root/.ssh:/root/.ssh:ro
 "
 ```
@@ -84,7 +84,7 @@ airflow/mounts/
 ├── README.md           # Documentation
 ├── freeipa/            # Symlink to /root/freeipa-workshop-deployer
 ├── kcli-pipelines/     # Symlink to /root/kcli-pipelines
-└── qubinode/           # Symlink to /root/qubinode_navigator
+└── qubinode/           # Symlink to /opt/qubinode_navigator
 ```
 
 ### 3. Docker Compose Integration
@@ -116,7 +116,7 @@ Add standard mounts to `docker-compose.yml`:
 
 ```yaml
 # Mount qubinode_navigator for vault.yml and inventory access
-- /root/qubinode_navigator:/opt/qubinode_navigator:ro
+- /opt/qubinode_navigator:/opt/qubinode_navigator:ro
 # Mount freeipa-workshop-deployer for Ansible playbooks
 - /root/freeipa-workshop-deployer:/opt/freeipa-workshop-deployer
 # Mount kcli-pipelines for scripts

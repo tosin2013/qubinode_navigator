@@ -4,6 +4,17 @@
 
 set -e
 
+# QUBINODE_HOME Setup
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -n "${QUBINODE_HOME:-}" ]]; then
+    : # Already set
+elif [[ -d "$SCRIPT_DIR/airflow" ]]; then
+    QUBINODE_HOME="$SCRIPT_DIR"
+else
+    QUBINODE_HOME="/opt/qubinode_navigator"
+fi
+export QUBINODE_HOME
+
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
@@ -28,14 +39,14 @@ echo ""
 echo -e "${YELLOW}[2/6]${NC} Creating backup..."
 BACKUP_DIR="/tmp/mcp-backup-$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$BACKUP_DIR"
-cp /root/qubinode_navigator/airflow/.env "$BACKUP_DIR/" 2>/dev/null || echo "No .env to backup"
-cp /root/qubinode_navigator/airflow/docker-compose.yml "$BACKUP_DIR/"
+cp ${QUBINODE_HOME}/airflow/.env "$BACKUP_DIR/" 2>/dev/null || echo "No .env to backup"
+cp ${QUBINODE_HOME}/airflow/docker-compose.yml "$BACKUP_DIR/"
 echo -e "${GREEN}✓${NC} Backup created: $BACKUP_DIR"
 echo ""
 
 # Configure environment
 echo -e "${YELLOW}[3/6]${NC} Configuring environment..."
-cd /root/qubinode_navigator/airflow
+cd ${QUBINODE_HOME}/airflow
 
 # Ensure MCP is enabled
 if ! grep -q "AIRFLOW_MCP_ENABLED" .env 2>/dev/null; then
@@ -128,7 +139,7 @@ echo ""
 
 # Show client configuration
 echo -e "${YELLOW}Client Configuration:${NC}"
-echo "  Copy /root/qubinode_navigator/mcp-client-config-example.json"
+echo "  Copy ${QUBINODE_HOME}/mcp-client-config-example.json"
 echo "  To: ~/.config/claude/claude_desktop_config.json"
 echo "  Or: /root/.codeium/windsurf/mcp_config.json"
 echo ""
@@ -139,5 +150,5 @@ echo -e "${YELLOW}Next Steps:${NC}"
 echo "  1. Configure your MCP client (Claude/Windsurf)"
 echo "  2. Test connection: ansible-playbook tests/mcp/test_mcp_suite.yml"
 echo "  3. Monitor logs: podman-compose logs -f airflow-mcp-server"
-echo "  4. Review docs: /root/qubinode_navigator/FASTMCP-QUICK-START.md"
+echo "  4. Review docs: ${QUBINODE_HOME}/FASTMCP-QUICK-START.md"
 echo ""

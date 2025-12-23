@@ -83,10 +83,10 @@ fi
 
 ```bash
 # Interactive mode
-/usr/local/bin/ansiblesafe -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml
+/usr/local/bin/ansiblesafe -f /opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml
 
 # CI/CD mode
-/usr/local/bin/ansiblesafe -f /root/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml -o 1
+/usr/local/bin/ansiblesafe -f /opt/qubinode_navigator/inventories/${INVENTORY}/group_vars/control/vault.yml -o 1
 ```
 
 ### Security Features

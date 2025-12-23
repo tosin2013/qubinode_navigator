@@ -79,7 +79,7 @@ Then:
 1. To deploy the MCP services (Airflow MCP server + AI Assistant) for MCP clients (e.g. Claude Desktop), run:
 
 ```bash
-cd /root/qubinode_navigator
+cd /opt/qubinode_navigator
 ./deploy-fastmcp-production.sh
 ```
 

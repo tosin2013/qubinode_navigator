@@ -236,7 +236,7 @@ class DAGValidator:
 
         if dags_path is None:
             # Check if running in container (/app/airflow/dags) or on host
-            dags_path = os.environ.get("AIRFLOW_DAGS_PATH", "/app/airflow/dags" if Path("/app/airflow/dags").exists() else "/root/qubinode_navigator/airflow/dags")
+            dags_path = os.environ.get("AIRFLOW_DAGS_PATH", "/app/airflow/dags" if Path("/app/airflow/dags").exists() else "/opt/qubinode_navigator/airflow/dags")
         if airflow_api_url is None:
             airflow_api_url = os.environ.get("AIRFLOW_API_URL", "http://localhost:8888/api/v1")
         self.dags_path = Path(dags_path)

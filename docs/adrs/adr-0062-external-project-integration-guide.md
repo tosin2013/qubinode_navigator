@@ -324,11 +324,11 @@ Before submitting, test your DAG works with qubinode_navigator:
 
 ```bash
 # 1. Start qubinode_navigator Airflow
-cd /root/qubinode_navigator
+cd /opt/qubinode_navigator
 ./deploy-qubinode-with-airflow.sh
 
 # 2. Copy your DAG to test location
-cp your-dag.py /root/qubinode_navigator/airflow/dags/
+cp your-dag.py /opt/qubinode_navigator/airflow/dags/
 
 # 3. Wait for Airflow to detect (or restart scheduler)
 docker compose -f airflow/docker-compose.yml restart airflow-scheduler

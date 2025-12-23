@@ -357,7 +357,7 @@ def get_default_input_dir() -> str:
 
     # Check common locations
     common_paths = [
-        "/root/qubinode_navigator",
+        "/opt/qubinode_navigator",
         "/opt/qubinode_navigator",
         Path.home() / "qubinode_navigator",
     ]

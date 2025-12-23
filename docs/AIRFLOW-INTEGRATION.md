@@ -36,7 +36,7 @@ export ENABLE_AIRFLOW=true
 ### 2. Start Services
 
 ```bash
-cd /root/qubinode_navigator
+cd /opt/qubinode_navigator
 docker-compose -f docker-compose-airflow.yml up -d
 ```
 

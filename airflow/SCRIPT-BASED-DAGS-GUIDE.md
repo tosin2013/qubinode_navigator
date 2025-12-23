@@ -304,7 +304,7 @@ virsh -c qemu:///system vol-list default | grep centos10stream
 **Use test script:**
 
 ```bash
-cd /root/qubinode_navigator/airflow
+cd /opt/qubinode_navigator/airflow
 ./scripts/test-kcli-create-vm.sh test-debug centos10stream 2048 2 10
 ```
 

@@ -251,7 +251,7 @@ class CodeGenerationRequest(BaseModel):
     target_files: List[str]
     rag_context: List[str]
     lineage_context: Optional[Dict[str, Any]] = None
-    working_directory: str = "/root/qubinode_navigator"
+    working_directory: str = "/opt/qubinode_navigator"
 
 
 class FallbackCodePrompt(BaseModel):

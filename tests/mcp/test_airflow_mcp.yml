@@ -100,5 +100,5 @@
           ## Summary
 
           - Core Tests Passed: {{ [list_dags_test.test_passed, list_vms_test.test_passed] | select('equalto', true) | list | length }}/2
-        dest: "/root/qubinode_navigator/tests/mcp/airflow_test_report.md"
+        dest: "/opt/qubinode_navigator/tests/mcp/airflow_test_report.md"
       tags: [report]

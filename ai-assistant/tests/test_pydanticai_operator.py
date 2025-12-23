@@ -259,8 +259,8 @@ class TestOperatorDefaults:
 
     def test_default_working_directory(self):
         """Test default working directory."""
-        default_dir = "/root/qubinode_navigator"
-        assert default_dir == "/root/qubinode_navigator"
+        default_dir = "/opt/qubinode_navigator"
+        assert default_dir == "/opt/qubinode_navigator"
 
     def test_default_aider_model(self):
         """Test default Aider model."""

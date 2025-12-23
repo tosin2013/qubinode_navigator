@@ -68,7 +68,7 @@ class AgentContextManager:
         self.rag_service = None
         self.lineage_service = None
         self.adrs_loaded = False
-        self.project_root = Path(os.getenv("QUBINODE_ROOT", "/root/qubinode_navigator"))
+        self.project_root = Path(os.getenv("QUBINODE_ROOT", "/opt/qubinode_navigator"))
         self.data_dir = Path(os.getenv("RAG_DATA_DIR", "/app/data"))
 
     async def initialize(

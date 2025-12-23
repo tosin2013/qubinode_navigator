@@ -456,12 +456,15 @@ class RockyLinuxPlugin(QubiNodePlugin):
     def _configure_ansible_navigator(self) -> None:
         """Configure Ansible Navigator for cloud deployment"""
         try:
+            # Get QUBINODE_HOME from environment or use default
+            qubinode_home = os.environ.get('QUBINODE_HOME', '/opt/qubinode_navigator')
+
             config_content = f"""---
 ansible-navigator:
   ansible:
     inventory:
       entries:
-      - /root/qubinode_navigator/inventories/{self.inventory}
+      - {qubinode_home}/inventories/{self.inventory}
   execution-environment:
     container-engine: podman
     enabled: true
@@ -516,7 +519,8 @@ ansible-navigator:
     def _configure_vault_integrated_setup(self) -> None:
         """Configure vault-integrated setup for cloud credential management"""
         try:
-            nav_dir = "/root/qubinode_navigator"
+            # Get QUBINODE_HOME from environment or use default
+            nav_dir = os.environ.get('QUBINODE_HOME', '/opt/qubinode_navigator')
             vault_script = f"{nav_dir}/vault-integrated-setup.sh"
 
             if os.path.exists(vault_script):

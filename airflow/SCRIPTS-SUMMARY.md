@@ -423,7 +423,7 @@ Want AI to know about it?
 
 ```bash
 # 1. Try existing scripts
-cd /root/qubinode_navigator/airflow/scripts
+cd /opt/qubinode_navigator/airflow/scripts
 ./test-kcli-list-vms.sh
 
 # 2. Create your first custom script

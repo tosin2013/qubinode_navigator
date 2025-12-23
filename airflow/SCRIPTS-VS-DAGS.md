@@ -24,7 +24,7 @@ Both use same commands, different execution!
 
 ### Test Scripts (Interactive)
 
-**Location:** `/root/qubinode_navigator/airflow/scripts/test-*.sh`
+**Location:** `/opt/qubinode_navigator/airflow/scripts/test-*.sh`
 
 **Example:**
 
@@ -63,7 +63,7 @@ kcli create vm $VM_NAME ...
 
 ### DAG Operators (Automated)
 
-**Location:** `/root/qubinode_navigator/airflow/plugins/qubinode/operators.py`
+**Location:** `/opt/qubinode_navigator/airflow/plugins/qubinode/operators.py`
 
 **Example:**
 

@@ -115,10 +115,10 @@ ______________________________________________________________________
 podman ps --filter "name=airflow"
 
 # View MCP config
-cat /root/qubinode_navigator/airflow/.env | grep MCP
+cat /opt/qubinode_navigator/airflow/.env | grep MCP
 
 # Restart if needed
-cd /root/qubinode_navigator/airflow && podman-compose restart
+cd /opt/qubinode_navigator/airflow && podman-compose restart
 
 # View logs
 podman logs -f airflow_airflow-webserver_1 | grep MCP

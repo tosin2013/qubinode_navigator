@@ -7,7 +7,7 @@ development:
     deployment_mode: "development"
     ai_service_url: "http://localhost:8080"
     container_name: "qubinode-ai-assistant-dev"
-    ai_assistant_path: "/root/qubinode_navigator/ai-assistant"
+    ai_assistant_path: "/opt/qubinode_navigator/ai-assistant"
     auto_start: true
     health_check_timeout: 120  # Longer timeout for development builds
     enable_diagnostics: true
@@ -20,7 +20,7 @@ production:
     deployment_mode: "production"
     ai_service_url: "http://localhost:8080"
     container_name: "qubinode-ai-assistant"
-    ai_assistant_path: "/root/qubinode_navigator/ai-assistant"
+    ai_assistant_path: "/opt/qubinode_navigator/ai-assistant"
     auto_start: true
     health_check_timeout: 60
     enable_diagnostics: true
@@ -33,7 +33,7 @@ auto:
     deployment_mode: "auto"  # Will auto-detect based on environment
     ai_service_url: "http://localhost:8080"
     container_name: "qubinode-ai-assistant"
-    ai_assistant_path: "/root/qubinode_navigator/ai-assistant"
+    ai_assistant_path: "/opt/qubinode_navigator/ai-assistant"
     auto_start: true
     health_check_timeout: 90
     enable_diagnostics: true
@@ -46,7 +46,7 @@ custom:
     container_image: "custom-registry.example.com/qubinode-ai-assistant:v1.2.3"
     ai_service_url: "http://localhost:8080"
     container_name: "qubinode-ai-assistant"
-    ai_assistant_path: "/root/qubinode_navigator/ai-assistant"
+    ai_assistant_path: "/opt/qubinode_navigator/ai-assistant"
     auto_start: true
     health_check_timeout: 60
     enable_diagnostics: true
@@ -60,7 +60,7 @@ version_specific:
     version_strategy: "specific"
     ai_service_url: "http://localhost:8080"
     container_name: "qubinode-ai-assistant"
-    ai_assistant_path: "/root/qubinode_navigator/ai-assistant"
+    ai_assistant_path: "/opt/qubinode_navigator/ai-assistant"
     auto_start: true
     health_check_timeout: 60
     enable_diagnostics: true
@@ -73,7 +73,7 @@ semver_stable:
     version_strategy: "semver"  # Use latest stable version from VERSION file
     ai_service_url: "http://localhost:8080"
     container_name: "qubinode-ai-assistant"
-    ai_assistant_path: "/root/qubinode_navigator/ai-assistant"
+    ai_assistant_path: "/opt/qubinode_navigator/ai-assistant"
     auto_start: true
     health_check_timeout: 60
     enable_diagnostics: true
@@ -86,7 +86,7 @@ dev_versioned:
     version_strategy: "auto"  # Read from VERSION file
     ai_service_url: "http://localhost:8080"
     container_name: "qubinode-ai-assistant-dev"
-    ai_assistant_path: "/root/qubinode_navigator/ai-assistant"
+    ai_assistant_path: "/opt/qubinode_navigator/ai-assistant"
     auto_start: true
     health_check_timeout: 120
     enable_diagnostics: true

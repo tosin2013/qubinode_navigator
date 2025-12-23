@@ -47,7 +47,7 @@ Human Users                  LLMs
 ### Step 1: Run Setup Script
 
 ```bash
-cd /root/qubinode_navigator/airflow
+cd /opt/qubinode_navigator/airflow
 ./setup-mcp-servers.sh
 ```
 
@@ -61,7 +61,7 @@ This will:
 ### Step 2: Restart Services
 
 ```bash
-cd /root/qubinode_navigator/airflow
+cd /opt/qubinode_navigator/airflow
 podman-compose restart
 ```
 
@@ -201,7 +201,7 @@ This allows:
 
    ```bash
    # Watch MCP access logs
-   tail -f /root/qubinode_navigator/airflow/logs/mcp_access.log
+   tail -f /opt/qubinode_navigator/airflow/logs/mcp_access.log
    ```
 
 1. **Rotate Keys Regularly:**
@@ -334,7 +334,7 @@ echo $AIRFLOW_MCP_API_KEY  # Should not be empty
 **Test MCP server locally:**
 
 ```bash
-cd /root/qubinode_navigator/ai-assistant
+cd /opt/qubinode_navigator/ai-assistant
 MCP_SERVER_ENABLED=true MCP_API_KEY=test python3 mcp_server.py
 ```
 
@@ -369,7 +369,7 @@ echo $AIRFLOW_MCP_TOOLS_VM_OPS     # Must be "true" for VM operations
 **Regenerate keys:**
 
 ```bash
-cd /root/qubinode_navigator/airflow
+cd /opt/qubinode_navigator/airflow
 ./setup-mcp-servers.sh
 ```
 
@@ -425,7 +425,7 @@ location /mcp/airflow/ {
 podman logs -f airflow_airflow-webserver_1 | grep "qubinode-airflow-mcp"
 
 # AI Assistant MCP logs
-tail -f /root/qubinode_navigator/ai-assistant/logs/mcp.log
+tail -f /opt/qubinode_navigator/ai-assistant/logs/mcp.log
 ```
 
 ### Track Tool Usage:

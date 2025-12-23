@@ -23,7 +23,7 @@ Qubinode Navigator provides two Model Context Protocol (MCP) servers that enable
 
 ```bash
 # Start Airflow with MCP enabled
-cd /root/qubinode_navigator/airflow
+cd /opt/qubinode_navigator/airflow
 podman-compose --profile mcp up -d
 
 # Verify servers are running
@@ -185,14 +185,14 @@ Configure keys in the respective `.env` files or environment variables.
 ### Test Airflow MCP
 
 ```bash
-cd /root/qubinode_navigator
+cd /opt/qubinode_navigator
 ansible-playbook tests/mcp/test_airflow_mcp.yml
 ```
 
 ### Test AI Assistant MCP
 
 ```bash
-cd /root/qubinode_navigator/ai-assistant
+cd /opt/qubinode_navigator/ai-assistant
 ./test-fastmcp-poc.sh
 ```
 
@@ -218,7 +218,7 @@ netstat -tuln | grep 8889
 podman logs airflow-mcp-server
 
 # Restart server
-cd /root/qubinode_navigator/airflow
+cd /opt/qubinode_navigator/airflow
 podman-compose restart airflow-mcp-server
 ```
 

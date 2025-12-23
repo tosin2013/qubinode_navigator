@@ -27,10 +27,44 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # so we go up two levels to get to the repository root
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
+# =============================================================================
+# QUBINODE_HOME Setup and Migration
+# =============================================================================
+# Canonical location: /opt/qubinode_navigator
+# Auto-migrate from $HOME/qubinode_navigator if needed
+
+setup_qubinode_home() {
+    local default_path="/opt/qubinode_navigator"
+    local home_path="$HOME/qubinode_navigator"
+
+    # Use environment variable if set, otherwise use default
+    QUBINODE_HOME="${QUBINODE_HOME:-$default_path}"
+
+    # If canonical location doesn't exist, check for migration opportunity
+    if [[ ! -d "$QUBINODE_HOME" ]] && [[ "$QUBINODE_HOME" == "$default_path" ]]; then
+        if [[ -d "$home_path" ]]; then
+            echo "[INFO] Migrating qubinode_navigator from $home_path to $QUBINODE_HOME..."
+            sudo mkdir -p "$QUBINODE_HOME"
+            sudo cp -r "$home_path"/* "$QUBINODE_HOME"/
+            sudo chown -R root:users "$QUBINODE_HOME" 2>/dev/null || sudo chown -R root:root "$QUBINODE_HOME"
+            sudo chmod -R g+w "$QUBINODE_HOME"
+            echo "[INFO] Migration complete. Original preserved at $home_path"
+        elif [[ -d "$REPO_ROOT" ]]; then
+            # Running from git clone - use repo root
+            QUBINODE_HOME="$REPO_ROOT"
+        fi
+    fi
+
+    export QUBINODE_HOME
+    export REPO_ROOT="$QUBINODE_HOME"  # Backward compatibility alias
+}
+
+setup_qubinode_home
+
 # Validate we're in the right repository
-if [[ ! -d "$REPO_ROOT/airflow" ]] || [[ ! -d "$REPO_ROOT/ai-assistant" ]]; then
+if [[ ! -d "$QUBINODE_HOME/airflow" ]] || [[ ! -d "$QUBINODE_HOME/ai-assistant" ]]; then
     echo "ERROR: Cannot find qubinode_navigator repository root"
-    echo "Expected to find airflow/ and ai-assistant/ directories at: $REPO_ROOT"
+    echo "Expected to find airflow/ and ai-assistant/ directories at: $QUBINODE_HOME"
     echo "Please run this script from within the qubinode_navigator repository"
     exit 1
 fi
@@ -1564,11 +1598,7 @@ configure_navigator() {
             }
 
             # Update navigator configuration for current user
-            if [[ "$EUID" -eq 0 ]]; then
-                sed -i "s|/home/admin/qubinode_navigator/inventories/localhost|/root/qubinode_navigator/inventories/${INVENTORY}|g" ~/.ansible-navigator.yml
-            else
-                sed -i "s|/home/admin/qubinode_navigator/inventories/localhost|/home/$USER/qubinode_navigator/inventories/${INVENTORY}|g" ~/.ansible-navigator.yml
-            fi
+            sed -i "s|/home/admin/qubinode_navigator/inventories/localhost|${QUBINODE_HOME}/inventories/${INVENTORY}|g" ~/.ansible-navigator.yml
         fi
 
         # Install Python requirements

@@ -104,7 +104,7 @@ async def query_documents(query: str) -> str:
 ## Links
 
 - **FastMCP:** https://github.com/jlowin/fastmcp
-- **Status:** `/root/qubinode_navigator/MCP-IMPLEMENTATION-STATUS.md`
+- **Status:** `/opt/qubinode_navigator/MCP-IMPLEMENTATION-STATUS.md`
 
 ______________________________________________________________________
 

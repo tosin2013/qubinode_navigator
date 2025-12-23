@@ -140,8 +140,8 @@ curl -I http://localhost:8889
 
 ```bash
 # Verify API keys in .env file
-grep MCP_API_KEY /root/qubinode_navigator/airflow/.env
-grep AIRFLOW_MCP_API_KEY /root/qubinode_navigator/airflow/.env
+grep MCP_API_KEY /opt/qubinode_navigator/airflow/.env
+grep AIRFLOW_MCP_API_KEY /opt/qubinode_navigator/airflow/.env
 ```
 
 ### Timeout Issues
@@ -164,8 +164,8 @@ Tests can be integrated into your CI/CD pipeline. See `MCP-AUDIT-INTEGRATION.md`
 
 ## Additional Resources
 
-- **Integration Guide**: `/root/qubinode_navigator/MCP-AUDIT-INTEGRATION.md`
-- **MCP Configuration**: `/root/qubinode_navigator/MCP-CONFIGURATION-ACTIVE.md`
+- **Integration Guide**: `/opt/qubinode_navigator/MCP-AUDIT-INTEGRATION.md`
+- **MCP Configuration**: `/opt/qubinode_navigator/MCP-CONFIGURATION-ACTIVE.md`
 - **Collection Docs**: https://deepwiki.com/tosin2013/ansible-collection-mcp-audit
 
 ## Support

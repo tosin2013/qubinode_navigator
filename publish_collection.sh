@@ -14,7 +14,12 @@
 
 set -e
 
-COLLECTION_DIR="/root/qubinode_navigator/qubinode_kvmhost_setup_collection"
+# QUBINODE_HOME Setup
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+QUBINODE_HOME="${QUBINODE_HOME:-$SCRIPT_DIR}"
+export QUBINODE_HOME
+
+COLLECTION_DIR="${QUBINODE_HOME}/qubinode_kvmhost_setup_collection"
 COLLECTION_VERSION="0.9.27"
 COLLECTION_TARBALL="tosin2013-qubinode_kvmhost_setup_collection-${COLLECTION_VERSION}.tar.gz"
 

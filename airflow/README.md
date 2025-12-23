@@ -22,7 +22,7 @@ Before starting Airflow, you need to clone the required repositories:
 
 ```bash
 # 1. Clone qubinode_navigator (if not already done)
-git clone https://github.com/Qubinode/qubinode_navigator.git /root/qubinode_navigator
+git clone https://github.com/Qubinode/qubinode_navigator.git /opt/qubinode_navigator
 
 # 2. Clone qubinode-pipelines to the standard location (required for deployment DAGs)
 sudo git clone https://github.com/Qubinode/qubinode-pipelines.git /opt/qubinode-pipelines
@@ -48,14 +48,14 @@ ENABLE_AIRFLOW=true
 **Using Podman** (RHEL ecosystem - recommended):
 
 ```bash
-cd /root/qubinode_navigator/airflow
+cd /opt/qubinode_navigator/airflow
 podman-compose up -d
 ```
 
 **Using Docker** (if available):
 
 ```bash
-cd /root/qubinode_navigator/airflow
+cd /opt/qubinode_navigator/airflow
 docker-compose up -d
 ```
 

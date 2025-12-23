@@ -109,7 +109,7 @@ Create `/root/kcli-pipelines/scripts/sync-dags-to-qubinode.sh`:
 #!/bin/bash
 # Sync DAGs from kcli-pipelines to qubinode_navigator
 KCLI_PIPELINES_DIR="${KCLI_PIPELINES_DIR:-/opt/kcli-pipelines}"
-QUBINODE_DAGS_DIR="${QUBINODE_DAGS_DIR:-/root/qubinode_navigator/airflow/dags}"
+QUBINODE_DAGS_DIR="${QUBINODE_DAGS_DIR:-/opt/qubinode_navigator/airflow/dags}"
 
 # Copy DAGs with validation
 for dag in "$KCLI_PIPELINES_DIR/dags/"*.py; do
