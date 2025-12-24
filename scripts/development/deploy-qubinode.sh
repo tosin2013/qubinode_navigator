@@ -153,7 +153,7 @@ export CICD_PIPELINE="${CICD_PIPELINE:-false}"
 export INVENTORY="${INVENTORY:-localhost}"
 export USE_HASHICORP_VAULT="${USE_HASHICORP_VAULT:-false}"
 export USE_HASHICORP_CLOUD="${USE_HASHICORP_CLOUD:-false}"
-export SSH_USER="${SSH_USER:-lab-user}"
+export SSH_USER="${SSH_USER:-${QUBINODE_ADMIN_USER:-lab-user}}"
 export ANSIBLE_SAFE_VERSION="0.0.14"
 
 # Optional Environment Variables
