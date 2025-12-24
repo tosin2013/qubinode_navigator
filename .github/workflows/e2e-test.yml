@@ -29,7 +29,7 @@ on:
 env:
   # Deployment Configuration
   QUBINODE_DOMAIN: "e2e.qubinode.local"
-  QUBINODE_ADMIN_USER: "admin"
+  QUBINODE_ADMIN_USER: "github-runner"
   QUBINODE_CLUSTER_NAME: "e2e-test"
   QUBINODE_DEPLOYMENT_MODE: "production"
   QUBINODE_ENABLE_AI_ASSISTANT: "true"
