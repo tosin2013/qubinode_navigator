@@ -1314,38 +1314,59 @@ install_packages() {
 configure_ssh() {
     log_step "Configuring SSH..."
 
-    if [[ -f ~/.ssh/id_rsa ]]; then
-        log_info "SSH key already exists"
+    # Determine the correct SSH key path based on admin user
+    local ssh_dir ssh_key_path
+    if [[ -n "${QUBINODE_ADMIN_USER:-}" && "${QUBINODE_ADMIN_USER}" != "root" ]]; then
+        ssh_dir="/home/${QUBINODE_ADMIN_USER}/.ssh"
+        ssh_key_path="${ssh_dir}/id_rsa"
     else
-        log_info "Generating SSH key..."
+        ssh_dir="$HOME/.ssh"
+        ssh_key_path="${ssh_dir}/id_rsa"
+    fi
+
+    # Ensure .ssh directory exists with correct permissions
+    if [[ ! -d "$ssh_dir" ]]; then
+        mkdir -p "$ssh_dir"
+        chmod 700 "$ssh_dir"
+        if [[ -n "${QUBINODE_ADMIN_USER:-}" && "${QUBINODE_ADMIN_USER}" != "root" ]]; then
+            chown "${QUBINODE_ADMIN_USER}:${QUBINODE_ADMIN_USER}" "$ssh_dir"
+        fi
+    fi
+
+    if [[ -f "$ssh_key_path" ]]; then
+        log_info "SSH key already exists at $ssh_key_path"
+    else
+        log_info "Generating SSH key at $ssh_key_path..."
         local ip_address=$(hostname -I | awk '{print $1}')
-        ssh-keygen -f ~/.ssh/id_rsa -t rsa -N '' || {
+        ssh-keygen -f "$ssh_key_path" -t rsa -N '' || {
             log_error "Failed to generate SSH key"
             ask_ai_for_help "ssh_keygen" "ssh-keygen failed"
             return 1
         }
+        # Set correct ownership if generating for non-root user
+        if [[ -n "${QUBINODE_ADMIN_USER:-}" && "${QUBINODE_ADMIN_USER}" != "root" ]]; then
+            chown "${QUBINODE_ADMIN_USER}:${QUBINODE_ADMIN_USER}" "$ssh_key_path" "${ssh_key_path}.pub"
+        fi
 
-        # Configure SSH key for local access
+        # Configure SSH key for local access - use the specific key we generated
         if [[ "$CICD_PIPELINE" == "true" ]]; then
             if [[ "$EUID" -eq 0 ]]; then
-                sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no "$SSH_USER@${ip_address}" || {
+                sshpass -p "$SSH_PASSWORD" ssh-copy-id -i "${ssh_key_path}.pub" -o StrictHostKeyChecking=no "$SSH_USER@${ip_address}" || {
                     log_warning "Failed to copy SSH key automatically"
                 }
             else
-                sshpass -p "$SSH_PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no "$USER@${ip_address}" || {
+                sshpass -p "$SSH_PASSWORD" ssh-copy-id -i "${ssh_key_path}.pub" -o StrictHostKeyChecking=no "$USER@${ip_address}" || {
                     log_warning "Failed to copy SSH key automatically"
                 }
-                sudo ssh-keygen -f /root/.ssh/id_rsa -t rsa -N '' || true
             fi
         else
             if [[ "$EUID" -eq 0 ]]; then
                 log_info "Please manually copy SSH key to target user if needed"
-                log_info "Command: ssh-copy-id $SSH_USER@${ip_address}"
+                log_info "Command: ssh-copy-id -i ${ssh_key_path}.pub $SSH_USER@${ip_address}"
             else
-                ssh-copy-id "$USER@${ip_address}" || {
+                ssh-copy-id -i "${ssh_key_path}.pub" "$USER@${ip_address}" || {
                     log_warning "Failed to copy SSH key, you may need to do this manually"
                 }
-                sudo ssh-keygen -f /root/.ssh/id_rsa -t rsa -N '' || true
             fi
         fi
     fi
@@ -1876,10 +1897,17 @@ test_inventory() {
 deploy_kvmhost() {
     log_step "Deploying KVM Host..."
 
-    # Set up SSH agent
+    # Set up SSH agent - use the admin user's SSH key, not root's
+    local ssh_key_path
+    if [[ -n "${QUBINODE_ADMIN_USER:-}" && "${QUBINODE_ADMIN_USER}" != "root" ]]; then
+        ssh_key_path="/home/${QUBINODE_ADMIN_USER}/.ssh/id_rsa"
+    else
+        ssh_key_path="$HOME/.ssh/id_rsa"
+    fi
+
     eval $(ssh-agent)
-    ssh-add ~/.ssh/id_rsa || {
-        log_error "Failed to add SSH key to agent"
+    ssh-add "$ssh_key_path" || {
+        log_error "Failed to add SSH key to agent: $ssh_key_path"
         return 1
     }
 
