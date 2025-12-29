@@ -34,7 +34,7 @@ filelock==3.20.1
 frozenlist==1.8.0
 fsspec==2025.12.0
 greenlet==3.3.0
-grpcio==1.67.1
+grpcio==1.76.0
 h11==0.16.0
 h2==4.3.0
 hf-xet==1.2.0
@@ -132,7 +132,7 @@ tiktoken==0.12.0
 tokenizers==0.22.1
 tqdm==4.67.1
 typer==0.20.1
-typer-slim==0.20.1
+typer-slim==0.21.0
 typing-extensions==4.15.0
 typing-inspect==0.9.0
 typing-inspection==0.4.2
