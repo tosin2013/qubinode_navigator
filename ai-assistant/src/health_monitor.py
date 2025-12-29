@@ -17,13 +17,15 @@ logger = logging.getLogger(__name__)
 class HealthMonitor:
     """Monitors health of AI assistant components."""
 
-    def __init__(self, ai_service=None, use_local_model: bool = False):
+    def __init__(self, ai_service=None, use_local_model: bool = False, pydanticai_available: bool = False):
         self.start_time = time.time()
         self.last_health_check = None
         self.health_status = "starting"
         self.ai_service = ai_service
         # When USE_LOCAL_MODEL=false, skip llama.cpp health checks
         self.use_local_model = use_local_model
+        # PydanticAI orchestrator availability (required for smart pipeline)
+        self.pydanticai_available = pydanticai_available
 
     async def get_health_status(self) -> Dict[str, Any]:
         """Get comprehensive health status."""
@@ -141,7 +143,7 @@ class HealthMonitor:
                 # Check model availability
                 model_healthy = await self._check_model_availability()
 
-                healthy = llama_healthy and model_healthy and api_healthy
+                healthy = llama_healthy and model_healthy and api_healthy and self.pydanticai_available
 
                 if not llama_healthy:
                     warnings.append("llama.cpp server not responding")
@@ -154,21 +156,26 @@ class HealthMonitor:
                     "model": model_healthy,
                     "api": api_healthy,
                     "rag_service": rag_status,
+                    "orchestrator": self.pydanticai_available,
                     "mode": "local",
                 }
             else:
-                # Cloud-only mode: llama.cpp not required
-                healthy = api_healthy
+                # Cloud-only mode: llama.cpp not required, but orchestrator IS required
+                healthy = api_healthy and self.pydanticai_available
                 components = {
                     "llama_server": "skipped (cloud-only mode)",
                     "model": "skipped (cloud-only mode)",
                     "api": api_healthy,
                     "rag_service": rag_status,
+                    "orchestrator": self.pydanticai_available,
                     "mode": "cloud",
                 }
 
             if not api_healthy:
                 warnings.append("API not responsive")
+
+            if not self.pydanticai_available:
+                warnings.append("PydanticAI orchestrator not available - check pydantic-ai dependency")
 
             if not rag_status["available"]:
                 warnings.append("RAG service not available")

@@ -94,8 +94,9 @@ async def lifespan(app: FastAPI):
 
         # Initialize health monitor with AI service reference
         # Pass use_local_model flag so health checks know whether to check llama.cpp
+        # Pass pydanticai_available so health checks fail early if orchestrator is missing
         use_local_model = config_manager.is_local_model_enabled()
-        health_monitor = HealthMonitor(ai_service, use_local_model=use_local_model)
+        health_monitor = HealthMonitor(ai_service, use_local_model=use_local_model, pydanticai_available=PYDANTICAI_AVAILABLE)
 
         # Initialize PydanticAI Agent Context with RAG and lineage services
         if PYDANTICAI_AVAILABLE:
