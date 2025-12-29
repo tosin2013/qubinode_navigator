@@ -174,38 +174,56 @@ jobs:
           # Also create in home directories for scripts that look there
           echo "$VAULT_PASS" > "$HOME/.vault_password"
           chmod 600 "$HOME/.vault_password"
+          # Create in admin user's home (may be different from current user when using sudo)
+          ADMIN_HOME=$(getent passwd "$QUBINODE_ADMIN_USER" | cut -d: -f6 || echo "/home/$QUBINODE_ADMIN_USER")
+          if [ -d "$ADMIN_HOME" ] && [ "$ADMIN_HOME" != "$HOME" ]; then
+            sudo sh -c "echo '$VAULT_PASS' > '$ADMIN_HOME/.vault_password' && chmod 600 '$ADMIN_HOME/.vault_password' && chown $QUBINODE_ADMIN_USER '$ADMIN_HOME/.vault_password'"
+          fi
+          # Also create for root if running privileged operations
           sudo sh -c "echo '$VAULT_PASS' > /root/.vault_password && chmod 600 /root/.vault_password"
           echo "[OK] Vault password files created"
 
       - name: Configure SSH for Airflow container host access
         run: |
           # ADR-0043/ADR-0046: Airflow containers SSH to localhost to run kcli
-          # The container mounts /root/.ssh but needs authorized_keys for localhost
+          # The container needs SSH access to the host for kcli operations
           echo "========================================"
           echo "Configuring SSH for Airflow container"
           echo "========================================"
 
-          # Ensure .ssh directory exists for root
-          sudo mkdir -p /root/.ssh
-          sudo chmod 700 /root/.ssh
-
-          # Ensure SSH key exists for root (use sudo for all /root checks)
-          if ! sudo test -f /root/.ssh/id_rsa; then
-            echo "[INFO] Generating SSH key for root..."
-            sudo ssh-keygen -t rsa -b 4096 -f /root/.ssh/id_rsa -N '' -q
+          # Determine admin user's home directory
+          SSH_USER="${QUBINODE_ADMIN_USER:-root}"
+          if [ "$SSH_USER" = "root" ]; then
+            SSH_HOME="/root"
+          else
+            SSH_HOME=$(getent passwd "$SSH_USER" | cut -d: -f6 || echo "/home/$SSH_USER")
           fi
-          echo "[OK] SSH key exists: /root/.ssh/id_rsa"
+          echo "[INFO] Configuring SSH for user: $SSH_USER (home: $SSH_HOME)"
+
+          # Ensure .ssh directory exists for the admin user
+          sudo mkdir -p "$SSH_HOME/.ssh"
+          sudo chmod 700 "$SSH_HOME/.ssh"
+          sudo chown "$SSH_USER:$SSH_USER" "$SSH_HOME/.ssh" 2>/dev/null || true
+
+          # Ensure SSH key exists for admin user
+          if ! sudo test -f "$SSH_HOME/.ssh/id_rsa"; then
+            echo "[INFO] Generating SSH key for $SSH_USER..."
+            sudo ssh-keygen -t rsa -b 4096 -f "$SSH_HOME/.ssh/id_rsa" -N '' -q
+            sudo chown "$SSH_USER:$SSH_USER" "$SSH_HOME/.ssh/id_rsa" "$SSH_HOME/.ssh/id_rsa.pub" 2>/dev/null || true
+          fi
+          echo "[OK] SSH key exists: $SSH_HOME/.ssh/id_rsa"
 
           # Ensure authorized_keys file exists
-          sudo touch /root/.ssh/authorized_keys
-          sudo chmod 600 /root/.ssh/authorized_keys
+          sudo touch "$SSH_HOME/.ssh/authorized_keys"
+          sudo chmod 600 "$SSH_HOME/.ssh/authorized_keys"
+          sudo chown "$SSH_USER:$SSH_USER" "$SSH_HOME/.ssh/authorized_keys" 2>/dev/null || true
 
           # Add the key to authorized_keys for localhost access
-          # This allows the Airflow container (running as root) to SSH to root@localhost
-          ROOT_PUB_KEY=$(sudo cat /root/.ssh/id_rsa.pub)
-          if ! sudo grep -qF "$ROOT_PUB_KEY" /root/.ssh/authorized_keys 2>/dev/null; then
+          # This allows the Airflow container to SSH to $SSH_USER@localhost
+          USER_PUB_KEY=$(sudo cat "$SSH_HOME/.ssh/id_rsa.pub")
+          if ! sudo grep -qF "$USER_PUB_KEY" "$SSH_HOME/.ssh/authorized_keys" 2>/dev/null; then
             echo "[INFO] Adding SSH key to authorized_keys for localhost access..."
-            echo "$ROOT_PUB_KEY" | sudo tee -a /root/.ssh/authorized_keys > /dev/null
+            echo "$USER_PUB_KEY" | sudo tee -a "$SSH_HOME/.ssh/authorized_keys" > /dev/null
             echo "[OK] SSH key added to authorized_keys"
           else
             echo "[OK] SSH key already in authorized_keys"
@@ -220,17 +238,22 @@ jobs:
           echo "[OK] SSH service is running"
 
           # Test SSH access to localhost
-          echo "[INFO] Testing SSH access to root@localhost..."
-          if sudo ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=5 root@localhost "echo 'SSH localhost access verified'"; then
+          echo "[INFO] Testing SSH access to $SSH_USER@localhost..."
+          if sudo -u "$SSH_USER" ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=5 "$SSH_USER@localhost" "echo 'SSH localhost access verified'" 2>/dev/null || \
+             sudo ssh -i "$SSH_HOME/.ssh/id_rsa" -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=5 "$SSH_USER@localhost" "echo 'SSH localhost access verified'"; then
             echo "[OK] SSH localhost access works"
           else
             echo "[WARN] SSH localhost test failed - checking configuration"
             # Show some debug info
             echo "  authorized_keys fingerprints:"
-            sudo ssh-keygen -lf /root/.ssh/authorized_keys 2>/dev/null | head -3 || echo "  (none)"
+            sudo ssh-keygen -lf "$SSH_HOME/.ssh/authorized_keys" 2>/dev/null | head -3 || echo "  (none)"
             echo "  id_rsa.pub fingerprint:"
-            sudo ssh-keygen -lf /root/.ssh/id_rsa.pub 2>/dev/null || echo "  (none)"
+            sudo ssh-keygen -lf "$SSH_HOME/.ssh/id_rsa.pub" 2>/dev/null || echo "  (none)"
           fi
+
+          # Export SSH_USER for subsequent steps that may need it
+          echo "SSH_USER=$SSH_USER" >> $GITHUB_ENV
+          echo "SSH_HOME=$SSH_HOME" >> $GITHUB_ENV
 
       - name: Deploy Qubinode Stack
         env:
