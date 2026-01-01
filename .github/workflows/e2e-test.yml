@@ -29,6 +29,9 @@ on:
 env:
   # Deployment Configuration
   QUBINODE_DOMAIN: "e2e.qubinode.local"
+  # Container names (podman-compose uses format: <project>_<service>_<instance>)
+  # The airflow/ directory creates project "airflow", so scheduler is "airflow_airflow-scheduler_1"
+  AIRFLOW_SCHEDULER_CONTAINER: "airflow_airflow-scheduler_1"
   QUBINODE_ADMIN_USER: "github-runner"
   QUBINODE_CLUSTER_NAME: "e2e-test"
   QUBINODE_DEPLOYMENT_MODE: "production"
@@ -431,7 +434,7 @@ jobs:
             ATTEMPT=$((ATTEMPT + 1))
 
             # Check if scheduler container is running and healthy
-            if sudo podman exec airflow-scheduler airflow dags list &>/dev/null; then
+            if sudo podman exec $AIRFLOW_SCHEDULER_CONTAINER airflow dags list &>/dev/null; then
               echo "[OK] Airflow scheduler is ready (attempt $ATTEMPT/$MAX_ATTEMPTS)"
               break
             fi
@@ -452,7 +455,7 @@ jobs:
 
           # List DAGs via podman exec (airflow CLI is inside the container)
           echo "[INFO] Available DAGs:"
-          sudo podman exec airflow-scheduler airflow dags list 2>/dev/null || {
+          sudo podman exec $AIRFLOW_SCHEDULER_CONTAINER airflow dags list 2>/dev/null || {
             # Fallback: Use the AI Assistant's orchestrator which has DAG discovery
             echo "[INFO] Using AI Assistant orchestrator for DAG list..."
             curl -s http://localhost:8080/orchestrator/dags | jq -r '.dags[].dag_id // .dags[]' 2>/dev/null || echo "Could not list DAGs"
@@ -461,7 +464,7 @@ jobs:
           # Check for import errors via podman exec
           echo ""
           echo "[INFO] DAG import errors:"
-          sudo podman exec airflow-scheduler airflow dags list-import-errors 2>/dev/null || echo "[INFO] Import errors check skipped"
+          sudo podman exec $AIRFLOW_SCHEDULER_CONTAINER airflow dags list-import-errors 2>/dev/null || echo "[INFO] Import errors check skipped"
 
           echo ""
           echo "[OK] Airflow validation complete"
@@ -479,17 +482,17 @@ jobs:
           # DAGs are paused by default (AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=true)
           # We need to unpause before triggering
           echo "[INFO] Current DAG status:"
-          sudo podman exec airflow-scheduler airflow dags list -o table 2>/dev/null | grep -E "dag_id|freeipa" || true
+          sudo podman exec $AIRFLOW_SCHEDULER_CONTAINER airflow dags list -o table 2>/dev/null | grep -E "dag_id|freeipa" || true
 
           echo ""
           echo "[INFO] Unpausing freeipa_deployment DAG..."
-          sudo podman exec airflow-scheduler airflow dags unpause freeipa_deployment 2>&1 || {
+          sudo podman exec $AIRFLOW_SCHEDULER_CONTAINER airflow dags unpause freeipa_deployment 2>&1 || {
             echo "[WARN] Could not unpause DAG - it may not exist yet"
           }
 
           echo ""
           echo "[INFO] DAG status after unpause:"
-          sudo podman exec airflow-scheduler airflow dags list -o table 2>/dev/null | grep -E "dag_id|freeipa" || true
+          sudo podman exec $AIRFLOW_SCHEDULER_CONTAINER airflow dags list -o table 2>/dev/null | grep -E "dag_id|freeipa" || true
 
       - name: Deploy FreeIPA via AI Assistant Orchestrator
         if: ${{ github.event.inputs.deploy_freeipa == 'true' || github.event_name == 'schedule' }}
@@ -619,7 +622,7 @@ jobs:
 
           # First, check if the DAG is still running or has failed
           echo "[INFO] Checking Airflow DAG run status..."
-          sudo podman exec airflow-scheduler airflow dags list-runs -d freeipa_deployment --limit 1 2>/dev/null || true
+          sudo podman exec $AIRFLOW_SCHEDULER_CONTAINER airflow dags list-runs -d freeipa_deployment --limit 1 2>/dev/null || true
 
           while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
             ATTEMPT=$((ATTEMPT + 1))
@@ -687,7 +690,7 @@ jobs:
                 if [ -n "$OBSERVE_RESPONSE" ] && [ "$OBSERVE_RESPONSE" != "{}" ]; then
                   echo "  [DEBUG] Observer error: $(echo "$OBSERVE_RESPONSE" | jq -c '.detail // .' 2>/dev/null | head -c 150)"
                 fi
-                DAG_STATUS=$(sudo podman exec airflow-scheduler airflow dags list-runs -d freeipa_deployment --limit 1 -o json 2>/dev/null | jq -r '.[0].state // "unknown"' 2>/dev/null || echo "unknown")
+                DAG_STATUS=$(sudo podman exec $AIRFLOW_SCHEDULER_CONTAINER airflow dags list-runs -d freeipa_deployment --limit 1 -o json 2>/dev/null | jq -r '.[0].state // "unknown"' 2>/dev/null || echo "unknown")
                 echo "  DAG status: $DAG_STATUS"
 
                 if [ "$DAG_STATUS" = "failed" ]; then
@@ -695,7 +698,7 @@ jobs:
                   echo "[ERROR] freeipa_deployment DAG failed!"
                   echo ""
                   echo "=== Scheduler Logs (last 50 lines) ==="
-                  sudo podman logs airflow-scheduler 2>&1 | grep -i "freeipa\|error\|failed" | tail -50 || true
+                  sudo podman logs $AIRFLOW_SCHEDULER_CONTAINER 2>&1 | grep -i "freeipa\|error\|failed" | tail -50 || true
                   exit 1
                 fi
               fi
@@ -738,7 +741,7 @@ jobs:
                 echo ""
                 echo "[DEBUG] VM not found after 10 attempts, checking DAG tasks..."
                 # Show the DAG run details
-                sudo podman exec airflow-scheduler bash -c '
+                sudo podman exec $AIRFLOW_SCHEDULER_CONTAINER bash -c '
                   airflow dags list-runs -d freeipa_deployment --limit 1 2>/dev/null
                   echo ""
                   echo "Task instances:"
@@ -759,10 +762,10 @@ jobs:
           sudo kcli list vm 2>/dev/null || echo "kcli list failed"
           echo ""
           echo "=== DAG Run Status ==="
-          sudo podman exec airflow-scheduler airflow dags list-runs -d freeipa_deployment --limit 3 2>/dev/null || true
+          sudo podman exec $AIRFLOW_SCHEDULER_CONTAINER airflow dags list-runs -d freeipa_deployment --limit 3 2>/dev/null || true
           echo ""
           echo "=== Scheduler Logs (last 30 lines with errors) ==="
-          sudo podman logs airflow-scheduler 2>&1 | grep -iE "error|failed|exception" | tail -30 || true
+          sudo podman logs $AIRFLOW_SCHEDULER_CONTAINER 2>&1 | grep -iE "error|failed|exception" | tail -30 || true
 
       # =========================================================================
       # Phase 5: Validate FreeIPA Deployment
