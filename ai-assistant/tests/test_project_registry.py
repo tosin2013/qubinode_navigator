@@ -507,7 +507,7 @@ class TestEnsureProjectAvailable:
             with patch("subprocess.run") as mock_run:
                 mock_run.return_value = MagicMock(returncode=0)
 
-                project = await registry.ensure_project_available("test", clone_if_missing=True)
+                _project = await registry.ensure_project_available("test", clone_if_missing=True)
 
                 mock_run.assert_called_once()
                 assert "git" in mock_run.call_args[0][0]

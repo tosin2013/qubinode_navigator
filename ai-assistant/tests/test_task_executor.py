@@ -383,7 +383,7 @@ class TestExecuteSessionPlan:
             )
             mock_execute.return_value = mock_result
 
-            result = await execute_session_plan(
+            _result = await execute_session_plan(
                 session_id="test-session",
                 plan=mock_plan,
             )
