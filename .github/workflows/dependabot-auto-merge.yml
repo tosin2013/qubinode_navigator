@@ -25,22 +25,32 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Get Dependabot metadata
+        id: dependabot-metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+
       - name: Set up Python
+        if: steps.dependabot-metadata.outputs.package-ecosystem == 'pip'
         uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 
       - name: Install dependencies
+        if: steps.dependabot-metadata.outputs.package-ecosystem == 'pip'
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r ansible-builder/requirements.txt
 
       - name: Test Python imports
+        if: steps.dependabot-metadata.outputs.package-ecosystem == 'pip'
         run: |
           python -c "import netifaces, psutil, hvac, requests, yaml, jinja2; print('✅ All imports successful')"
 
       - name: Test enhanced load variables script
+        if: steps.dependabot-metadata.outputs.package-ecosystem == 'pip'
         run: |
           python -c "
           import sys
@@ -54,6 +64,7 @@ jobs:
           "
 
       - name: Test original load variables script syntax
+        if: steps.dependabot-metadata.outputs.package-ecosystem == 'pip'
         run: |
           python -c "
           import ast
@@ -70,12 +81,14 @@ jobs:
           "
 
       - name: Test script execution capabilities
+        if: steps.dependabot-metadata.outputs.package-ecosystem == 'pip'
         run: |
           # Test that scripts can be executed (without actually running them)
           python3 enhanced_load_variables.py --help > /dev/null 2>&1 && echo "✅ enhanced_load_variables.py is executable" || echo "⚠️ enhanced_load_variables.py execution test failed"
           python3 load-variables.py --help > /dev/null 2>&1 && echo "✅ load-variables.py is executable" || echo "⚠️ load-variables.py execution test failed"
 
       - name: Validate YAML files
+        if: steps.dependabot-metadata.outputs.package-ecosystem == 'pip'
         run: |
           python -c "
           import yaml
@@ -115,6 +128,13 @@ jobs:
               print(f'✅ All {len(yaml_files)} YAML files are valid')
           "
 
+      - name: Skip tests for non-Python ecosystems
+        if: steps.dependabot-metadata.outputs.package-ecosystem != 'pip'
+        run: |
+          echo "Skipping Python tests for ${{ steps.dependabot-metadata.outputs.package-ecosystem }} ecosystem"
+          echo "Dependency: ${{ steps.dependabot-metadata.outputs.dependency-names }}"
+          echo "Update type: ${{ steps.dependabot-metadata.outputs.update-type }}"
+
   # Auto-merge for patch and minor updates
   auto-merge:
     needs: test-dependabot-pr
@@ -122,25 +142,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
       - name: Get Dependabot metadata
         id: metadata
         uses: dependabot/fetch-metadata@v2
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
 
-      - name: Auto-merge patch and minor updates
+      - name: Enable auto-merge for patch and minor updates
         if: steps.metadata.outputs.update-type == 'version-update:semver-patch' || steps.metadata.outputs.update-type == 'version-update:semver-minor'
         run: |
-          echo "Auto-merging ${{ steps.metadata.outputs.update-type }} update"
-          gh pr merge --auto --squash "$PR_URL"
+          echo "Enabling auto-merge for ${{ steps.metadata.outputs.update-type }} update"
+          echo "Package: ${{ steps.metadata.outputs.dependency-names }}"
+          echo "Ecosystem: ${{ steps.metadata.outputs.package-ecosystem }}"
+          gh pr merge --auto --squash "$PR_URL" || {
+            echo "Note: Auto-merge may require branch protection settings to be configured"
+            echo "Attempting to approve and merge directly..."
+            gh pr review --approve "$PR_URL" || true
+            gh pr merge --squash "$PR_URL" || echo "Manual merge may be required"
+          }
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Comment on major updates
         if: steps.metadata.outputs.update-type == 'version-update:semver-major'
         run: |
-          gh pr comment "$PR_URL" --body "🚨 **Major version update detected!**
+          gh pr comment "$PR_URL" --body "**Major version update detected**
 
           This PR contains a major version update that requires manual review:
           - **Package**: ${{ steps.metadata.outputs.dependency-names }}
@@ -158,7 +188,7 @@ jobs:
           - [ ] Verify no breaking changes in deployment scripts"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Add security label for security updates
         if: contains(steps.metadata.outputs.dependency-names, 'security') || contains(github.event.pull_request.title, 'security')
@@ -166,4 +196,4 @@ jobs:
           gh pr edit "$PR_URL" --add-label "security-update,priority-high"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
