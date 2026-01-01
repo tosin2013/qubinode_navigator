@@ -86,11 +86,16 @@ flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36
 
     def test_check_state(self):
         """Test system state checking"""
-        with patch.object(self.plugin, "_get_os_version", return_value="CentOS Stream release 10"), patch.object(self.plugin, "_get_python_version", return_value=(3, 12)), patch.object(
-            self.plugin, "_get_kernel_version", return_value=(6, 12)
-        ), patch.object(self.plugin, "_get_installed_packages", return_value=["python3", "git"]), patch.object(self.plugin, "_is_service_enabled", return_value=True), patch.object(
-            self.plugin, "_is_service_active", return_value=True
-        ), patch.object(self.plugin, "_user_exists", return_value=False), patch.object(self.plugin, "_validate_microarchitecture", return_value=True):
+        with (
+            patch.object(self.plugin, "_get_os_version", return_value="CentOS Stream release 10"),
+            patch.object(self.plugin, "_get_python_version", return_value=(3, 12)),
+            patch.object(self.plugin, "_get_kernel_version", return_value=(6, 12)),
+            patch.object(self.plugin, "_get_installed_packages", return_value=["python3", "git"]),
+            patch.object(self.plugin, "_is_service_enabled", return_value=True),
+            patch.object(self.plugin, "_is_service_active", return_value=True),
+            patch.object(self.plugin, "_user_exists", return_value=False),
+            patch.object(self.plugin, "_validate_microarchitecture", return_value=True),
+        ):
             state = self.plugin.check_state()
             self.assertIsInstance(state, SystemState)
             self.assertEqual(state.get("python_version"), (3, 12))
@@ -120,9 +125,12 @@ flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36
 
     def test_get_health_status(self):
         """Test health status reporting"""
-        with patch.object(self.plugin, "_is_rhel10_or_centos10", return_value=True), patch.object(self.plugin, "_validate_microarchitecture", return_value=True), patch.object(
-            self.plugin, "_get_python_version", return_value=(3, 12)
-        ), patch.object(self.plugin, "_get_kernel_version", return_value=(6, 12)):
+        with (
+            patch.object(self.plugin, "_is_rhel10_or_centos10", return_value=True),
+            patch.object(self.plugin, "_validate_microarchitecture", return_value=True),
+            patch.object(self.plugin, "_get_python_version", return_value=(3, 12)),
+            patch.object(self.plugin, "_get_kernel_version", return_value=(6, 12)),
+        ):
             health = self.plugin.get_health_status()
             self.assertIsInstance(health, dict)
             self.assertTrue(health["os_compatible"])
@@ -143,8 +151,10 @@ class TestCentOSStream10Plugin(unittest.TestCase):
         }
 
         # Mock the OS detection to pass initialization
-        with patch.object(CentOSStream10Plugin, "_is_centos_stream10", return_value=True), patch.object(CentOSStream10Plugin, "_validate_x86_64_v3_microarchitecture"), patch.object(
-            CentOSStream10Plugin, "_validate_python312_compatibility"
+        with (
+            patch.object(CentOSStream10Plugin, "_is_centos_stream10", return_value=True),
+            patch.object(CentOSStream10Plugin, "_validate_x86_64_v3_microarchitecture"),
+            patch.object(CentOSStream10Plugin, "_validate_python312_compatibility"),
         ):
             self.plugin = CentOSStream10Plugin(self.config)
             self.plugin.initialize()
@@ -183,14 +193,18 @@ class TestCentOSStream10Plugin(unittest.TestCase):
 
     def test_check_state(self):
         """Test system state checking"""
-        with patch.object(self.plugin, "_get_os_version", return_value="CentOS Stream release 10"), patch.object(self.plugin, "_get_python_version", return_value=(3, 12)), patch.object(
-            self.plugin, "_get_kernel_version", return_value=(6, 12)
-        ), patch.object(
-            self.plugin,
-            "_get_installed_packages",
-            return_value=["python3", "git", "podman"],
-        ), patch.object(self.plugin, "_is_service_enabled", return_value=True), patch.object(self.plugin, "_is_service_active", return_value=True), patch.object(
-            self.plugin, "_user_exists", return_value=False
+        with (
+            patch.object(self.plugin, "_get_os_version", return_value="CentOS Stream release 10"),
+            patch.object(self.plugin, "_get_python_version", return_value=(3, 12)),
+            patch.object(self.plugin, "_get_kernel_version", return_value=(6, 12)),
+            patch.object(
+                self.plugin,
+                "_get_installed_packages",
+                return_value=["python3", "git", "podman"],
+            ),
+            patch.object(self.plugin, "_is_service_enabled", return_value=True),
+            patch.object(self.plugin, "_is_service_active", return_value=True),
+            patch.object(self.plugin, "_user_exists", return_value=False),
         ):
             state = self.plugin.check_state()
             self.assertIsInstance(state, SystemState)
@@ -234,9 +248,13 @@ class TestPluginIntegration(unittest.TestCase):
 
         try:
             # Mock initialization for both plugins
-            with patch.object(RHEL10Plugin, "_is_rhel10_or_centos10", return_value=True), patch.object(RHEL10Plugin, "_validate_microarchitecture", return_value=True), patch.object(
-                CentOSStream10Plugin, "_is_centos_stream10", return_value=True
-            ), patch.object(CentOSStream10Plugin, "_validate_x86_64_v3_microarchitecture"), patch.object(CentOSStream10Plugin, "_validate_python312_compatibility"):
+            with (
+                patch.object(RHEL10Plugin, "_is_rhel10_or_centos10", return_value=True),
+                patch.object(RHEL10Plugin, "_validate_microarchitecture", return_value=True),
+                patch.object(CentOSStream10Plugin, "_is_centos_stream10", return_value=True),
+                patch.object(CentOSStream10Plugin, "_validate_x86_64_v3_microarchitecture"),
+                patch.object(CentOSStream10Plugin, "_validate_python312_compatibility"),
+            ):
                 rhel10_plugin = RHEL10Plugin(config)
                 rhel10_plugin.initialize()
                 centos10_plugin = CentOSStream10Plugin(config)

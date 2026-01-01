@@ -386,7 +386,7 @@ class RolloutPipelineManager:
                 phases.append(
                     RolloutPhase(
                         phase_id=f"rolling_{i}_{int(time.time())}",
-                        phase_name=f"Rolling Phase {i+1} ({env})",
+                        phase_name=f"Rolling Phase {i + 1} ({env})",
                         stage=PipelineStage.PENDING,
                         target_environments=[env],
                         update_batch=self._create_sample_batch(),

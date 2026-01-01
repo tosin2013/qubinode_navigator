@@ -243,7 +243,7 @@ def get_config_check_command(
         ... ])
     """
     paths_str = " ".join(f'"{p}"' for p in config_paths)
-    default_error = "Configuration files not accessible in container.\\n" "Run: ./airflow/scripts/config-sync.sh generate\\n" "Then restart Airflow to apply volume mounts."
+    default_error = "Configuration files not accessible in container.\\nRun: ./airflow/scripts/config-sync.sh generate\\nThen restart Airflow to apply volume mounts."
     error_msg = error_message or default_error
 
     return f"""
@@ -965,7 +965,7 @@ def get_dns_validation_command(cluster_name: str, base_domain: str, expected_ip:
 
     CLUSTER="{cluster_name}"
     DOMAIN="{base_domain}"
-    EXPECTED_IP="{expected_ip or ''}"
+    EXPECTED_IP="{expected_ip or ""}"
     ERRORS=0
 
     # Check api.<cluster>.<domain>

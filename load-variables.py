@@ -208,7 +208,7 @@ def get_interface_ips(configure_bridge=None, interface=None):
             elif len(interfaces) > 1:
                 print("Multiple network interfaces found:")
                 for i, iface in enumerate(interfaces):
-                    print(f"{i+1}. {iface}")
+                    print(f"{i + 1}. {iface}")
                 choice = int(input("Choose an interface to use: "))
                 interface = interfaces[choice - 1]
             else:

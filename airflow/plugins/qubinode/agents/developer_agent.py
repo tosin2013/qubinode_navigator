@@ -393,7 +393,7 @@ Provide the modified code with clear comments explaining changes.
         # Add successful troubleshooting solutions
         for ts in rag_context.get("troubleshooting", [])[:2]:
             if ts.get("result") == "success":
-                context_parts.append(f"[Previous Solution]\n" f"Problem: {ts.get('error_message', 'N/A')}\n" f"Solution: {ts.get('attempted_solution', 'N/A')}")
+                context_parts.append(f"[Previous Solution]\nProblem: {ts.get('error_message', 'N/A')}\nSolution: {ts.get('attempted_solution', 'N/A')}")
 
         return "\n\n---\n\n".join(context_parts)
 

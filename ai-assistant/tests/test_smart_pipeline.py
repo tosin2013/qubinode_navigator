@@ -12,7 +12,6 @@ import pytest
 import os
 import sys
 from unittest.mock import patch, MagicMock, AsyncMock
-from datetime import datetime
 
 # Add src directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
@@ -209,9 +208,7 @@ class TestOpenLineageEmitter:
         with patch("httpx.AsyncClient") as mock_client:
             mock_response = MagicMock()
             mock_response.status_code = 200
-            mock_client.return_value.__aenter__.return_value.post = AsyncMock(
-                return_value=mock_response
-            )
+            mock_client.return_value.__aenter__.return_value.post = AsyncMock(return_value=mock_response)
 
             result = await emitter.emit_shadow_error_event(
                 dag_id="test_dag",
@@ -234,9 +231,7 @@ class TestOpenLineageEmitter:
         with patch("httpx.AsyncClient") as mock_client:
             mock_response = MagicMock()
             mock_response.status_code = 201
-            mock_client.return_value.__aenter__.return_value.post = AsyncMock(
-                return_value=mock_response
-            )
+            mock_client.return_value.__aenter__.return_value.post = AsyncMock(return_value=mock_response)
 
             result = await emitter.emit_shadow_error_event(
                 dag_id="test_dag",
@@ -257,9 +252,7 @@ class TestOpenLineageEmitter:
             mock_response = MagicMock()
             mock_response.status_code = 500
             mock_response.text = "Internal Server Error"
-            mock_client.return_value.__aenter__.return_value.post = AsyncMock(
-                return_value=mock_response
-            )
+            mock_client.return_value.__aenter__.return_value.post = AsyncMock(return_value=mock_response)
 
             result = await emitter.emit_shadow_error_event(
                 dag_id="test_dag",
@@ -278,9 +271,7 @@ class TestOpenLineageEmitter:
             mock_response = MagicMock()
             mock_response.status_code = 200
             mock_response.json.return_value = {"runs": []}
-            mock_client.return_value.__aenter__.return_value.get = AsyncMock(
-                return_value=mock_response
-            )
+            mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
 
             result = await emitter.query_shadow_errors(dag_id="test_dag")
 
@@ -353,15 +344,9 @@ class TestSmartPipelineOrchestrator:
         orchestrator = SmartPipelineOrchestrator()
 
         # Mock the internal methods
-        with patch.object(
-            orchestrator, "_validate_dag", new_callable=AsyncMock
-        ) as mock_validate:
-            with patch.object(
-                orchestrator, "_check_and_unpause_dag", new_callable=AsyncMock
-            ) as mock_unpause:
-                with patch.object(
-                    orchestrator, "_trigger_dag", new_callable=AsyncMock
-                ) as mock_trigger:
+        with patch.object(orchestrator, "_validate_dag", new_callable=AsyncMock) as mock_validate:
+            with patch.object(orchestrator, "_check_and_unpause_dag", new_callable=AsyncMock) as mock_unpause:
+                with patch.object(orchestrator, "_trigger_dag", new_callable=AsyncMock) as mock_trigger:
                     mock_validate.return_value = {"can_proceed": True, "checks": []}
                     mock_unpause.return_value = (False, "Already unpaused")
                     mock_trigger.return_value = {
@@ -383,9 +368,7 @@ class TestSmartPipelineOrchestrator:
         """Test that execute_with_validation fails when validation fails."""
         orchestrator = SmartPipelineOrchestrator()
 
-        with patch.object(
-            orchestrator, "_validate_dag", new_callable=AsyncMock
-        ) as mock_validate:
+        with patch.object(orchestrator, "_validate_dag", new_callable=AsyncMock) as mock_validate:
             mock_validate.return_value = {
                 "can_proceed": False,
                 "checks": [{"name": "syntax", "status": "failed"}],

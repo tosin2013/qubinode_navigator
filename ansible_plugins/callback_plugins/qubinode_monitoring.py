@@ -110,9 +110,9 @@ class CallbackModule(CallbackBase):
         try:
             os.makedirs(os.path.dirname(self.log_file), exist_ok=True)
             with open(self.log_file, "a") as f:
-                f.write(f"\n{'='*80}\n")
+                f.write(f"\n{'=' * 80}\n")
                 f.write(f"Qubinode Navigator Deployment Log - {datetime.datetime.now()}\n")
-                f.write(f"{'='*80}\n")
+                f.write(f"{'=' * 80}\n")
         except Exception as e:
             self._display.warning(f"Failed to initialize log file {self.log_file}: {e}")
 

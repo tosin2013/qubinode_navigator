@@ -166,7 +166,7 @@ dag = DAG(
     |-----------|---------|-------------|
     | `registry_type` | mirror-registry, harbor, jfrog, upstream | Registry for pulling images |
     | `deployment_size` | sno, 3-node, full | Cluster size |
-    | `example_config` | {', '.join(AVAILABLE_EXAMPLES[:5])}... | Configuration template |
+    | `example_config` | {", ".join(AVAILABLE_EXAMPLES[:5])}... | Configuration template |
     | `ocp_version` | 4.17, 4.18, 4.19, 4.20 | OpenShift version |
     | `deploy_on_kvm` | true/false | Deploy to local KVM |
 
@@ -174,7 +174,7 @@ dag = DAG(
 
     **Discovered {len(AVAILABLE_EXAMPLES)} examples:**
 
-    {chr(10).join([f'- `{ex}`' for ex in AVAILABLE_EXAMPLES])}
+    {chr(10).join([f"- `{ex}`" for ex in AVAILABLE_EXAMPLES])}
 
     ## Registry Types
 

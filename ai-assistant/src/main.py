@@ -1886,7 +1886,7 @@ async def validate_execution_outcome(
         # OpenLineage tracking
         "openlineage_emitted": validation_result.get("openlineage_emitted", False),
         "summary": (
-            "SHADOW FAILURE DETECTED: Airflow reported success but outcome validation failed. " "Review shadow_errors and fix_suggestions."
+            "SHADOW FAILURE DETECTED: Airflow reported success but outcome validation failed. Review shadow_errors and fix_suggestions."
             if is_shadow_failure
             else "Execution validated successfully"
             if outcome_validated
@@ -2149,7 +2149,7 @@ async def observe_dag_by_name(
                     "has_errors": False,
                     "recommendations": [f"DAG '{dag_id}' has no runs yet - waiting for first run to start"],
                     "summary": f"DAG '{dag_id}' is waiting to start (no runs yet)",
-                    "detailed_message": f"DAG '{dag_id}' has been triggered but no run has started yet. " "This is normal - the scheduler may take a few seconds to pick up the DAG.",
+                    "detailed_message": f"DAG '{dag_id}' has been triggered but no run has started yet. This is normal - the scheduler may take a few seconds to pick up the DAG.",
                     "endpoint": "/orchestrator/observe",
                     "timestamp": time.time(),
                 }

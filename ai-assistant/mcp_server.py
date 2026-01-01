@@ -355,7 +355,7 @@ Provide a clear, comprehensive answer that:
 3. Links to key concepts and best practices
 4. Suggests next steps for learning more
 
-If skill level is '{skill_level or 'any'}', adjust depth accordingly.{docs_context}
+If skill level is '{skill_level or "any"}', adjust depth accordingly.{docs_context}
 
 Provide your answer in clear, actionable markdown format."""
 

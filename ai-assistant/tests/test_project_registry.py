@@ -297,6 +297,7 @@ class TestProjectRegistry:
     @pytest.mark.asyncio
     async def test_get_available_projects(self, registry):
         """Test getting only available projects."""
+
         async def check_avail(path):
             return path == "/opt/available"
 
@@ -314,14 +315,20 @@ class TestProjectRegistry:
         with patch.object(registry, "_check_availability", new_callable=AsyncMock) as mock_check:
             mock_check.return_value = True
 
-            await registry.register_project("freeipa-proj", {
-                "path": "/opt/freeipa",
-                "capabilities": [ProjectCapability.FREEIPA],
-            })
-            await registry.register_project("vm-proj", {
-                "path": "/opt/vm",
-                "capabilities": [ProjectCapability.VM_CREATION],
-            })
+            await registry.register_project(
+                "freeipa-proj",
+                {
+                    "path": "/opt/freeipa",
+                    "capabilities": [ProjectCapability.FREEIPA],
+                },
+            )
+            await registry.register_project(
+                "vm-proj",
+                {
+                    "path": "/opt/vm",
+                    "capabilities": [ProjectCapability.VM_CREATION],
+                },
+            )
 
             freeipa_projects = registry.find_by_capability(ProjectCapability.FREEIPA)
             assert len(freeipa_projects) == 1
@@ -333,10 +340,13 @@ class TestProjectRegistry:
         with patch.object(registry, "_check_availability", new_callable=AsyncMock) as mock_check:
             mock_check.return_value = True
 
-            await registry.register_project("vm-proj", {
-                "path": "/opt/vm",
-                "capabilities": [ProjectCapability.VM_CREATION],
-            })
+            await registry.register_project(
+                "vm-proj",
+                {
+                    "path": "/opt/vm",
+                    "capabilities": [ProjectCapability.VM_CREATION],
+                },
+            )
 
             matches = registry.find_for_task("create a centos vm")
             assert len(matches) > 0
@@ -347,10 +357,13 @@ class TestProjectRegistry:
         with patch.object(registry, "_check_availability", new_callable=AsyncMock) as mock_check:
             mock_check.return_value = True
 
-            await registry.register_project("freeipa-proj", {
-                "path": "/opt/freeipa",
-                "capabilities": [ProjectCapability.FREEIPA],
-            })
+            await registry.register_project(
+                "freeipa-proj",
+                {
+                    "path": "/opt/freeipa",
+                    "capabilities": [ProjectCapability.FREEIPA],
+                },
+            )
 
             matches = registry.find_for_task("deploy freeipa identity server")
             assert len(matches) > 0
@@ -361,10 +374,13 @@ class TestProjectRegistry:
         with patch.object(registry, "_check_availability", new_callable=AsyncMock) as mock_check:
             mock_check.return_value = True
 
-            await registry.register_project("ocp-proj", {
-                "path": "/opt/ocp",
-                "capabilities": [ProjectCapability.OPENSHIFT],
-            })
+            await registry.register_project(
+                "ocp-proj",
+                {
+                    "path": "/opt/ocp",
+                    "capabilities": [ProjectCapability.OPENSHIFT],
+                },
+            )
 
             matches = registry.find_for_task("deploy kubernetes cluster")
             assert len(matches) > 0
@@ -375,10 +391,13 @@ class TestProjectRegistry:
         with patch.object(registry, "_check_availability", new_callable=AsyncMock) as mock_check:
             mock_check.return_value = True
 
-            await registry.register_project("generic", {
-                "path": "/opt/generic",
-                "capabilities": [ProjectCapability.GENERIC_DEPLOYMENT],
-            })
+            await registry.register_project(
+                "generic",
+                {
+                    "path": "/opt/generic",
+                    "capabilities": [ProjectCapability.GENERIC_DEPLOYMENT],
+                },
+            )
 
             matches = registry.find_for_task("do something completely unique")
             assert len(matches) > 0
@@ -492,6 +511,7 @@ class TestEnsureProjectAvailable:
     @pytest.mark.asyncio
     async def test_ensure_clones_if_missing(self, registry):
         """Test ensure clones project if missing and clone_if_missing=True."""
+
         async def check_avail_dynamic(path):
             # Start unavailable, become available after clone
             return registry._projects.get("test", MagicMock()).is_available
@@ -499,10 +519,13 @@ class TestEnsureProjectAvailable:
         with patch.object(registry, "_check_availability", new_callable=AsyncMock) as mock_check:
             mock_check.return_value = False
 
-            await registry.register_project("test", {
-                "path": "/opt/test",
-                "git_url": "https://github.com/example/test.git",
-            })
+            await registry.register_project(
+                "test",
+                {
+                    "path": "/opt/test",
+                    "git_url": "https://github.com/example/test.git",
+                },
+            )
 
             with patch("subprocess.run") as mock_run:
                 mock_run.return_value = MagicMock(returncode=0)
@@ -567,10 +590,14 @@ class TestEntryPointAndCommand:
             mock_check.return_value = True
             await registry.register_project("test", config)
 
-            command = registry.format_command("test", "create_vm", {
-                "profile": "centos9stream",
-                "vm_name": "test-vm",
-            })
+            command = registry.format_command(
+                "test",
+                "create_vm",
+                {
+                    "profile": "centos9stream",
+                    "vm_name": "test-vm",
+                },
+            )
 
             assert command is not None
             assert "centos9stream" in command
@@ -609,6 +636,7 @@ class TestSingletonFunctions:
     def reset_singleton(self):
         """Reset the singleton before each test."""
         import project_registry
+
         project_registry._registry = None
         yield
         project_registry._registry = None

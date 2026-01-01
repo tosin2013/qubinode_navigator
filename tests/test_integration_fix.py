@@ -80,13 +80,13 @@ def test_integration_fix():
             try:
                 response = requests.get("http://localhost:8081/health", timeout=5)
                 if response.status_code == 200:
-                    print(f"✅ Test container ready after {(i+1)*5} seconds")
+                    print(f"✅ Test container ready after {(i + 1) * 5} seconds")
                     return True
                 elif response.status_code == 503:
-                    print(f"Service starting up... attempt {i+1}")
+                    print(f"Service starting up... attempt {i + 1}")
             except requests.exceptions.RequestException:
                 if i % 6 == 0:  # Every 30 seconds
-                    print(f"Still waiting... {(i+1)*5} seconds")
+                    print(f"Still waiting... {(i + 1) * 5} seconds")
 
         print("❌ Test container failed to start in time")
         # Show logs

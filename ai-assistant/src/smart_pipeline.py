@@ -1450,16 +1450,16 @@ def _generate_manager_recommendations(error_types: Dict[str, Any]) -> List[str]:
         count = data.get("count", 0)
 
         if err_type == "missing_directory" and count >= 2:
-            recommendations.append(f"Recurring 'missing_directory' errors ({count}x). " "Consider adding prerequisite check DAG or alerting ops team.")
+            recommendations.append(f"Recurring 'missing_directory' errors ({count}x). Consider adding prerequisite check DAG or alerting ops team.")
 
         if err_type == "missing_image" and count >= 2:
-            recommendations.append(f"Recurring 'missing_image' errors ({count}x). " "Suggest pre-downloading common images or adding profile validation.")
+            recommendations.append(f"Recurring 'missing_image' errors ({count}x). Suggest pre-downloading common images or adding profile validation.")
 
         if err_type == "connection_refused" and count >= 3:
-            recommendations.append(f"High 'connection_refused' errors ({count}x). " "Infrastructure connectivity issue - escalate to ops.")
+            recommendations.append(f"High 'connection_refused' errors ({count}x). Infrastructure connectivity issue - escalate to ops.")
 
         if err_type == "permission_denied" and count >= 1:
-            recommendations.append(f"'permission_denied' errors detected ({count}x). " "Review service account permissions on target hosts.")
+            recommendations.append(f"'permission_denied' errors detected ({count}x). Review service account permissions on target hosts.")
 
     if not recommendations:
         recommendations.append("No critical patterns detected. Continue monitoring.")

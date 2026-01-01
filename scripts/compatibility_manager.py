@@ -68,7 +68,7 @@ def print_compatibility_report(report: Dict[str, Any]):
         if details["supported_versions"]:
             print("      Supported Versions:")
             for os_ver, versions in details["supported_versions"].items():
-                print(f"        OS {os_ver}: {', '.join(versions[:3])}" + (f" (+{len(versions)-3} more)" if len(versions) > 3 else ""))
+                print(f"        OS {os_ver}: {', '.join(versions[:3])}" + (f" (+{len(versions) - 3} more)" if len(versions) > 3 else ""))
 
         # Show recent test results
         if details["recent_test_results"]:

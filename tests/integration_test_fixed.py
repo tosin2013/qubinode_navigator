@@ -118,24 +118,24 @@ class TestAIAssistantIntegration:
                         print(f"Container health status: {health_status}")
 
                         if health_status == "healthy":
-                            print(f"✅ Container is healthy after {(i+1)*5} seconds")
+                            print(f"✅ Container is healthy after {(i + 1) * 5} seconds")
                             break
 
                     # Try health endpoint
                     response = requests.get(f"{cls.base_url}/health", timeout=10)
                     if response.status_code == 200:
                         health_data = response.json()
-                        print(f"✅ Container ready after {(i+1)*5} seconds")
+                        print(f"✅ Container ready after {(i + 1) * 5} seconds")
                         print(f"Health response: {health_data}")
                         return
                     elif response.status_code == 503:
-                        print(f"Service starting up (503), attempt {i+1}/{max_attempts}")
+                        print(f"Service starting up (503), attempt {i + 1}/{max_attempts}")
                     else:
                         print(f"Health check returned status {response.status_code}")
 
                     # Show progress every 12 attempts (1 minute)
                     if i > 0 and i % 12 == 0:
-                        print(f"Still waiting... {i*5} seconds elapsed")
+                        print(f"Still waiting... {i * 5} seconds elapsed")
                         # Show recent logs for debugging
                         log_result = subprocess.run(
                             ["docker", "logs", "--tail", "5", cls.container_name],
@@ -149,10 +149,10 @@ class TestAIAssistantIntegration:
 
                 except requests.exceptions.RequestException as e:
                     if i % 24 == 0:  # Every 2 minutes
-                        print(f"Attempt {i+1}/{max_attempts}: Connection failed - {e}")
+                        print(f"Attempt {i + 1}/{max_attempts}: Connection failed - {e}")
 
                 except Exception as e:
-                    print(f"Attempt {i+1}/{max_attempts}: Unexpected error - {e}")
+                    print(f"Attempt {i + 1}/{max_attempts}: Unexpected error - {e}")
 
             # If we get here, container didn't start properly
             print("❌ Container failed to start, checking logs...")
@@ -178,7 +178,7 @@ class TestAIAssistantIntegration:
             print("Container status:")
             print(status_result.stdout)
 
-            raise Exception(f"Container failed to start within {max_attempts*5} seconds ({max_attempts*5//60} minutes)")
+            raise Exception(f"Container failed to start within {max_attempts * 5} seconds ({max_attempts * 5 // 60} minutes)")
 
         except subprocess.CalledProcessError as e:
             print(f"Failed to start container: {e}")

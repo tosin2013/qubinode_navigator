@@ -64,7 +64,7 @@ class VaultDynamicSecretsOperator(BaseOperator):
         try:
             from airflow.providers.hashicorp.hooks.vault import VaultHook
         except ImportError:
-            raise ImportError("apache-airflow-providers-hashicorp is required. " "Install with: pip install apache-airflow-providers-hashicorp")
+            raise ImportError("apache-airflow-providers-hashicorp is required. Install with: pip install apache-airflow-providers-hashicorp")
 
         hook = VaultHook(vault_conn_id=self.vault_conn_id)
 
@@ -81,7 +81,7 @@ class VaultDynamicSecretsOperator(BaseOperator):
         lease_id = response.get("lease_id")
         lease_duration = response.get("lease_duration")
 
-        self.log.info(f"Obtained dynamic credentials, " f"lease_id={lease_id[:20] + '...' if lease_id else 'N/A'}, " f"ttl={lease_duration}s")
+        self.log.info(f"Obtained dynamic credentials, lease_id={lease_id[:20] + '...' if lease_id else 'N/A'}, ttl={lease_duration}s")
 
         # Store lease_id for cleanup
         if lease_id and self.store_lease_id:
@@ -200,7 +200,7 @@ class VaultAWSCredsOperator(VaultDynamicSecretsOperator):
         lease_id = response.get("lease_id")
         lease_duration = response.get("lease_duration")
 
-        self.log.info(f"Obtained AWS credentials, type={self.credential_type}, " f"ttl={lease_duration}s")
+        self.log.info(f"Obtained AWS credentials, type={self.credential_type}, ttl={lease_duration}s")
 
         if lease_id and self.store_lease_id:
             context["ti"].xcom_push(key=f"{self.output_key}_lease_id", value=lease_id)
@@ -272,7 +272,7 @@ class VaultSSHSignOperator(BaseOperator):
         try:
             from airflow.providers.hashicorp.hooks.vault import VaultHook
         except ImportError:
-            raise ImportError("apache-airflow-providers-hashicorp is required. " "Install with: pip install apache-airflow-providers-hashicorp")
+            raise ImportError("apache-airflow-providers-hashicorp is required. Install with: pip install apache-airflow-providers-hashicorp")
 
         hook = VaultHook(vault_conn_id=self.vault_conn_id)
         client = hook.get_conn()
@@ -336,7 +336,7 @@ class VaultLeaseRevokeOperator(BaseOperator):
         try:
             from airflow.providers.hashicorp.hooks.vault import VaultHook
         except ImportError:
-            raise ImportError("apache-airflow-providers-hashicorp is required. " "Install with: pip install apache-airflow-providers-hashicorp")
+            raise ImportError("apache-airflow-providers-hashicorp is required. Install with: pip install apache-airflow-providers-hashicorp")
 
         hook = VaultHook(vault_conn_id=self.vault_conn_id)
         client = hook.get_conn()
@@ -367,6 +367,6 @@ class VaultLeaseRevokeOperator(BaseOperator):
                     self.log.error(f"Failed to revoke lease {lease_id[:20]}...: {e}")
                     results["failed"].append(lease_id)
 
-        self.log.info(f"Lease cleanup complete: " f"{len(results['revoked'])} revoked, " f"{len(results['not_found'])} expired, " f"{len(results['failed'])} failed")
+        self.log.info(f"Lease cleanup complete: {len(results['revoked'])} revoked, {len(results['not_found'])} expired, {len(results['failed'])} failed")
 
         return results

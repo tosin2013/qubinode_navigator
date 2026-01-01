@@ -171,7 +171,7 @@ class DocumentationAnalyzer:
                 chunk = DocumentChunk(
                     id=chunk_id,
                     source_file=str(rel_path),
-                    title=title or f"Section {i+1}",
+                    title=title or f"Section {i + 1}",
                     content=section_content.strip(),
                     chunk_type="markdown",
                     metadata=metadata,

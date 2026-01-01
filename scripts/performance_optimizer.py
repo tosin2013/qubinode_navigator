@@ -202,11 +202,7 @@ async def handle_monitor_command(optimizer: PerformanceOptimizer, args):
             if summary["status"] == "active":
                 metrics = summary["current_metrics"]
                 print(
-                    f"\r[{datetime.now().strftime('%H:%M:%S')}] "
-                    f"CPU: {metrics['cpu_usage']}% | "
-                    f"MEM: {metrics['memory_usage']}% | "
-                    f"DISK: {metrics['disk_usage']}% | "
-                    f"PROC: {metrics['process_count']}",
+                    f"\r[{datetime.now().strftime('%H:%M:%S')}] CPU: {metrics['cpu_usage']}% | MEM: {metrics['memory_usage']}% | DISK: {metrics['disk_usage']}% | PROC: {metrics['process_count']}",
                     end="",
                     flush=True,
                 )
@@ -262,9 +258,7 @@ async def handle_recommendations_command(optimizer: PerformanceOptimizer, args):
             print("-" * 85)
 
             for rec in recommendations:
-                print(
-                    f"{rec.recommendation_id:<20} {rec.resource_type.value:<10} {rec.impact_level:<8} " f"{rec.current_value:<10.1f} {rec.recommended_value:<12.1f} {rec.estimated_improvement:<12.1f}%"
-                )
+                print(f"{rec.recommendation_id:<20} {rec.resource_type.value:<10} {rec.impact_level:<8} {rec.current_value:<10.1f} {rec.recommended_value:<12.1f} {rec.estimated_improvement:<12.1f}%")
 
             print(f"\nTotal recommendations: {len(recommendations)}")
 
@@ -397,7 +391,7 @@ async def handle_metrics_command(optimizer: PerformanceOptimizer, args):
 
                 for metric in recent:
                     time_str = metric.timestamp.strftime("%H:%M:%S")
-                    print(f"{time_str:<20} {metric.cpu_usage:<8.1f} {metric.memory_usage:<10.1f} " f"{metric.disk_usage:<8.1f} {metric.process_count:<10}")
+                    print(f"{time_str:<20} {metric.cpu_usage:<8.1f} {metric.memory_usage:<10.1f} {metric.disk_usage:<8.1f} {metric.process_count:<10}")
 
                 # Calculate averages
                 avg_cpu = sum(m.cpu_usage for m in recent) / len(recent)

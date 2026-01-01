@@ -120,11 +120,7 @@ class TestDAGInfo:
 
     def test_dag_info_full(self):
         """Test DAGInfo with all fields."""
-        checks = [
-            ValidationCheck(
-                name="test", status=ValidationStatus.PASSED, message="OK"
-            )
-        ]
+        checks = [ValidationCheck(name="test", status=ValidationStatus.PASSED, message="OK")]
         info = DAGInfo(
             dag_id="freeipa_deployment",
             file_path="/opt/airflow/dags/freeipa_deployment.py",
@@ -375,9 +371,7 @@ class TestDAGValidator:
             mock_response = MagicMock()
             mock_response.status_code = 200
             mock_response.json.return_value = {"is_paused": False}
-            mock_client.return_value.__aenter__.return_value.get = AsyncMock(
-                return_value=mock_response
-            )
+            mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
 
             result = await validator.validate_dag(
                 dag_id="test_dag",

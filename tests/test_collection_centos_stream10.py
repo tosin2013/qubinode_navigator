@@ -197,7 +197,7 @@ class CentOSStream10CollectionTester:
                 passed += 1
 
         print("\n" + "=" * 60)
-        print(f"📊 Test Results: {passed}/{total} tests passed ({passed/total*100:.1f}%)")
+        print(f"📊 Test Results: {passed}/{total} tests passed ({passed / total * 100:.1f}%)")
 
         if passed == total:
             print("🎉 All tests PASSED! CentOS Stream 10 support is ready.")

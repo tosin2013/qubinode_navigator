@@ -195,9 +195,14 @@ class TestAIAssistantPlugin:
 
     def test_check_state(self):
         """Test system state checking"""
-        with patch.object(self.plugin, "_container_exists", return_value=True), patch.object(self.plugin, "_container_running", return_value=True), patch.object(
-            self.plugin, "_ai_service_healthy", return_value=True
-        ), patch.object(self.plugin, "_rag_system_loaded", return_value=True), patch.object(self.plugin, "_diagnostic_tools_available", return_value=True), patch("os.path.exists", return_value=True):
+        with (
+            patch.object(self.plugin, "_container_exists", return_value=True),
+            patch.object(self.plugin, "_container_running", return_value=True),
+            patch.object(self.plugin, "_ai_service_healthy", return_value=True),
+            patch.object(self.plugin, "_rag_system_loaded", return_value=True),
+            patch.object(self.plugin, "_diagnostic_tools_available", return_value=True),
+            patch("os.path.exists", return_value=True),
+        ):
             state = self.plugin.check_state()
 
             assert isinstance(state, SystemState)

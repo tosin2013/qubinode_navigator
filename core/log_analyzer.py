@@ -372,10 +372,10 @@ class LogAnalyzer:
             - Session ID: {session.session_id}
             - Playbook: {session.playbook}
             - Tasks: {session.successful_tasks}/{session.total_tasks} successful
-            - Failure Rate: {session.performance_metrics.get('failure_rate', 0):.1f}%
+            - Failure Rate: {session.performance_metrics.get("failure_rate", 0):.1f}%
 
             Identified Error Patterns:
-            {', '.join(error_patterns) if error_patterns else 'None'}
+            {", ".join(error_patterns) if error_patterns else "None"}
 
             Recent Errors:
             {json.dumps(session.errors[:3], indent=2)}

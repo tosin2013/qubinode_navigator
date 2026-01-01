@@ -4,7 +4,6 @@ Tests for main.py - Orchestrator Endpoints
 Tests cover the /orchestrator/* endpoints for PydanticAI integration.
 """
 
-import pytest
 import os
 import sys
 from unittest.mock import patch, MagicMock, AsyncMock
@@ -387,9 +386,7 @@ class TestOrchestratorObserve:
                 mock_response = MagicMock()
                 mock_response.status_code = 200
                 mock_response.json.return_value = {"dag_runs": []}
-                mock_client.return_value.__aenter__.return_value.get = AsyncMock(
-                    return_value=mock_response
-                )
+                mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
 
                 client = TestClient(app)
                 response = client.post(

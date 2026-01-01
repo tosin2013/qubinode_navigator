@@ -95,7 +95,7 @@ class AgentContextManager:
         if auto_load_adrs and self.rag_service:
             await self._ensure_adrs_loaded()
 
-        logger.info(f"AgentContextManager initialized: " f"RAG={self.rag_service is not None}, " f"Lineage={self.lineage_service is not None}, " f"ADRs loaded={self.adrs_loaded}")
+        logger.info(f"AgentContextManager initialized: RAG={self.rag_service is not None}, Lineage={self.lineage_service is not None}, ADRs loaded={self.adrs_loaded}")
         return True
 
     async def _ensure_adrs_loaded(self) -> None:

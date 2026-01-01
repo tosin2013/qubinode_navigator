@@ -87,14 +87,14 @@ def test_container_integration():
             try:
                 response = requests.get("http://localhost:8080/health", timeout=10)
                 if response.status_code == 200:
-                    print(f"✅ Container ready after {(i+1)*5} seconds")
+                    print(f"✅ Container ready after {(i + 1) * 5} seconds")
                     health_data = response.json()
                     print(f"Health status: {json.dumps(health_data, indent=2)}")
                     break
                 else:
                     print(f"Health check returned status {response.status_code}")
             except requests.exceptions.RequestException as e:
-                print(f"Attempt {i+1}/{max_attempts}: {e}")
+                print(f"Attempt {i + 1}/{max_attempts}: {e}")
 
             if i == max_attempts - 1:
                 print("❌ Container failed to become ready")

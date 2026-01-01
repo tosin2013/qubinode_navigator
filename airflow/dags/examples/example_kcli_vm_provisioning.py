@@ -61,7 +61,7 @@ if QUBINODE_AVAILABLE:
     # Task 2: Create a new VM
     create_vm = KcliVMCreateOperator(
         task_id="create_test_vm",
-        vm_name=f'test-centos-{datetime.now().strftime("%Y%m%d")}',
+        vm_name=f"test-centos-{datetime.now().strftime('%Y%m%d')}",
         image="centos10stream",  # Use existing image (was: centos-stream-10)
         memory=2048,
         cpus=2,
@@ -73,7 +73,7 @@ if QUBINODE_AVAILABLE:
     # Task 3: Wait for VM to be running
     wait_for_vm = KcliVMStatusSensor(
         task_id="wait_for_vm_running",
-        vm_name=f'test-centos-{datetime.now().strftime("%Y%m%d")}',
+        vm_name=f"test-centos-{datetime.now().strftime('%Y%m%d')}",
         expected_status="running",
         timeout=300,  # 5 minutes
         poke_interval=30,  # Check every 30 seconds
@@ -96,7 +96,7 @@ if QUBINODE_AVAILABLE:
     # Task 6: Keep VM running for 5 minutes so you can check it
     keep_vm_running = BashOperator(
         task_id="keep_vm_running_5min",
-        bash_command=('echo "VM is running. Check it with: kcli list vms" && ' 'echo "Waiting 5 minutes before cleanup..." && sleep 300'),
+        bash_command=('echo "VM is running. Check it with: kcli list vms" && echo "Waiting 5 minutes before cleanup..." && sleep 300'),
         dag=dag,
     )
 

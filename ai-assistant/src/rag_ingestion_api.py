@@ -180,7 +180,7 @@ class RAGIngestionService:
                     ProcessedChunk(
                         id=chunk_id,
                         content=chunk_content.strip(),
-                        title=title or f"Section {i+1}",
+                        title=title or f"Section {i + 1}",
                         metadata=enhanced_metadata,
                         quality_score=0.0,  # Will be calculated during validation
                     )
@@ -229,7 +229,7 @@ class RAGIngestionService:
 
         for i, paragraph in enumerate(paragraphs):
             if len(paragraph.strip()) > 50:
-                sections.append((f"Section {i+1}", paragraph.strip()))
+                sections.append((f"Section {i + 1}", paragraph.strip()))
 
         return sections
 

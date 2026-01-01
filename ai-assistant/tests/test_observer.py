@@ -300,9 +300,7 @@ class TestLineageObserverAgent:
                 ]
             }
 
-            mock_client.return_value.__aenter__.return_value.get = AsyncMock(
-                side_effect=[mock_dag_run_response, mock_tasks_response]
-            )
+            mock_client.return_value.__aenter__.return_value.get = AsyncMock(side_effect=[mock_dag_run_response, mock_tasks_response])
 
             report = await agent.observe(
                 dag_id="test_dag",
@@ -337,9 +335,7 @@ class TestLineageObserverAgent:
                 ]
             }
 
-            mock_client.return_value.__aenter__.return_value.get = AsyncMock(
-                side_effect=[mock_response, mock_tasks_response]
-            )
+            mock_client.return_value.__aenter__.return_value.get = AsyncMock(side_effect=[mock_response, mock_tasks_response])
 
             report = await agent.observe(
                 dag_id="test_dag",
@@ -358,9 +354,7 @@ class TestLineageObserverAgent:
             mock_response = MagicMock()
             mock_response.status_code = 404
 
-            mock_client.return_value.__aenter__.return_value.get = AsyncMock(
-                return_value=mock_response
-            )
+            mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
 
             report = await agent.observe(
                 dag_id="nonexistent_dag",

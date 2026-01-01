@@ -580,8 +580,8 @@ class ReportingSystem:
             status_class = f"status-{kpi_data['status']}"
             kpi_cards += f"""
             <div class="kpi-card">
-                <div class="kpi-value {status_class}">{kpi_data['value']}{kpi_data['unit']}</div>
-                <div class="kpi-label">{kpi_name.replace('_', ' ').title()}</div>
+                <div class="kpi-value {status_class}">{kpi_data["value"]}{kpi_data["unit"]}</div>
+                <div class="kpi-label">{kpi_name.replace("_", " ").title()}</div>
             </div>
             """
 
@@ -595,15 +595,15 @@ class ReportingSystem:
 
                 sections_html += f"""
                 <div class="section">
-                    <h2>{section_data['title']}</h2>
+                    <h2>{section_data["title"]}</h2>
                     <ul class="insights">{insights_html}</ul>
                 </div>
                 """
             else:
                 sections_html += f"""
                 <div class="section">
-                    <h2>{section_data['title']}</h2>
-                    <p>{section_data.get('summary', '')}</p>
+                    <h2>{section_data["title"]}</h2>
+                    <p>{section_data.get("summary", "")}</p>
                 </div>
                 """
 

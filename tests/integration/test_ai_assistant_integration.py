@@ -217,9 +217,13 @@ class TestAIAssistantFullIntegration:
         plugin = AIAssistantPlugin(config)
 
         # Mock all health check methods for fast execution
-        with patch.object(plugin, "_ai_service_healthy") as mock_ai_health, patch.object(plugin, "_container_exists") as mock_container_exists, patch.object(
-            plugin, "_container_running"
-        ) as mock_container_running, patch.object(plugin, "_rag_system_loaded") as mock_rag_loaded, patch.object(plugin, "_diagnostic_tools_available") as mock_diagnostics:
+        with (
+            patch.object(plugin, "_ai_service_healthy") as mock_ai_health,
+            patch.object(plugin, "_container_exists") as mock_container_exists,
+            patch.object(plugin, "_container_running") as mock_container_running,
+            patch.object(plugin, "_rag_system_loaded") as mock_rag_loaded,
+            patch.object(plugin, "_diagnostic_tools_available") as mock_diagnostics,
+        ):
             # Mock all checks to return quickly
             mock_ai_health.return_value = True
             mock_container_exists.return_value = True

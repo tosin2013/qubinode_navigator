@@ -283,9 +283,7 @@ class MarquezContextService:
 
             # Job statistics
             stats = summary.get("job_stats", {})
-            context_parts.append(
-                f"DAG Status: {stats.get('total', 0)} total jobs, " f"{stats.get('running', 0)} running, " f"{stats.get('completed', 0)} completed, " f"{stats.get('failed', 0)} failed"
-            )
+            context_parts.append(f"DAG Status: {stats.get('total', 0)} total jobs, {stats.get('running', 0)} running, {stats.get('completed', 0)} completed, {stats.get('failed', 0)} failed")
 
             # Recent failures (important for troubleshooting)
             failures = summary.get("recent_failures", [])

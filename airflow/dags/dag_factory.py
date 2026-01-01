@@ -445,7 +445,7 @@ def _generate_dag_documentation(
         mounts_str = "None required"
 
     return f"""
-# {component.replace('_', ' ').title()} Deployment
+# {component.replace("_", " ").title()} Deployment
 
 {description}
 

@@ -183,7 +183,7 @@ class QdrantRAGService:
                     ids=batch_ids,
                 )
 
-                self.logger.info(f"Uploaded batch {i//batch_size + 1}/{(len(documents) + batch_size - 1)//batch_size}")
+                self.logger.info(f"Uploaded batch {i // batch_size + 1}/{(len(documents) + batch_size - 1) // batch_size}")
 
             self.documents_loaded = True
             self.logger.info(f"🎉 Successfully built collection with {len(documents)} documents")

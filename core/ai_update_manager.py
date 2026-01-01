@@ -191,7 +191,7 @@ COMPATIBILITY ASSESSMENT:
 - Compatibility Reason: {compatibility_reason}
 
 SECURITY INFORMATION:
-- Security Advisories: {', '.join(update_info.security_advisories) if update_info.security_advisories else 'None'}
+- Security Advisories: {", ".join(update_info.security_advisories) if update_info.security_advisories else "None"}
 
 Please provide a comprehensive analysis including:
 

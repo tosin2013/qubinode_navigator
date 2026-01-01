@@ -324,7 +324,7 @@ class LineageObserverAgent:
 
             # Check if complete
             if report.is_complete:
-                logger.info(f"DAG {dag_id} run {run_id} completed: " f"{'SUCCESS' if report.success else 'FAILED'}")
+                logger.info(f"DAG {dag_id} run {run_id} completed: {'SUCCESS' if report.success else 'FAILED'}")
                 return report
 
             # Wait before next check
@@ -390,7 +390,7 @@ class LineageObserverAgent:
         try:
             async with httpx.AsyncClient(timeout=15.0) as client:
                 response = await client.get(
-                    f"{self.airflow_api_url}/api/v1/dags/{dag_id}/dagRuns/{run_id}" f"/taskInstances/{task_id}/logs/{try_number}",
+                    f"{self.airflow_api_url}/api/v1/dags/{dag_id}/dagRuns/{run_id}/taskInstances/{task_id}/logs/{try_number}",
                     auth=(self.airflow_user, self.airflow_pass),
                 )
                 if response.status_code == 200:
@@ -522,9 +522,9 @@ class LineageObserverAgent:
                             Concern(
                                 level=ConcernLevel.WARNING,
                                 category="shadow_error",
-                                message=(f"Task '{task_id}' succeeded but contains " f"error patterns in logs"),
+                                message=(f"Task '{task_id}' succeeded but contains error patterns in logs"),
                                 task_id=task_id,
-                                recommendation=(f"Review logs for '{task_id}' - may have " f"non-fatal errors: {shadow_errors[0][:100]}..."),
+                                recommendation=(f"Review logs for '{task_id}' - may have non-fatal errors: {shadow_errors[0][:100]}..."),
                             )
                         )
 
@@ -560,7 +560,7 @@ class LineageObserverAgent:
 
         # Build summary based on status
         if report.overall_status == ExecutionStatus.SUCCESS:
-            report.summary = f"DAG '{report.dag_id}' completed successfully. " f"{report.completed_tasks}/{report.total_tasks} tasks completed"
+            report.summary = f"DAG '{report.dag_id}' completed successfully. {report.completed_tasks}/{report.total_tasks} tasks completed"
             if report.elapsed_seconds:
                 report.summary += f" in {report.elapsed_seconds:.0f}s"
 
@@ -578,7 +578,7 @@ class LineageObserverAgent:
                 )
 
         elif report.overall_status == ExecutionStatus.FAILED:
-            report.summary = f"DAG '{report.dag_id}' FAILED. " f"{report.failed_tasks} task(s) failed out of {report.total_tasks}"
+            report.summary = f"DAG '{report.dag_id}' FAILED. {report.failed_tasks} task(s) failed out of {report.total_tasks}"
 
             # Add specific failure recommendations
             if report.failed_task_details:
@@ -593,7 +593,7 @@ class LineageObserverAgent:
             recommendations.append(f"View full logs: {self.airflow_api_url}/dags/{report.dag_id}/grid")
 
         elif report.overall_status == ExecutionStatus.RUNNING:
-            report.summary = f"DAG '{report.dag_id}' is running. " f"Progress: {report.progress_percent:.0f}% " f"({report.completed_tasks}/{report.total_tasks} tasks complete)"
+            report.summary = f"DAG '{report.dag_id}' is running. Progress: {report.progress_percent:.0f}% ({report.completed_tasks}/{report.total_tasks} tasks complete)"
 
             if report.running_tasks > 0:
                 running = [tid for tid, state in report.task_statuses.items() if state == "running"]

@@ -13,8 +13,6 @@ import os
 import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock
-from datetime import datetime
 
 # Add src directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
@@ -449,6 +447,7 @@ class TestProjectEditor:
         with tempfile.TemporaryDirectory() as tmpdir:
             # Initialize git repo
             import subprocess
+
             subprocess.run(["git", "init"], cwd=tmpdir, capture_output=True)
 
             result = editor._is_git_repo(tmpdir)
@@ -484,6 +483,7 @@ class TestSingletonAndConvenience:
     def reset_singleton(self):
         """Reset the singleton before each test."""
         import project_editor
+
         project_editor._editor = None
         yield
         project_editor._editor = None

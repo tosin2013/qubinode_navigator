@@ -156,7 +156,7 @@ def confidence_validator(min_confidence: float = 0.6):
     async def validator(ctx: RunContext, output: T) -> T:
         if hasattr(output, "confidence"):
             if output.confidence < min_confidence:
-                raise ModelRetry(f"Low confidence ({output.confidence:.2f} < {min_confidence}). " "Need more RAG context. Query for additional documents.")
+                raise ModelRetry(f"Low confidence ({output.confidence:.2f} < {min_confidence}). Need more RAG context. Query for additional documents.")
 
             # Add caveats for medium confidence
             if output.confidence < 0.8 and hasattr(output, "next_steps"):
@@ -228,7 +228,7 @@ Set escalation_needed=True if you cannot achieve 0.6 confidence.
         threshold = ctx.deps.confidence_threshold
 
         if output.confidence < threshold:
-            raise ModelRetry(f"Confidence {output.confidence:.2f} below threshold {threshold}. " "Request more context or information.")
+            raise ModelRetry(f"Confidence {output.confidence:.2f} below threshold {threshold}. Request more context or information.")
 
         return output
 

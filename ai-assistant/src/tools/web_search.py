@@ -24,7 +24,7 @@ try:
 
     DUCKDUCKGO_AVAILABLE = True
 except ImportError:
-    logger.warning("PydanticAI DuckDuckGo search not available. " "Install with: pip install 'pydantic-ai-slim[duckduckgo]'")
+    logger.warning("PydanticAI DuckDuckGo search not available. Install with: pip install 'pydantic-ai-slim[duckduckgo]'")
 
 
 @dataclass
@@ -91,7 +91,7 @@ class WebSearchService:
     def __init__(self):
         """Initialize web search service."""
         if not DUCKDUCKGO_AVAILABLE:
-            raise ImportError("PydanticAI DuckDuckGo search is required. " "Install with: pip install 'pydantic-ai-slim[duckduckgo]'")
+            raise ImportError("PydanticAI DuckDuckGo search is required. Install with: pip install 'pydantic-ai-slim[duckduckgo]'")
         self._search_tool = duckduckgo_search_tool()
 
     @property
@@ -199,7 +199,7 @@ def quick_search(query: str) -> str:
         return "Web search unavailable: pydantic-ai[duckduckgo] not installed"
 
     # Return informational message - actual search requires async context
-    return f"Web search available for query: '{query}'. " "Use WebSearchService.search() in async context for actual results."
+    return f"Web search available for query: '{query}'. Use WebSearchService.search() in async context for actual results."
 
 
 def search_airflow_docs(topic: str) -> str:

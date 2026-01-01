@@ -181,9 +181,9 @@ class TaskExecutor:
 
         # Execute each task
         for idx, task_description in enumerate(plan.planned_tasks):
-            self._write_log(f"\n{'='*60}")
+            self._write_log(f"\n{'=' * 60}")
             self._write_log(f"TASK {idx + 1}/{len(plan.planned_tasks)}: {task_description}")
-            self._write_log(f"{'='*60}")
+            self._write_log(f"{'=' * 60}")
 
             task_log = TaskExecutionLog(
                 task_index=idx,
@@ -294,9 +294,9 @@ class TaskExecutor:
         )
         self.execution_log.summary = summary
 
-        self._write_log(f"\n{'='*80}")
+        self._write_log(f"\n{'=' * 80}")
         self._write_log("EXECUTION SESSION COMPLETED")
-        self._write_log(f"{'='*80}")
+        self._write_log(f"{'=' * 80}")
         self._write_log(summary)
 
         # Final save
@@ -359,7 +359,7 @@ class TaskExecutor:
 ## Available Context:
 - RAG documents: {len(rag_context)} relevant documents
 - Lineage data: {"Available" if lineage_context else "Not available"}
-- Required providers: {', '.join(required_providers) if required_providers else 'None specified'}
+- Required providers: {", ".join(required_providers) if required_providers else "None specified"}
 
 ## Instructions:
 1. Analyze this task and determine what needs to be done
