@@ -376,10 +376,17 @@ class SmartPipelineOrchestrator:
         marquez_api_url: str = None,
     ):
         # Use environment variables for container/host operation
+        # Note: AIRFLOW_API_URL should be the base URL (e.g., http://localhost:8888)
+        # We add /api/v1 when building API paths for consistency with other components
         if airflow_api_url is None:
-            airflow_api_url = os.environ.get("AIRFLOW_API_URL", "http://localhost:8888/api/v1")
+            airflow_api_url = os.environ.get("AIRFLOW_API_URL", "http://localhost:8888")
+        # Ensure /api/v1 is appended if not already present
+        if not airflow_api_url.endswith("/api/v1"):
+            airflow_api_url = f"{airflow_api_url}/api/v1"
         if marquez_api_url is None:
-            marquez_api_url = os.environ.get("MARQUEZ_API_URL", "http://localhost:5001/api/v1")
+            marquez_api_url = os.environ.get("MARQUEZ_API_URL", "http://localhost:5001")
+        if not marquez_api_url.endswith("/api/v1"):
+            marquez_api_url = f"{marquez_api_url}/api/v1"
         self.airflow_api_url = airflow_api_url
         self.marquez_api_url = marquez_api_url
 

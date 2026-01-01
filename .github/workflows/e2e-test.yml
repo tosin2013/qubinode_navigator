@@ -740,14 +740,26 @@ jobs:
               if [ $ATTEMPT -eq 10 ]; then
                 echo ""
                 echo "[DEBUG] VM not found after 10 attempts, checking DAG tasks..."
-                # Show the DAG run details
+                # Show the DAG run details using correct Airflow CLI commands
                 sudo podman exec $AIRFLOW_SCHEDULER_CONTAINER bash -c '
-                  airflow dags list-runs -d freeipa_deployment --limit 1 2>/dev/null
-                  echo ""
-                  echo "Task instances:"
-                  for task in decide_action validate_environment create_freeipa_vm; do
-                    airflow tasks states-for-dag-run freeipa_deployment $(airflow dags list-runs -d freeipa_deployment --limit 1 -o plain 2>/dev/null | tail -1 | awk "{print \$3}") $task 2>/dev/null || true
-                  done
+                  echo "=== DAG Runs ==="
+                  airflow dags list-runs -d freeipa_deployment --limit 3 2>/dev/null || echo "No runs found"
+
+                  # Get the execution date from latest run (if any)
+                  EXEC_DATE=$(airflow dags list-runs -d freeipa_deployment --limit 1 -o plain 2>/dev/null | tail -1 | awk "{print \$3}")
+
+                  if [ -n "$EXEC_DATE" ]; then
+                    echo ""
+                    echo "=== Task States for run: $EXEC_DATE ==="
+                    # states-for-dag-run shows all task states for a run (no task_id needed)
+                    airflow tasks states-for-dag-run freeipa_deployment "$EXEC_DATE" 2>/dev/null || echo "Could not get task states"
+                  else
+                    echo ""
+                    echo "[WARN] No DAG runs found - DAG may not have been triggered"
+                    echo ""
+                    echo "=== DAG Info ==="
+                    airflow dags show freeipa_deployment 2>/dev/null || echo "DAG not found"
+                  fi
                 ' 2>/dev/null || true
               fi
             fi

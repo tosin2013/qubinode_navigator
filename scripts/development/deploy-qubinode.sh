@@ -807,7 +807,7 @@ restart_ai_assistant_with_credentials() {
         -e LOG_LEVEL=INFO \
         -e USE_LOCAL_MODEL="${use_local_model}" \
         -e MARQUEZ_API_URL=http://localhost:5001 \
-        -e AIRFLOW_API_URL=http://localhost:8888/api/v1 \
+        -e AIRFLOW_API_URL=http://localhost:8888 \
         -e AIRFLOW_DAGS_PATH=/app/airflow/dags \
         -e PROJECT_ROOT=/app \
         -e AIRFLOW_USER="${AIRFLOW_USER}" \
