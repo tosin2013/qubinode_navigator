@@ -652,6 +652,17 @@ jobs:
           sys.path.insert(0, os.environ.get('AIRFLOW__CORE__DAGS_FOLDER', 'airflow/dags'))
 
           from airflow.models import DagBag
+          from airflow.models.param import Param
+
+          def get_param_default(param_value):
+              """Get default value from a param - handles both Param objects and raw values."""
+              if hasattr(param_value, 'default'):
+                  return param_value.default
+              elif isinstance(param_value, Param):
+                  return param_value.default
+              else:
+                  # Raw value (string, int, etc.)
+                  return param_value
 
           print("=== Loading FreeIPA DAG ===")
           dagbag = DagBag(dag_folder=os.environ.get('AIRFLOW__CORE__DAGS_FOLDER', 'airflow/dags'), include_examples=False)
@@ -668,15 +679,16 @@ jobs:
           expected_params = ['action', 'community_version', 'os_version', 'domain', 'idm_hostname', 'dns_forwarder', 'run_ansible_install']
           for param in expected_params:
               if param in dag.params:
-                  print(f"  [OK] {param}: {dag.params[param].default}")
+                  default_val = get_param_default(dag.params[param])
+                  print(f"  [OK] {param}: {default_val}")
               else:
                   print(f"  [ERROR] Missing parameter: {param}")
                   sys.exit(1)
 
           # Validate default values
-          assert dag.params['action'].default == 'create', "action should default to 'create'"
-          assert dag.params['community_version'].default == 'true', "community_version should default to 'true'"
-          assert dag.params['os_version'].default == '9', "os_version should default to '9'"
+          assert get_param_default(dag.params['action']) == 'create', "action should default to 'create'"
+          assert get_param_default(dag.params['community_version']) == 'true', "community_version should default to 'true'"
+          assert get_param_default(dag.params['os_version']) == '9', "os_version should default to '9'"
           print("[OK] All parameters validated")
 
           # === Test 2: Validate task structure ===
