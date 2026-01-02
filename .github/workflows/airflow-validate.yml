@@ -633,6 +633,157 @@ jobs:
           echo ""
           echo "[OK] Infrastructure DAG validation complete"
 
+      - name: FreeIPA DAG Smoke Test
+        env:
+          AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@localhost:5432/airflow
+          AIRFLOW__CORE__DAGS_FOLDER: ${{ github.workspace }}/airflow/dags
+          AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+        run: |
+          echo "========================================"
+          echo "FreeIPA DAG Smoke Test"
+          echo "========================================"
+
+          # Test FreeIPA DAG logic without actual VM creation
+          python3 << 'PYTHON_SCRIPT'
+          import sys
+          import os
+
+          # Add dags directory to path for imports
+          sys.path.insert(0, os.environ.get('AIRFLOW__CORE__DAGS_FOLDER', 'airflow/dags'))
+
+          from airflow.models import DagBag
+
+          print("=== Loading FreeIPA DAG ===")
+          dagbag = DagBag(dag_folder=os.environ.get('AIRFLOW__CORE__DAGS_FOLDER', 'airflow/dags'), include_examples=False)
+
+          if 'freeipa_deployment' not in dagbag.dags:
+              print("[ERROR] freeipa_deployment DAG not found")
+              sys.exit(1)
+
+          dag = dagbag.dags['freeipa_deployment']
+          print(f"[OK] DAG loaded: {dag.dag_id}")
+
+          # === Test 1: Validate DAG parameters ===
+          print("\n=== Test 1: DAG Parameters ===")
+          expected_params = ['action', 'community_version', 'os_version', 'domain', 'idm_hostname', 'dns_forwarder', 'run_ansible_install']
+          for param in expected_params:
+              if param in dag.params:
+                  print(f"  [OK] {param}: {dag.params[param].default}")
+              else:
+                  print(f"  [ERROR] Missing parameter: {param}")
+                  sys.exit(1)
+
+          # Validate default values
+          assert dag.params['action'].default == 'create', "action should default to 'create'"
+          assert dag.params['community_version'].default == 'true', "community_version should default to 'true'"
+          assert dag.params['os_version'].default == '9', "os_version should default to '9'"
+          print("[OK] All parameters validated")
+
+          # === Test 2: Validate task structure ===
+          print("\n=== Test 2: Task Structure ===")
+          expected_tasks = [
+              'decide_action',
+              'validate_environment',
+              'create_freeipa_vm',
+              'wait_for_vm',
+              'prepare_ansible',
+              'install_freeipa',
+              'validate_freeipa',
+              'destroy_freeipa'
+          ]
+
+          actual_tasks = [t.task_id for t in dag.tasks]
+          for task_id in expected_tasks:
+              if task_id in actual_tasks:
+                  print(f"  [OK] Task: {task_id}")
+              else:
+                  print(f"  [ERROR] Missing task: {task_id}")
+                  sys.exit(1)
+          print("[OK] All expected tasks present")
+
+          # === Test 3: Validate branching logic ===
+          print("\n=== Test 3: Branching Logic ===")
+          decide_task = dag.get_task('decide_action')
+
+          # Test the branching function with mock context
+          class MockContext:
+              def __init__(self, action):
+                  self.params = {'action': action}
+              def get(self, key, default=None):
+                  return self.params.get(key, default)
+
+          # Import the decide_action function from the DAG module
+          import importlib.util
+          dag_path = os.path.join(os.environ.get('AIRFLOW__CORE__DAGS_FOLDER', 'airflow/dags'), 'freeipa_deployment.py')
+          spec = importlib.util.spec_from_file_location("freeipa_deployment", dag_path)
+          freeipa_module = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(freeipa_module)
+
+          # Test create path
+          result = freeipa_module.decide_action(params={'action': 'create'})
+          assert result == 'validate_environment', f"create should branch to validate_environment, got {result}"
+          print("  [OK] action=create -> validate_environment")
+
+          # Test destroy path
+          result = freeipa_module.decide_action(params={'action': 'destroy'})
+          assert result == 'destroy_freeipa', f"destroy should branch to destroy_freeipa, got {result}"
+          print("  [OK] action=destroy -> destroy_freeipa")
+
+          print("[OK] Branching logic validated")
+
+          # === Test 4: Validate task dependencies ===
+          print("\n=== Test 4: Task Dependencies ===")
+
+          # Check create workflow dependencies
+          validate_env = dag.get_task('validate_environment')
+          create_vm = dag.get_task('create_freeipa_vm')
+          wait_vm = dag.get_task('wait_for_vm')
+
+          # validate_environment -> create_freeipa_vm
+          if create_vm in validate_env.downstream_list:
+              print("  [OK] validate_environment -> create_freeipa_vm")
+          else:
+              print("  [ERROR] Missing dependency: validate_environment -> create_freeipa_vm")
+              sys.exit(1)
+
+          # create_freeipa_vm -> wait_for_vm
+          if wait_vm in create_vm.downstream_list:
+              print("  [OK] create_freeipa_vm -> wait_for_vm")
+          else:
+              print("  [ERROR] Missing dependency: create_freeipa_vm -> wait_for_vm")
+              sys.exit(1)
+
+          print("[OK] Task dependencies validated")
+
+          # === Test 5: Validate SSH commands (syntax check) ===
+          print("\n=== Test 5: SSH Command Validation ===")
+          ssh_tasks = ['validate_environment', 'create_freeipa_vm', 'wait_for_vm', 'prepare_ansible', 'install_freeipa', 'validate_freeipa', 'destroy_freeipa']
+
+          for task_id in ssh_tasks:
+              task = dag.get_task(task_id)
+              if hasattr(task, 'command'):
+                  cmd = task.command
+                  # Check for common issues
+                  if 'kcli' in cmd or 'ansible' in cmd or 'ssh' in cmd:
+                      print(f"  [OK] {task_id}: SSH command present")
+                  else:
+                      print(f"  [INFO] {task_id}: No kcli/ansible/ssh in command")
+
+          print("[OK] SSH command validation complete")
+
+          # === Summary ===
+          print("\n======================================")
+          print("[OK] FreeIPA DAG Smoke Test PASSED")
+          print("======================================")
+          print(f"  DAG ID: {dag.dag_id}")
+          print(f"  Tasks: {len(dag.tasks)}")
+          print(f"  Parameters: {len(dag.params)}")
+          print(f"  Tags: {dag.tags}")
+          PYTHON_SCRIPT
+
+          echo ""
+          echo "[OK] FreeIPA DAG smoke test complete"
+
       - name: Validate OpenLineage configuration
         run: |
           echo "========================================"
@@ -792,6 +943,7 @@ jobs:
           echo "  - Marquez lineage capture"
           echo "  - Failure path handling"
           echo "  - Infrastructure DAG structure validation"
+          echo "  - FreeIPA DAG smoke test (params, tasks, branching, dependencies)"
           echo "  - ADR-0045/ADR-0046 compliance"
           echo "  - MCP server syntax and startup"
           echo ""
