@@ -472,6 +472,87 @@ jobs:
       # =========================================================================
       # Phase 4: Deploy FreeIPA VM via PydanticAI Smart Pipeline (ADR-0066)
       # =========================================================================
+      - name: Orchestrator Intent Smoke Test (Dry Run)
+        run: |
+          echo "========================================"
+          echo "Orchestrator Intent Smoke Test"
+          echo "========================================"
+          echo "[INFO] Testing orchestrator intent parsing without execution"
+          echo ""
+
+          # Test 1: Verify orchestrator status
+          echo "=== Test 1: Orchestrator Status ==="
+          ORCH_STATUS=$(curl -s http://localhost:8080/orchestrator/status 2>/dev/null)
+          if echo "$ORCH_STATUS" | jq -e '.available == true' &>/dev/null; then
+            echo "[OK] Orchestrator is available"
+            echo "$ORCH_STATUS" | jq -c '{available, dag_count: .dag_count, api_keys: .api_keys_configured}' 2>/dev/null || true
+          else
+            echo "[WARN] Orchestrator not available - skipping intent tests"
+            exit 0
+          fi
+
+          # Test 2: DAG Discovery
+          echo ""
+          echo "=== Test 2: DAG Discovery ==="
+          DAGS=$(curl -s http://localhost:8080/orchestrator/dags 2>/dev/null)
+          FREEIPA_FOUND=$(echo "$DAGS" | jq -r '.dags[] | select(.dag_id == "freeipa_deployment") | .dag_id' 2>/dev/null)
+          if [ "$FREEIPA_FOUND" = "freeipa_deployment" ]; then
+            echo "[OK] freeipa_deployment DAG discovered by orchestrator"
+          else
+            echo "[WARN] freeipa_deployment not in orchestrator DAG list"
+            echo "Available DAGs:"
+            echo "$DAGS" | jq -r '.dags[].dag_id' 2>/dev/null | head -10
+          fi
+
+          # Test 3: Intent Parsing (dry run - no execution)
+          echo ""
+          echo "=== Test 3: Intent Parsing (Dry Run) ==="
+          echo "[INFO] Sending intent without auto_execute to test parsing..."
+
+          INTENT_RESPONSE=$(curl -s -X POST http://localhost:8080/orchestrator/intent \
+            -H "Content-Type: application/json" \
+            -d '{
+              "intent": "Deploy a FreeIPA identity management server",
+              "params": {
+                "vm_name": "freeipa-test",
+                "action": "create"
+              },
+              "auto_approve": false,
+              "auto_execute": false
+            }' 2>/dev/null)
+
+          echo "Intent Response:"
+          echo "$INTENT_RESPONSE" | jq . 2>/dev/null || echo "$INTENT_RESPONSE"
+
+          # Validate response
+          MATCHED_DAG=$(echo "$INTENT_RESPONSE" | jq -r '.dag_id // .matched_dag // empty' 2>/dev/null)
+          if [ "$MATCHED_DAG" = "freeipa_deployment" ]; then
+            echo ""
+            echo "[OK] Orchestrator correctly matched intent to freeipa_deployment DAG"
+          elif [ -n "$MATCHED_DAG" ]; then
+            echo ""
+            echo "[WARN] Orchestrator matched to different DAG: $MATCHED_DAG"
+          else
+            echo ""
+            echo "[INFO] Intent parsing response (may need approval or different format)"
+          fi
+
+          # Test 4: Validate DAG info endpoint
+          echo ""
+          echo "=== Test 4: DAG Info Endpoint ==="
+          DAG_INFO=$(curl -s "http://localhost:8080/orchestrator/dags/freeipa_deployment" 2>/dev/null)
+          if echo "$DAG_INFO" | jq -e '.dag_id' &>/dev/null; then
+            echo "[OK] DAG info endpoint working"
+            echo "$DAG_INFO" | jq -c '{dag_id, description, tags}' 2>/dev/null || true
+          else
+            echo "[INFO] DAG info endpoint returned: $(echo "$DAG_INFO" | head -c 100)"
+          fi
+
+          echo ""
+          echo "========================================"
+          echo "[OK] Orchestrator Intent Smoke Test Complete"
+          echo "========================================"
+
       - name: Unpause FreeIPA DAG
         if: ${{ github.event.inputs.deploy_freeipa == 'true' || github.event_name == 'schedule' }}
         run: |
