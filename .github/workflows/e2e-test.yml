@@ -447,6 +447,54 @@ jobs:
             echo "[WARN] Scheduler may not be fully ready, continuing anyway..."
           fi
 
+      - name: Create localhost_ssh Airflow connection
+        run: |
+          echo "========================================"
+          echo "Creating localhost_ssh Airflow connection"
+          echo "========================================"
+
+          # Determine SSH user (same logic as Configure SSH step)
+          SSH_USER="${QUBINODE_ADMIN_USER:-root}"
+          if [ "$SSH_USER" = "root" ]; then
+            SSH_HOME="/root"
+          else
+            SSH_HOME=$(getent passwd "$SSH_USER" | cut -d: -f6 || echo "/home/$SSH_USER")
+          fi
+          SSH_KEY_PATH="$SSH_HOME/.ssh/id_rsa"
+
+          echo "[INFO] Creating connection for SSH user: $SSH_USER"
+          echo "[INFO] SSH key path: $SSH_KEY_PATH"
+
+          # Delete existing connection if present (idempotent)
+          sudo podman exec $AIRFLOW_SCHEDULER_CONTAINER \
+            airflow connections delete localhost_ssh 2>/dev/null || true
+
+          # Create the localhost_ssh connection
+          sudo podman exec $AIRFLOW_SCHEDULER_CONTAINER \
+            airflow connections add 'localhost_ssh' \
+              --conn-type 'ssh' \
+              --conn-host 'localhost' \
+              --conn-login "$SSH_USER" \
+              --conn-extra "{\"key_file\": \"$SSH_KEY_PATH\", \"no_host_key_check\": true}"
+
+          # Verify connection was created
+          echo ""
+          echo "[INFO] Verifying connection..."
+          sudo podman exec $AIRFLOW_SCHEDULER_CONTAINER \
+            airflow connections get localhost_ssh 2>/dev/null && echo "[OK] Connection created" || {
+              echo "[ERROR] Failed to create localhost_ssh connection"
+              exit 1
+            }
+
+          # Test the SSH connection
+          echo ""
+          echo "[INFO] Testing SSH connectivity..."
+          sudo podman exec $AIRFLOW_SCHEDULER_CONTAINER \
+            ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=5 \
+            "$SSH_USER@localhost" "echo '[OK] SSH connection works'" || {
+              echo "[WARN] SSH test failed - DAGs may fail"
+            }
+
       - name: Validate Airflow DAGs
         run: |
           echo "========================================"

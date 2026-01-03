@@ -327,6 +327,102 @@ Benefits:
 - ✅ Better error handling
 - ✅ Connection reuse
 
+## CI/CD Setup
+
+When running Airflow DAGs in CI/CD pipelines (GitHub Actions, GitLab CI, etc.), the `localhost_ssh` connection must be created programmatically after Airflow starts.
+
+### GitHub Actions Example
+
+Add this step after the Airflow scheduler is ready:
+
+```yaml
+- name: Create localhost_ssh Airflow connection
+  run: |
+    # Determine SSH user and key path
+    SSH_USER="${QUBINODE_ADMIN_USER:-root}"
+    if [ "$SSH_USER" = "root" ]; then
+      SSH_HOME="/root"
+    else
+      SSH_HOME=$(getent passwd "$SSH_USER" | cut -d: -f6 || echo "/home/$SSH_USER")
+    fi
+    SSH_KEY_PATH="$SSH_HOME/.ssh/id_rsa"
+
+    # Delete existing connection if present (idempotent)
+    sudo podman exec $AIRFLOW_SCHEDULER_CONTAINER \
+      airflow connections delete localhost_ssh 2>/dev/null || true
+
+    # Create the localhost_ssh connection
+    sudo podman exec $AIRFLOW_SCHEDULER_CONTAINER \
+      airflow connections add 'localhost_ssh' \
+        --conn-type 'ssh' \
+        --conn-host 'localhost' \
+        --conn-login "$SSH_USER" \
+        --conn-extra "{\"key_file\": \"$SSH_KEY_PATH\", \"no_host_key_check\": true}"
+
+    # Verify connection
+    sudo podman exec $AIRFLOW_SCHEDULER_CONTAINER \
+      airflow connections get localhost_ssh
+```
+
+### Prerequisites for CI/CD
+
+Before creating the connection, ensure:
+
+1. **SSH keys are generated** on the CI runner:
+
+   ```bash
+   ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N '' -q
+   ```
+
+2. **SSH key is authorized** for localhost access:
+
+   ```bash
+   cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+   chmod 600 ~/.ssh/authorized_keys
+   ```
+
+3. **SSH service is running** on the CI runner:
+
+   ```bash
+   systemctl start sshd
+   ```
+
+4. **Airflow scheduler container** can reach localhost:
+   - Use `--network host` or ensure proper network configuration
+   - Mount the SSH key into the container if needed
+
+### Common CI/CD Errors
+
+**Error**: `The conn_id 'localhost_ssh' isn't defined`
+
+**Cause**: The connection was not created before triggering the DAG.
+
+**Fix**: Add the connection creation step before any DAG triggers.
+
+**Error**: `Permission denied (publickey)`
+
+**Cause**: SSH key not in authorized_keys or wrong permissions.
+
+**Fix**:
+
+```bash
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/id_rsa
+chmod 600 ~/.ssh/authorized_keys
+cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+```
+
+**Error**: `Connection refused`
+
+**Cause**: SSH service not running on the host.
+
+**Fix**:
+
+```bash
+systemctl start sshd
+systemctl enable sshd
+```
+
 ## Related Documentation
 
 - [Airflow SSH Provider Docs](https://airflow.apache.org/docs/apache-airflow-providers-ssh/stable/index.html)
