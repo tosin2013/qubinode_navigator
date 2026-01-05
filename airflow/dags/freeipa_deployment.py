@@ -110,9 +110,9 @@ validate_environment = SSHOperator(
         echo "[ERROR] kcli not installed"
         exit 1
     fi
-    echo "[OK] kcli installed: $(kcli --version 2>&1 | head -1)"
+    echo "[OK] kcli installed: $(sudo kcli --version 2>&1 | head -1)"
 
-    if kcli list images | grep -q "$IMAGE_NAME"; then
+    if sudo kcli list images | grep -q "$IMAGE_NAME"; then
         echo "[OK] Image $IMAGE_NAME available"
     else
         echo "[WARN] Image $IMAGE_NAME not found, will download during VM creation"
@@ -160,9 +160,9 @@ create_freeipa_vm = SSHOperator(
 
     VM_NAME=freeipa
 
-    if kcli info vm $VM_NAME &>/dev/null; then
+    if sudo kcli info vm $VM_NAME &>/dev/null; then
         echo "[WARN] VM $VM_NAME already exists"
-        kcli info vm $VM_NAME
+        sudo kcli info vm $VM_NAME
         exit 0
     fi
 
@@ -172,7 +172,7 @@ create_freeipa_vm = SSHOperator(
     echo "  CPUs: 2"
     echo "  Disk: 50 GB"
 
-    kcli create vm $VM_NAME \
+    sudo kcli create vm $VM_NAME \
         -i $IMAGE_NAME \
         -P memory=4096 \
         -P numcpus=2 \
@@ -185,7 +185,7 @@ create_freeipa_vm = SSHOperator(
 
     echo ""
     echo "[OK] VM created successfully"
-    kcli info vm $VM_NAME
+    sudo kcli info vm $VM_NAME
     """,
     cmd_timeout=600,
     dag=dag,
@@ -207,7 +207,7 @@ wait_for_vm = SSHOperator(
     echo "Waiting for VM to get IP address..."
 
     for i in $(seq 1 $MAX_ATTEMPTS); do
-        VM_INFO=$(kcli info vm $VM_NAME 2>/dev/null)
+        VM_INFO=$(sudo kcli info vm $VM_NAME 2>/dev/null)
         IP=$(echo "$VM_INFO" | grep "^ip:" | awk "{print \\$2}")
 
         if [ -n "$IP" ] && [ "$IP" != "None" ] && [ "$IP" != "" ]; then
@@ -263,7 +263,7 @@ prepare_ansible = SSHOperator(
 
     # Get IP via kcli on host
     VM_NAME="freeipa"
-    IP=$(kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{{{{print \\$2}}}}")
+    IP=$(sudo kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{{{{print \\$2}}}}")
 
     if [ -z "$IP" ] || [ "$IP" == "None" ]; then
         echo "[ERROR] Could not get VM IP"
@@ -348,7 +348,7 @@ install_freeipa = SSHOperator(
     DNS_FORWARDER="{{{{ params.dns_forwarder }}}}"
 
     VM_NAME="freeipa"
-    IP=$(kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{{{{print \\$2}}}}")
+    IP=$(sudo kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{{{{print \\$2}}}}")
 
     if [ -z "$IP" ]; then
         echo "[ERROR] Could not get VM IP"
@@ -404,7 +404,7 @@ validate_freeipa = SSHOperator(
     RUN_ANSIBLE="{{ params.run_ansible_install }}"
 
     VM_NAME="freeipa"
-    IP=$(kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{print \\$2}")
+    IP=$(sudo kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{print \\$2}")
 
     echo "Checking FreeIPA services on $IP..."
 
@@ -444,9 +444,9 @@ destroy_freeipa = SSHOperator(
 
     VM_NAME=freeipa
 
-    if kcli info vm $VM_NAME &>/dev/null; then
+    if sudo kcli info vm $VM_NAME &>/dev/null; then
         echo "Deleting VM: $VM_NAME"
-        kcli delete vm $VM_NAME -y
+        sudo kcli delete vm $VM_NAME -y
         echo "[OK] VM deleted"
     else
         echo "[WARN] VM $VM_NAME does not exist"
