@@ -986,6 +986,124 @@ jobs:
           echo "[OK] FreeIPA validation complete"
 
       # =========================================================================
+      # Phase 5b: Natural Language VM Deployment Test (ADR-0066)
+      # =========================================================================
+      # Tests the AI orchestrator's ability to parse natural language and deploy a VM
+      - name: Deploy Custom VM via Natural Language
+        if: ${{ github.event.inputs.deploy_freeipa == 'true' || github.event_name == 'schedule' }}
+        continue-on-error: true
+        run: |
+          echo "========================================"
+          echo "Natural Language VM Deployment Test"
+          echo "========================================"
+          echo ""
+          echo "Testing AI orchestrator's natural language understanding"
+          echo "by requesting a RHEL 9 test VM deployment."
+          echo ""
+
+          # First, unpause the generic_vm_deployment DAG
+          echo "[INFO] Unpausing generic_vm_deployment DAG..."
+          sudo podman exec $AIRFLOW_SCHEDULER_CONTAINER \
+            airflow dags unpause generic_vm_deployment 2>&1 || true
+
+          # Send natural language request to the AI orchestrator
+          echo ""
+          echo "[INFO] Sending natural language request..."
+          echo "Prompt: 'Deploy a RHEL 9 test VM named e2e-test-vm'"
+          echo ""
+
+          INTENT_RESPONSE=$(curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -d '{
+              "intent": "Deploy a RHEL 9 test VM named e2e-test-vm for testing purposes",
+              "execute": true,
+              "params": {
+                "vm_name": "e2e-test-vm",
+                "vm_profile": "rhel9",
+                "action": "create"
+              }
+            }' \
+            "http://localhost:8080/orchestrator/intent" 2>/dev/null || echo '{"error": "request failed"}')
+
+          echo "Orchestrator Response:"
+          echo "$INTENT_RESPONSE" | jq . 2>/dev/null || echo "$INTENT_RESPONSE"
+
+          # Check if the orchestrator matched to the correct DAG
+          MATCHED_DAG=$(echo "$INTENT_RESPONSE" | jq -r '.dag_id // .matched_dag // empty' 2>/dev/null)
+          if [ "$MATCHED_DAG" = "generic_vm_deployment" ]; then
+            echo ""
+            echo "[OK] Orchestrator correctly matched intent to generic_vm_deployment DAG"
+          else
+            echo ""
+            echo "[INFO] Orchestrator matched to: ${MATCHED_DAG:-none}"
+          fi
+
+          # Get run_id if execution was triggered
+          RUN_ID=$(echo "$INTENT_RESPONSE" | jq -r '.run_id // empty' 2>/dev/null)
+          if [ -n "$RUN_ID" ]; then
+            echo ""
+            echo "[OK] DAG execution triggered with run_id: $RUN_ID"
+          fi
+
+      - name: Wait for Custom VM Deployment
+        if: ${{ github.event.inputs.deploy_freeipa == 'true' || github.event_name == 'schedule' }}
+        continue-on-error: true
+        run: |
+          echo "========================================"
+          echo "Waiting for Custom VM to be Ready"
+          echo "========================================"
+
+          MAX_ATTEMPTS=20
+          ATTEMPT=0
+
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            ATTEMPT=$((ATTEMPT + 1))
+            echo ""
+            echo "Check $ATTEMPT/$MAX_ATTEMPTS..."
+
+            # Check if VM exists
+            VM_INFO=$(sudo kcli info vm e2e-test-vm 2>/dev/null || echo "")
+
+            if [ -n "$VM_INFO" ]; then
+              VM_IP=$(echo "$VM_INFO" | grep 'ip:' | awk '{print $2}' | head -1)
+
+              if [ -n "$VM_IP" ] && [ "$VM_IP" != "None" ]; then
+                echo "[OK] e2e-test-vm is running with IP: $VM_IP"
+                echo ""
+                echo "=== VM Info ==="
+                echo "$VM_INFO"
+                echo ""
+                echo "[SUCCESS] Natural language VM deployment test PASSED!"
+                exit 0
+              else
+                echo "  VM exists but no IP yet..."
+              fi
+            else
+              echo "  VM not found yet..."
+
+              # Check DAG status
+              DAG_STATUS=$(sudo podman exec $AIRFLOW_SCHEDULER_CONTAINER \
+                airflow dags list-runs -d generic_vm_deployment --limit 1 -o json 2>/dev/null | \
+                jq -r '.[0].state // "unknown"' 2>/dev/null || echo "unknown")
+              echo "  DAG status: $DAG_STATUS"
+
+              if [ "$DAG_STATUS" = "failed" ]; then
+                echo ""
+                echo "[WARN] generic_vm_deployment DAG failed"
+                break
+              fi
+            fi
+
+            sleep 15
+          done
+
+          echo ""
+          echo "[INFO] Custom VM deployment test completed (may not have succeeded)"
+          echo ""
+          echo "=== VM List ==="
+          sudo kcli list vm 2>/dev/null || echo "kcli list failed"
+
+      # =========================================================================
       # Phase 6: Smart Pipeline Validation (ADR-0066)
       # =========================================================================
       - name: Check Shadow Errors
@@ -1050,6 +1168,14 @@ jobs:
             echo "  - FreeIPA VM: ❌ Not deployed or no IP"
           fi
 
+          # Check natural language test VM
+          E2E_VM_IP=$(sudo kcli info vm e2e-test-vm 2>/dev/null | grep 'ip:' | awk '{print $2}' | head -1)
+          if [ -n "$E2E_VM_IP" ] && [ "$E2E_VM_IP" != "None" ]; then
+            echo "  - NL Test VM: ✅ Running ($E2E_VM_IP)"
+          else
+            echo "  - NL Test VM: ⚠️ Not deployed (optional test)"
+          fi
+
           echo ""
           echo "Access URLs:"
           echo "  - AI Assistant: http://$(hostname):8080"
@@ -1075,6 +1201,9 @@ jobs:
           # NOTE: Must use sudo kcli to see/manage VMs created by root
           echo "[INFO] Deleting FreeIPA VM..."
           sudo kcli delete vm freeipa -y 2>/dev/null || true
+
+          echo "[INFO] Deleting e2e-test-vm (natural language test VM)..."
+          sudo kcli delete vm e2e-test-vm -y 2>/dev/null || true
 
           # Clean up any other test VMs that might have been created
           echo "[INFO] Cleaning up any lingering test VMs..."
