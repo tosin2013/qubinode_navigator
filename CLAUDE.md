@@ -135,13 +135,13 @@ ssh -o StrictHostKeyChecking=no root@localhost \
 
 DAG commands pass through THREE interpreters. Memorize these rules:
 
-| Goal | In f-string | After f-string | After Jinja2 |
-|------|-------------|----------------|--------------|
-| Literal `{` for awk | `{{` | `{` | `{` |
-| Jinja2 param | `{{{{ params.x }}}}` | `{{ params.x }}` | value |
-| Shell `$VAR` | `$VAR` | `$VAR` | `$VAR` |
-| Shell `${VAR}` | `${{VAR}}` | `${VAR}` | `${VAR}` |
-| awk `$2` (double-quoted) | `\\$2` | `\$2` | `$2` |
+| Goal                     | In f-string          | After f-string   | After Jinja2 |
+| ------------------------ | -------------------- | ---------------- | ------------ |
+| Literal `{` for awk      | `{{`                 | `{`              | `{`          |
+| Jinja2 param             | `{{{{ params.x }}}}` | `{{ params.x }}` | value        |
+| Shell `$VAR`             | `$VAR`               | `$VAR`           | `$VAR`       |
+| Shell `${VAR}`           | `${{VAR}}`           | `${VAR}`         | `${VAR}`     |
+| awk `$2` (double-quoted) | `\\$2`               | `\$2`            | `$2`         |
 
 **Common mistakes:**
 
