@@ -30,7 +30,7 @@ from airflow.operators.python import BranchPythonOperator, PythonOperator
 
 # Import helpers for portable DAGs
 # See dag_helpers.py for documentation
-from dag_helpers import get_ssh_conn_id, get_kcli_prefix
+from dag_helpers import get_kcli_prefix
 
 # =============================================================================
 # kcli Prefix Configuration

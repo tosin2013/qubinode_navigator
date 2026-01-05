@@ -118,6 +118,7 @@ create_vm = SSHOperator(
 ```
 
 The prefix is controlled by:
+
 - `QUBINODE_KCLI_SUDO=true|false` - Explicit control
 - Auto-detect: Uses sudo if `QUBINODE_SSH_USER` is not root
 
