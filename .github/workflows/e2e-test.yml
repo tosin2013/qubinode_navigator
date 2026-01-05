@@ -492,15 +492,14 @@ jobs:
 
           # Determine SSH user (same logic as Configure SSH step)
           SSH_USER="${QUBINODE_ADMIN_USER:-root}"
-          if [ "$SSH_USER" = "root" ]; then
-            SSH_HOME="/root"
-          else
-            SSH_HOME=$(getent passwd "$SSH_USER" | cut -d: -f6 || echo "/home/$SSH_USER")
-          fi
-          SSH_KEY_PATH="$SSH_HOME/.ssh/id_rsa"
+          # IMPORTANT: The key path inside the container is ALWAYS /root/.ssh/id_rsa
+          # because docker-compose.yml mounts /root/.ssh:/root/.ssh:ro
+          # The deploy script copies the admin user's key to /root/.ssh/ on the host
+          # So regardless of SSH_USER, the key is at /root/.ssh/id_rsa in the container
+          SSH_KEY_PATH="/root/.ssh/id_rsa"
 
           echo "[INFO] Creating connection for SSH user: $SSH_USER"
-          echo "[INFO] SSH key path: $SSH_KEY_PATH"
+          echo "[INFO] SSH key path (inside container): $SSH_KEY_PATH"
 
           # Delete existing connection if present (idempotent)
           sudo podman exec $AIRFLOW_SCHEDULER_CONTAINER \

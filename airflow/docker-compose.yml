@@ -44,9 +44,10 @@ x-airflow-common:
     # SSH Connection Configuration (for SSHOperator in DAGs)
     # This connection is used by DAGs to SSH to the host for kcli/virsh commands
     # The key at /root/.ssh/id_rsa is mounted from the host (see volumes below)
-    # For non-root users: set QUBINODE_SSH_USER and copy your key to /root/.ssh/
-    # Or override the entire connection via AIRFLOW_CONN_LOCALHOST_SSH env var
-    AIRFLOW_CONN_LOCALHOST_SSH: ${AIRFLOW_CONN_LOCALHOST_SSH:-ssh://${QUBINODE_SSH_USER:-root}@localhost?key_file=/root/.ssh/id_rsa&no_host_key_check=true}
+    # Set QUBINODE_SSH_USER env var before starting containers to change the SSH user
+    # The key is always at /root/.ssh/id_rsa (synced from admin user's key by deploy script)
+    QUBINODE_SSH_USER: ${QUBINODE_SSH_USER:-root}
+    AIRFLOW_CONN_LOCALHOST_SSH: ${AIRFLOW_CONN_LOCALHOST_SSH:-}
     # Override default SSH connection ID if needed (default: localhost_ssh)
     # QUBINODE_SSH_CONN_ID: 'localhost_ssh'
     # See SSH-CONNECTION-SETUP.md for configuration instructions
