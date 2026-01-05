@@ -92,6 +92,34 @@ Families:
 1. ASCII-only log prefixes: `[OK]`, `[ERROR]`, `[WARN]`, `[INFO]`, `[SKIP]`
 1. No string concatenation in `bash_command`
 1. No Unicode/emoji in bash commands
+1. **Always use `get_kcli_prefix()` for kcli commands** (see below)
+
+**kcli commands - IMPORTANT:**
+
+kcli requires root/sudo privileges for VM operations. Use the helper from `dag_helpers.py`:
+
+```python
+from dag_helpers import get_ssh_conn_id, get_kcli_prefix
+
+# Get prefix once at module level (evaluated at DAG parse time)
+KCLI = get_kcli_prefix()  # Returns "sudo " or "" based on environment
+
+# Use in SSHOperator commands (f-string required)
+create_vm = SSHOperator(
+    task_id="create_vm",
+    ssh_conn_id=get_ssh_conn_id(),
+    command=f"""
+    {KCLI}kcli list vm
+    {KCLI}kcli create vm myvm -i centos9stream
+    {KCLI}kcli info vm myvm
+    """,
+    dag=dag,
+)
+```
+
+The prefix is controlled by:
+- `QUBINODE_KCLI_SUDO=true|false` - Explicit control
+- Auto-detect: Uses sudo if `QUBINODE_SSH_USER` is not root
 
 **SSH execution pattern (ADR-0046):**
 

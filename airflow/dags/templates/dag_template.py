@@ -11,12 +11,34 @@ ADR Compliance:
 
 Author: [Your Name]
 Created: [Date]
+
+IMPORTANT - kcli Commands:
+    kcli requires root/sudo privileges for VM operations.
+    Always use get_kcli_prefix() from dag_helpers.py:
+
+    from dag_helpers import get_kcli_prefix
+    KCLI = get_kcli_prefix()  # Returns "sudo " or "" based on environment
+
+    Then use f-strings in commands:
+    command=f"{KCLI}kcli list vm"
 """
 
 from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.python import BranchPythonOperator, PythonOperator
+
+# Import helpers for portable DAGs
+# See dag_helpers.py for documentation
+from dag_helpers import get_ssh_conn_id, get_kcli_prefix
+
+# =============================================================================
+# kcli Prefix Configuration
+# =============================================================================
+# IMPORTANT: kcli requires root privileges. This prefix adds "sudo " when
+# running as a non-root user (e.g., in CI/CD pipelines).
+# Controlled by QUBINODE_KCLI_SUDO env var or auto-detected from SSH user.
+KCLI = get_kcli_prefix()
 
 # =============================================================================
 # DAG Configuration
@@ -186,36 +208,38 @@ validate_prerequisites = BashOperator(
 
 # Task: Create resources
 # ADR-0046: Wrap kcli/virsh commands in SSH
+# NOTE: Uses KCLI prefix for sudo support in CI/CD environments
 create_resources = BashOperator(
     task_id="create_resources",
-    bash_command="""
+    bash_command=f"""
     echo "========================================"
     echo "Creating Resources"
     echo "========================================"
 
-    VM_NAME="{{ params.vm_name }}"
-    VM_PROFILE="{{ params.vm_profile }}"
-    TARGET_SERVER="{{ params.target_server }}"
+    VM_NAME="{{{{ params.vm_name }}}}"
+    VM_PROFILE="{{{{ params.vm_profile }}}}"
+    TARGET_SERVER="{{{{ params.target_server }}}}"
 
     # Generate VM name if not provided
     if [ -z "$VM_NAME" ]; then
-        VM_NAME="${VM_PROFILE}-$(date +%s | md5sum | head -c 5)"
+        VM_NAME="${{VM_PROFILE}}-$(date +%s | md5sum | head -c 5)"
         echo "[INFO] Generated VM name: $VM_NAME"
     fi
 
     # ADR-0046: Execute kcli via SSH
+    # Using KCLI prefix for sudo support when running as non-root
     echo "[INFO] Creating VM via kcli..."
     ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
-        "kcli create vm -p ${VM_PROFILE} ${VM_NAME}" || {
+        "{KCLI}kcli create vm -p ${{VM_PROFILE}} ${{VM_NAME}}" || {{
         echo "[ERROR] Failed to create VM"
         exit 1
-    }
+    }}
 
     # Wait for VM to get IP
     echo "[INFO] Waiting for VM to get IP address..."
-    for i in {1..30}; do
+    for i in {{1..30}}; do
         VM_IP=$(ssh -o StrictHostKeyChecking=no root@localhost \
-            "kcli info vm ${VM_NAME} 2>/dev/null | grep '^ip:' | awk '{print \\$2}' | head -1")
+            "{KCLI}kcli info vm ${{VM_NAME}} 2>/dev/null | grep '^ip:' | awk '{{print \\$2}}' | head -1")
         if [ -n "$VM_IP" ]; then
             echo "[OK] VM IP: $VM_IP"
             break
@@ -239,19 +263,19 @@ create_resources = BashOperator(
 # Task: Delete resources
 delete_resources = BashOperator(
     task_id="delete_resources",
-    bash_command="""
+    bash_command=f"""
     echo "========================================"
     echo "Deleting Resources"
     echo "========================================"
 
-    VM_NAME="{{ params.vm_name }}"
-    VM_PROFILE="{{ params.vm_profile }}"
+    VM_NAME="{{{{ params.vm_name }}}}"
+    VM_PROFILE="{{{{ params.vm_profile }}}}"
 
     # Find VM by profile if name not provided
     if [ -z "$VM_NAME" ]; then
         echo "[INFO] Looking for VMs matching profile: $VM_PROFILE"
         VM_NAME=$(ssh -o StrictHostKeyChecking=no root@localhost \
-            "kcli list vm 2>/dev/null | grep ${VM_PROFILE} | tail -1 | awk '{print \\$2}'" 2>/dev/null)
+            "{KCLI}kcli list vm 2>/dev/null | grep ${{VM_PROFILE}} | tail -1 | awk '{{print \\$2}}'" 2>/dev/null)
     fi
 
     if [ -z "$VM_NAME" ]; then
@@ -262,10 +286,10 @@ delete_resources = BashOperator(
     # ADR-0046: Execute kcli via SSH
     echo "[INFO] Deleting VM: $VM_NAME"
     ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
-        "kcli delete vm ${VM_NAME} -y" || {
+        "{KCLI}kcli delete vm ${{VM_NAME}} -y" || {{
         echo "[ERROR] Failed to delete VM"
         exit 1
-    }
+    }}
 
     echo ""
     echo "[OK] VM $VM_NAME deleted successfully"
@@ -276,25 +300,25 @@ delete_resources = BashOperator(
 # Task: Check status
 status_resources = BashOperator(
     task_id="status_resources",
-    bash_command="""
+    bash_command=f"""
     echo "========================================"
     echo "Resource Status"
     echo "========================================"
 
-    VM_NAME="{{ params.vm_name }}"
-    VM_PROFILE="{{ params.vm_profile }}"
+    VM_NAME="{{{{ params.vm_name }}}}"
+    VM_PROFILE="{{{{ params.vm_profile }}}}"
 
     # List VMs matching profile
     echo "[INFO] VMs matching profile '$VM_PROFILE':"
     ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
-        "kcli list vm 2>/dev/null | grep -E 'Name|${VM_PROFILE}'" || echo "No VMs found"
+        "{KCLI}kcli list vm 2>/dev/null | grep -E 'Name|${{VM_PROFILE}}'" || echo "No VMs found"
 
     # If specific VM name provided, show details
     if [ -n "$VM_NAME" ]; then
         echo ""
         echo "[INFO] Details for VM: $VM_NAME"
         ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@localhost \
-            "kcli info vm ${VM_NAME} 2>/dev/null" || echo "VM not found"
+            "{KCLI}kcli info vm ${{VM_NAME}} 2>/dev/null" || echo "VM not found"
     fi
 
     echo ""
