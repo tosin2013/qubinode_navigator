@@ -22,7 +22,12 @@ from dag_helpers import (
     get_ssh_key_path,
     get_inventory_dir,
     get_ssh_conn_id,
+    get_kcli_prefix,
 )
+
+# Get kcli prefix (sudo or empty) based on SSH user configuration
+# This is evaluated at DAG parse time and auto-detects if sudo is needed
+KCLI = get_kcli_prefix()
 
 # Default arguments
 default_args = {
@@ -88,13 +93,13 @@ decide_action_task = BranchPythonOperator(
 validate_environment = SSHOperator(
     task_id="validate_environment",
     ssh_conn_id=get_ssh_conn_id(),
-    command="""
+    command=f"""
     echo "========================================"
     echo "Validating FreeIPA Deployment Environment"
     echo "========================================"
 
-    COMMUNITY_VERSION="{{ params.community_version }}"
-    OS_VERSION="{{ params.os_version }}"
+    COMMUNITY_VERSION="{{{{ params.community_version }}}}"
+    OS_VERSION="{{{{ params.os_version }}}}"
 
     echo "Community Version: $COMMUNITY_VERSION"
     echo "OS Version: $OS_VERSION"
@@ -110,9 +115,9 @@ validate_environment = SSHOperator(
         echo "[ERROR] kcli not installed"
         exit 1
     fi
-    echo "[OK] kcli installed: $(sudo kcli --version 2>&1 | head -1)"
+    echo "[OK] kcli installed: $({KCLI}kcli --version 2>&1 | head -1)"
 
-    if sudo kcli list images | grep -q "$IMAGE_NAME"; then
+    if {KCLI}kcli list images | grep -q "$IMAGE_NAME"; then
         echo "[OK] Image $IMAGE_NAME available"
     else
         echo "[WARN] Image $IMAGE_NAME not found, will download during VM creation"
@@ -144,13 +149,13 @@ validate_environment = SSHOperator(
 create_freeipa_vm = SSHOperator(
     task_id="create_freeipa_vm",
     ssh_conn_id=get_ssh_conn_id(),
-    command="""
+    command=f"""
     echo "========================================"
     echo "Creating FreeIPA VM"
     echo "========================================"
 
-    COMMUNITY_VERSION="{{ params.community_version }}"
-    OS_VERSION="{{ params.os_version }}"
+    COMMUNITY_VERSION="{{{{ params.community_version }}}}"
+    OS_VERSION="{{{{ params.os_version }}}}"
 
     if [ "$COMMUNITY_VERSION" == "true" ]; then
         [ "$OS_VERSION" == "9" ] && IMAGE_NAME=centos9stream || IMAGE_NAME=centos8stream
@@ -160,9 +165,9 @@ create_freeipa_vm = SSHOperator(
 
     VM_NAME=freeipa
 
-    if sudo kcli info vm $VM_NAME &>/dev/null; then
+    if {KCLI}kcli info vm $VM_NAME &>/dev/null; then
         echo "[WARN] VM $VM_NAME already exists"
-        sudo kcli info vm $VM_NAME
+        {KCLI}kcli info vm $VM_NAME
         exit 0
     fi
 
@@ -172,20 +177,20 @@ create_freeipa_vm = SSHOperator(
     echo "  CPUs: 2"
     echo "  Disk: 50 GB"
 
-    sudo kcli create vm $VM_NAME \
+    {KCLI}kcli create vm $VM_NAME \
         -i $IMAGE_NAME \
         -P memory=4096 \
         -P numcpus=2 \
         -P disks=[50] \
         -P nets=[default] \
-        --wait || {
+        --wait || {{
         echo "[ERROR] Failed to create VM"
         exit 1
-    }
+    }}
 
     echo ""
     echo "[OK] VM created successfully"
-    sudo kcli info vm $VM_NAME
+    {KCLI}kcli info vm $VM_NAME
     """,
     cmd_timeout=600,
     dag=dag,
@@ -196,7 +201,7 @@ create_freeipa_vm = SSHOperator(
 wait_for_vm = SSHOperator(
     task_id="wait_for_vm",
     ssh_conn_id=get_ssh_conn_id(),
-    command="""
+    command=f"""
     echo "========================================"
     echo "Waiting for FreeIPA VM to be Ready"
     echo "========================================"
@@ -207,8 +212,8 @@ wait_for_vm = SSHOperator(
     echo "Waiting for VM to get IP address..."
 
     for i in $(seq 1 $MAX_ATTEMPTS); do
-        VM_INFO=$(sudo kcli info vm $VM_NAME 2>/dev/null)
-        IP=$(echo "$VM_INFO" | grep "^ip:" | awk "{print \\$2}")
+        VM_INFO=$({KCLI}kcli info vm $VM_NAME 2>/dev/null)
+        IP=$(echo "$VM_INFO" | grep "^ip:" | awk "{{print \\$2}}")
 
         if [ -n "$IP" ] && [ "$IP" != "None" ] && [ "$IP" != "" ]; then
             echo "[OK] VM IP: $IP"
@@ -263,7 +268,7 @@ prepare_ansible = SSHOperator(
 
     # Get IP via kcli on host
     VM_NAME="freeipa"
-    IP=$(sudo kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{{{{print \\$2}}}}")
+    IP=$({KCLI}kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{{{{print \\$2}}}}")
 
     if [ -z "$IP" ] || [ "$IP" == "None" ]; then
         echo "[ERROR] Could not get VM IP"
@@ -348,7 +353,7 @@ install_freeipa = SSHOperator(
     DNS_FORWARDER="{{{{ params.dns_forwarder }}}}"
 
     VM_NAME="freeipa"
-    IP=$(sudo kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{{{{print \\$2}}}}")
+    IP=$({KCLI}kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{{{{print \\$2}}}}")
 
     if [ -z "$IP" ]; then
         echo "[ERROR] Could not get VM IP"
@@ -394,17 +399,17 @@ install_freeipa = SSHOperator(
 validate_freeipa = SSHOperator(
     task_id="validate_freeipa",
     ssh_conn_id=get_ssh_conn_id(),
-    command="""
+    command=f"""
     echo "========================================"
     echo "Validating FreeIPA Installation"
     echo "========================================"
 
-    DOMAIN="{{ params.domain }}"
-    IDM_HOSTNAME="{{ params.idm_hostname }}"
-    RUN_ANSIBLE="{{ params.run_ansible_install }}"
+    DOMAIN="{{{{ params.domain }}}}"
+    IDM_HOSTNAME="{{{{ params.idm_hostname }}}}"
+    RUN_ANSIBLE="{{{{ params.run_ansible_install }}}}"
 
     VM_NAME="freeipa"
-    IP=$(sudo kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{print \\$2}")
+    IP=$({KCLI}kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{{print \\$2}}")
 
     echo "Checking FreeIPA services on $IP..."
 
@@ -420,11 +425,11 @@ validate_freeipa = SSHOperator(
     echo "========================================"
     echo "VM Name: $VM_NAME"
     echo "IP Address: $IP"
-    echo "FQDN: ${IDM_HOSTNAME}.${DOMAIN}"
+    echo "FQDN: ${{IDM_HOSTNAME}}.${{DOMAIN}}"
     echo ""
     echo "Access:"
     echo "  SSH: ssh cloud-user@$IP"
-    echo "  Web UI: https://${IDM_HOSTNAME}.${DOMAIN}"
+    echo "  Web UI: https://${{IDM_HOSTNAME}}.${{DOMAIN}}"
     echo "  Username: admin"
     """,
     dag=dag,
@@ -437,26 +442,26 @@ validate_freeipa = SSHOperator(
 destroy_freeipa = SSHOperator(
     task_id="destroy_freeipa",
     ssh_conn_id=get_ssh_conn_id(),
-    command="""
+    command=f"""
     echo "========================================"
     echo "Destroying FreeIPA VM"
     echo "========================================"
 
     VM_NAME=freeipa
 
-    if sudo kcli info vm $VM_NAME &>/dev/null; then
+    if {KCLI}kcli info vm $VM_NAME &>/dev/null; then
         echo "Deleting VM: $VM_NAME"
-        sudo kcli delete vm $VM_NAME -y
+        {KCLI}kcli delete vm $VM_NAME -y
         echo "[OK] VM deleted"
     else
         echo "[WARN] VM $VM_NAME does not exist"
     fi
 
-    DOMAIN="{{ params.domain }}"
-    IDM_HOSTNAME="{{ params.idm_hostname }}"
-    rm -rf $HOME/.generated/.${IDM_HOSTNAME}.${DOMAIN} 2>/dev/null || true
+    DOMAIN="{{{{ params.domain }}}}"
+    IDM_HOSTNAME="{{{{ params.idm_hostname }}}}"
+    rm -rf $HOME/.generated/.${{IDM_HOSTNAME}}.${{DOMAIN}} 2>/dev/null || true
 
-    grep -v "${IDM_HOSTNAME}" /etc/hosts > /tmp/hosts.tmp 2>/dev/null || true
+    grep -v "${{IDM_HOSTNAME}}" /etc/hosts > /tmp/hosts.tmp 2>/dev/null || true
     cp /tmp/hosts.tmp /etc/hosts 2>/dev/null || true
 
     echo ""

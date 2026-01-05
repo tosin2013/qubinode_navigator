@@ -39,6 +39,78 @@ def get_ssh_user() -> str:
     return os.environ.get("QUBINODE_SSH_USER", os.environ.get("USER", "root"))
 
 
+def get_kcli_prefix() -> str:
+    """
+    Get the prefix to use for kcli commands (sudo or empty).
+
+    kcli requires root privileges to manage VMs via libvirt. When running
+    as a non-root user (e.g., in CI/CD pipelines), sudo is required.
+
+    Environment variable: QUBINODE_KCLI_SUDO
+    - "true" or "1" or "yes": Returns "sudo " (with trailing space)
+    - "false" or "0" or "no": Returns "" (no prefix)
+    - Not set: Auto-detect based on SSH user (sudo if not root)
+
+    Returns:
+        "sudo " if sudo is needed, "" otherwise
+
+    Example:
+        >>> prefix = get_kcli_prefix()
+        >>> cmd = f"{prefix}kcli create vm myvm -i centos9stream"
+
+    Usage in DAG:
+        from dag_helpers import get_kcli_prefix
+
+        KCLI = get_kcli_prefix()
+
+        command = f'''
+        {KCLI}kcli list vm
+        {KCLI}kcli create vm myvm -i centos9stream
+        '''
+    """
+    sudo_setting = os.environ.get("QUBINODE_KCLI_SUDO", "").lower()
+
+    if sudo_setting in ("true", "1", "yes"):
+        return "sudo "
+    elif sudo_setting in ("false", "0", "no"):
+        return ""
+    else:
+        # Auto-detect: use sudo if SSH user is not root
+        ssh_user = get_ssh_user()
+        if ssh_user != "root":
+            return "sudo "
+        return ""
+
+
+def get_kcli_cmd(command: str) -> str:
+    """
+    Get a complete kcli command with appropriate sudo prefix.
+
+    Convenience wrapper that combines get_kcli_prefix() with the command.
+
+    Args:
+        command: The kcli subcommand (e.g., "list vm", "create vm myvm")
+
+    Returns:
+        Complete command string with sudo prefix if needed
+
+    Example:
+        >>> get_kcli_cmd("list vm")
+        'sudo kcli list vm'  # if non-root user
+        >>> get_kcli_cmd("create vm myvm -i centos9stream")
+        'sudo kcli create vm myvm -i centos9stream'
+
+    Usage in DAG:
+        from dag_helpers import get_kcli_cmd
+
+        command = f'''
+        {get_kcli_cmd("list vm")}
+        VM_IP=$({get_kcli_cmd("info vm myvm")} | grep ip: | awk '{{print $2}}')
+        '''
+    """
+    return f"{get_kcli_prefix()}kcli {command}"
+
+
 def get_ssh_key_path() -> str:
     """
     Get SSH key path from environment or default to ~/.ssh/id_rsa.
