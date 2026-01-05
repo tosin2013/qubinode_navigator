@@ -374,20 +374,21 @@ Before creating the connection, ensure:
    ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N '' -q
    ```
 
-2. **SSH key is authorized** for localhost access:
+1. **SSH key is authorized** for localhost access:
 
    ```bash
    cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
    chmod 600 ~/.ssh/authorized_keys
    ```
 
-3. **SSH service is running** on the CI runner:
+1. **SSH service is running** on the CI runner:
 
    ```bash
    systemctl start sshd
    ```
 
-4. **Airflow scheduler container** can reach localhost:
+1. **Airflow scheduler container** can reach localhost:
+
    - Use `--network host` or ensure proper network configuration
    - Mount the SSH key into the container if needed
 
