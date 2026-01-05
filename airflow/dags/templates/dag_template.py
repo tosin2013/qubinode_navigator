@@ -255,7 +255,7 @@ create_resources = BashOperator(
     echo ""
     echo "[OK] Resource creation complete"
     echo "VM Name: $VM_NAME"
-    echo "VM IP: ${VM_IP:-pending}"
+    echo "VM IP: ${{VM_IP:-pending}}"
     """,
     dag=dag,
 )
