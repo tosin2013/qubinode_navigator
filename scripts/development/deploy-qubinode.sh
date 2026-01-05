@@ -1371,6 +1371,33 @@ configure_ssh() {
         fi
     fi
 
+    # Sync SSH key to /root/.ssh/ for Airflow container access
+    # The docker-compose.yml mounts /root/.ssh:/root/.ssh:ro into containers
+    # So the key MUST be available at /root/.ssh/id_rsa for the container to use it
+    if [[ -n "${QUBINODE_ADMIN_USER:-}" && "${QUBINODE_ADMIN_USER}" != "root" ]]; then
+        log_info "Syncing SSH key to /root/.ssh for Airflow container access..."
+        if [[ -f "$ssh_key_path" ]]; then
+            mkdir -p /root/.ssh
+            chmod 700 /root/.ssh
+            # Only copy if not already in sync
+            if [[ ! -f /root/.ssh/id_rsa ]] || ! diff -q "$ssh_key_path" /root/.ssh/id_rsa &>/dev/null; then
+                cp "$ssh_key_path" /root/.ssh/id_rsa
+                cp "${ssh_key_path}.pub" /root/.ssh/id_rsa.pub
+                chmod 600 /root/.ssh/id_rsa
+                chmod 644 /root/.ssh/id_rsa.pub
+                log_info "SSH key copied to /root/.ssh/"
+            fi
+            # Also add to root's authorized_keys for container->host SSH
+            touch /root/.ssh/authorized_keys
+            chmod 600 /root/.ssh/authorized_keys
+            local pub_key=$(cat "${ssh_key_path}.pub")
+            if ! grep -qF "$pub_key" /root/.ssh/authorized_keys 2>/dev/null; then
+                echo "$pub_key" >> /root/.ssh/authorized_keys
+                log_info "SSH key added to /root/.ssh/authorized_keys"
+            fi
+        fi
+    fi
+
     log_success "SSH configuration completed"
     return 0
 }
