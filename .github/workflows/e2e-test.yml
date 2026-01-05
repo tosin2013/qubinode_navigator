@@ -301,6 +301,9 @@ jobs:
           PYDANTICAI_MODEL: ${{ secrets.PYDANTICAI_MODEL }}
           QUBINODE_DOMAIN: ${{ env.QUBINODE_DOMAIN }}
           QUBINODE_ADMIN_USER: ${{ env.QUBINODE_ADMIN_USER }}
+          # Set SSH user for Airflow container->host SSH connections
+          # Must match QUBINODE_ADMIN_USER so SSH connects as the right user
+          QUBINODE_SSH_USER: ${{ env.QUBINODE_ADMIN_USER }}
           QUBINODE_CLUSTER_NAME: ${{ env.QUBINODE_CLUSTER_NAME }}
           QUBINODE_DEPLOYMENT_MODE: ${{ env.QUBINODE_DEPLOYMENT_MODE }}
           QUBINODE_ENABLE_AI_ASSISTANT: ${{ env.QUBINODE_ENABLE_AI_ASSISTANT }}
