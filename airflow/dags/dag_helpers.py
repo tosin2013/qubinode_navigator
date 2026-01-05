@@ -1581,3 +1581,117 @@ def create_kcli_ssh_operator(task_id: str, kcli_command: str, dag, ssh_conn_id: 
     """
     command = f"kcli {kcli_command}"
     return create_ssh_operator(task_id=task_id, command=command, dag=dag, ssh_conn_id=ssh_conn_id, **kwargs)
+
+
+# =============================================================================
+# Bash Command Snippets for DAGs (Escaping-Safe Patterns)
+# =============================================================================
+# These functions return pre-escaped bash snippets that work correctly with
+# Python f-strings AND Jinja2 templates in Airflow DAGs.
+#
+# ESCAPING RULES (memorize these!):
+# ---------------------------------
+# 1. Python f-string: {{ becomes {, }} becomes }
+# 2. Jinja2 template: {{ expr }} is interpreted as a variable
+# 3. Shell: \$ escapes $ in double-quoted strings
+#
+# To get literal { in final bash: use {{ in f-string
+# To get Jinja2 {{ expr }}: use {{{{ expr }}}} in f-string
+# To get literal $ in awk: use \\$ in f-string (becomes \$ for shell)
+#
+# COMMON PATTERNS:
+# ----------------
+# - awk with field: awk "{{print \\$2}}"     -> awk "{print $2}" in bash
+# - Jinja2 param:   {{{{ params.x }}}}       -> {{ params.x }} for Jinja2
+# - Shell variable: $VAR or ${VAR}           -> works as-is (no f-string conflict)
+# - Shell brace expansion: ${{VAR}}          -> ${VAR} in bash
+
+
+def get_vm_ip_snippet(vm_name_var: str = "VM_NAME", use_kcli_prefix: bool = True) -> str:
+    """
+    Return a bash snippet to extract VM IP from kcli info.
+
+    This handles the complex escaping needed for awk in f-strings with Jinja2.
+    Use this instead of writing the awk command manually.
+
+    Args:
+        vm_name_var: Shell variable name containing VM name (default: "VM_NAME")
+        use_kcli_prefix: Whether to include KCLI prefix variable (default: True)
+
+    Returns:
+        Bash snippet that sets IP variable from kcli info output
+
+    Example usage in DAG:
+        from dag_helpers import get_vm_ip_snippet, get_kcli_prefix
+
+        KCLI = get_kcli_prefix()
+
+        command = f'''
+        VM_NAME="freeipa"
+        {get_vm_ip_snippet()}
+        echo "VM IP: $IP"
+        '''
+
+    The snippet produces bash like:
+        IP=$(sudo kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk '{print $2}')
+    """
+    prefix = "{KCLI}" if use_kcli_prefix else ""
+    # Use single quotes for awk to avoid all escaping issues
+    return f"IP=$({prefix}kcli info vm ${vm_name_var} 2>/dev/null | grep \"^ip:\" | awk '{{print $2}}')"
+
+
+def get_vm_ip_snippet_inline(vm_name: str, use_kcli_prefix: bool = True) -> str:
+    """
+    Return a bash snippet to extract VM IP with inline VM name.
+
+    Similar to get_vm_ip_snippet but takes a literal VM name instead of variable.
+
+    Args:
+        vm_name: Literal VM name (e.g., "freeipa")
+        use_kcli_prefix: Whether to include KCLI prefix variable (default: True)
+
+    Returns:
+        Bash snippet that sets IP variable
+
+    Example:
+        command = f'''
+        {get_vm_ip_snippet_inline("freeipa")}
+        echo "FreeIPA IP: $IP"
+        '''
+    """
+    prefix = "{KCLI}" if use_kcli_prefix else ""
+    return f"IP=$({prefix}kcli info vm {vm_name} 2>/dev/null | grep \"^ip:\" | awk '{{print $2}}')"
+
+
+def get_awk_field_snippet(field_num: int = 2) -> str:
+    """
+    Return an awk print field snippet with correct escaping.
+
+    Use this for simple field extraction in pipelines.
+
+    Args:
+        field_num: Field number to extract (default: 2)
+
+    Returns:
+        awk command snippet: awk '{print $N}'
+
+    Example:
+        command = f'''
+        RESULT=$(echo "$OUTPUT" | grep "status:" | {get_awk_field_snippet(2)})
+        '''
+    """
+    return f"awk '{{print ${field_num}}}'"
+
+
+def get_virsh_ip_snippet(vm_name_var: str = "VM_NAME", network: str = "default") -> str:
+    """
+    Return a bash snippet to extract VM IP from virsh DHCP leases.
+
+    Args:
+        vm_name_var: Shell variable name containing VM name
+        network: Libvirt network name (default: "default")
+
+    Returns:
+        Bash snippet that sets IP variable from virsh output
+    """
+    return f"IP=$(virsh net-dhcp-leases {network} 2>/dev/null | grep ${vm_name_var} | awk '{{print $5}}' | sed 's/\\/24//g' | tail -1)"

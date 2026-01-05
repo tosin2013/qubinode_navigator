@@ -131,6 +131,44 @@ ssh -o StrictHostKeyChecking=no root@localhost \
 """
 ```
 
+**F-string + Jinja2 + Shell Escaping Rules (CRITICAL):**
+
+DAG commands pass through THREE interpreters. Memorize these rules:
+
+| Goal | In f-string | After f-string | After Jinja2 |
+|------|-------------|----------------|--------------|
+| Literal `{` for awk | `{{` | `{` | `{` |
+| Jinja2 param | `{{{{ params.x }}}}` | `{{ params.x }}` | value |
+| Shell `$VAR` | `$VAR` | `$VAR` | `$VAR` |
+| Shell `${VAR}` | `${{VAR}}` | `${VAR}` | `${VAR}` |
+| awk `$2` (double-quoted) | `\\$2` | `\$2` | `$2` |
+
+**Common mistakes:**
+
+```python
+# WRONG: Quadruple braces for awk - Jinja2 interprets as template
+awk "{{{{print \\$2}}}}"  # -> awk "{{print \$2}}" -> Jinja2 ERROR!
+
+# CORRECT: Double braces for awk - passes through Jinja2 unchanged
+awk "{{print \\$2}}"      # -> awk "{print \$2}" -> awk "{print $2}"
+
+# CORRECT: Quadruple braces for Jinja2 params
+DOMAIN="{{{{ params.domain }}}}"  # -> DOMAIN="{{ params.domain }}" -> DOMAIN="example.com"
+```
+
+**Use helper snippets from `dag_helpers.py`:**
+
+```python
+from dag_helpers import get_vm_ip_snippet, get_awk_field_snippet
+
+# Instead of writing complex escaping manually:
+command = f'''
+VM_NAME="freeipa"
+{get_vm_ip_snippet()}  # Handles escaping correctly
+echo "IP: $IP"
+'''
+```
+
 **Validate before committing:**
 
 ```bash

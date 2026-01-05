@@ -268,7 +268,7 @@ prepare_ansible = SSHOperator(
 
     # Get IP via kcli on host
     VM_NAME="freeipa"
-    IP=$({KCLI}kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{{{{print \\$2}}}}")
+    IP=$({KCLI}kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{{print \\$2}}")
 
     if [ -z "$IP" ] || [ "$IP" == "None" ]; then
         echo "[ERROR] Could not get VM IP"
@@ -353,7 +353,7 @@ install_freeipa = SSHOperator(
     DNS_FORWARDER="{{{{ params.dns_forwarder }}}}"
 
     VM_NAME="freeipa"
-    IP=$({KCLI}kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{{{{print \\$2}}}}")
+    IP=$({KCLI}kcli info vm $VM_NAME 2>/dev/null | grep "^ip:" | awk "{{print \\$2}}")
 
     if [ -z "$IP" ]; then
         echo "[ERROR] Could not get VM IP"
