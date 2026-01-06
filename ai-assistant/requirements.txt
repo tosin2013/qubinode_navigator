@@ -11,7 +11,7 @@ attrs==25.4.0
 authlib==1.6.6
 beartype==0.22.9
 cachetools==6.2.4
-certifi==2025.11.12
+certifi==2026.1.4
 cffi==2.0.0
 charset-normalizer==3.4.4
 click==8.3.1
@@ -133,7 +133,6 @@ tiktoken==0.12.0
 tokenizers==0.22.2
 tqdm==4.67.1
 typer==0.21.0
-typer-slim==0.21.0
 typing-extensions==4.15.0
 typing-inspect==0.9.0
 typing-inspection==0.4.2
