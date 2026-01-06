@@ -119,7 +119,6 @@ class DiagnosticContext:
         Returns:
             List of log entries with timestamp, level, and message
         """
-        logger = logging.getLogger(f"qubinode.{plugin_name}")
         logs = []
         
         # In a real implementation, this would query a centralized log store

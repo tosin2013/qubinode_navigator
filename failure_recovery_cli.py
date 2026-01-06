@@ -10,18 +10,22 @@ Usage:
 """
 
 import argparse
-import json
-import sys
-import os
-from datetime import datetime
 import asyncio
+import json
+import os
+import sys
+from datetime import datetime
 
 # Add qubinode to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from core.failure_analyzer import FailureAnalyzer, DiagnosticContext, RootCauseCategory
-from core.recovery_planner import RecoveryPlanner
 from ai_assistant.src.shadow_error_detector import ShadowErrorDetector
+from core.failure_analyzer import (
+    DiagnosticContext,
+    FailureAnalyzer,
+    RootCauseCategory,
+)
+from core.recovery_planner import RecoveryPlanner
 
 
 def diagnose_failure(args):

@@ -281,7 +281,6 @@ class PluginManager:
         
         try:
             # Collect diagnostic context
-            plugin = self.get_plugin(plugin_name)
             dependencies = self._get_plugin_dependencies(plugin_name)
             
             diagnostic_ctx = DiagnosticContext(
@@ -522,7 +521,7 @@ class PluginManager:
             raise RuntimeError("Plugin manager not initialized")
 
         context = context or ExecutionContext()
-        plugins_to_execute = plugin_names or self._plugin_execution_order
+        plugins_to_execute = plugin_names if plugin_names else self._plugin_execution_order
         results = {}
 
         self.logger.info(f"Executing plugins: {plugins_to_execute}")

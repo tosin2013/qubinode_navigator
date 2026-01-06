@@ -378,25 +378,9 @@ Be concise and actionable."""
             return
         
         try:
-            prompt = f"""
-Analyze this infrastructure failure:
-
-Plugin: {diagnostic_context.plugin_name}
-Error: {diagnostic_context.error_message}
-Matched Patterns: {', '.join(analysis.pattern_matches) or 'none'}
-Unhealthy Services: {', '.join(analysis.correlated_failures) or 'none'}
-
-Current Analysis:
-- Root Cause: {analysis.root_cause.value}
-- Confidence: {analysis.confidence:.2%}
-
-Refine the analysis with your assessment of the most likely root cause.
-Respond with: ROOT_CAUSE | CONFIDENCE | KEY_ACTIONS
-"""
-            
-            # Synchronous call to agent (simplified; real impl would be async)
-            self.logger.debug(f"Invoking LLM reasoning agent")
             # Note: This is a simplified placeholder; real integration would be async
+            # The prompt would be: analyze infrastructure failure with context
+            self.logger.debug(f"Invoking LLM reasoning agent")
             analysis.lm_reasoning = f"LLM analysis queued for {analysis.failed_plugin}"
             
         except Exception as e:

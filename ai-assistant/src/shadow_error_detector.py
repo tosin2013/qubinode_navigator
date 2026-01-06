@@ -296,7 +296,6 @@ class ShadowErrorDetector:
                 
                 # Check for suspicious task execution patterns
                 failed_tasks = [t for t in task_instances if t.get("state") == "failed"]
-                skipped_tasks = [t for t in task_instances if t.get("state") == "skipped"]
                 
                 # If we have failed tasks in a successful DAG run, that's a shadow error
                 if failed_tasks:
