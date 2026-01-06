@@ -54,7 +54,7 @@ jobs:
       root_cause: ${{ steps.diagnosis.outputs.root_cause }}
       confidence: ${{ steps.diagnosis.outputs.confidence }}
       recovery_option: ${{ steps.diagnosis.outputs.recovery_option }}
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -79,23 +79,23 @@ jobs:
           import sys
           import os
           from datetime import datetime
-          
+
           # Add qubinode to path
           sys.path.insert(0, os.getcwd())
-          
+
           from core.failure_analyzer import FailureAnalyzer, DiagnosticContext
           from core.recovery_planner import RecoveryPlanner
-          
+
           # Initialize analyzer
           analyzer = FailureAnalyzer()
-          
+
           # Create diagnostic context from inputs
           ctx = DiagnosticContext(
               plugin_name="${{ inputs.failed_job }}",
               failure_timestamp=datetime.now(),
               error_message="${{ inputs.failure_message }}",
           )
-          
+
           # Collect system diagnostics
           print("[INFO] Collecting system diagnostics...")
           ctx.service_health = {
@@ -105,18 +105,18 @@ jobs:
           }
           ctx.system_resources = DiagnosticContext.get_system_resources()
           ctx.recent_logs = DiagnosticContext.get_plugin_logs("${{ inputs.failed_job }}")
-          
+
           # Analyze failure
           print("[INFO] Analyzing failure...")
           analysis = analyzer.analyze(ctx)
-          
+
           # Create recovery plan
           planner = RecoveryPlanner(
               github_token=os.getenv("GITHUB_TOKEN"),
               github_repo=os.getenv("GITHUB_REPOSITORY"),
           )
           plan = planner.plan_recovery(analysis)
-          
+
           # Output diagnostics as JSON
           result = {
               "root_cause": analysis.root_cause.value,
@@ -135,16 +135,16 @@ jobs:
                   for opt in plan.recovery_options
               ],
           }
-          
+
           print(json.dumps(result, indent=2))
-          
+
           # Set outputs for next step
           import subprocess
           subprocess.run([
               "gh", "workflow", "set-output",
               f"root_cause={analysis.root_cause.value}"
           ], env={**os.environ, "GH_TOKEN": os.getenv("GITHUB_TOKEN")})
-          
+
           print(f"[OK] Diagnosis complete: {analysis.root_cause.value} "
                 f"(confidence: {analysis.confidence:.0%})")
           EOF
@@ -158,7 +158,7 @@ jobs:
     runs-on: self-hosted
     outputs:
       plan_json: ${{ steps.plan.outputs.plan }}
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -183,16 +183,16 @@ jobs:
           import sys
           import os
           from datetime import datetime
-          
+
           sys.path.insert(0, os.getcwd())
-          
+
           from core.failure_analyzer import FailureAnalyzer, DiagnosticContext, RootCauseCategory
           from core.recovery_planner import RecoveryPlanner, FailureAnalysis
-          
+
           # Reconstruct analysis from previous step
           root_cause_str = "${{ needs.diagnose-failure.outputs.root_cause }}"
           confidence = float("${{ needs.diagnose-failure.outputs.confidence }}" or "0.0")
-          
+
           # Create minimal FailureAnalysis for recovery planning
           analysis = FailureAnalysis(
               timestamp=datetime.now(),
@@ -202,17 +202,17 @@ jobs:
               root_cause_description="See diagnosis logs",
               confidence=confidence,
           )
-          
+
           planner = RecoveryPlanner(
               github_token=os.getenv("GITHUB_TOKEN"),
               github_repo=os.getenv("GITHUB_REPOSITORY"),
           )
           plan = planner.plan_recovery(analysis)
-          
+
           # Output plan as markdown for GitHub issue
           print("[INFO] Recovery plan:")
           print(plan.to_markdown())
-          
+
           print(f"[OK] {len(plan.recovery_options)} recovery options generated")
           EOF
         env:
@@ -223,18 +223,18 @@ jobs:
     name: Decide Recovery Action
     needs: [diagnose-failure, generate-recovery-plan]
     runs-on: self-hosted
-    
+
     steps:
       - name: Evaluate recovery feasibility
         run: |
           echo "Root Cause: ${{ needs.diagnose-failure.outputs.root_cause }}"
           echo "Confidence: ${{ needs.diagnose-failure.outputs.confidence }}"
           echo "Recommended Action: ${{ needs.diagnose-failure.outputs.recovery_option }}"
-          
+
           # Determine if we should auto-recover or escalate
           CONFIDENCE=$(echo "${{ needs.diagnose-failure.outputs.confidence }}" | sed 's/%//')
           ENABLE_RECOVERY="${{ inputs.enable_auto_recovery }}"
-          
+
           if [ "$CONFIDENCE" -gt 85 ] && [ "$ENABLE_RECOVERY" = "true" ]; then
             echo "Auto-recovery enabled: confidence is $CONFIDENCE%"
             echo "action=auto-recover" >> $GITHUB_OUTPUT
@@ -249,42 +249,42 @@ jobs:
         with:
           script: |
             const title = `[Failure Recovery] ${{ inputs.failed_job }} - ${{ needs.diagnose-failure.outputs.root_cause }}`;
-            
+
             const body = `## Failure Diagnosis Report
 
             **Job**: ${{ inputs.failed_job }}
             **Root Cause**: ${{ needs.diagnose-failure.outputs.root_cause }}
             **Confidence**: ${{ needs.diagnose-failure.outputs.confidence }}
-            
+
             **Error Message**:
             \`\`\`
             ${{ inputs.failure_message }}
             \`\`\`
-            
+
             ### Recovery Options
-            
+
             1. **Automatic Retry** (Low Risk)
                - Re-execute with checkpoint recovery
                - Recommended if infrastructure is stable
-            
+
             2. **Manual Fix** (Medium Risk)
                - Execute diagnostic commands
                - Verify system state manually
-            
+
             3. **Escalate** (Low Risk)
                - Skip this run and continue
                - Investigate in next scheduled run
-            
+
             See detailed recovery plan in Actions logs.
-            
+
             ### Next Steps
-            
+
             - Review diagnostic data in workflow run
             - Execute suggested recovery commands
             - Comment with recovery action taken
             - Close issue when resolved
             `;
-            
+
             github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -298,7 +298,7 @@ jobs:
     needs: [diagnose-failure, decide-recovery-action]
     runs-on: self-hosted
     if: always()
-    
+
     steps:
       - name: Summary
         run: |

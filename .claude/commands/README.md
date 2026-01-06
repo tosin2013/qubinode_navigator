@@ -113,6 +113,25 @@ export QUBINODE_HOME=/custom/path/qubinode_navigator
 /troubleshoot VM won't start after reboot
 ```
 
+### GitHub Repository Maintenance
+
+| Command                       | Description                                    |
+| ----------------------------- | ---------------------------------------------- |
+| `/github-resolve failures`    | Analyze and fix failed GitHub Actions runs     |
+| `/github-resolve prs`         | Review and fix PRs with failed checks          |
+| `/github-resolve dependabot`  | Process and merge Dependabot PRs strategically |
+| `/github-resolve triage`      | Full triage across all issue types             |
+| `/github-resolve <pr-number>` | Investigate specific PR or run                 |
+
+**Examples:**
+
+```
+/github-resolve failures
+/github-resolve dependabot
+/github-resolve triage
+/github-resolve 42
+```
+
 ### System Operations
 
 | Command                  | Description                          |
@@ -216,6 +235,115 @@ curl -X POST "http://localhost:8080/orchestrator/observe?dag_id=freeipa_deployme
 - [ADR-0047](../../docs/adrs/adr-0047-qubinode-pipelines-integration.md): Pipeline Integration
 - [Airflow README](../../airflow/README.md): Airflow setup guide
 - [Gemini CLI Commands](../../.gemini/commands/README.md): Equivalent Gemini commands
+
+## Code Quality Hooks
+
+Claude Code hooks automatically enforce code quality standards. These hooks run on file operations.
+
+### Active Hooks
+
+| Hook                 | Trigger                  | Purpose                                   |
+| -------------------- | ------------------------ | ----------------------------------------- |
+| `code-quality.py`    | PostToolUse (Write/Edit) | Routes to appropriate linter by file type |
+| `pre-write-check.sh` | PreToolUse (Write/Edit)  | Blocks writes to sensitive files          |
+
+### Linting by File Type
+
+| File Type                  | Linter     | Actions                    |
+| -------------------------- | ---------- | -------------------------- |
+| Python (`.py`)             | ruff       | Auto-fix + format          |
+| Shell (`.sh`, `.bash`)     | shellcheck | Lint warnings              |
+| Markdown (`.md`)           | custom     | Language tags + formatting |
+| YAML (`.yml`, `.yaml`)     | yamllint   | Lint warnings              |
+| JSON (`.json`)             | built-in   | Syntax validation          |
+| DAGs (`airflow/dags/*.py`) | ADR-0045   | Compliance validation      |
+
+### Hook Configuration
+
+Hooks are configured in `.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/code-quality.py",
+            "timeout": 45
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/pre-write-check.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Protected Files
+
+The `pre-write-check.sh` hook blocks writes to:
+
+- `.env`, `.env.local` - Environment files
+- `credentials.json`, `secrets.yaml` - Secret files
+- `*.pem`, `*.key` - Certificates and keys
+- `pull-secret.json` - OpenShift secrets
+- `vault.yml` - Vault configuration
+- Lock files (warns but doesn't block)
+
+### Individual Hook Scripts
+
+| Script               | Purpose                                    |
+| -------------------- | ------------------------------------------ |
+| `python-lint.sh`     | Standalone Python linting with ruff        |
+| `bash-lint.sh`       | Standalone Bash linting with shellcheck    |
+| `dag-validate.sh`    | Standalone DAG validation per ADR-0045     |
+| `markdown-format.py` | Markdown formatting and language detection |
+
+### Adding Custom Hooks
+
+1. Create script in `.claude/hooks/`
+1. Make executable: `chmod +x .claude/hooks/my-hook.sh`
+1. Add to `.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/my-hook.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### Hook Exit Codes
+
+| Code  | Meaning | Behavior                              |
+| ----- | ------- | ------------------------------------- |
+| 0     | Success | Continue, show stdout in verbose mode |
+| 2     | Block   | Stop operation, show stderr to Claude |
+| Other | Warning | Continue, show stderr in verbose mode |
 
 ## Extending Commands
 

@@ -21,3 +21,4 @@ ignore = [
 "ai-assistant/test-env-vars.py" = ["E402"]
 "ai-assistant/tests/*.py" = ["E402"]
 "qubinode_cli.py" = ["E402"]
+"failure_recovery_cli.py" = ["E402"]

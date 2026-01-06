@@ -6,7 +6,7 @@ This implementation adds intelligent failure diagnosis and recovery capabilities
 
 **Implements**: ADR-0069 (Agentic Failure Diagnosis and Recovery) with agentic patterns from [GitHub's blog on reliable AI workflows](https://github.blog/ai-and-ml/github-copilot/how-to-build-reliable-ai-workflows-with-agentic-primitives-and-context-engineering/)
 
----
+______________________________________________________________________
 
 ## Architecture Overview
 
@@ -77,7 +77,7 @@ Failure Occurs
      └────────────────────────┘
 ```
 
----
+______________________________________________________________________
 
 ## Components Implemented
 
@@ -86,12 +86,14 @@ Failure Occurs
 **Purpose**: Unified interface for collecting failure diagnostic data
 
 **Key Methods**:
-- `get_plugin_logs(plugin_name, since_seconds=300)` → List[Dict]
+
+- `get_plugin_logs(plugin_name, since_seconds=300)` → List\[Dict\]
 - `get_service_status(service_name)` → Dict with active/pid/uptime
 - `get_system_resources()` → Dict with CPU/memory/disk/network metrics
 - `get_network_connectivity(target)` → Dict with reachability and latency
 
 **Usage**:
+
 ```python
 from core.base_plugin import DiagnosticContext
 
@@ -114,6 +116,7 @@ ctx.system_resources = DiagnosticContext.get_system_resources()
 **Purpose**: Classify root causes using pattern matching + optional LLM reasoning
 
 **Root Cause Categories**:
+
 - `VIRTUALIZATION` - KVM/virt-manager issues
 - `NETWORK` - Connectivity, DNS, registry access
 - `STORAGE` - Disk space, I/O failures
@@ -126,6 +129,7 @@ ctx.system_resources = DiagnosticContext.get_system_resources()
 - `UNKNOWN` - Unclassified
 
 **Built-in Error Patterns** (extensible library):
+
 - `virsh_001`: CPU virtualization not available
 - `libvirt_001`: libvirtd not running
 - `network_001`: Network unreachable
@@ -138,11 +142,13 @@ ctx.system_resources = DiagnosticContext.get_system_resources()
 - `kcli_001`: VM operation failed
 
 **LLM Integration** (Optional, via PydanticAI):
-- Uses `gpt-4o` for advanced reasoning when confidence < 70%
+
+- Uses `gpt-4o` for advanced reasoning when confidence \< 70%
 - Can be disabled by setting `use_llm=False`
 - Falls back gracefully if API unavailable
 
 **Usage**:
+
 ```python
 from core.failure_analyzer import FailureAnalyzer, DiagnosticContext
 
@@ -161,22 +167,27 @@ for action in analysis.recommended_actions:
 **Purpose**: Generate multiple recovery options and optionally create GitHub issues
 
 **Recovery Options**:
+
 1. **RETRY** (priority 1)
+
    - Re-execute with checkpoint recovery
    - Adjust timeout/parameters based on failure type
    - Low risk if infrastructure is healthy
 
-2. **MANUAL_FIX** (priority 2)
+1. **MANUAL_FIX** (priority 2)
+
    - Suggest diagnostic commands (systemctl, df, ping, etc.)
    - Specific steps based on root cause
    - Medium risk, requires human execution
 
-3. **ESCALATE** (priority 3)
+1. **ESCALATE** (priority 3)
+
    - Create GitHub issue with full diagnostic context
    - Low risk, enables human review
    - Supports async resolution
 
 **Features**:
+
 - Ranks options by priority and confidence
 - Generates diagnostic commands matched to root cause
 - Creates detailed GitHub issues with context
@@ -184,6 +195,7 @@ for action in analysis.recommended_actions:
 - Idempotent recovery execution
 
 **Usage**:
+
 ```python
 from core.recovery_planner import RecoveryPlanner
 
@@ -205,6 +217,7 @@ if plan.recommended_option.confidence > 0.85:
 **Purpose**: Integrate failure diagnosis and recovery into plugin orchestration
 
 **New Methods**:
+
 - `diagnose_failure(plugin_name, failure_message, context)` → FailureAnalysis
 - `plan_recovery(failure_analysis, plugin_name)` → RecoveryPlan
 - `execute_recovery(recovery_plan, context)` → bool
@@ -214,6 +227,7 @@ if plan.recommended_option.confidence > 0.85:
 - `set_approval_callback(callback)` → None
 
 **New Fields**:
+
 - `_failure_analyzer`: FailureAnalyzer instance
 - `_recovery_planner`: RecoveryPlanner instance
 - `_plugin_checkpoints`: Dict of state snapshots
@@ -222,6 +236,7 @@ if plan.recommended_option.confidence > 0.85:
 - `_approval_callback`: Optional approval gate
 
 **Usage**:
+
 ```python
 from core.plugin_manager import PluginManager
 
@@ -247,18 +262,21 @@ result = manager.execute_plugin("HetznerDeploymentPlugin", context)
 **Purpose**: Detect failures that don't immediately manifest (ADR-0067)
 
 **Detection Types**:
+
 - `vm_not_created`: DAG succeeds but VM not in libvirt
 - `lineage_missing`: DAG succeeds but no Marquez lineage recorded
 - `state_mismatch`: DAG marked success but contains failed tasks
 - `kcli_check_failed`: Cannot verify VM creation
 
 **Mechanisms**:
+
 1. Correlates Airflow DAG execution with actual resource state
-2. Checks Marquez for missing lineage
-3. Queries libvirt/kcli for VM presence
-4. Analyzes task instance states for inconsistencies
+1. Checks Marquez for missing lineage
+1. Queries libvirt/kcli for VM presence
+1. Analyzes task instance states for inconsistencies
 
 **Usage**:
+
 ```python
 from ai_assistant.src.shadow_error_detector import ShadowErrorDetector
 import asyncio
@@ -277,14 +295,16 @@ asyncio.run(detector.monitor_continuously(interval_seconds=300))
 **Purpose**: Orchestrate failure diagnosis and recovery in CI/CD
 
 **Jobs**:
+
 1. `diagnose-failure`: Run FailureAnalyzer with full context
-2. `generate-recovery-plan`: Create recovery options and markdown
-3. `decide-recovery-action`: Evaluate confidence and decide action
-4. `report-status`: Summarize results and create issue if needed
+1. `generate-recovery-plan`: Create recovery options and markdown
+1. `decide-recovery-action`: Evaluate confidence and decide action
+1. `report-status`: Summarize results and create issue if needed
 
 **Triggering**:
 
 From E2E test on failure:
+
 ```yaml
 - name: Trigger failure recovery
   if: failure()
@@ -296,6 +316,7 @@ From E2E test on failure:
 ```
 
 Manual trigger:
+
 ```bash
 gh workflow run failure-recovery-agent.yml \
   -f failed_job="E2E Integration Test" \
@@ -303,7 +324,7 @@ gh workflow run failure-recovery-agent.yml \
   -f enable_auto_recovery=true
 ```
 
----
+______________________________________________________________________
 
 ## Configuration & Environment Variables
 
@@ -345,7 +366,7 @@ manager.set_auto_recovery_enabled(False)
 manager.set_approval_callback(lambda plan: user_approves(plan))
 ```
 
----
+______________________________________________________________________
 
 ## Usage Examples
 
@@ -359,6 +380,7 @@ python3 failure_recovery_cli.py diagnose \
 ```
 
 **Output**:
+
 ```
 ============================================================
 Failure Diagnosis: HetznerDeploymentPlugin
@@ -388,6 +410,7 @@ python3 failure_recovery_cli.py plan \
 ```
 
 **Output**:
+
 ```
 ============================================================
 Recovery Planning
@@ -401,7 +424,7 @@ Recovery Options for: HetznerDeploymentPlugin
    Risk: low
    Duration: 300s
    Description: Re-execute the failed plugin with checkpoint recovery
-   
+
    Steps:
      - Load last checkpoint (system state snapshot)
      - Re-execute HetznerDeploymentPlugin plugin
@@ -414,7 +437,7 @@ Recovery Options for: HetznerDeploymentPlugin
    Risk: medium
    Duration: 600s
    Description: Execute manual diagnostic and fix steps
-   
+
    Steps:
      - Check registry credentials: cat ~/.docker/config.json
      - Test registry access: curl -I https://registry.redhat.io
@@ -426,7 +449,7 @@ Recovery Options for: HetznerDeploymentPlugin
    Risk: low
    Duration: 3600s
    Description: Create GitHub issue for human review
-   
+
    Steps:
      - Create GitHub issue with failure analysis
      - Include diagnostic context and service health
@@ -471,6 +494,7 @@ python3 failure_recovery_cli.py detect-shadows --scan-hours 1
 ```
 
 **Output**:
+
 ```
 ============================================================
 Shadow Error Detection
@@ -491,7 +515,7 @@ Shadow Error Detection
 [OK] Available in detector.shadow_errors
 ```
 
----
+______________________________________________________________________
 
 ## Error Pattern Library
 
@@ -516,11 +540,12 @@ custom_pattern = KnownErrorPattern(
 analyzer._patterns.append(custom_pattern)
 ```
 
----
+______________________________________________________________________
 
 ## Integration with Existing Systems
 
 ### With ApprovalGateManager
+
 ```python
 from core.plugin_manager import PluginManager
 from core.approval_gate_manager import ApprovalGateManager
@@ -540,18 +565,20 @@ manager.set_approval_callback(approval_callback)
 ```
 
 ### With EventSystem
+
 ```python
 # Events are automatically emitted:
 # - plugin_failure_diagnosed
 # - recovery_plan_created
 # - recovery_executed
 
-event_system.subscribe("recovery_executed", lambda data: 
+event_system.subscribe("recovery_executed", lambda data:
     print(f"Recovery {data['action_type']} for {data['plugin_name']}")
 )
 ```
 
 ### With LogAnalyzer
+
 ```python
 from core.log_analyzer import LogAnalyzer
 from core.failure_analyzer import FailureAnalyzer
@@ -566,22 +593,25 @@ for pattern in error_patterns:
     print(f"Known error: {pattern.description}")
 ```
 
----
+______________________________________________________________________
 
 ## Testing
 
 ### Unit Tests
+
 ```bash
 python3 -m pytest tests/unit/test_failure_analyzer.py -v
 python3 -m pytest tests/unit/test_recovery_planner.py -v
 ```
 
 ### Integration Tests
+
 ```bash
 python3 -m pytest tests/integration/test_plugin_recovery.py -v
 ```
 
 ### Manual Testing
+
 ```bash
 # Test failure analyzer
 python3 failure_recovery_cli.py diagnose \
@@ -596,7 +626,7 @@ python3 failure_recovery_cli.py plan \
 python3 failure_recovery_cli.py detect-shadows
 ```
 
----
+______________________________________________________________________
 
 ## Performance Characteristics
 
@@ -604,33 +634,34 @@ python3 failure_recovery_cli.py detect-shadows
 - **RecoveryPlanner**: ~100ms (plan generation)
 - **PluginManager recovery**: ~1-5 min (depending on recovery option)
 - **ShadowErrorDetector**: ~2 seconds per DAG run (async)
-- **Overall diagnostic time**: <1 second (no LLM)
+- **Overall diagnostic time**: \<1 second (no LLM)
 
----
+______________________________________________________________________
 
 ## Security Considerations
 
 1. **Credentials**: GitHub tokens, API keys handled via environment variables
-2. **Shell commands**: Executed with restricted permissions, input validated
-3. **File access**: Respects system permissions, no privilege escalation
-4. **Network**: HTTPS only for remote APIs, timeout protections
+1. **Shell commands**: Executed with restricted permissions, input validated
+1. **File access**: Respects system permissions, no privilege escalation
+1. **Network**: HTTPS only for remote APIs, timeout protections
 
----
+______________________________________________________________________
 
 ## Future Enhancements
 
 1. **Machine Learning**: Train models on historical failures for better classification
-2. **Adaptive Timeouts**: Adjust timeout values based on system load
-3. **Predictive Recovery**: Proactively identify likely failures before they occur
-4. **Custom Strategies**: Per-plugin custom recovery handlers
-5. **Slack/PagerDuty Integration**: Real-time alerts and escalations
-6. **Multi-Agent Coordination**: Agents collaboratively solving complex failures
+1. **Adaptive Timeouts**: Adjust timeout values based on system load
+1. **Predictive Recovery**: Proactively identify likely failures before they occur
+1. **Custom Strategies**: Per-plugin custom recovery handlers
+1. **Slack/PagerDuty Integration**: Real-time alerts and escalations
+1. **Multi-Agent Coordination**: Agents collaboratively solving complex failures
 
----
+______________________________________________________________________
 
 ## Files Modified/Created
 
 ### Created
+
 - `core/failure_analyzer.py` (430 lines)
 - `core/recovery_planner.py` (370 lines)
 - `ai-assistant/src/shadow_error_detector.py` (400 lines)
@@ -638,12 +669,13 @@ python3 failure_recovery_cli.py detect-shadows
 - `failure_recovery_cli.py` (280 lines)
 
 ### Modified
+
 - `core/base_plugin.py` (added DiagnosticContext class, 200+ lines)
 - `core/plugin_manager.py` (added recovery hooks, 150+ lines)
 
 **Total Lines Added**: ~2,100 lines of production code
 
----
+______________________________________________________________________
 
 ## References
 
@@ -654,11 +686,12 @@ python3 failure_recovery_cli.py detect-shadows
 - ADR-0067: Shadow Error Detection
 - ADR-0069: Agentic Failure Diagnosis and Recovery
 
----
+______________________________________________________________________
 
 ## Contact & Support
 
 For issues or improvements to the failure recovery system:
+
 - Create an issue: https://github.com/Qubinode/qubinode_navigator/issues
 - Tag: `failure-diagnosis`, `agentic-recovery`
 - Include: failure logs, diagnostic output, system state

@@ -54,7 +54,7 @@ class PluginManager:
 
         # State tracking
         self._initialized = False
-        
+
         # Failure recovery support
         self._failure_analyzer = FailureAnalyzer()
         self._recovery_planner = RecoveryPlanner()
@@ -268,49 +268,52 @@ class PluginManager:
     ) -> Optional[FailureAnalysis]:
         """
         Diagnose the root cause of a plugin failure
-        
+
         Args:
             plugin_name: Name of the failed plugin
             failure_message: Error message from the failure
             context: Execution context at time of failure
-        
+
         Returns:
             FailureAnalysis with root cause and recommendations
         """
         self.logger.info(f"Diagnosing failure for plugin: {plugin_name}")
-        
+
         try:
             # Collect diagnostic context
             dependencies = self._get_plugin_dependencies(plugin_name)
-            
+
             diagnostic_ctx = DiagnosticContext(
                 plugin_name=plugin_name,
                 failure_timestamp=__import__("datetime").datetime.now(),
                 error_message=failure_message,
                 dependent_plugins=dependencies,
             )
-            
+
             # Collect service health
             diagnostic_ctx.service_health = self._collect_service_health()
-            
+
             # Collect system resources
             diagnostic_ctx.system_resources = DiagnosticContext.get_system_resources()
-            
+
             # Collect recent logs
             diagnostic_ctx.recent_logs = DiagnosticContext.get_plugin_logs(plugin_name, since_seconds=300)
-            
+
             # Analyze failure
             analysis = self._failure_analyzer.analyze(diagnostic_ctx)
-            
+
             # Emit event
-            self.event_system.emit("plugin_failure_diagnosed", {
-                "plugin_name": plugin_name,
-                "root_cause": analysis.root_cause.value,
-                "confidence": analysis.confidence,
-            })
-            
+            self.event_system.emit(
+                "plugin_failure_diagnosed",
+                {
+                    "plugin_name": plugin_name,
+                    "root_cause": analysis.root_cause.value,
+                    "confidence": analysis.confidence,
+                },
+            )
+
             return analysis
-        
+
         except Exception as e:
             self.logger.error(f"Failed to diagnose failure: {e}")
             return None
@@ -318,33 +321,36 @@ class PluginManager:
     def plan_recovery(self, failure_analysis: FailureAnalysis, plugin_name: str) -> Optional[RecoveryPlan]:
         """
         Create recovery plan for a diagnosed failure
-        
+
         Args:
             failure_analysis: Result from failure diagnosis
             plugin_name: Name of the failed plugin
-        
+
         Returns:
             RecoveryPlan with recovery options
         """
         self.logger.info(f"Planning recovery for: {plugin_name}")
-        
+
         try:
             plugin_config = self._discovered_plugins.get(plugin_name)
             config_dict = {
                 "plugin_name": plugin_name,
                 "version": plugin_config.version if plugin_config else "unknown",
             }
-            
+
             plan = self._recovery_planner.plan_recovery(failure_analysis, config_dict)
-            
-            self.event_system.emit("recovery_plan_created", {
-                "plugin_name": plugin_name,
-                "num_options": len(plan.recovery_options),
-                "recommended": plan.recommended_option.action_type.value if plan.recommended_option else None,
-            })
-            
+
+            self.event_system.emit(
+                "recovery_plan_created",
+                {
+                    "plugin_name": plugin_name,
+                    "num_options": len(plan.recovery_options),
+                    "recommended": plan.recommended_option.action_type.value if plan.recommended_option else None,
+                },
+            )
+
             return plan
-        
+
         except Exception as e:
             self.logger.error(f"Failed to plan recovery: {e}")
             return None
@@ -352,50 +358,53 @@ class PluginManager:
     def execute_recovery(self, recovery_plan: RecoveryPlan, context: ExecutionContext) -> bool:
         """
         Execute the recommended recovery option
-        
+
         Args:
             recovery_plan: Recovery plan from plan_recovery()
             context: Execution context
-        
+
         Returns:
             True if recovery succeeded, False otherwise
         """
         self.logger.info(f"Executing recovery for: {recovery_plan.failed_plugin}")
-        
+
         if not recovery_plan.recommended_option:
             self.logger.error("No recommended recovery option in plan")
             return False
-        
+
         try:
             option = recovery_plan.recommended_option
-            
+
             # Check approval if callback is set
             if self._approval_callback:
                 if not self._approval_callback(recovery_plan):
                     self.logger.info("Recovery execution denied by approval callback")
                     return False
-            
+
             # Execute the recovery option
             success = self._recovery_planner.execute_recovery(
                 recovery_plan,
                 option,
                 approval_callback=self._approval_callback,
             )
-            
-            self.event_system.emit("recovery_executed", {
-                "plugin_name": recovery_plan.failed_plugin,
-                "action_type": option.action_type.value,
-                "success": success,
-            })
-            
+
+            self.event_system.emit(
+                "recovery_executed",
+                {
+                    "plugin_name": recovery_plan.failed_plugin,
+                    "action_type": option.action_type.value,
+                    "success": success,
+                },
+            )
+
             # If retry option and successful, re-execute the plugin
             if success and option.action_type.value == "retry":
                 self.logger.info(f"Retrying plugin: {recovery_plan.failed_plugin}")
                 result = self.execute_plugin(recovery_plan.failed_plugin, context)
                 return result.status != PluginStatus.FAILED
-            
+
             return success
-        
+
         except Exception as e:
             self.logger.error(f"Failed to execute recovery: {e}")
             return False
@@ -403,7 +412,7 @@ class PluginManager:
     def record_checkpoint(self, plugin_name: str, state: Any) -> None:
         """
         Record a state checkpoint for recovery
-        
+
         Args:
             plugin_name: Name of the plugin
             state: State snapshot for recovery
@@ -421,14 +430,14 @@ class PluginManager:
     ) -> None:
         """
         Register a custom recovery handler for a plugin
-        
+
         Args:
             plugin_name: Name of the plugin
             handler: Callable that executes custom recovery logic
         """
         if plugin_name not in self._recovery_handlers:
             self._recovery_handlers[plugin_name] = []
-        
+
         self._recovery_handlers[plugin_name].append(handler)
         self.logger.debug(f"Registered recovery handler for: {plugin_name}")
 
@@ -440,7 +449,7 @@ class PluginManager:
     def set_approval_callback(self, callback: Optional[Callable[[RecoveryPlan], bool]]) -> None:
         """
         Set approval callback for recovery execution
-        
+
         Args:
             callback: Function that returns True to approve recovery
         """
@@ -450,23 +459,23 @@ class PluginManager:
         """Collect health status of key services"""
         services = ["libvirtd", "podman", "airflow", "vault", "networking"]
         health = {}
-        
+
         for service in services:
             try:
                 health[service] = DiagnosticContext.get_service_status(service)
             except Exception as e:
                 health[service] = {"error": str(e)}
-        
+
         return health
 
     def _get_plugin_dependencies(self, plugin_name: str) -> List[str]:
         """Get list of plugins that depend on this one"""
         dependents = []
-        
+
         for name, info in self._discovered_plugins.items():
             if plugin_name in info.dependencies:
                 dependents.append(name)
-        
+
         return dependents
 
     def _execute_plugin_with_recovery(
@@ -476,37 +485,39 @@ class PluginManager:
     ) -> PluginResult:
         """
         Execute plugin with automatic failure recovery
-        
+
         Args:
             plugin_name: Name of plugin to execute
             context: Execution context
-        
+
         Returns:
             PluginResult from plugin execution
         """
         # Execute plugin normally
         result = self.execute_plugin(plugin_name, context)
-        
+
         # If failed and auto-recovery enabled, attempt recovery
         if result.status == PluginStatus.FAILED and self._auto_recovery_enabled:
-            self.logger.info(f"Plugin failed; attempting automatic recovery")
-            
+            self.logger.info("Plugin failed; attempting automatic recovery")
+
             # Diagnose failure
             analysis = self.diagnose_failure(plugin_name, result.message, context)
             if not analysis:
                 return result
-            
+
             # Plan recovery
             plan = self.plan_recovery(analysis, plugin_name)
             if not plan:
                 return result
-            
+
             # Execute recovery
             if self.execute_recovery(plan, context):
                 # Try to get updated result from retry
                 result = self.execute_plugin(plugin_name, context)
-        
+
         return result
+
+    def execute_plugins(self, plugin_names: List[str] = None, context: ExecutionContext = None) -> Dict[str, PluginResult]:
         """
         Execute multiple plugins in dependency order
 
