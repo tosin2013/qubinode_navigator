@@ -131,10 +131,14 @@ def get_ssh_key_path() -> str:
 
 def get_inventory_dir() -> str:
     """
-    Get inventory directory from environment or default to ~/.generated.
+    Get inventory directory from environment or default to /opt/.generated.
 
     Environment variable: QUBINODE_INVENTORY_DIR
-    Default: ~/.generated (expands to current user's home)
+    Default: /opt/.generated (portable across container/host environments)
+
+    Note: We use /opt/.generated instead of ~/.generated because DAGs are
+    parsed in the Airflow container but commands run on the host via SSH.
+    Using ~ would expand to the container user's home, not the host user's.
 
     Returns:
         Full path to inventory directory
@@ -143,7 +147,8 @@ def get_inventory_dir() -> str:
         >>> inv_dir = get_inventory_dir()
         >>> inventory_path = f"{inv_dir}/.{hostname}.{domain}"
     """
-    default = os.path.expanduser("~/.generated")
+    # Use /opt/.generated as default - portable across container/host
+    default = "/opt/.generated"
     return os.environ.get("QUBINODE_INVENTORY_DIR", default)
 
 

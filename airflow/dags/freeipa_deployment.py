@@ -287,15 +287,15 @@ prepare_ansible = SSHOperator(
     mkdir -p "$INVENTORY_DIR"
 
     # Create Ansible inventory
+    # Note: ansible_host MUST be on the hostname line, not in [all:vars]
     cat > "$INVENTORY_DIR/inventory" << INVENTORY_EOF
 [idm]
-$IDM_HOSTNAME
+$IDM_HOSTNAME ansible_host=$IP
 
 [all:vars]
 ansible_ssh_private_key_file={SSH_KEY_PATH}
 ansible_ssh_user=$LOGIN_USER
 ansible_ssh_common_args=-o StrictHostKeyChecking=no
-ansible_host=$IP
 ansible_internal_private_ip=$IP
 INVENTORY_EOF
 
