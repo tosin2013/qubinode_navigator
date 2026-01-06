@@ -6,10 +6,14 @@ idempotency support and comprehensive state management.
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Any
-from dataclasses import dataclass
+from typing import Dict, List, Any, Optional
+from dataclasses import dataclass, field
 from enum import Enum
 import logging
+import subprocess
+import psutil
+import os
+from datetime import datetime
 
 
 class PluginStatus(Enum):
@@ -83,6 +87,235 @@ class ExecutionContext:
         self.environment = environment
         self.config = config or {}
         self.variables = variables or {}
+
+
+@dataclass
+class DiagnosticContext:
+    """
+    Failure diagnosis context providing real-time system state and diagnostics
+
+    Enables plugins to report detailed failure information for root cause analysis
+    """
+
+    plugin_name: str
+    failure_timestamp: datetime
+    error_message: str
+    system_state: Dict[str, Any] = field(default_factory=dict)
+    dependent_plugins: List[str] = field(default_factory=list)
+    service_health: Dict[str, Any] = field(default_factory=dict)
+    system_resources: Dict[str, Any] = field(default_factory=dict)
+    recent_logs: List[Dict[str, Any]] = field(default_factory=list)
+    network_status: Dict[str, Any] = field(default_factory=dict)
+
+    @staticmethod
+    def get_plugin_logs(plugin_name: str, since_seconds: int = 300) -> List[Dict[str, Any]]:
+        """
+        Retrieve recent plugin logs
+
+        Args:
+            plugin_name: Name of the plugin
+            since_seconds: Time window in seconds to retrieve logs
+
+        Returns:
+            List of log entries with timestamp, level, and message
+        """
+        logger = logging.getLogger(f"qubinode.{plugin_name}")
+        logs = []
+        
+        # In a real implementation, this would query a centralized log store
+        # For now, we return a structured format for log aggregation
+        try:
+            # This is a placeholder - actual implementation would query:
+            # - systemd journal (journalctl)
+            # - podman logs
+            # - file-based logs in /var/log or /opt/qubinode_navigator/logs
+            logs.append({
+                "timestamp": datetime.now().isoformat(),
+                "level": "INFO",
+                "plugin": plugin_name,
+                "message": f"Retrieving logs for {plugin_name} from last {since_seconds}s"
+            })
+        except Exception as e:
+            logs.append({
+                "timestamp": datetime.now().isoformat(),
+                "level": "ERROR",
+                "plugin": plugin_name,
+                "message": f"Failed to retrieve logs: {str(e)}"
+            })
+        
+        return logs
+
+    @staticmethod
+    def get_service_status(service_name: str) -> Dict[str, Any]:
+        """
+        Get status of a system service
+
+        Args:
+            service_name: Name of the service (e.g., 'airflow', 'libvirtd', 'podman')
+
+        Returns:
+            Dict with service state, pid, uptime, last restart
+        """
+        status = {
+            "service": service_name,
+            "active": False,
+            "pid": None,
+            "uptime_seconds": None,
+            "last_restart": None,
+            "details": {}
+        }
+
+        try:
+            # Check with systemctl
+            result = subprocess.run(
+                ["systemctl", "is-active", service_name],
+                capture_output=True,
+                timeout=5
+            )
+            status["active"] = result.returncode == 0
+
+            if status["active"]:
+                # Get service info
+                show_result = subprocess.run(
+                    ["systemctl", "show", service_name],
+                    capture_output=True,
+                    timeout=5,
+                    text=True
+                )
+                if show_result.returncode == 0:
+                    for line in show_result.stdout.split("\n"):
+                        if "=" in line:
+                            key, val = line.split("=", 1)
+                            status["details"][key.lower()] = val
+
+        except subprocess.TimeoutExpired:
+            status["details"]["error"] = "Service status check timed out"
+        except FileNotFoundError:
+            # systemctl not available or not systemd system
+            try:
+                result = subprocess.run(
+                    ["pgrep", "-f", service_name],
+                    capture_output=True,
+                    timeout=5,
+                    text=True
+                )
+                if result.returncode == 0:
+                    status["active"] = True
+                    status["pid"] = result.stdout.strip().split()[0] if result.stdout else None
+            except Exception as e:
+                status["details"]["error"] = str(e)
+        except Exception as e:
+            status["details"]["error"] = str(e)
+
+        return status
+
+    @staticmethod
+    def get_system_resources() -> Dict[str, Any]:
+        """
+        Get current system resource utilization
+
+        Returns:
+            Dict with CPU, memory, disk, and network metrics
+        """
+        resources = {
+            "timestamp": datetime.now().isoformat(),
+            "cpu": {},
+            "memory": {},
+            "disk": {},
+            "network": {}
+        }
+
+        try:
+            # CPU metrics
+            resources["cpu"]["percent"] = psutil.cpu_percent(interval=1)
+            resources["cpu"]["count_logical"] = psutil.cpu_count()
+            resources["cpu"]["count_physical"] = psutil.cpu_count(logical=False)
+            resources["cpu"]["load_average"] = dict(zip(["1min", "5min", "15min"], os.getloadavg() if hasattr(os, 'getloadavg') else [0, 0, 0]))
+        except Exception as e:
+            resources["cpu"]["error"] = str(e)
+
+        try:
+            # Memory metrics
+            mem = psutil.virtual_memory()
+            resources["memory"]["total"] = mem.total
+            resources["memory"]["available"] = mem.available
+            resources["memory"]["percent"] = mem.percent
+            resources["memory"]["used"] = mem.used
+        except Exception as e:
+            resources["memory"]["error"] = str(e)
+
+        try:
+            # Disk metrics
+            disk = psutil.disk_usage("/")
+            resources["disk"]["total"] = disk.total
+            resources["disk"]["used"] = disk.used
+            resources["disk"]["free"] = disk.free
+            resources["disk"]["percent"] = disk.percent
+        except Exception as e:
+            resources["disk"]["error"] = str(e)
+
+        try:
+            # Network metrics
+            net_if = psutil.net_if_stats()
+            resources["network"]["interfaces"] = {}
+            for iface, stats in net_if.items():
+                resources["network"]["interfaces"][iface] = {
+                    "up": stats.isup,
+                    "speed": stats.speed,
+                    "mtu": stats.mtu
+                }
+        except Exception as e:
+            resources["network"]["error"] = str(e)
+
+        return resources
+
+    @staticmethod
+    def get_network_connectivity(target: str) -> Dict[str, Any]:
+        """
+        Check network connectivity to a target
+
+        Args:
+            target: Hostname or IP address to check
+
+        Returns:
+            Dict with connectivity status and latency info
+        """
+        connectivity = {
+            "target": target,
+            "reachable": False,
+            "latency_ms": None,
+            "details": {}
+        }
+
+        try:
+            import socket
+            # Try DNS resolution
+            ip = socket.gethostbyname(target)
+            connectivity["details"]["resolved_ip"] = ip
+
+            # Try ICMP ping
+            result = subprocess.run(
+                ["ping", "-c", "1", "-W", "2", target],
+                capture_output=True,
+                timeout=5,
+                text=True
+            )
+            if result.returncode == 0:
+                connectivity["reachable"] = True
+                # Extract latency
+                import re
+                match = re.search(r"time=(\d+\.?\d*) ms", result.stdout)
+                if match:
+                    connectivity["latency_ms"] = float(match.group(1))
+            else:
+                connectivity["details"]["ping_error"] = result.stderr
+
+        except socket.gaierror as e:
+            connectivity["details"]["dns_error"] = str(e)
+        except Exception as e:
+            connectivity["details"]["error"] = str(e)
+
+        return connectivity
 
 
 class QubiNodePlugin(ABC):
