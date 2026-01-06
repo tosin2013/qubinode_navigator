@@ -327,6 +327,7 @@ INVENTORY_EOF
     echo ""
     echo "[OK] Ansible preparation complete"
     """,
+    cmd_timeout=600,  # 10 minutes for ansible-galaxy collection install
     dag=dag,
 )
 
