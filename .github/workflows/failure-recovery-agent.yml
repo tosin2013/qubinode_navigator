@@ -245,7 +245,7 @@ jobs:
 
       - name: Create issue for manual review
         if: failure() || steps.evaluate.outputs.action == 'escalate'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const title = `[Failure Recovery] ${{ inputs.failed_job }} - ${{ needs.diagnose-failure.outputs.root_cause }}`;
