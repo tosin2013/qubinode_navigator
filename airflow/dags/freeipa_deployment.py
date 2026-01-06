@@ -23,11 +23,16 @@ from dag_helpers import (
     get_inventory_dir,
     get_ssh_conn_id,
     get_kcli_prefix,
+    get_sudo_prefix,
 )
 
 # Get kcli prefix (sudo or empty) based on SSH user configuration
 # This is evaluated at DAG parse time and auto-detects if sudo is needed
 KCLI = get_kcli_prefix()
+
+# Get sudo prefix for privileged operations (mkdir /opt, /etc/hosts)
+# Auto-detects: returns "sudo " if SSH user is not root
+SUDO = get_sudo_prefix()
 
 # Default arguments
 default_args = {
@@ -283,8 +288,10 @@ prepare_ansible = SSHOperator(
     [ "$COMMUNITY_VERSION" == "true" ] && LOGIN_USER="cloud-user" || LOGIN_USER="cloud-user"
 
     # Create inventory directory
+    # Uses get_inventory_dir() default of /opt/.generated (configurable via QUBINODE_INVENTORY_DIR)
+    # SUDO prefix handles non-root users who need sudo for /opt/ access
     INVENTORY_DIR="{INVENTORY_BASE_DIR}/.$IDM_HOSTNAME.$DOMAIN"
-    mkdir -p "$INVENTORY_DIR"
+    {SUDO}mkdir -p "$INVENTORY_DIR"
 
     # Create Ansible inventory
     # Note: ansible_host MUST be on the hostname line, not in [all:vars]
@@ -302,10 +309,10 @@ INVENTORY_EOF
     echo "[OK] Inventory created at $INVENTORY_DIR/inventory"
     cat "$INVENTORY_DIR/inventory"
 
-    # Update /etc/hosts
+    # Update /etc/hosts (requires root/sudo)
     grep -v "$IDM_HOSTNAME" /etc/hosts > /tmp/hosts.tmp || true
     echo "$IP $IDM_HOSTNAME.$DOMAIN $IDM_HOSTNAME" >> /tmp/hosts.tmp
-    cp /tmp/hosts.tmp /etc/hosts
+    {SUDO}cp /tmp/hosts.tmp /etc/hosts
     echo "[OK] Updated /etc/hosts"
 
     # Test SSH connectivity
@@ -361,6 +368,7 @@ install_freeipa = SSHOperator(
         exit 1
     fi
 
+    # Use same inventory path as prepare_ansible task
     INVENTORY_DIR="{INVENTORY_BASE_DIR}/.$IDM_HOSTNAME.$DOMAIN"
     PLAYBOOK_DIR="/opt/freeipa-workshop-deployer"
 
@@ -460,10 +468,10 @@ destroy_freeipa = SSHOperator(
 
     DOMAIN="{{{{ params.domain }}}}"
     IDM_HOSTNAME="{{{{ params.idm_hostname }}}}"
-    rm -rf $HOME/.generated/.${{IDM_HOSTNAME}}.${{DOMAIN}} 2>/dev/null || true
+    {SUDO}rm -rf {INVENTORY_BASE_DIR}/.${{IDM_HOSTNAME}}.${{DOMAIN}} 2>/dev/null || true
 
     grep -v "${{IDM_HOSTNAME}}" /etc/hosts > /tmp/hosts.tmp 2>/dev/null || true
-    cp /tmp/hosts.tmp /etc/hosts 2>/dev/null || true
+    {SUDO}cp /tmp/hosts.tmp /etc/hosts 2>/dev/null || true
 
     echo ""
     echo "[OK] FreeIPA cleanup complete"

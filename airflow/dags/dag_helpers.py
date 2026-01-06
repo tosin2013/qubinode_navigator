@@ -111,6 +111,49 @@ def get_kcli_cmd(command: str) -> str:
     return f"{get_kcli_prefix()}kcli {command}"
 
 
+def get_sudo_prefix() -> str:
+    """
+    Get sudo prefix for privileged operations.
+
+    Returns "sudo " if SSH user is not root, empty string otherwise.
+    Used for operations that require root like mkdir in /opt or modifying /etc/hosts.
+
+    Environment variable: QUBINODE_USE_SUDO
+    - "true" or "1" or "yes": Returns "sudo " (with trailing space)
+    - "false" or "0" or "no": Returns "" (no prefix)
+    - Not set: Auto-detect based on SSH user (sudo if not root)
+
+    Returns:
+        "sudo " if sudo is needed, "" otherwise
+
+    Example:
+        >>> prefix = get_sudo_prefix()
+        >>> cmd = f"{prefix}mkdir -p /opt/.generated"
+
+    Usage in DAG:
+        from dag_helpers import get_sudo_prefix
+
+        SUDO = get_sudo_prefix()
+
+        command = f'''
+        {SUDO}mkdir -p /opt/.generated
+        {SUDO}cp /tmp/hosts.tmp /etc/hosts
+        '''
+    """
+    sudo_setting = os.environ.get("QUBINODE_USE_SUDO", "").lower()
+
+    if sudo_setting in ("true", "1", "yes"):
+        return "sudo "
+    elif sudo_setting in ("false", "0", "no"):
+        return ""
+    else:
+        # Auto-detect: use sudo if SSH user is not root
+        ssh_user = get_ssh_user()
+        if ssh_user != "root":
+            return "sudo "
+        return ""
+
+
 def get_ssh_key_path() -> str:
     """
     Get SSH key path from environment or default to ~/.ssh/id_rsa.
