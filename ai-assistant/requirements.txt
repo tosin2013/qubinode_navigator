@@ -34,7 +34,7 @@ filelock==3.20.2
 frozenlist==1.8.0
 fsspec==2025.12.0
 greenlet==3.3.0
-grpcio==1.67.1
+grpcio==1.76.0
 h11==0.16.0
 h2==4.3.0
 hf-xet==1.2.0
@@ -99,7 +99,6 @@ py-key-value-shared==0.3.0
 pycparser==2.23
 pydantic[email]==2.12.4
 pydantic-core==2.41.5
-pydantic-ai==1.39.1
 pydantic-settings==2.12.0
 pydocket==0.16.3
 pygments==2.19.2
@@ -136,7 +135,7 @@ typer==0.21.0
 typing-extensions==4.15.0
 typing-inspect==0.9.0
 typing-inspection==0.4.2
-urllib3==2.6.2
+urllib3==2.6.3
 uuid-utils==0.12.0
 uvicorn[standard]==0.40.0
 uvloop==0.22.1
